@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.campaign.infrastructure.CampaignMapper">
+ <sql id="columns">campaign_id,version,store_id,merchant_id,name,valid_from,valid_to,CAST(minimum_spend AS CHAR) minimum_spend,CAST(discount_amount AS CHAR) discount_amount,rule_json,status,lock_version</sql>
+ <insert id="insert">INSERT INTO marketing_campaign(tenant_id,campaign_id,version,store_id,merchant_id,name,valid_from,valid_to,minimum_spend,discount_amount,rule_json) VALUES(#{tenant},#{input.campaignId},#{input.version},#{input.storeId},#{merchant},#{input.name},#{input.validFrom},#{input.validTo},#{input.minimumSpend},#{input.discountAmount},#{rule})</insert>
+ <select id="find" resultType="com.lrj.commerce.campaign.infrastructure.CampaignMapper$Row">SELECT <include refid="columns"/> FROM marketing_campaign WHERE tenant_id=#{tenant} AND campaign_id=#{id} AND version=#{version}</select>
+ <select id="lockGroup" resultType="com.lrj.commerce.campaign.infrastructure.CampaignMapper$Row">SELECT <include refid="columns"/> FROM marketing_campaign WHERE tenant_id=#{tenant} AND campaign_id=#{id} ORDER BY version FOR UPDATE</select>
+ <update id="pauseOthers">UPDATE marketing_campaign SET status='PAUSED',lock_version=lock_version+1 WHERE tenant_id=#{tenant} AND campaign_id=#{id} AND status='PUBLISHED'</update>
+ <update id="change">UPDATE marketing_campaign SET status=#{status},lock_version=lock_version+1 WHERE tenant_id=#{tenant} AND campaign_id=#{id} AND version=#{version} AND lock_version=#{expected}</update>
+ <select id="list" resultType="com.lrj.commerce.campaign.infrastructure.CampaignMapper$Row">SELECT <include refid="columns"/> FROM marketing_campaign c WHERE tenant_id=#{tenant} AND campaign_id &gt; #{after} AND version=(SELECT MAX(c2.version) FROM marketing_campaign c2 WHERE c2.tenant_id=c.tenant_id AND c2.campaign_id=c.campaign_id) ORDER BY campaign_id LIMIT #{limit}</select>
+ <select id="published" resultType="com.lrj.commerce.campaign.infrastructure.CampaignMapper$Row">SELECT <include refid="columns"/> FROM marketing_campaign WHERE tenant_id=#{tenant} AND store_id=#{store} AND status='PUBLISHED' ORDER BY campaign_id LIMIT 101</select>
+</mapper>

@@ -1,0 +1,466 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] commerce-platform                                                  [pom]
+[INFO] shared-kernel                                                      [jar]
+[INFO] platform-runtime                                                   [jar]
+[INFO] member                                                             [jar]
+[INFO] merchant                                                           [jar]
+[INFO] store                                                              [jar]
+[INFO] catalog                                                            [jar]
+[INFO] marketing                                                          [jar]
+[INFO] marketing-runtime                                                  [jar]
+[INFO] trade                                                              [jar]
+[INFO] commerce-app                                                       [jar]
+[INFO] order                                                              [jar]
+[INFO] architecture-tests                                                 [jar]
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:commerce-platform >-----------------
+[INFO] Building commerce-platform 0.1.0-SNAPSHOT                         [1/13]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:shared-kernel >-------------------
+[INFO] Building shared-kernel 0.1.0-SNAPSHOT                             [2/13]
+[INFO]   from shared-kernel/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared-kernel ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared-kernel ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ shared-kernel ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ shared-kernel ---
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:platform-runtime >------------------
+[INFO] Building platform-runtime 0.1.0-SNAPSHOT                          [3/13]
+[INFO]   from platform-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jdbc:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jdbc:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jdbc/4.1.1/spring-boot-starter-jdbc-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jdbc/4.1.1/spring-boot-starter-jdbc-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-jdbc:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-jdbc:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-jdbc/4.1.1/spring-boot-jdbc-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-jdbc/4.1.1/spring-boot-jdbc-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-sql:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-sql:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-sql/4.1.1/spring-boot-sql-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-sql/4.1.1/spring-boot-sql-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-transaction:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-transaction:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-transaction/4.1.1/spring-boot-transaction-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-transaction/4.1.1/spring-boot-transaction-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-persistence:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-persistence:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-persistence/4.1.1/spring-boot-persistence-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-persistence/4.1.1/spring-boot-persistence-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jdbc:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-jdbc:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-sql:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-transaction:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-persistence:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jdbc:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-jdbc:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-sql:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-transaction:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-persistence:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jdbc/4.1.1/spring-boot-starter-jdbc-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-jdbc/4.1.1/spring-boot-jdbc-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-sql/4.1.1/spring-boot-sql-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-transaction/4.1.1/spring-boot-transaction-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-persistence/4.1.1/spring-boot-persistence-4.1.1.jar
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jdbc/4.1.1/spring-boot-starter-jdbc-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-persistence/4.1.1/spring-boot-persistence-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-transaction/4.1.1/spring-boot-transaction-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-sql/4.1.1/spring-boot-sql-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-jdbc/4.1.1/spring-boot-jdbc-4.1.1.jar (0 B at 0 B/s)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-runtime ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ platform-runtime ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 6 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-runtime ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/platform-runtime/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ platform-runtime ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ platform-runtime ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ platform-runtime ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/platform-runtime/target/platform-runtime-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:member >-----------------------
+[INFO] Building member 0.1.0-SNAPSHOT                                    [4/13]
+[INFO]   from member/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ member ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ member ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ member ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/member/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ member ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ member ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ member ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/member/target/member-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------------< com.lrj.commerce:merchant >----------------------
+[INFO] Building merchant 0.1.0-SNAPSHOT                                  [5/13]
+[INFO]   from merchant/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ merchant ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ merchant ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ merchant ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/merchant/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ merchant ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ merchant ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ merchant ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/merchant/target/merchant-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:store >-----------------------
+[INFO] Building store 0.1.0-SNAPSHOT                                     [6/13]
+[INFO]   from store/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ store ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ store ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ store ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/store/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ store ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ store ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ store ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/store/target/store-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:catalog >----------------------
+[INFO] Building catalog 0.1.0-SNAPSHOT                                   [7/13]
+[INFO]   from catalog/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ catalog ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ catalog ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ catalog ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/catalog/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ catalog ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ catalog ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ catalog ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/catalog/target/catalog-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------------< com.lrj.commerce:marketing >---------------------
+[INFO] Building marketing 0.1.0-SNAPSHOT                                 [8/13]
+[INFO]   from marketing/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketing ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketing ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ marketing ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ marketing ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ marketing ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ marketing ---
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:marketing-runtime >-----------------
+[INFO] Building marketing-runtime 0.1.0-SNAPSHOT                         [9/13]
+[INFO]   from marketing-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketing-runtime ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketing-runtime ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ marketing-runtime ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing-runtime/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ marketing-runtime ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ marketing-runtime ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ marketing-runtime ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/marketing-runtime/target/marketing-runtime-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:trade >-----------------------
+[INFO] Building trade 0.1.0-SNAPSHOT                                    [10/13]
+[INFO]   from trade/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ trade ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ trade ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ trade ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/trade/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ trade ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ trade ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ trade ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/trade/target/trade-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:commerce-app >--------------------
+[INFO] Building commerce-app 0.1.0-SNAPSHOT                             [11/13]
+[INFO]   from commerce-app/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Artifact org.springframework.boot:spring-boot-starter-flyway:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-flyway:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-flyway/4.1.1/spring-boot-starter-flyway-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-flyway/4.1.1/spring-boot-starter-flyway-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-flyway:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-flyway:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-flyway/4.1.1/spring-boot-flyway-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-flyway/4.1.1/spring-boot-flyway-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-starter-webmvc-test:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-webmvc-test:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-webmvc-test/4.1.1/spring-boot-starter-webmvc-test-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-webmvc-test/4.1.1/spring-boot-starter-webmvc-test-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jackson-test:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jackson-test:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jackson-test/4.1.1/spring-boot-starter-jackson-test-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jackson-test/4.1.1/spring-boot-starter-jackson-test-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-webmvc-test:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-webmvc-test:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-webmvc-test/4.1.1/spring-boot-webmvc-test-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-webmvc-test/4.1.1/spring-boot-webmvc-test-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-resttestclient:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-resttestclient:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-resttestclient/4.1.1/spring-boot-resttestclient-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-resttestclient/4.1.1/spring-boot-resttestclient-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-starter-flyway:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-flyway:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-webmvc-test:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jackson-test:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-webmvc-test:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-resttestclient:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-flyway:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-flyway:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-webmvc-test:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jackson-test:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-webmvc-test:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-resttestclient:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-flyway/4.1.1/spring-boot-starter-flyway-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-flyway/4.1.1/spring-boot-flyway-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-webmvc-test/4.1.1/spring-boot-starter-webmvc-test-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jackson-test/4.1.1/spring-boot-starter-jackson-test-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-webmvc-test/4.1.1/spring-boot-webmvc-test-4.1.1.jar
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-flyway/4.1.1/spring-boot-flyway-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-resttestclient/4.1.1/spring-boot-resttestclient-4.1.1.jar
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-webmvc-test/4.1.1/spring-boot-starter-webmvc-test-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-webmvc-test/4.1.1/spring-boot-webmvc-test-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-flyway/4.1.1/spring-boot-starter-flyway-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-resttestclient/4.1.1/spring-boot-resttestclient-4.1.1.jar (0 B at 0 B/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-starter-jackson-test/4.1.1/spring-boot-starter-jackson-test-4.1.1.jar (0 B at 0 B/s)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ commerce-app ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ commerce-app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ commerce-app ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/commerce-app/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ commerce-app ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ commerce-app ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ commerce-app ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:4.1.1:repackage (default) @ commerce-app ---
+[INFO] Artifact org.springframework.boot:spring-boot-buildpack-platform:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-buildpack-platform:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-buildpack-platform/4.1.1/spring-boot-buildpack-platform-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-buildpack-platform/4.1.1/spring-boot-buildpack-platform-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact org.apache.httpcomponents.client5:httpclient5:pom:5.6.4 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.apache.httpcomponents.client5:httpclient5:pom:5.6.4 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/client5/httpclient5/5.6.4/httpclient5-5.6.4.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/client5/httpclient5/5.6.4/httpclient5-5.6.4.pom (0 B at 0 B/s)
+[INFO] Artifact org.apache.httpcomponents.client5:httpclient5-parent:pom:5.6.4 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.apache.httpcomponents.client5:httpclient5-parent:pom:5.6.4 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/client5/httpclient5-parent/5.6.4/httpclient5-parent-5.6.4.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/client5/httpclient5-parent/5.6.4/httpclient5-parent-5.6.4.pom (0 B at 0 B/s)
+[INFO] Artifact org.apache.httpcomponents.core5:httpcore5:pom:5.4.3 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.apache.httpcomponents.core5:httpcore5:pom:5.4.3 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5/5.4.3/httpcore5-5.4.3.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5/5.4.3/httpcore5-5.4.3.pom (0 B at 0 B/s)
+[INFO] Artifact org.apache.httpcomponents.core5:httpcore5-parent:pom:5.4.3 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.apache.httpcomponents.core5:httpcore5-parent:pom:5.4.3 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5-parent/5.4.3/httpcore5-parent-5.4.3.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5-parent/5.4.3/httpcore5-parent-5.4.3.pom (0 B at 0 B/s)
+[INFO] Artifact org.apache.httpcomponents.core5:httpcore5-h2:pom:5.4.3 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.apache.httpcomponents.core5:httpcore5-h2:pom:5.4.3 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5-h2/5.4.3/httpcore5-h2-5.4.3.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5-h2/5.4.3/httpcore5-h2-5.4.3.pom (0 B at 0 B/s)
+[INFO] Artifact org.springframework.boot:spring-boot-loader-tools:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-loader-tools:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-loader-tools/4.1.1/spring-boot-loader-tools-4.1.1.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-loader-tools/4.1.1/spring-boot-loader-tools-4.1.1.pom (0 B at 0 B/s)
+[INFO] Artifact io.micrometer:micrometer-observation:pom:1.16.7 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact io.micrometer:micrometer-observation:pom:1.16.7 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-observation/1.16.7/micrometer-observation-1.16.7.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-observation/1.16.7/micrometer-observation-1.16.7.pom (0 B at 0 B/s)
+[INFO] Artifact io.micrometer:micrometer-commons:pom:1.16.7 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact io.micrometer:micrometer-commons:pom:1.16.7 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-commons/1.16.7/micrometer-commons-1.16.7.pom
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-commons/1.16.7/micrometer-commons-1.16.7.pom (0 B at 0 B/s)
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-buildpack-platform/4.1.1/spring-boot-buildpack-platform-4.1.1.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/client5/httpclient5/5.6.4/httpclient5-5.6.4.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5/5.4.3/httpcore5-5.4.3.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5-h2/5.4.3/httpcore5-h2-5.4.3.jar
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-loader-tools/4.1.1/spring-boot-loader-tools-4.1.1.jar
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-buildpack-platform/4.1.1/spring-boot-buildpack-platform-4.1.1.jar (333 kB at 3.3 MB/s)
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-observation/1.16.7/micrometer-observation-1.16.7.jar
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/springframework/boot/spring-boot-loader-tools/4.1.1/spring-boot-loader-tools-4.1.1.jar (342 kB at 3.4 MB/s)
+[INFO] Downloading from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-commons/1.16.7/micrometer-commons-1.16.7.jar
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/client5/httpclient5/5.6.4/httpclient5-5.6.4.jar (1.1 MB at 9.2 MB/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5/5.4.3/httpcore5-5.4.3.jar (955 kB at 7.8 MB/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-commons/1.16.7/micrometer-commons-1.16.7.jar (52 kB at 392 kB/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/io/micrometer/micrometer-observation/1.16.7/micrometer-observation-1.16.7.jar (84 kB at 622 kB/s)
+[INFO] Downloaded from aliyun-all: https://maven.aliyun.com/repository/public/org/apache/httpcomponents/core5/httpcore5-h2/5.4.3/httpcore5-h2-5.4.3.jar (264 kB at 916 kB/s)
+[INFO] Replacing main artifact /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar.original
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:order >-----------------------
+[INFO] Building order 0.1.0-SNAPSHOT                                    [12/13]
+[INFO]   from order/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ order ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/order/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ order ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ order ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/order/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ order ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ order ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ order ---
+[INFO] 
+[INFO] ----------------< com.lrj.commerce:architecture-tests >-----------------
+[INFO] Building architecture-tests 0.1.0-SNAPSHOT                       [13/13]
+[INFO]   from architecture-tests/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ architecture-tests ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ architecture-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ architecture-tests ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ architecture-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ architecture-tests ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ architecture-tests ---
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for commerce-platform 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] commerce-platform .................................. SUCCESS [  0.001 s]
+[INFO] shared-kernel ...................................... SUCCESS [  0.547 s]
+[INFO] platform-runtime ................................... SUCCESS [  1.011 s]
+[INFO] member ............................................. SUCCESS [  0.108 s]
+[INFO] merchant ........................................... SUCCESS [  0.091 s]
+[INFO] store .............................................. SUCCESS [  0.086 s]
+[INFO] catalog ............................................ SUCCESS [  0.098 s]
+[INFO] marketing .......................................... SUCCESS [  0.015 s]
+[INFO] marketing-runtime .................................. SUCCESS [  0.118 s]
+[INFO] trade .............................................. SUCCESS [  0.101 s]
+[INFO] commerce-app ....................................... SUCCESS [  1.132 s]
+[INFO] order .............................................. SUCCESS [  0.012 s]
+[INFO] architecture-tests ................................. SUCCESS [  0.008 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.535 s
+[INFO] Finished at: 2026-09-23T17:39:32+08:00
+[INFO] ------------------------------------------------------------------------

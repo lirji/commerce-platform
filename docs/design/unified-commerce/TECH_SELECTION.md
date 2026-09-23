@@ -17,3 +17,9 @@ Owner：backend-architecture-design。本次只固定已安装且可离线验证
 首批质量基线：Money 不接受负数/超精度，类型化 ID 与不可变集合；规则缺失/类型不符为 UNKNOWN，NOT UNKNOWN 仍 UNKNOWN；每请求规则数、事实数、树深/节点、行数有上限；优惠择优与分摊可复现；订单状态事件集中且非法迁移拒绝。架构检查确保订单与营销不直接依赖彼此、领域不导入框架/持久化实现。
 
 本次纯计算没有正式业务存储，未使用纯内存库替代数据库。新增数据库切片必须含表/列中文注释、约束、并发/回滚实测与种子脚本；正式数据不得存 JSON 文件。工作区根不是 Git 仓库；新项目在收尾时已出现 Git 与 origin 配置，交付复用该远程，不重新创建仓库。
+
+## S4运行时选型（2026-09-23）
+
+复用Java21，新增Spring Boot4.1.1 BOM（包含Spring7/Jackson3/Flyway/MySQL驱动），MyBatis starter4.0.1。JUnit随BOM统一，避免测试平台5/6混装；Surefire3.5.4。生产内核仍无框架依赖，新增runtime与持久化模块单独依赖Spring。实际MySQL通过dev-infra只读SELECT VERSION()确认8.4.11。
+
+官方依据：[Boot系统要求](https://docs.spring.io/spring-boot/system-requirements.html)、[管理依赖](https://docs.spring.io/spring-boot/appendix/dependency-versions/coordinates.html)、[MyBatis兼容矩阵](https://mybatis.org/spring-boot-starter/mybatis-spring-boot-autoconfigure/)、[Flyway MySQL支持](https://documentation.red-gate.com/fd/mysql-277579322.html)。MyBatis4.0声明支持Boot4.0+及Java17+；最终兼容以本项目真实启动/SQL测试为准。Spring/MyBatis/Flyway开源核心许可为Apache2.0，Connector/J为GPLv2+FOSS例外；当前本地应用使用，发布分发前保留依赖许可证清单。安全公告已查Spring官方页面，不将该查看声称为完整依赖漏洞扫描；上线扫描仍需单独证据。

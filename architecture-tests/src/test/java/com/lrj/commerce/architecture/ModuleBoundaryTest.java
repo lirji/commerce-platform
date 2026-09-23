@@ -13,6 +13,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** 检查真实编译产物依赖，不用预设目录列表冒充模块隔离已经成立。 */
 class ModuleBoundaryTest {
+    @Test void persistedModulesOnlyReachOtherDomainsThroughApi() throws Exception {
+        var diagnostics=new StringWriter();
+        var arguments=new java.util.ArrayList<>(List.of("-verbose:class","-filter:none"));
+        for(String module:List.of("shared-kernel","platform-runtime","member","merchant","store","catalog","marketing","marketing-runtime","trade","order")) {
+            Path classes=Path.of("..",module,"target","classes").toRealPath();
+            arguments.add(classes.toString());
+        }
+        int code=ToolProvider.findFirst("jdeps").orElseThrow().run(new PrintWriter(diagnostics),new PrintWriter(diagnostics),arguments.toArray(String[]::new));
+        assertEquals(0,code,diagnostics.toString());
+        int edges=0;
+        for(String line:diagnostics.toString().split("\\R")) {
+            String[] parts=line.trim().split("\\s+");
+            if(parts.length<3||!parts[1].equals("->")||!parts[0].startsWith("com.lrj.commerce.")||!parts[2].startsWith("com.lrj.commerce.")) continue;
+            edges++;String owner=parts[0].split("\\.")[3],targetOwner=parts[2].split("\\.")[3];
+            assertTrue(owner.equals(targetOwner)||targetOwner.equals("kernel")||targetOwner.equals("runtime")||parts[2].contains(".api."),line);
+            if(parts[0].contains(".api.")) assertFalse(parts[2].contains(".infrastructure.")||parts[2].contains(".application.")||parts[2].contains(".persistence."),line);
+        }
+        assertTrue(edges>100,"必须真实检查全部持久化模块");
+    }
     @Test void compiledDomainDependenciesRespectOwnershipAndApiDirection() throws Exception {
         var diagnostics = new StringWriter();
         var arguments = new java.util.ArrayList<>(List.of("-verbose:class", "-filter:none"));

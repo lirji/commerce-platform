@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.member.infrastructure.MemberMapper">
+ <insert id="insert">INSERT INTO member_record(tenant_id,member_id,actor_id,display_name,member_level,status,version) VALUES(#{tenant},#{input.memberId},#{input.actorId},#{input.displayName},#{input.memberLevel},'ACTIVE',0)</insert>
+ <select id="find" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND member_id=#{id}</select>
+ <select id="list" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND member_id &gt; #{after} ORDER BY member_id LIMIT #{limit}</select>
+<select id="byActor" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND actor_id=#{actor}</select>
+</mapper>

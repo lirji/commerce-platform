@@ -1,0 +1,44 @@
+server:
+  address: ${COMMERCE_BIND_ADDRESS:127.0.0.1}
+  port: ${COMMERCE_PORT:8600}
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 64
+      min-spare: 4
+    max-connections: 256
+    accept-count: 64
+spring:
+  application:
+    name: commerce-platform
+  datasource:
+    url: ${COMMERCE_DB_URL}
+    username: ${COMMERCE_DB_USER}
+    password: ${COMMERCE_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 1
+      connection-timeout: 3000
+      connection-init-sql: SET SESSION innodb_lock_wait_timeout=5
+  flyway:
+    clean-disabled: true
+    locations: classpath:db/migration
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+mybatis:
+  mapper-locations: classpath*:mappers/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    arg-name-based-constructor-auto-mapping: true
+    default-statement-timeout: 10
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

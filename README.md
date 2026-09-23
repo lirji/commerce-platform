@@ -2,7 +2,9 @@
 
 目标：DDD + 模块化单体，覆盖会员、商家、店铺、商品、营销、交易、订单、支付、履约及售后。营销包含活动、人群、动态规则、权益、优惠、旅程和低代码运营。
 
-当前已完成首批**领域内核**：版本化活动条件树、可解释优惠报价、精确分摊、订单生命周期。当前不是可部署电商应用：尚无 HTTP、数据库、身份接入、支付渠道、Outbox 或前端。
+当前已完成领域内核和S4持久化闭环：主数据、活动版本发布、可信事实优惠报价、MySQL存储、幂等与审计、本地Bearer认证、真实HTTP。订单状态机已有领域实现，实际下单/支付/履约、权益与旅程仍在建设。真实外部联调按用户要求后置。
+
+本地运行与访问凭据位置见 [S4运行说明](docs/design/unified-commerce/s4/RUNTIME.md)。演示数据通过API写入数据库；没有页面硬编码数据。
 
 ## 构建
 
@@ -10,10 +12,10 @@
 
 ```sh
 cd commerce-platform
-mvn -o -B verify
+bash scripts/verify.sh -o
 ```
 
-首次在无缓存机器上需允许 Maven 下载依赖，再运行 `mvn -B verify`。业务库没有生产三方依赖。测试数据仅为 JUnit fixture，不是页面 Mock 或正式业务数据。
+首次在无缓存机器上需允许 Maven 下载依赖，再运行 `mvn -B verify`。纯领域内核没有生产三方依赖；应用模块使用Spring/MyBatis/Flyway。测试数据仅为 JUnit fixture，不是页面 Mock 或正式业务数据。
 
 | 当前模块 | 职责 |
 |---|---|
@@ -33,7 +35,7 @@ mvn -o -B verify
 - [首批精确契约](docs/design/unified-commerce/CONTRACTS.md)
 - [分阶段实施路线](docs/design/unified-commerce/IMPLEMENTATION_SLICES.md)
 - [风险与待决事项](docs/design/unified-commerce/RISKS.md)
-- [验证结果](docs/evidence/TEST_RESULT.md)
+- [验证结果](docs/evidence/s4/TEST_RESULT.md)
 - [恢复入口](CODEX_PROGRESS.md)
 
-下一里程碑：隔离 MySQL 下的会员/商店/商品最小主数据、活动发布、报价持久化和真实 API。随后扩展预占下单、支付与事件、履约售后，再完成营销旅程及运营台。旧规则迁移计划独立保留，未被本项目建设解除。
+S4已完成；下一里程碑S5预占下单，然后支付与事件、履约售后、营销旅程及运营台。旧规则迁移计划独立保留，未被本项目建设解除。

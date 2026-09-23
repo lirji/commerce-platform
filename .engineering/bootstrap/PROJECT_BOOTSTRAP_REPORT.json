@@ -5,7 +5,7 @@
     "mode": "FULL_BOOTSTRAP",
     "workspace": "REFERENCE_SYSTEM",
     "status": "PARTIAL",
-    "completedScope": "M0 domain kernel; S1-S3",
+    "completedScope": "S1-S4; persisted HTTP quote loop",
     "userDecision": "新建设任务，旧迁移保持门禁",
     "fullPlatformComplete": false
   },
@@ -65,21 +65,22 @@
     "completed": [
       "S1",
       "S2",
-      "S3"
+      "S3",
+      "S4"
     ],
     "notImplemented": [
-      "database",
-      "HTTP",
-      "identity",
+      "order persistence",
       "payment",
       "events",
+      "benefits",
+      "journey",
       "UI"
     ]
   },
   "verification": {
-    "ref": "docs/evidence/verification.json",
+    "ref": "docs/evidence/s4/verification.json",
     "build": "PASS",
-    "tests": 72,
+    "tests": 81,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -97,9 +98,9 @@
   ],
   "nextMilestones": [
     {
-      "id": "S4",
-      "description": "Isolated MySQL master data, release and persisted quote API",
-      "status": "PLANNED"
+      "id": "S5",
+      "description": "quote consumption, inventory hold and persisted order",
+      "status": "IN_PROGRESS"
     }
   ],
   "evidence": [

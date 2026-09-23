@@ -8,7 +8,7 @@
 | S1 | 版本化活动条件树参与报价；未知拒绝；分摊守恒、稳定择优、资源越界拒绝 | S0 | backend/shared-kernel、marketing | Java 21/Maven；C1–C3 | DONE（26项，s1-maven.log） |
 | S2 | 取消/支付竞态、可信未支付确认、履约、非法迁移按 C4 验证 | S1 | backend/order | Java；C4 | DONE（45项） |
 | S3 | 编译/行为/模块边界测试通过，恢复记录绑定产物 | S2 | validation/architecture-tests、docs | Maven offline verify | DONE（总72项） |
-| S4 | 单店最小业务主数据→活动发布→报价保存/查询→重启可回放 | S3 | backend+runtime；member/merchant/store/catalog/trade/装配 | 隔离 MySQL、Spring/MyBatis/Flyway 版本核验 | TODO |
+| S4 | 单店最小业务主数据→活动发布→报价保存/查询→重启可回放 | S3 | backend+runtime；member/merchant/store/catalog/trade/装配 | 隔离 MySQL、Spring/MyBatis/Flyway 版本核验 | DONE（真实MySQL/HTTP/重启证据s4） |
 | S5 | 报价消费、订单/库存/权益预占原子提交；重复/并发/失败回滚 | S4 | order/inventory/benefit | 真实 DB 集成；不能只 Mock | TODO |
 | S6 | 隔离支付适配、支付未知/关单、事件可靠投递与重复消费 | S5 | payment/jobs/装配 | 渠道沙箱及 DB；真实渠道另需明确配置 | TODO |
 | S7 | 履约、退货、退款及权益冲正，补偿与对账闭环 | S6 | fulfillment/aftersales | WMS/渠道契约或隔离沙箱 | TODO |

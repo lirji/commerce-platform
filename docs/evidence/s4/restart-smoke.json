@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "quoteId": "84e6984b-5c1a-4e92-915e-cb99d258f2db",
+  "payable": "168.00",
+  "checks": [
+    "actual JVM stop/start",
+    "authenticated HTTP read",
+    "unchanged persisted quote"
+  ]
+}

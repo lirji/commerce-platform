@@ -1,0 +1,95 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] commerce-platform                                                  [pom]
+[INFO] shared-kernel                                                      [jar]
+[INFO] platform-runtime                                                   [jar]
+[INFO] member                                                             [jar]
+[INFO] merchant                                                           [jar]
+[INFO] store                                                              [jar]
+[INFO] catalog                                                            [jar]
+[INFO] marketing                                                          [jar]
+[INFO] marketing-runtime                                                  [jar]
+[INFO] trade                                                              [jar]
+[INFO] commerce-app                                                       [jar]
+[INFO] order                                                              [jar]
+[INFO] architecture-tests                                                 [jar]
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:commerce-platform >-----------------
+[INFO] Building commerce-platform 0.1.0-SNAPSHOT                         [1/13]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:shared-kernel >-------------------
+[INFO] Building shared-kernel 0.1.0-SNAPSHOT                             [2/13]
+[INFO]   from shared-kernel/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared-kernel ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared-kernel ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ shared-kernel ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ shared-kernel ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/target/shared-kernel-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:platform-runtime >------------------
+[INFO] Building platform-runtime 0.1.0-SNAPSHOT                          [3/13]
+[INFO]   from platform-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jdbc:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[WARNING] The POM for org.springframework.boot:spring-boot-starter-jdbc:jar:4.1.1 is missing, no dependency information available
+[INFO] Artifact org.springframework.boot:spring-boot-jdbc:pom:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[WARNING] The POM for org.springframework.boot:spring-boot-jdbc:jar:4.1.1 is missing, no dependency information available
+[INFO] Artifact org.springframework.boot:spring-boot-starter-jdbc:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] Artifact org.springframework.boot:spring-boot-jdbc:jar:4.1.1 is present in the local repository, but cached from a remote repository ID that is unavailable in current build context, verifying that is downloadable from [aliyun-all (https://maven.aliyun.com/repository/public, default, releases+snapshots)]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for commerce-platform 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] commerce-platform .................................. SUCCESS [  0.001 s]
+[INFO] shared-kernel ...................................... SUCCESS [  0.844 s]
+[INFO] platform-runtime ................................... FAILURE [  0.128 s]
+[INFO] member ............................................. SKIPPED
+[INFO] merchant ........................................... SKIPPED
+[INFO] store .............................................. SKIPPED
+[INFO] catalog ............................................ SKIPPED
+[INFO] marketing .......................................... SKIPPED
+[INFO] marketing-runtime .................................. SKIPPED
+[INFO] trade .............................................. SKIPPED
+[INFO] commerce-app ....................................... SKIPPED
+[INFO] order .............................................. SKIPPED
+[INFO] architecture-tests ................................. SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.148 s
+[INFO] Finished at: 2026-09-23T17:39:14+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal on project platform-runtime: Could not resolve dependencies for project com.lrj.commerce:platform-runtime:jar:0.1.0-SNAPSHOT
+[ERROR] dependency: org.springframework.boot:spring-boot-starter-jdbc:jar:4.1.1 (compile)
+[ERROR] 	Cannot access aliyun-all (https://maven.aliyun.com/repository/public) in offline mode and the artifact org.springframework.boot:spring-boot-starter-jdbc:jar:4.1.1 has not been downloaded from it before.
+[ERROR] dependency: org.springframework.boot:spring-boot-jdbc:jar:4.1.1 (compile)
+[ERROR] 	Cannot access aliyun-all (https://maven.aliyun.com/repository/public) in offline mode and the artifact org.springframework.boot:spring-boot-jdbc:jar:4.1.1 has not been downloaded from it before.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/DependencyResolutionException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :platform-runtime

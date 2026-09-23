@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.store.infrastructure.StoreMapper">
+ <insert id="insert">INSERT INTO store_record(tenant_id,store_id,merchant_id,name,status,version) VALUES(#{tenant},#{input.storeId},#{input.merchantId},#{input.name},'ACTIVE',0)</insert>
+ <select id="find" resultType="com.lrj.commerce.store.api.StoreApi$View">SELECT store_id,merchant_id,name,status,version FROM store_record WHERE tenant_id=#{tenant} AND store_id=#{id}</select>
+ <select id="list" resultType="com.lrj.commerce.store.api.StoreApi$View">SELECT store_id,merchant_id,name,status,version FROM store_record WHERE tenant_id=#{tenant} AND store_id &gt; #{after} ORDER BY store_id LIMIT #{limit}</select>
+</mapper>

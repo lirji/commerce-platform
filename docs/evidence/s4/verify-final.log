@@ -1,0 +1,419 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] commerce-platform                                                  [pom]
+[INFO] shared-kernel                                                      [jar]
+[INFO] platform-runtime                                                   [jar]
+[INFO] member                                                             [jar]
+[INFO] merchant                                                           [jar]
+[INFO] store                                                              [jar]
+[INFO] catalog                                                            [jar]
+[INFO] marketing                                                          [jar]
+[INFO] marketing-runtime                                                  [jar]
+[INFO] trade                                                              [jar]
+[INFO] commerce-app                                                       [jar]
+[INFO] order                                                              [jar]
+[INFO] architecture-tests                                                 [jar]
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:commerce-platform >-----------------
+[INFO] Building commerce-platform 0.1.0-SNAPSHOT                         [1/13]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:shared-kernel >-------------------
+[INFO] Building shared-kernel 0.1.0-SNAPSHOT                             [2/13]
+[INFO]   from shared-kernel/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared-kernel ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared-kernel ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ shared-kernel ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.kernel.MoneyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.lrj.commerce.kernel.MoneyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ shared-kernel ---
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:platform-runtime >------------------
+[INFO] Building platform-runtime 0.1.0-SNAPSHOT                          [3/13]
+[INFO]   from platform-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-runtime ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ platform-runtime ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-runtime ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/platform-runtime/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ platform-runtime ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ platform-runtime ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ platform-runtime ---
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:member >-----------------------
+[INFO] Building member 0.1.0-SNAPSHOT                                    [4/13]
+[INFO]   from member/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ member ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ member ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ member ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/member/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ member ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ member ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ member ---
+[INFO] 
+[INFO] ---------------------< com.lrj.commerce:merchant >----------------------
+[INFO] Building merchant 0.1.0-SNAPSHOT                                  [5/13]
+[INFO]   from merchant/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ merchant ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ merchant ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ merchant ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/merchant/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ merchant ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ merchant ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ merchant ---
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:store >-----------------------
+[INFO] Building store 0.1.0-SNAPSHOT                                     [6/13]
+[INFO]   from store/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ store ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ store ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ store ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/store/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ store ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ store ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ store ---
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:catalog >----------------------
+[INFO] Building catalog 0.1.0-SNAPSHOT                                   [7/13]
+[INFO]   from catalog/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ catalog ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ catalog ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ catalog ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/catalog/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ catalog ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ catalog ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ catalog ---
+[INFO] 
+[INFO] ---------------------< com.lrj.commerce:marketing >---------------------
+[INFO] Building marketing 0.1.0-SNAPSHOT                                 [8/13]
+[INFO]   from marketing/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketing ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketing ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ marketing ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ marketing ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ marketing ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.marketing.MarketingDecisionTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.173 s -- in com.lrj.commerce.marketing.MarketingDecisionTest
+[INFO] Running com.lrj.commerce.marketing.RuleEvaluatorTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in com.lrj.commerce.marketing.RuleEvaluatorTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ marketing ---
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:marketing-runtime >-----------------
+[INFO] Building marketing-runtime 0.1.0-SNAPSHOT                         [9/13]
+[INFO]   from marketing-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketing-runtime ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketing-runtime ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ marketing-runtime ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing-runtime/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ marketing-runtime ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ marketing-runtime ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ marketing-runtime ---
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:trade >-----------------------
+[INFO] Building trade 0.1.0-SNAPSHOT                                    [10/13]
+[INFO]   from trade/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ trade ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ trade ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ trade ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/trade/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ trade ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ trade ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ trade ---
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:commerce-app >--------------------
+[INFO] Building commerce-app 0.1.0-SNAPSHOT                             [11/13]
+[INFO]   from commerce-app/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ commerce-app ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ commerce-app ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ commerce-app ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/commerce-app/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ commerce-app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ commerce-app ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.app.PersistedCommerceTest
+17:41:30.213 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.lrj.commerce.app.PersistedCommerceTest]: PersistedCommerceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:41:30.283 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.lrj.commerce.app.CommerceApplication for test class com.lrj.commerce.app.PersistedCommerceTest
+17:41:30.321 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.lrj.commerce.app.PersistedCommerceTest]: PersistedCommerceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:41:30.322 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.lrj.commerce.app.CommerceApplication for test class com.lrj.commerce.app.PersistedCommerceTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-09-23T17:41:30.665+08:00  INFO 21867 --- [commerce-platform] [           main] c.l.commerce.app.PersistedCommerceTest   : Starting PersistedCommerceTest using Java 21.0.11 with PID 21867 (started by liruijun in /Users/liruijun/personal/LLM/commerce-platform/commerce-app)
+2026-09-23T17:41:30.666+08:00  INFO 21867 --- [commerce-platform] [           main] c.l.commerce.app.PersistedCommerceTest   : No active profile set, falling back to 1 default profile: "default"
+2026-09-23T17:41:31.301+08:00  INFO 21867 --- [commerce-platform] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-09-23T17:41:31.311+08:00  INFO 21867 --- [commerce-platform] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-23T17:41:31.312+08:00  INFO 21867 --- [commerce-platform] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-09-23T17:41:31.333+08:00  INFO 21867 --- [commerce-platform] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 654 ms
+2026-09-23T17:41:31.620+08:00  INFO 21867 --- [commerce-platform] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-23T17:41:31.774+08:00  INFO 21867 --- [commerce-platform] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@d28a235
+2026-09-23T17:41:31.775+08:00  INFO 21867 --- [commerce-platform] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-23T17:41:31.789+08:00  INFO 21867 --- [commerce-platform] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:43306/commerce_test_20260923?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true (MySQL 8.4)
+2026-09-23T17:41:31.892+08:00  INFO 21867 --- [commerce-platform] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.020s)
+2026-09-23T17:41:31.906+08:00  INFO 21867 --- [commerce-platform] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `commerce_test_20260923`: 1
+2026-09-23T17:41:31.908+08:00  INFO 21867 --- [commerce-platform] [           main] o.f.core.internal.command.DbMigrate      : Schema `commerce_test_20260923` is up to date. No migration necessary.
+2026-09-23T17:41:31.996+08:00  WARN 21867 --- [commerce-platform] [           main] .s.a.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: bb11b7f9-9c8e-42bb-8b83-cef9ff2fc3e8
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-09-23T17:41:32.000+08:00  INFO 21867 --- [commerce-platform] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-09-23T17:41:32.280+08:00  INFO 21867 --- [commerce-platform] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-09-23T17:41:32.318+08:00  INFO 21867 --- [commerce-platform] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 56324 (http) with context path '/'
+2026-09-23T17:41:32.324+08:00  INFO 21867 --- [commerce-platform] [           main] c.l.commerce.app.PersistedCommerceTest   : Started PersistedCommerceTest in 1.8 seconds (process running for 2.51)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/Users/liruijun/personal/repository/net/bytebuddy/byte-buddy-agent/1.18.11/byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-09-23T17:41:32.849+08:00  INFO 21867 --- [commerce-platform] [1-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-23T17:41:32.849+08:00  INFO 21867 --- [commerce-platform] [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-23T17:41:32.850+08:00  INFO 21867 --- [commerce-platform] [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.505 s -- in com.lrj.commerce.app.PersistedCommerceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ commerce-app ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:4.1.1:repackage (default) @ commerce-app ---
+[INFO] Replacing main artifact /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar.original
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:order >-----------------------
+[INFO] Building order 0.1.0-SNAPSHOT                                    [12/13]
+[INFO]   from order/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ order ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/order/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ order ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ order ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/order/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ order ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ order ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.order.OrderLifecycleTest
+[INFO] Tests run: 45, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.094 s -- in com.lrj.commerce.order.OrderLifecycleTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 45, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ order ---
+[INFO] 
+[INFO] ----------------< com.lrj.commerce:architecture-tests >-----------------
+[INFO] Building architecture-tests 0.1.0-SNAPSHOT                       [13/13]
+[INFO]   from architecture-tests/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ architecture-tests ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ architecture-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ architecture-tests ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ architecture-tests ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ architecture-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.architecture.ModuleBoundaryTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.185 s -- in com.lrj.commerce.architecture.ModuleBoundaryTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ architecture-tests ---
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for commerce-platform 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] commerce-platform .................................. SUCCESS [  0.001 s]
+[INFO] shared-kernel ...................................... SUCCESS [  0.833 s]
+[INFO] platform-runtime ................................... SUCCESS [  0.150 s]
+[INFO] member ............................................. SUCCESS [  0.021 s]
+[INFO] merchant ........................................... SUCCESS [  0.017 s]
+[INFO] store .............................................. SUCCESS [  0.018 s]
+[INFO] catalog ............................................ SUCCESS [  0.016 s]
+[INFO] marketing .......................................... SUCCESS [  0.562 s]
+[INFO] marketing-runtime .................................. SUCCESS [  0.017 s]
+[INFO] trade .............................................. SUCCESS [  0.017 s]
+[INFO] commerce-app ....................................... SUCCESS [  5.493 s]
+[INFO] order .............................................. SUCCESS [  0.406 s]
+[INFO] architecture-tests ................................. SUCCESS [  0.538 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.328 s
+[INFO] Finished at: 2026-09-23T17:41:35+08:00
+[INFO] ------------------------------------------------------------------------
