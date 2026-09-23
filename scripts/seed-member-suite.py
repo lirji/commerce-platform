@@ -18,12 +18,12 @@ if path.exists() and '--fresh' not in sys.argv:
     access=json.loads(path.read_text())
     if access['schema']!=schema or access['baseUrl']!=base:raise SystemExit('Existing fixture targets another environment; use --fresh explicitly.')
 else:
-    access={'tenant':'member-suite-'+str(uuid.uuid4()),'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'operatorToken':secrets.token_hex(32),'checkoutToken':secrets.token_hex(32),'exchangeToken':secrets.token_hex(32),'behaviorToken':secrets.token_hex(32),'deliveryToken':secrets.token_hex(32),'baseUrl':base,'schema':schema,'storeId':'brand-store','seedAt':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+    access={'tenant':'member-suite-'+str(uuid.uuid4()),'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'operatorToken':secrets.token_hex(32),'checkoutToken':secrets.token_hex(32),'exchangeToken':secrets.token_hex(32),'behaviorToken':secrets.token_hex(32),'deliveryToken':secrets.token_hex(32),'journeyToken':secrets.token_hex(32),'baseUrl':base,'schema':schema,'storeId':'brand-store','seedAt':datetime.datetime.now(datetime.timezone.utc).isoformat()}
     fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
     with os.fdopen(fd,'w') as f:json.dump(access,f,indent=2)
 # 仅身份夹具直写凭据表，业务数据一律通过API持久化；不将明文凭据写入SQL或日志。
 sql=''
-for field,actor,role in [('adminToken','ops-admin','ADMIN'),('memberToken','ops-buyer','MEMBER'),('operatorToken','ops-clerk','OPERATOR'),('checkoutToken','points-buyer','MEMBER'),('exchangeToken','exchange-buyer','MEMBER'),('behaviorToken','behavior-buyer','MEMBER'),('deliveryToken','delivery-buyer','MEMBER')]:
+for field,actor,role in [('adminToken','ops-admin','ADMIN'),('memberToken','ops-buyer','MEMBER'),('operatorToken','ops-clerk','OPERATOR'),('checkoutToken','points-buyer','MEMBER'),('exchangeToken','exchange-buyer','MEMBER'),('behaviorToken','behavior-buyer','MEMBER'),('deliveryToken','delivery-buyer','MEMBER'),('journeyToken','journey-buyer','MEMBER')]:
     digest=hashlib.sha256(access[field].encode()).hexdigest()
     sql+=f"INSERT INTO platform_credential(token_hash,tenant_id,actor_id,role,expires_at) VALUES('{digest}','{access['tenant']}','{actor}','{role}',DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY)) ON DUPLICATE KEY UPDATE expires_at=DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY);\n"
 p=subprocess.run(['docker','exec','-i','-e','MYSQL_PWD',os.getenv('COMMERCE_MYSQL_CONTAINER','dev-infra-mysql84-1'),'mysql','-ucommerce_app',schema],input=sql,text=True,capture_output=True,env=dict(os.environ,MYSQL_PWD=env['COMMERCE_DB_PASSWORD']),timeout=15)
@@ -67,6 +67,8 @@ post('/admin/member-behavior/behavior-member/profile',{'expectedVersion':0,'birt
 post('/admin/members',{'memberId':'delivery-member','actorId':'delivery-buyer','displayName':'定向关怀会员','memberLevel':'BASIC'})
 post('/admin/coupon-definitions',{'definitionId':'target-care','version':1,'storeId':'brand-store','name':'会员关怀受控券','minimumSpend':'0.00','discountAmount':'3.00','validFrom':at(-60),'validTo':at(86400*60),'quota':1000,'stackable':True,'platformFundingBps':10000,'issuanceMode':'SOURCE_ONLY','validityDays':7})
 post('/admin/audiences',{'audienceId':'target-care-audience','version':1,'name':'会员关怀演示人群','source':'ISOLATED_DEMO','watermark':at(0),'validUntil':at(7200),'memberIds':['delivery-member','suite-member']})
+post('/admin/members',{'memberId':'journey-member','actorId':'journey-buyer','displayName':'生日旅程会员','memberLevel':'BASIC'})
+post('/admin/member-behavior/journey-member/profile',{'expectedVersion':0,'birthday':now.strftime('%m-%d'),'journeyEnabled':True,'reason':'隔离生命周期旅程演示'})
 # 演示仅受理后不假称到账；正式消费者读取持久事件完成发放。
 for _ in range(6):
     req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})

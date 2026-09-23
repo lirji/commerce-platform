@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.insight.infrastructure.EffectsMapper">
- <insert id="observe">INSERT INTO marketing_effect_order(tenant_id,order_id,store_id,series_id,campaign_id,campaign_version,ordered_at,paid,paid_amount,refunded,discount_amount,platform_funding,merchant_funding)
- VALUES(#{tenant},#{input.orderId},#{input.storeId},#{input.seriesId},#{input.campaignId},#{input.campaignVersion},#{input.orderedAt},#{input.paid},#{input.paidAmount},#{input.refunded},#{input.discountAmount},#{input.platformFunding},#{input.merchantFunding})
- ON DUPLICATE KEY UPDATE paid=GREATEST(paid,#{input.paid}),refunded=GREATEST(refunded,#{input.refunded}),updated_at=UTC_TIMESTAMP(3)
+ <insert id="observe">INSERT INTO marketing_effect_order(tenant_id,order_id,store_id,series_id,campaign_id,campaign_version,ordered_at,paid,paid_amount,refunded,discount_amount,platform_funding,merchant_funding,member_id,coupon_id,coupon_discount)
+ VALUES(#{tenant},#{input.orderId},#{input.storeId},#{input.seriesId},#{input.campaignId},#{input.campaignVersion},#{input.orderedAt},#{input.paid},#{input.paidAmount},#{input.refunded},#{input.discountAmount},#{input.platformFunding},#{input.merchantFunding},#{input.memberId},#{input.couponId},#{input.couponDiscount})
+ ON DUPLICATE KEY UPDATE member_id=#{input.memberId},coupon_id=#{input.couponId},coupon_discount=#{input.couponDiscount},paid=GREATEST(paid,#{input.paid}),refunded=GREATEST(refunded,#{input.refunded}),updated_at=UTC_TIMESTAMP(3)
  </insert>
  <select id="report" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$Series">
   SELECT series_id,campaign_id,campaign_version,COUNT(*) orders,SUM(paid) paid_orders,
@@ -12,5 +12,45 @@
   CAST(SUM(IF(paid,platform_funding,0)) AS CHAR) platform_funding,CAST(SUM(IF(paid,merchant_funding,0)) AS CHAR) merchant_funding,MAX(updated_at) updated_at
   FROM marketing_effect_order WHERE tenant_id=#{tenant} AND store_id=#{store} AND ordered_at&gt;=#{from} AND ordered_at&lt;#{to} AND series_id&gt;#{after}
   GROUP BY series_id,campaign_id,campaign_version ORDER BY series_id LIMIT #{limit}
+ </select>
+ <select id="journeys" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$JourneySeries">
+  WITH versions AS (
+   SELECT DISTINCT e.journey_id,e.journey_version,SHA2(CONCAT(e.journey_id,'/',e.journey_version),256) series_id,
+   COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(d.definition_json,'$.lifecycle.conversionWindowDays')) AS UNSIGNED),7) observation_days
+   FROM journey_effect e JOIN journey_definition d ON d.tenant_id=e.tenant_id AND d.journey_id=e.journey_id AND d.version=e.journey_version
+   WHERE e.tenant_id=#{tenant} AND e.store_id=#{store} AND e.kind='ENROLLED' AND e.created_at&gt;=#{from} AND e.created_at&lt;#{to}
+   AND SHA2(CONCAT(e.journey_id,'/',e.journey_version),256)&gt;#{after} ORDER BY series_id LIMIT #{limit}
+  ), entries AS (
+   SELECT v.series_id,v.journey_id,v.journey_version,v.observation_days,e.member_id,MIN(e.created_at) entered_at
+   FROM versions v JOIN journey_effect e ON e.tenant_id=#{tenant} AND e.journey_id=v.journey_id AND e.journey_version=v.journey_version
+   WHERE e.kind='ENROLLED' AND e.created_at&gt;=#{from} AND e.created_at&lt;#{to}
+   GROUP BY v.series_id,v.journey_id,v.journey_version,v.observation_days,e.member_id
+  ), cohorts AS (
+   SELECT series_id,COUNT(*) enrolled_members,SUM(TIMESTAMPADD(DAY,observation_days,entered_at)&lt;=#{now}) mature_members FROM entries GROUP BY series_id
+  ), touches AS (
+   SELECT a.series_id,SUM(e.kind='NOTIFIED') notified,SUM(e.kind='BENEFIT_GRANTED') benefits_granted,SUM(e.kind='COUPON_GRANTED') coupons_granted
+   FROM entries a JOIN journey_effect e ON e.tenant_id=#{tenant} AND e.journey_id=a.journey_id AND e.journey_version=a.journey_version AND e.member_id=a.member_id
+   AND e.created_at&gt;=a.entered_at AND e.created_at&lt;TIMESTAMPADD(DAY,a.observation_days,a.entered_at) GROUP BY a.series_id
+  ), sales AS (
+   SELECT a.series_id,COUNT(DISTINCT o.member_id) paid_members,COUNT(*) paid_orders,SUM(o.paid_amount) received,SUM(o.refunded) refunded,
+   SUM(o.paid_amount-o.refunded) net_receipts,SUM(o.discount_amount) discount_granted,SUM(o.platform_funding) platform_funding,SUM(o.merchant_funding) merchant_funding,MAX(o.updated_at) updated_at
+   FROM entries a JOIN marketing_effect_order o ON o.tenant_id=#{tenant} AND o.store_id=#{store} AND o.member_id=a.member_id AND o.paid=TRUE
+   AND o.ordered_at&gt;=a.entered_at AND o.ordered_at&lt;TIMESTAMPADD(DAY,a.observation_days,a.entered_at) GROUP BY a.series_id
+  )
+  SELECT v.series_id,v.journey_id,v.journey_version,v.observation_days,c.enrolled_members,c.mature_members,
+   COALESCE(t.notified,0) notified,COALESCE(t.benefits_granted,0) benefits_granted,COALESCE(t.coupons_granted,0) coupons_granted,
+   COALESCE(s.paid_members,0) paid_members,COALESCE(s.paid_orders,0) paid_orders,
+   CAST(COALESCE(s.received,0.00) AS CHAR) received,CAST(COALESCE(s.refunded,0.00) AS CHAR) refunded,CAST(COALESCE(s.net_receipts,0.00) AS CHAR) net_receipts,
+   CAST(COALESCE(s.discount_granted,0.00) AS CHAR) discount_granted,CAST(COALESCE(s.platform_funding,0.00) AS CHAR) platform_funding,CAST(COALESCE(s.merchant_funding,0.00) AS CHAR) merchant_funding,s.updated_at
+  FROM versions v JOIN cohorts c ON c.series_id=v.series_id LEFT JOIN touches t ON t.series_id=v.series_id LEFT JOIN sales s ON s.series_id=v.series_id ORDER BY v.series_id
+ </select>
+ <select id="deliveries" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$DeliverySeries">
+  WITH batches AS (SELECT batch_id,issued,skipped,revoked,kept FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND store_id=#{store} AND created_at&gt;=#{from} AND created_at&lt;#{to} AND batch_id&gt;#{after} ORDER BY batch_id LIMIT #{limit})
+  SELECT b.batch_id series_id,b.batch_id,b.issued,b.skipped,b.revoked,b.kept,COUNT(o.order_id) paid_orders,
+   CAST(COALESCE(SUM(o.paid_amount),0.00) AS CHAR) received,CAST(COALESCE(SUM(o.refunded),0.00) AS CHAR) refunded,CAST(COALESCE(SUM(o.paid_amount-o.refunded),0.00) AS CHAR) net_receipts,
+   CAST(COALESCE(SUM(o.coupon_discount),0.00) AS CHAR) coupon_discount,MAX(o.updated_at) updated_at
+  FROM batches b LEFT JOIN automation_coupon_recipient r ON r.tenant_id=#{tenant} AND r.batch_id=b.batch_id
+  LEFT JOIN marketing_effect_order o ON o.tenant_id=#{tenant} AND o.store_id=#{store} AND o.coupon_id=r.coupon_id AND o.paid=TRUE
+  GROUP BY b.batch_id,b.issued,b.skipped,b.revoked,b.kept ORDER BY b.batch_id
  </select>
 </mapper>

@@ -43,14 +43,14 @@ public class MemberGrowthService implements MemberGrowthApi {
  public Wallet adjust(Actor actor,String key,String id,Adjustment input){
   actor.requireAdmin();Identifiers.require(id);Inputs.require(input!=null&&input.expectedVersion()>=0&&input.delta()!=0&&input.delta()>=-1000000000L&&input.delta()<=1000000000L,"调整量或版本无效");Inputs.text(input.reason(),256);
   return commands.run(actor,"member.growth.adjust",key,new Object[]{id,input},Wallet.class,()->{
-   var member=lock(actor.tenantId(),id);Inputs.require(!member.status().equals("CLOSED"),"注销会员不可人工调整");var account=mapper.account(actor.tenantId(),id);
+   var member=lock(actor.tenantId(),id);Inputs.require(!member.status().equals("CLOSED"),"注销会员不可人工调整");var account=mapper.accountCurrent(actor.tenantId(),id);
    if(account.version()!=input.expectedVersion())throw new DomainException(DomainException.Code.CONFLICT,"成长版本已变化");
    cycles.contribute(actor.tenantId(),id,"manual-"+JsonCodec.hash(actor.actorId()+":"+key).substring(0,48),clock.instant(),input.delta());
    apply(actor.tenantId(),member,account,input.delta(),new BigDecimal(account.netSpend()),"manual-"+JsonCodec.hash(key).substring(0,32),0,input.reason(),true);return wallet(actor.tenantId(),id);
   });
  }
  /** 新门槛不隐含全库更新；运营可对明确会员重算等级。 */
- public Wallet recalculate(Actor actor,String key,String id){actor.requireAdmin();Identifiers.require(id);return commands.run(actor,"member.growth.recalculate",key,id,Wallet.class,()->{var member=lock(actor.tenantId(),id);var account=mapper.account(actor.tenantId(),id);apply(actor.tenantId(),member,account,0,new BigDecimal(account.netSpend()),"recalculate",0,"按当前策略重算等级",false);return wallet(actor.tenantId(),id);});}
+ public Wallet recalculate(Actor actor,String key,String id){actor.requireAdmin();Identifiers.require(id);return commands.run(actor,"member.growth.recalculate",key,id,Wallet.class,()->{var member=lock(actor.tenantId(),id);var account=mapper.accountCurrent(actor.tenantId(),id);apply(actor.tenantId(),member,account,0,new BigDecimal(account.netSpend()),"recalculate",0,"按当前策略重算等级",false);return wallet(actor.tenantId(),id);});}
  /** 事件装配层提供权威订单事实；退款先于完成时只记录来源，完成后按净额入账。 */
  @Transactional(propagation=Propagation.MANDATORY)
  public void observe(String tenant,OrderFact fact){
@@ -66,7 +66,7 @@ public class MemberGrowthService implements MemberGrowthApi {
   BigDecimal refunded=new BigDecimal(mapper.refunds(tenant,fact.orderId()));Inputs.require(refunded.compareTo(paid)<=0,"退款累计超过原实付");
   boolean completed=source.completed()||fact.completed();BigDecimal net=completed?paid.subtract(refunded):BigDecimal.ZERO;
   long contribution=net.multiply(new BigDecimal(source.growthRate())).setScale(0,RoundingMode.DOWN).longValueExact();long delta=contribution-source.contribution();
-  var account=mapper.account(tenant,fact.memberId());BigDecimal newNet=new BigDecimal(account.netSpend()).add(net.subtract(new BigDecimal(source.netSpend())));
+  var account=mapper.accountCurrent(tenant,fact.memberId());BigDecimal newNet=new BigDecimal(account.netSpend()).add(net.subtract(new BigDecimal(source.netSpend())));
   mapper.updateSource(tenant,fact.orderId(),completed,contribution,net.toPlainString());
   cycles.contribute(tenant,fact.memberId(),"order-"+fact.orderId(),fact.orderedAt(),contribution);
   if(delta!=0||newNet.compareTo(new BigDecimal(account.netSpend()))!=0)apply(tenant,member,account,delta,newNet,fact.orderId(),source.policyVersion(),fact.refundId()==null?"完成订单净消费成长":"成功退款重算净成长",true);

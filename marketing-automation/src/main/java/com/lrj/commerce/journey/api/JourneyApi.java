@@ -6,14 +6,24 @@ import java.time.Instant;
 import java.util.List;
 /** 旅程只执行已批准的有限节点，版本和持久检查点决定恢复行为。 */
 public interface JourneyApi {
-    enum Kind { WAIT, DECIDE, GRANT, NOTIFY, END }
-    enum Trigger { MANUAL, ORDER_PAID, MEMBER_REGISTERED, LEVEL_CHANGED, SEGMENT_ENTERED }
+    enum Kind { WAIT, DECIDE, GRANT, COUPON, NOTIFY, END }
+    enum Trigger { MANUAL, ORDER_PAID, MEMBER_REGISTERED, LEVEL_CHANGED, SEGMENT_ENTERED, BIRTHDAY, DORMANT, REPURCHASE, CART_ABANDONED }
     enum State { RUNNING, WAITING, ISOLATED, COMPLETED, CANCELLED, TIMED_OUT }
-    record Node(String id,Kind kind,Integer seconds,String next,RuleNode rule,String yesNext,String noNext,EntitlementApi.Ref benefit,String title,String body) { }
+    record CouponRef(String definitionId,long version) { }
+    record Node(String id,Kind kind,Integer seconds,String next,RuleNode rule,String yesNext,String noNext,EntitlementApi.Ref benefit,String title,String body,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) CouponRef coupon) {
+        public Node(String id,Kind kind,Integer seconds,String next,RuleNode rule,String yesNext,String noNext,EntitlementApi.Ref benefit,String title,String body){this(id,kind,seconds,next,rule,yesNext,noNext,benefit,title,body,null);}
+    }
     record Controls(String segmentId,RuleNode entryRule,int maxEntries,int entryWindowSeconds,int notificationLimit,int notificationWindowSeconds) { }
-    record Definition(String journeyId,long version,String storeId,String name,Trigger trigger,Instant validFrom,Instant validTo,int maxDurationSeconds,String entry,List<Node> nodes,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) Controls controls) {
+    record Lifecycle(int thresholdDays,int cartDelaySeconds,int scanIntervalSeconds,int conversionWindowDays) { }
+    record Definition(String journeyId,long version,String storeId,String name,Trigger trigger,Instant validFrom,Instant validTo,int maxDurationSeconds,String entry,List<Node> nodes,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) Controls controls,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) Lifecycle lifecycle) {
+        public Definition(String journeyId,long version,String storeId,String name,Trigger trigger,Instant validFrom,Instant validTo,int maxDurationSeconds,String entry,List<Node> nodes,Controls controls){this(journeyId,version,storeId,name,trigger,validFrom,validTo,maxDurationSeconds,entry,nodes,controls,null);}
         public Definition(String journeyId,long version,String storeId,String name,Trigger trigger,Instant validFrom,Instant validTo,int maxDurationSeconds,String entry,List<Node> nodes){this(journeyId,version,storeId,name,trigger,validFrom,validTo,maxDurationSeconds,entry,nodes,null);}
     }
+    record Scan(String journeyId,long journeyVersion,String status,String memberCursor,Instant createdBefore,Instant nextDue,long scanned,long enrolled,int attempts,String errorCode,long version) { }
+    record ScanRetry(long expectedVersion,String reason) { }
+    /** 持久扫描状态与人工恢复均有界且受租户约束。 */
+    List<Scan> scans(Actor actor,String after,int limit);
+    Scan retryScan(Actor actor,String key,String id,long version,ScanRetry input);
     record EffectSummary(String journeyId,long enrolled,long completed,long notified,long entrySuppressed,long notificationSuppressed) { }
     record View(Definition content,String status,long lockVersion) { }
     record Start(String journeyId,long version,String memberId,String eventKey) { }

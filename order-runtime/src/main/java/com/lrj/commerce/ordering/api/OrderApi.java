@@ -25,6 +25,8 @@ public interface OrderApi {
     View paymentFact(String tenant,String id,String amount,boolean paid);
     /** 内部按租户查询，不接受客户端替换租户。 */
     View internalRead(String tenant,String id);
+    /** 生命周期仅判断本门店加购后的已付订单，不暴露订单资料。 */
+    boolean hasPaidSince(String tenant,String member,String store,Instant since);
     /** 到期只请求取消，支付未知必须保留库存。 */
     int expire(Actor actor,String key);
     /** 履约可信事实推进生命周期，必须加入调用者本地事务。 */

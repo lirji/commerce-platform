@@ -18,6 +18,7 @@ public interface GrowthMapper {
  List<PolicyRow> policies(@Param("tenant") String tenant,@Param("after") long after,@Param("limit") int limit);
  MemberApi.View lockMember(@Param("tenant") String tenant,@Param("member") String member);
  void ensureAccount(@Param("tenant") String tenant,@Param("member") String member);
+ Account accountCurrent(@Param("tenant") String tenant,@Param("member") String member);
  Account account(@Param("tenant") String tenant,@Param("member") String member);
  int accountChange(@Param("tenant") String tenant,@Param("member") String member,@Param("growth") long growth,@Param("net") String net,@Param("policy") long policy,@Param("version") long version);
  void level(@Param("tenant") String tenant,@Param("member") String member,@Param("level") String level);

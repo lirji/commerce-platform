@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper">
  <sql id="row">CAST(content_json AS CHAR) content_json,status,mode,cursor_member,revoke_cursor,processed,issued,skipped,revoked,kept,attempts,error_code,available_at,version</sql>
- <insert id="insert">INSERT INTO automation_coupon_batch(tenant_id,batch_id,store_id,content_json,status,available_at) VALUES(#{tenant},#{input.batchId},#{input.storeId},#{json},'RUNNING',#{now})</insert>
+ <insert id="insert">INSERT INTO automation_coupon_batch(tenant_id,batch_id,store_id,content_json,status,available_at,created_at) VALUES(#{tenant},#{input.batchId},#{input.storeId},#{json},'RUNNING',#{now},#{now})</insert>
  <select id="find" resultType="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id}</select>
  <select id="lock" resultType="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id} FOR UPDATE</select>
  <select id="list" resultType="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND store_id=#{store} AND batch_id&gt;#{after} ORDER BY batch_id LIMIT #{limit}</select>

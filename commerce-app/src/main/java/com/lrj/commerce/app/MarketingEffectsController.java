@@ -13,6 +13,10 @@ public class MarketingEffectsController {
  public MarketingEffectsController(MarketingEffectsApi effects,JourneyApi journeys){this.effects=effects;this.journeys=journeys;}
  /** 活动版本的成交退款与优惠承担。 */
  @GetMapping("/marketing-effects") public Object report(@AuthenticationPrincipal Actor actor,@RequestParam String storeId,@RequestParam Instant from,@RequestParam Instant to,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return effects.report(actor,storeId,from,to,after,limit);}
+ /** 生命周期版本按首次入组队列比较。 */
+ @GetMapping("/marketing-effects/journeys") public Object compareJourneys(@AuthenticationPrincipal Actor actor,@RequestParam String storeId,@RequestParam Instant from,@RequestParam Instant to,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return effects.journeys(actor,storeId,from,to,after,limit);}
+ /** 以实际使用券关联定向批次。 */
+ @GetMapping("/marketing-effects/deliveries") public Object compareDeliveries(@AuthenticationPrincipal Actor actor,@RequestParam String storeId,@RequestParam Instant from,@RequestParam Instant to,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return effects.deliveries(actor,storeId,from,to,after,limit);}
  /** 对历史订单补建投影，每次最多100单。 */
  @PostMapping("/marketing-effects/rebuild") public Object rebuild(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@RequestBody MarketingEffectsApi.Rebuild input){return effects.rebuild(actor,key,input);}
  /** 旅程执行指标不混入成交归因。 */

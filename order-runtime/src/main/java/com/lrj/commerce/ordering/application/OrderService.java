@@ -89,6 +89,8 @@ public class OrderService implements OrderApi {
         var result=view(mapper.internalRead(tenant,id));outbox.append(tenant,paid?"order.paid.v1":"order.cancelled.v1",id,result.version(),result);return result;
     }
     /** 跨域只返回API投影，其他模块不读订单Mapper。 */
+    /** 只读交易权威状态，不依赖营销投影消费延迟。 */
+    public boolean hasPaidSince(String tenant,String member,String store,java.time.Instant since){Identifiers.require(tenant);Identifiers.require(member);Identifiers.require(store);Inputs.require(since!=null,"订单检查起点缺失");return mapper.hasPaidSince(tenant,member,store,since);}
     public View internalRead(String tenant,String id) {return view(Inputs.found(mapper.internalRead(tenant,id)));}
     /** 批量任务每次最多20单，超时不是未支付证明。 */
     public int expire(Actor actor,String key) {

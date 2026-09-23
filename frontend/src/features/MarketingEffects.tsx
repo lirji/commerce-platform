@@ -1,4 +1,5 @@
 import { Alert, Button, Card, Form, Input, Space, Table, Tabs } from "antd";
+import { LifecycleEffects } from "./LifecycleEffects";
 import { useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
 import { ErrorNotice, Fields, PageHead, initialDate, instant, money, time } from "../shared/ui";
@@ -16,7 +17,7 @@ export function MarketingEffects({store}:{store:string}){
  return <>
   <PageHead title="营销与旅程效果" description="用成交快照和成功退款核对活动版本，先看清经营结果，再调整下一轮配置。" extra={<Button onClick={refresh}>刷新结果</Button>}/>
   <Card style={{marginBottom:16}}><Form layout="inline" initialValues={{from:initialDate(-86400*30),to:initialDate(86400)}} onFinish={v=>{setRange({from:instant(v.from),to:instant(v.to)});setAfter("");setJourneyAfter("");}}>
-   <Fields fields={[{name:"from",label:"下单起点",type:"datetime"},{name:"to",label:"下单终点（不含）",type:"datetime"}]}/><Button htmlType="submit">查询（最多93天）</Button>
+   <Fields fields={[{name:"from",label:"下单 / 入组 / 批次起点",type:"datetime"},{name:"to",label:"选择终点（不含）",type:"datetime"}]}/><Button htmlType="submit">查询（最多93天）</Button>
   </Form></Card>
   <ErrorNotice error={report.error}/><ErrorNotice error={journeys.error}/>
   <Tabs items={[
@@ -28,6 +29,7 @@ export function MarketingEffects({store}:{store:string}){
      {title:"成交优惠",dataIndex:"discountGranted",render:money},{title:"平台承担",dataIndex:"platformFunding",render:money},{title:"商家承担",dataIndex:"merchantFunding",render:money},{title:"最后核对",dataIndex:"updatedAt",render:time}
     ]}/><Space><Button onClick={()=>setAfter("")} disabled={!after}>回到首页</Button><Button disabled={report.data?.rows.length!==50} onClick={()=>setAfter(report.data!.rows.at(-1)!.seriesId)}>下一页</Button></Space>
    </Card>},
+   {key:"comparisons",label:"会员营销比较",children:<LifecycleEffects key={query} query={query}/>},
    {key:"journeys",label:"旅程执行",children:<Card>
     <Alert type="info" title="此页汇总各版本新增的执行事实，升级前记录不追溯补计。时间按执行发生时间；入组、完成和触达次数不代表带来了相应成交。"/>
     <Table<Journey> rowKey="journeyId" dataSource={journeys.data} pagination={false} loading={journeys.loading} columns={[

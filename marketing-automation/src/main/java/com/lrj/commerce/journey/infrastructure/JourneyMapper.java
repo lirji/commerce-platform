@@ -6,12 +6,21 @@ import java.util.List;
 /** 旅程定义、检查点和站内信由本模块独占写入。 */
 @Mapper
 public interface JourneyMapper {
+    void ensureScan(String tenant,Definition definition,Instant now);
+    List<Scan> dueScans(String tenant,Instant now);
+    Scan scanLock(String tenant,String id,long version);
+    List<Scan> scans(String tenant,String after,int limit);
+    int scanAdvance(String tenant,Scan previous,String status,String cursor,Instant before,Instant due,int scanned,int enrolled);
+    int scanFailed(String tenant,Scan previous,Instant due);
+    int scanRetry(String tenant,Scan previous,Instant now);
+    Instant anchor(String tenant,String id);
+    void setAnchor(String tenant,String id,Instant at);
     record Cap(long entryWindow,int entries,long notificationWindow,int notifications) { }
     void ensureCap(String tenant,String journey,String member);
     Cap lockCap(String tenant,String journey,String member);
     void cap(String tenant,String journey,String member,boolean notification,long window,int count,boolean suppressed);
     boolean effectExists(String tenant,String id);
-    void effect(String tenant,String id,Definition definition,String member,String kind);
+    void effect(String tenant,String id,Definition definition,String member,String kind,Instant now);
     List<Row> triggered(String tenant,String trigger,String store,Instant now,Instant occurred);
     List<EffectSummary> effects(String tenant,String store,Instant from,Instant to,String after,int limit);
     record Row(String journeyId,long version,String storeId,String status,long lockVersion,String definitionJson) { }

@@ -3,6 +3,8 @@
 <mapper namespace="com.lrj.commerce.member.infrastructure.BehaviorMapper">
  <sql id="ids"><foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach></sql>
  <select id="profile" resultType="com.lrj.commerce.member.api.MemberBehaviorApi$Profile">SELECT birthday,journey_enabled,version FROM member_behavior_profile WHERE tenant_id=#{tenant} AND member_id=#{member}</select>
+ <select id="profileCurrent" resultType="com.lrj.commerce.member.api.MemberBehaviorApi$Profile">SELECT birthday,journey_enabled,version FROM member_behavior_profile WHERE tenant_id=#{tenant} AND member_id=#{member} FOR UPDATE</select>
+ <select id="latestCart" resultType="java.time.Instant">SELECT occurred_at FROM member_behavior_event WHERE tenant_id=#{tenant} AND member_id=#{member} AND store_id=#{store} AND kind='ADD_TO_CART' ORDER BY occurred_at DESC LIMIT 1</select>
  <insert id="ensure">INSERT INTO member_behavior_profile(tenant_id,member_id) VALUES(#{tenant},#{member}) ON DUPLICATE KEY UPDATE member_id=member_id</insert>
  <update id="profileChange">UPDATE member_behavior_profile SET birthday=#{input.birthday},journey_enabled=#{input.journeyEnabled},version=version+1 WHERE tenant_id=#{tenant} AND member_id=#{member} AND version=#{input.expectedVersion}</update>
  <select id="event" resultType="com.lrj.commerce.member.api.MemberBehaviorApi$Event">SELECT sequence_id,event_id,kind,store_id,sku_id,occurred_at FROM member_behavior_event WHERE tenant_id=#{tenant} AND member_id=#{member} AND event_id=#{id} FOR UPDATE</select>

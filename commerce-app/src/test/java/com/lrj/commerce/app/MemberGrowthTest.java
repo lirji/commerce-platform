@@ -135,5 +135,24 @@ class MemberGrowthTest {
         assertEquals(0,wallet().path("growth").asLong());assertEquals("0.00",wallet().path("netSpend").asString());
         assertEquals(2,call("GET","/v1/members/me/growth/ledger",member,null,null).body().size());
     }
+    @Autowired com.lrj.commerce.member.api.MemberBehaviorApi behavior;
+    /** 两个事务先建立旧快照再竞争会员锁，验证不同退款不会相互覆盖。 */
+    @Test void distinctRefundsAfterOldSnapshotsPreserveGrowthAndBehavior() throws Exception {
+        seed();Instant at=Instant.now();policy(1,"1.00",at.minusSeconds(1));
+        observe("initial",new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("rr-order","m1","100.00",at,true,null,null));
+        var barrier=new CyclicBarrier(2);
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var jobs=new ArrayList<Future<String>>();
+            for(int i=0;i<2;i++){final int index=i;jobs.add(pool.submit(()->commands.run(new Actor(tenant,"admin",Actor.Role.ADMIN),"test.growth.rr","refund-"+index,index,String.class,()->{
+                jdbc.queryForObject("SELECT growth FROM member_growth_account WHERE tenant_id=? AND member_id='m1'",Long.class,tenant);
+                try{barrier.await(5,TimeUnit.SECONDS);}catch(Exception e){throw new RuntimeException(e);}
+                growth.observe(tenant,new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("rr-order","m1","100.00",at,true,"rr-refund-"+index,index==0?"20.00":"30.00"));
+                behavior.projectOrder(tenant,"rr-order",at);return "ok";
+            })));}
+            for(var job:jobs)assertEquals("ok",job.get(15,TimeUnit.SECONDS));
+        }
+        assertEquals(50,wallet().path("growth").asLong());assertEquals("50.00",wallet().path("netSpend").asString());
+        assertEquals("50.00",behavior.facts(tenant,List.of("m1"),Instant.now()).getFirst().netSpend30());
+    }
     private void pumpAll() throws Exception {for(int i=0;i<6;i++)post("/v1/admin/events/pump",admin,null,null);}
 }

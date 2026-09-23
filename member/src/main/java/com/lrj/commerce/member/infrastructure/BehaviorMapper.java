@@ -8,6 +8,8 @@ import java.util.List;
 public interface BehaviorMapper {
     record Row(String memberId,int browse30,int cart30,long completedOrders30,String netSpend30,Instant lastOrderAt,Instant lastCartAt,Instant joinedAt,String birthday,boolean journeyEnabled) { }
     record OrderSource(String memberId,boolean completed,String netSpend) { }
+    Instant latestCart(String tenant,String member,String store);
+    Profile profileCurrent(String tenant,String member);
     Profile profile(@Param("tenant") String tenant,@Param("member") String member);
     void ensure(@Param("tenant") String tenant,@Param("member") String member);
     int profileChange(@Param("tenant") String tenant,@Param("member") String member,@Param("input") ProfileChange input);

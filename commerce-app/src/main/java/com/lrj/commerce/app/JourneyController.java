@@ -23,6 +23,10 @@ public class JourneyController {
     @PostMapping("/admin/journey-instances/{id}/{action}") public Object control(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@PathVariable String id,@PathVariable String action){return journeys.control(actor,key,id,action);}
     /** 运维只推动有限批次。 */
     @PostMapping("/admin/journeys/pump") public Object pump(@AuthenticationPrincipal Actor actor){return journeys.pump(actor);}
+    /** 持久扫描的当前进度与失败状态。 */
+    @GetMapping("/admin/journey-scans") public Object scans(@AuthenticationPrincipal Actor actor,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return journeys.scans(actor,after,limit);}
+    /** 隔离恢复保留原检查点，并记录原因。 */
+    @PostMapping("/admin/journey-scans/{id}/{version}/retry") public Object retryScan(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@PathVariable String id,@PathVariable long version,@RequestBody JourneyApi.ScanRetry input){return journeys.retryScan(actor,key,id,version,input);}
     /** 读取本人的真实触达记录。 */
     @GetMapping("/notifications") public Object notifications(@AuthenticationPrincipal Actor actor,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return journeys.notifications(actor,after,limit);}
 }

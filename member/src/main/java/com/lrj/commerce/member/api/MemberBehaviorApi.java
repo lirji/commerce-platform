@@ -21,6 +21,10 @@ public interface MemberBehaviorApi {
     List<Event> events(Actor actor,String member,long after,int limit);
     /** 从同领域净成交来源更新投影，不接受外部请求自报金额。 */
     void projectOrder(String tenant,String order,Instant orderedAt);
+    /** 当前锁读会员偏好，用于已有事务中的触达决策。 */
+    boolean journeyAllowed(String tenant,String member);
+    /** 当前店铺最后加购时间，会员锁下调用以串行化交互。 */
+    Instant latestCart(String tenant,String member,String store);
     /** 同一时间快照的有界批量事实，供规则/旅程使用。 */
     List<Facts> facts(String tenant,List<String> members,Instant now);
 }

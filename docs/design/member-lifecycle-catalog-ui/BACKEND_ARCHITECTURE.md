@@ -46,3 +46,7 @@ benefit.PointOffer编排会员积分扣费和受控来源券/权益，同一Comm
 ## LP07 批次一致性
 
 定向发券由marketing-automation拥有批次/游标/回执，benefit拥有券及配额，member提供权威会员锁。每步锁批次→会员→频控→券配额，事务内保存副作用与检查点；失败后独立记录有界重试。人群通过MarketingAssets固定版本分页，不跨模块直接写表。
+
+## LP08 生命周期与分析
+
+扫描/实例执行使用READ_COMMITTED短事务，会员当前锁读偏好后执行；实例泵送先会员再实例，保持与入组顺序一致。扫描副作用与游标原子提交，失败单独持久退避。insight只读同模块journey效果/批次回执，订单由领域API投影memberId/couponId/金额；跨行收入不可相加。成长写路径当前读避免旧RR快照覆盖多笔退款。

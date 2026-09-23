@@ -167,13 +167,14 @@ export type Refund = {
 };
 export type JourneyNode = {
   id: string;
-  kind: "WAIT" | "DECIDE" | "GRANT" | "NOTIFY" | "END";
+  kind: "WAIT" | "DECIDE" | "GRANT" | "COUPON" | "NOTIFY" | "END";
   seconds?: number;
   next?: string;
   rule?: Rule;
   yesNext?: string;
   noNext?: string;
   benefit?: BenefitRef;
+  coupon?: {definitionId:string;version:number};
   title?: string;
   body?: string;
 };
@@ -182,12 +183,13 @@ export type Journey = {
   version: number;
   storeId: string;
   name: string;
-  trigger: "MANUAL" | "ORDER_PAID" | "MEMBER_REGISTERED" | "LEVEL_CHANGED" | "SEGMENT_ENTERED";
+  trigger: "MANUAL" | "ORDER_PAID" | "MEMBER_REGISTERED" | "LEVEL_CHANGED" | "SEGMENT_ENTERED" | "BIRTHDAY" | "DORMANT" | "REPURCHASE" | "CART_ABANDONED";
   validFrom: string;
   validTo: string;
   maxDurationSeconds: number;
   entry: string;
   nodes: JourneyNode[];
+  lifecycle?: {thresholdDays:number;cartDelaySeconds:number;scanIntervalSeconds:number;conversionWindowDays:number};
   controls?: {segmentId?:string;entryRule?:Rule;maxEntries:number;entryWindowSeconds:number;notificationLimit:number;notificationWindowSeconds:number};
 };
 export type JourneyInstance = {

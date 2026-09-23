@@ -31,7 +31,7 @@ public class CouponService implements CouponApi {
     /** 兑换目录只绑定受控券，且发行窗口必须完整覆盖兑换窗口。 */
     public void validateExchange(String tenant,String store,String id,long version,java.time.Instant from,java.time.Instant to) {
         var d=Inputs.found(mapper.definitionFind(tenant,id,version));
-        Inputs.require(d.issuanceMode().equals("SOURCE_ONLY") && d.storeId().equals(store) && !from.isBefore(d.validFrom()) && !to.isAfter(d.validTo()),"兑换券需为同店受控券且覆盖兑换有效期");
+        Inputs.require(d.issuanceMode().equals("SOURCE_ONLY") && d.storeId().equals(store) && !from.isBefore(d.validFrom()) && !to.isAfter(d.validTo()),"券需为同店受控券，且发行窗口覆盖发放期间");
     }
     /** 来源与发行配额同事务，重复来源绝不再发券。 */
     @Transactional(propagation=Propagation.MANDATORY)
@@ -41,6 +41,9 @@ public class CouponService implements CouponApi {
     /** 批次发券保持独立来源，不能与积分兑换来源混用。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public Coupon grantTargeted(String tenant,String member,String store,String source,String id,long version){return grantSource(tenant,member,store,source,id,version,"TARGETED");}
+    /** 旅程来源不能冒用公开领取或定向批次标识。 */
+    @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public Coupon grantFromJourney(String tenant,String member,String store,String source,String id,long version){return grantSource(tenant,member,store,source,id,version,"JOURNEY");}
     private Coupon grantSource(String tenant,String member,String store,String source,String id,long version,String type){
         Identifiers.require(source);var d=Inputs.found(mapper.definitionLock(tenant,id,version));
         var old=mapper.bySource(tenant,source,type);

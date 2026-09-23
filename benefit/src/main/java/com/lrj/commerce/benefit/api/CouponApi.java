@@ -19,6 +19,8 @@ public interface CouponApi {
     Coupon grantFromPoints(String tenant,String member,String store,String source,String definition,long version);
     /** 定向批次来源与其他来源独立去重。 */
     Coupon grantTargeted(String tenant,String member,String store,String source,String definition,long version);
+    /** 旅程节点来源独立，副作用与检查点由同一事务提交。 */
+    Coupon grantFromJourney(String tenant,String member,String store,String source,String definition,long version);
     /** 仅撤销此定向来源的可用券，返回REVOKED或保留原因。 */
     String revokeTargeted(String tenant,String member,String coupon,String source);
     Coupon claim(Actor actor,String key,String definition,long version);

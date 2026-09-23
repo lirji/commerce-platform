@@ -13,6 +13,7 @@ public interface OrderMapper {
     Row lock(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id);
     List<Row> list(@Param("tenant") String tenant,@Param("member") String member,@Param("after") String after,@Param("limit") int limit);
     int change(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version,@Param("status") String status);
+    boolean hasPaidSince(String tenant,String member,String store,java.time.Instant since);
     Row internalRead(@Param("tenant") String tenant,@Param("id") String id);
     Row internalLock(@Param("tenant") String tenant,@Param("id") String id);
     List<Row> expired(@Param("tenant") String tenant,@Param("now") Instant now);

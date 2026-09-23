@@ -49,6 +49,14 @@ public class MemberBehaviorService implements MemberBehaviorApi {
         var identity=mapper.sourceMember(tenant,order);if(identity==null)return;
         locks.lockMember(tenant,identity);var source=mapper.source(tenant,order);mapper.project(tenant,order,source,orderedAt);
     }
+    /** 不能使用先于会员锁建立的RR快照决定是否允许触达。 */
+    @Transactional(propagation=Propagation.MANDATORY)
+    public boolean journeyAllowed(String tenant,String member){
+        var value=locks.lockMember(tenant,member);if(value==null||!value.status().equals("ACTIVE"))return false;
+        var preference=mapper.profileCurrent(tenant,member);return preference==null||preference.journeyEnabled();
+    }
+    /** 门店维度避免把其他门店的加购误当成本店意向。 */
+    public Instant latestCart(String tenant,String member,String store){Identifiers.require(tenant);Identifiers.require(member);Identifiers.require(store);return mapper.latestCart(tenant,member,store);}
     /** 每次最多100会员，一条SQL聚合日汇总和订单窗口，避免网络N+1。 */
     public List<Facts> facts(String tenant,List<String> ids,Instant now){
         Identifiers.require(tenant);Inputs.require(ids!=null && ids.size()<=100 && now!=null,"行为事实批次超限");if(ids.isEmpty())return List.of();ids.forEach(Identifiers::require);
