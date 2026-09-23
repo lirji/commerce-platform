@@ -12,15 +12,21 @@
     "S7a",
     "S8a",
     "S8b1",
-    "S8b2a"
+    "S8b2a",
+    "S8b2b",
+    "S5b",
+    "S7b",
+    "S5",
+    "S7",
+    "S8"
   ],
-  "next": "S8b2b",
+  "next": "S9",
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
-  "verification": "docs/evidence/s8b2a/verification.json",
+  "verification": "docs/evidence/s8b2b/verification.json",
   "git": {
-    "status": "S8b2a_PUSHED_MAIN",
-    "sourceCommit": "33f5993",
+    "status": "S8_PUSHED_MAIN",
+    "sourceCommit": "46d9ffc",
     "branch": "feat/entitlement-fulfillment-compensation"
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",

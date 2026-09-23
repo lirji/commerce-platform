@@ -9,10 +9,10 @@
 | S2 | 取消/支付竞态、可信未支付确认、履约、非法迁移按 C4 验证 | S1 | backend/order | Java；C4 | DONE（45项） |
 | S3 | 编译/行为/模块边界测试通过，恢复记录绑定产物 | S2 | validation/architecture-tests、docs | Maven offline verify | DONE（总72项） |
 | S4 | 单店最小业务主数据→活动发布→报价保存/查询→重启可回放 | S3 | backend+runtime；member/merchant/store/catalog/trade/装配 | 隔离 MySQL、Spring/MyBatis/Flyway 版本核验 | DONE（真实MySQL/HTTP/重启证据s4） |
-| S5 | 报价消费、订单/库存/权益预占原子提交；重复/并发/失败回滚 | S4 | order/inventory/benefit | 真实 DB 集成；不能只 Mock | S5a DONE；S5b待S8 |
+| S5 | 报价消费、订单/库存/权益预占原子提交；重复/并发/失败回滚 | S4 | order/inventory/benefit | 真实 DB 集成；不能只 Mock | DONE (130 tests; S8b2b evidence) |
 | S6 | 隔离支付适配、支付未知/关单、事件可靠投递与重复消费 | S5 | payment/jobs/装配 | 渠道沙箱及 DB；真实渠道另需明确配置 | DONE（96测试；真实渠道后置） |
-| S7 | 履约、退货、退款及权益冲正，补偿与对账闭环 | S6 | fulfillment/aftersales | WMS/渠道契约或隔离沙箱 | S7a DONE；S7b待S8 |
-| S8 | 活动、人群、规则版本发布、权益及券、叠加/资金分摊 | S4–S7 | marketing/benefit/trade | 授权、审计、规则与人群来源 | S8a DONE；S8b待实施 |
+| S7 | 履约、退货、退款及权益冲正，补偿与对账闭环 | S6 | fulfillment/aftersales | WMS/渠道契约或隔离沙箱 | DONE (130 tests; S8b2b evidence) |
+| S8 | 活动、人群、规则版本发布、权益及券、叠加/资金分摊 | S4–S7 | marketing/benefit/trade | 授权、审计、规则与人群来源 | DONE (130 tests; S8b2b evidence) |
 | S9 | 旅程实例、等待/触达/超时/取消、恢复和运营低代码发布 | S8 | marketing/journey/lowcode | 持久调度、渠道隔离 | TODO |
 | S10 | 管理台和消费端真实接口、数据库 seed、部署文件与全链路验证 | 各后端 API 完成时逐页跟进，最终依赖 S9 | frontend/runtime | 沿用已有设计资产，另出前端架构 | TODO |
 
