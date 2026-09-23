@@ -157,7 +157,7 @@
     "scripts/prepare-e2e.py": "5b2f91ab501cdfaad45ee93d295b57d4c450fd13e82d529afb5347fd19aae94d",
     "scripts/provision-local.py": "765197921ce725c92c54a761451b3c88f4da5c0c61c025a196c9806bd1919a6d",
     "scripts/verify.sh": "7a39a3e7c933a63dcccc87da794a825a66062f0580ab8083984814b42bc20b3a",
-    "scripts/build.sh": "b082c974be8c3182a2242f66b2f1f12bdf60a46019f9182a0eb61cee31ad4f2a",
+    "scripts/build.sh": "e7792eac4ad2b5601db83346e65945a3363281ca48ac4d2effa49c72b5c258cb",
     "scripts/seed-local.py": "03f989b2e6f300f807a0c67627b2d48868f6da8091febbdc4bbf7b16752dae39",
     "scripts/run-local.sh": "92cb7b5b4a4cf7bd415c4f6278aedfd32321bc01c54fdfb604f9a539273e5804",
     "aftersales/pom.xml": "63b3a984d6f81d6a5d59024aa8dc634c7d7fb511b51871b49b26b9e603479332",
@@ -201,5 +201,6 @@
     "External providers deferred by user",
     "No production deployment"
   ],
-  "ciInfrastructureValidation": "CI bootstrap/workflow changed after local backend validation; validated separately by actionlint, Python syntax and remote CI_RESULT.json."
+  "ciInfrastructureValidation": "CI bootstrap/workflow changed after local backend validation; validated separately by actionlint, Python syntax and remote CI_RESULT.json.",
+  "packagingCheckUpdate": "Replaced optional rg with Python stdlib ZipFile; checked existing final jar. Remote Linux Maven already PASS in run35855436009; end-of-script portability check corrected and full CI rerun required."
 }

@@ -46,3 +46,5 @@
 - S10b实现34296d6已推送feat/runtime-delivery；首轮CI35855207933在MySQL镜像入口ALTER USER阶段失败，业务测试未执行。
 - 修复仅CI资源初始化：ci-configure.py在隔离GitHub runner创建唯一容器和随机root/app口令，TCP轮询真实数据库就绪，workflow始终清理该专属容器；不再将GitHub令牌作为DB口令。
 - actionlint/Python语法通过，随后提交并复跑远程CI。main仍48e3fcf，尚未合并。
+
+- 第二轮CI35855436009：MySQL初始化和全部Maven测试/构建通过；末尾jar检查依赖runner没有的rg，exit127。已改为Python标准库ZipFile并在本地最终jar验证，下一轮继续远程完整验收。

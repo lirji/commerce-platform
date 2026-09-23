@@ -7,5 +7,9 @@ npm ci --prefix frontend --ignore-scripts
 npm run build --prefix frontend
 test -s frontend/dist/index.html
 mvn -B -Pwith-ui clean verify "$@"
-jar tf commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar | rg '^BOOT-INF/classes/static/index.html$' > /dev/null
+python3 - <<'CHECK_JAR'
+from zipfile import ZipFile
+with ZipFile('commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar') as jar:
+    assert 'BOOT-INF/classes/static/index.html' in jar.namelist(), 'UI was not packaged'
+CHECK_JAR
 echo 'Verified application jar contains both UI and APIs.'
