@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      COMMERCE_EVIDENCE_DIR: ../docs/evidence/s10b
+      COMMERCE_EVIDENCE_DIR: ../.local/ci-evidence
       COMMERCE_UI_URL: http://127.0.0.1:8600
       COMMERCE_E2E_BASE_URL: http://127.0.0.1:8600
       COMMERCE_BASE_URL: http://127.0.0.1:8600
@@ -64,8 +64,8 @@ jobs:
           retention-days: 7
           path: |
             docs/evidence/s10b/ci-*.log
-            docs/evidence/s10b/browser-results.json
-            docs/evidence/s10b/*.png
+            .local/ci-evidence/browser-results.json
+            .local/ci-evidence/*.png
             **/target/surefire-reports/*.xml
       - name: Stop only the ephemeral CI database
         if: always()
