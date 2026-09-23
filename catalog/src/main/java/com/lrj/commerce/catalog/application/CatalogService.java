@@ -24,6 +24,7 @@ public class CatalogService implements CatalogApi {
         var normalized=new Create(input.skuId(),input.storeId(),input.title(),price.amount().toPlainString());
         return commands.run(actor,"catalog.create",key,normalized,View.class,()->{
             stores.requireActive(actor,input.storeId()); mapper.insert(actor.tenantId(),normalized);
+            mapper.snapshot(actor.tenantId(),input.skuId(),"兼容接口创建商品",actor.actorId());
             return published(actor,input.storeId(),List.of(input.skuId())).getFirst();
         });
     }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.catalog.infrastructure.ProductMapper">
+ <sql id="productColumns">product_id,store_id,title,category,brand,version</sql>
+ <sql id="skuColumns">sku_id,store_id,title,CAST(unit_price AS CHAR) unit_price,revision,status,product_id,CAST(specifications_json AS CHAR) specifications_json</sql>
+ <insert id="insertProduct">INSERT INTO catalog_product(tenant_id,product_id,store_id,title,category,brand) VALUES(#{tenant},#{input.productId},#{input.storeId},#{input.title},#{input.category},#{input.brand})</insert>
+ <select id="product" resultType="com.lrj.commerce.catalog.api.ProductOperationsApi$Product">SELECT <include refid="productColumns"/> FROM catalog_product WHERE tenant_id=#{tenant} AND store_id=#{store} AND product_id=#{id}</select>
+ <update id="changeProduct">UPDATE catalog_product SET title=#{input.title},category=#{input.category},brand=#{input.brand},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{input.storeId} AND product_id=#{id} AND version=#{input.expectedVersion}</update>
+ <select id="products" resultType="com.lrj.commerce.catalog.api.ProductOperationsApi$Product">SELECT <include refid="productColumns"/> FROM catalog_product WHERE tenant_id=#{tenant} AND store_id=#{store} AND product_id&gt;#{after} ORDER BY product_id LIMIT #{limit}</select>
+ <insert id="insertVariant">INSERT INTO catalog_sku(tenant_id,sku_id,store_id,title,unit_price,revision,status,product_id,specifications_json,specification_key) VALUES(#{tenant},#{input.skuId},#{input.storeId},#{input.title},#{input.unitPrice},1,'FROZEN',#{input.productId},#{specifications},#{hash})</insert>
+ <select id="sku" resultType="com.lrj.commerce.catalog.infrastructure.ProductMapper$SkuRow">SELECT <include refid="skuColumns"/> FROM catalog_sku WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id=#{id}</select>
+ <select id="skus" resultType="com.lrj.commerce.catalog.infrastructure.ProductMapper$SkuRow">SELECT <include refid="skuColumns"/> FROM catalog_sku WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id&gt;#{after} ORDER BY sku_id LIMIT #{limit}</select>
+ <update id="change">UPDATE catalog_sku SET title=#{input.title},unit_price=#{input.unitPrice},status=#{input.status},revision=revision+1 WHERE tenant_id=#{tenant} AND store_id=#{input.storeId} AND sku_id=#{id} AND revision=#{input.expectedVersion}</update>
+ <select id="history" resultType="com.lrj.commerce.catalog.api.ProductOperationsApi$Revision">SELECT revision,title,CAST(unit_price AS CHAR) unit_price,status,reason,actor_id,created_at FROM catalog_revision WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id=#{id} AND revision&gt;#{after} ORDER BY revision LIMIT #{limit}</select>
+</mapper>

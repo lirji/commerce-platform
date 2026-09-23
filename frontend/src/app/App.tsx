@@ -22,6 +22,7 @@ import { AdminData, specs } from "../features/AdminData";
 import { Marketing } from "../features/Marketing";
 import { Journeys } from "../features/Journeys";
 import { OpsPages } from "../features/OpsPages";
+import { ProductOperations } from "../features/ProductOperations";
 const groups = [
   {
     label: "交易与交付",
@@ -205,7 +206,8 @@ export function App() {
         ["notifications", "消息"],
       ].map(([key, label]) => ({ key, label }));
   let content;
-  if (operator) content = <Alert type="info" title="商品经营工作空间" description="当前店铺列表仅包含已授权范围；授权撤销后请刷新店铺目录。" />;
+  if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
+  else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
   else if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;
   else if (!admin) {
     if (page === "shop")
