@@ -15,6 +15,7 @@ export const dateFields: Field[] = [
 export const couponFields: Field[] = [
   { name: "issuanceMode", label: "发行方式", type: "select", initial: "PUBLIC", options: [{ label: "公开领取", value: "PUBLIC" }, { label: "受控发放（积分兑换等）", value: "SOURCE_ONLY" }] },
   id("definitionId", "券定义标识"),
+  { name: "validityDays", label: "领取后有效天数", type: "number", min: 0, max: 366, initial: 0, help: "0沿用固定有效期；大于0时开始/结束时间为发行窗口，券从发放时起有效。" },
   version,
   name,
   {

@@ -16,6 +16,8 @@ public interface MarketingAssets {
     AudienceView createAudience(Actor actor,String key,Audience input);
     List<AudienceView> audiences(Actor actor,String after,int limit);
     List<Source> sources(String tenant,String member,List<Ref> refs,Instant now);
+    /** 已发布固定人群的有界成员游标，不能读取未完成刷新结果。 */
+    List<String> members(String tenant,Ref ref,String after,int limit);
     void requireFresh(String tenant,Ref ref,Instant now);
     RuleView createRule(Actor actor,String key,Rule input);
     RuleView publishRule(Actor actor,String key,String id,long version);

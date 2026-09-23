@@ -11,6 +11,8 @@ public interface MemberApi {
  View change(Actor actor,String key,String memberId,String action,Change input);
  /** 只读变更记录，按版本稳定分页。 */
  List<History> history(Actor actor,String memberId,long after,int limit);
+ /** 内部事务当前锁读，供批次发放与冻结状态变更串行协作；缺失返回null。 */
+ View lockForOperation(String tenant,String id);
  /** 同一命令重试返回原结果。 */
  View create(Actor actor,String key,Create input);
  /** 从可信租户限定资源，禁止跨租户访问。 */

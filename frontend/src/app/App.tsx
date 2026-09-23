@@ -24,6 +24,7 @@ import { Journeys } from "../features/Journeys";
 import { OpsPages } from "../features/OpsPages";
 import { ProductOperations } from "../features/ProductOperations";
 import { MemberGrowth } from "../features/MemberGrowth";
+import { CouponDeliveries } from "../features/CouponDeliveries";
 import { Segments } from "../features/Segments";
 import { MarketingEffects } from "../features/MarketingEffects";
 const groups = [
@@ -46,6 +47,7 @@ const groups = [
       ["rules", "动态规则"],
       ["budgets", "营销预算"],
       ["coupons", "优惠券"],
+      ["coupon-deliveries", "定向发券"],
       ["definitions", "权益定义"],
       ["entitlements", "权益台账"],
     ],
@@ -216,6 +218,7 @@ export function App() {
   let content;
   if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
   else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
+  else if (admin && page === "coupon-deliveries") content = <CouponDeliveries key={store} store={store}/>;
   else if (page === "growth") content = <MemberGrowth admin={admin} store={store}/>;
   else if (admin && page === "segments") content = <Segments/>;
   else if (admin && page === "effects") content = <MarketingEffects key={store} store={store}/>;

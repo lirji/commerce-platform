@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper">
+ <sql id="row">CAST(content_json AS CHAR) content_json,status,mode,cursor_member,revoke_cursor,processed,issued,skipped,revoked,kept,attempts,error_code,available_at,version</sql>
+ <insert id="insert">INSERT INTO automation_coupon_batch(tenant_id,batch_id,store_id,content_json,status,available_at) VALUES(#{tenant},#{input.batchId},#{input.storeId},#{json},'RUNNING',#{now})</insert>
+ <select id="find" resultType="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id}</select>
+ <select id="lock" resultType="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id} FOR UPDATE</select>
+ <select id="list" resultType="com.lrj.commerce.journey.infrastructure.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND store_id=#{store} AND batch_id&gt;#{after} ORDER BY batch_id LIMIT #{limit}</select>
+ <select id="pending" resultType="string">SELECT batch_id FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND status IN ('RUNNING','REVOKING') AND available_at&lt;=#{now} ORDER BY available_at,batch_id LIMIT 1</select>
+ <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM automation_coupon_batch WHERE tenant_id&gt;#{after} AND status IN ('RUNNING','REVOKING') AND available_at&lt;=#{now} ORDER BY tenant_id LIMIT 4</select>
+ <update id="status">UPDATE automation_coupon_batch SET status=#{status},mode=#{mode},attempts=0,error_code=NULL,available_at=#{now},version=version+1 WHERE tenant_id=#{tenant} AND batch_id=#{id} AND version=#{expected}</update>
+ <update id="advance">UPDATE automation_coupon_batch SET cursor_member=#{member},processed=processed+1,issued=issued+IF(#{issued},1,0),skipped=skipped+IF(#{issued},0,1),attempts=0,error_code=NULL,version=version+1 WHERE tenant_id=#{tenant} AND batch_id=#{id} AND status='RUNNING'</update>
+ <update id="advanceRevoke">UPDATE automation_coupon_batch SET revoke_cursor=#{member},revoked=revoked+IF(#{revoked},1,0),kept=kept+IF(#{revoked},0,1),attempts=0,error_code=NULL,version=version+1 WHERE tenant_id=#{tenant} AND batch_id=#{id} AND status='REVOKING'</update>
+ <update id="failed">UPDATE automation_coupon_batch SET status=IF(attempts+1>=5,'ISOLATED',status),attempts=LEAST(5,attempts+1),error_code=#{code},available_at=#{next},version=version+1 WHERE tenant_id=#{tenant} AND batch_id=#{id} AND status IN ('RUNNING','REVOKING')</update>
+ <select id="frequency" resultType="java.time.Instant">SELECT next_eligible_at FROM automation_coupon_frequency WHERE tenant_id=#{tenant} AND member_id=#{member} FOR UPDATE</select>
+ <insert id="frequencySet">INSERT INTO automation_coupon_frequency(tenant_id,member_id,next_eligible_at) VALUES(#{tenant},#{member},#{next}) ON DUPLICATE KEY UPDATE next_eligible_at=GREATEST(next_eligible_at,#{next})</insert>
+ <insert id="recipient">INSERT INTO automation_coupon_recipient(tenant_id,batch_id,member_id,status,coupon_id,error_code,created_at) VALUES(#{tenant},#{id},#{input.memberId},#{input.status},#{input.couponId},#{input.errorCode},#{input.createdAt})</insert>
+ <select id="recipients" resultType="com.lrj.commerce.journey.api.CouponDeliveryApi$Recipient">SELECT member_id,status,coupon_id,error_code,created_at FROM automation_coupon_recipient WHERE tenant_id=#{tenant} AND batch_id=#{id} AND member_id&gt;#{after} ORDER BY member_id LIMIT #{limit}</select>
+ <select id="nextRevoke" resultType="com.lrj.commerce.journey.api.CouponDeliveryApi$Recipient">SELECT member_id,status,coupon_id,error_code,created_at FROM automation_coupon_recipient WHERE tenant_id=#{tenant} AND batch_id=#{id} AND member_id&gt;#{after} AND status='ISSUED' ORDER BY member_id LIMIT 1 FOR UPDATE</select>
+ <update id="revokeResult">UPDATE automation_coupon_recipient SET status=#{status},error_code=#{code} WHERE tenant_id=#{tenant} AND batch_id=#{id} AND member_id=#{member} AND status='ISSUED'</update>
+</mapper>

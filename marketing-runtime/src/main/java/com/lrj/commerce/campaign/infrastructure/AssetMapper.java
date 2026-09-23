@@ -8,6 +8,7 @@ import java.util.List;
 public interface AssetMapper {
     void audience(@Param("tenant") String tenant,@Param("input") Audience input,@Param("count") int count);
     void members(@Param("tenant") String tenant,@Param("input") Audience input);
+    List<String> audienceMembers(@Param("tenant") String tenant,@Param("ref") Ref ref,@Param("after") String after,@Param("limit") int limit);
     AudienceView audienceFind(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
     List<AudienceView> audiences(@Param("tenant") String tenant,@Param("after") String after,@Param("limit") int limit);
     record Membership(String audienceId,long version,String source,Instant watermark,Instant validUntil,boolean matched) { }

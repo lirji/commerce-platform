@@ -21,6 +21,8 @@ export const time = (v: unknown) =>
 export const money = (v: unknown) => (v == null ? "—" : `¥${String(v)}`);
 const labels: Record<string, string> = {
   ACTIVE: "可用",
+  REVOCATION_DONE: "撤销处理完成",
+  REVOKING: "撤销处理中",
   FROZEN: "已停用",
   DRAFT: "草稿",
   IN_REVIEW: "待审批",

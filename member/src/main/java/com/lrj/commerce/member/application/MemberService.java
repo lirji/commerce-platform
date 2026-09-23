@@ -48,6 +48,9 @@ public class MemberService implements MemberApi {
    return requireActive(actor,input.memberId());
   });
  }
+ /** 内部锁读不伪装管理员HTTP；调用者必须已有本地事务与目标租户。 */
+ @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+ public View lockForOperation(String tenant,String id){Identifiers.require(tenant);Identifiers.require(id);return mapper.lock(tenant,id);}
  /** 缺失与非本租户统一拒绝，冻结资源不允许参与新交易。 */
  public View requireActive(Actor actor,String id) {
   Identifiers.require(id); var value=Inputs.found(mapper.find(actor.tenantId(),id));

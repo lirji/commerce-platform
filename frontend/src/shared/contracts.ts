@@ -54,6 +54,8 @@ export type Campaign = {
 };
 export type Governed<T> = { content: T; status: string; lockVersion: number };
 export type CouponDefinition = {
+  issuanceMode?: "PUBLIC" | "SOURCE_ONLY";
+  validityDays?: number | null;
   definitionId: string;
   version: number;
   storeId: string;

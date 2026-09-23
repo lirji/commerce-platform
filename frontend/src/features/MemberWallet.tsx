@@ -75,6 +75,7 @@ export function MemberWallet({
               label: "领取优惠",
               children: (
                 <Row gutter={[16, 16]}>
+                  {available.data?.length === 0 && <Col span={24}><Blank text="暂无可公开领取的优惠券，已发放的券请查看「我的优惠券」" /></Col>}
                   {available.data?.map(({ content: c, issued }) => (
                     <Col xs={24} md={12} lg={8} key={c.definitionId}>
                       <Card title={c.name}>
@@ -86,7 +87,7 @@ export function MemberWallet({
                           {c.stackable ? "可叠加活动" : "择优使用"}
                         </p>
                         <p className="muted">
-                          有效期至 {time(c.validTo)} · 已领 {issued}/{c.quota}
+                          {(c.validityDays ?? 0) > 0 ? `领取后${c.validityDays}天有效，发行截止${time(c.validTo)}` : `有效期至${time(c.validTo)}`} · 已领 {issued}/{c.quota}
                         </p>
                         <ActionButton
                           path={

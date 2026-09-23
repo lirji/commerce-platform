@@ -9,6 +9,7 @@ public interface MemberMapper {
  void history(@Param("tenant") String tenant,@Param("id") String id,@Param("action") String action,@Param("before") String before,@Param("input") MemberApi.Change input,@Param("actor") String actor);
  List<MemberApi.History> changes(@Param("tenant") String tenant,@Param("id") String id,@Param("after") long after,@Param("limit") int limit);
  void insert(@Param("tenant") String tenant,@Param("input") MemberApi.Create input);
+ MemberApi.View lock(@Param("tenant") String tenant,@Param("id") String id);
  MemberApi.View find(@Param("tenant") String tenant,@Param("id") String id);
  List<MemberApi.View> list(@Param("tenant") String tenant,@Param("after") String after,@Param("limit") int limit);
  MemberApi.View byActor(@Param("tenant") String tenant,@Param("actor") String actor);

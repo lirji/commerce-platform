@@ -6,20 +6,21 @@ import java.util.List;
 /** 发券额度和钱包状态都由数据库条件更新决定。 */
 @Mapper
 public interface CouponMapper {
-    record DefinitionRow(String definitionId,long version,String storeId,String name,String minimumSpend,String discountAmount,Instant validFrom,Instant validTo,int quota,boolean stackable,int issued,int platformFundingBps,String issuanceMode) { }
+    record DefinitionRow(String definitionId,long version,String storeId,String name,String minimumSpend,String discountAmount,Instant validFrom,Instant validTo,int quota,boolean stackable,int issued,int platformFundingBps,String issuanceMode,Integer validityDays) { }
     void definition(@Param("tenant") String tenant,@Param("input") Definition input);
     DefinitionRow definitionFind(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
     DefinitionRow definitionLock(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
     List<DefinitionRow> definitions(@Param("tenant") String tenant,@Param("store") String store,@Param("after") String after,@Param("limit") int limit,@Param("admin") boolean admin);
     int issue(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
-    Coupon bySource(@Param("tenant") String tenant,@Param("source") String source);
-    void sourceCoupon(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("source") String source,@Param("definition") DefinitionRow definition);
+    Coupon bySource(@Param("tenant") String tenant,@Param("source") String source,@Param("type") String type);
+    void sourceCoupon(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("source") String source,@Param("type") String type,@Param("definition") DefinitionRow definition,@Param("from") Instant from,@Param("to") Instant to);
     Coupon existing(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("version") long version);
-    void coupon(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("definition") DefinitionRow definition);
+    void coupon(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("definition") DefinitionRow definition,@Param("from") Instant from,@Param("to") Instant to);
     Coupon find(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id);
-    record LockedCoupon(String couponId,String definitionId,long version,String memberId,String status,Instant validTo) { }
+    record LockedCoupon(String couponId,String definitionId,long version,String memberId,String status,Instant validTo,Instant validFrom) { }
     LockedCoupon lock(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id);
     List<Coupon> wallet(@Param("tenant") String tenant,@Param("member") String member,@Param("after") String after,@Param("limit") int limit);
+    int revoke(@Param("tenant") String tenant,@Param("id") String id);
     int reserve(@Param("tenant") String tenant,@Param("id") String id,@Param("order") String order);
     void insertHold(@Param("tenant") String tenant,@Param("order") String order,@Param("id") String id,@Param("discount") String discount);
     record Hold(String couponId,String status) { }
