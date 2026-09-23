@@ -42,7 +42,9 @@ public final class MarketingDecisionService implements DecisionPort {
             Reason reason = reason(request, offer, gross);
             trace.add(new Trace(offer.campaignId(), offer.version(), reason));
             if (reason != Reason.ELIGIBLE) continue;
-            Money actual = offer.discount().compareTo(gross) > 0 ? gross : offer.discount();
+            Money proposed=offer.percentageBps()==0?offer.discount():Money.minor(BigInteger.valueOf(gross.minorUnits()).multiply(BigInteger.valueOf(offer.percentageBps())).divide(BigInteger.valueOf(10000)).longValueExact());
+            if(proposed.compareTo(offer.discount())>0)proposed=offer.discount();
+            Money actual = proposed.compareTo(gross)>0?gross:proposed;
             // 已按活动标识排序；仅严格更优时替换，保证平局结果与输入顺序无关。
             if (actual.compareTo(discount) > 0) {
                 discount = actual;

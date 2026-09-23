@@ -107,4 +107,10 @@ class MarketingDecisionTest {
     private Request request(List<Line> lines, List<Offer> offers, Map<String, Fact> inputFacts, Instant at) {
         return new Request(scope, "member1", at, lines, inputFacts, offers);
     }
+    @org.junit.jupiter.api.Test void percentageRoundingDoesNotInventAPenny() {
+        var percentage=new Offer(scope,"percentage",1,now.minusSeconds(1),now.plusSeconds(1),Money.ZERO,Money.minor(100),member,1);
+        var quote=service.decide(request(List.of(line("a",1)),List.of(percentage),facts,now));
+        org.junit.jupiter.api.Assertions.assertNull(quote.selected());org.junit.jupiter.api.Assertions.assertEquals(Money.ZERO,quote.discount());
+        org.junit.jupiter.api.Assertions.assertEquals(Reason.ELIGIBLE,quote.trace().getFirst().reason());
+    }
 }

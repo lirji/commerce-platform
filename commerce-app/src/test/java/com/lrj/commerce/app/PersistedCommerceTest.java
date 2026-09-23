@@ -493,6 +493,57 @@ class PersistedCommerceTest {
         assertEquals("PAID",order.path("status").asString());assertEquals("USED",couponState(coupon));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM payment_attempt WHERE tenant_id=?",Integer.class,tenant));
         approve(requestReturn(order,1,"r"),"a");pump();pump();assertEquals("AVAILABLE",couponState(coupon));
     }
+    private void budgetCampaign(String cap,int percentage,int funding,String maximumDiscount) throws Exception {
+        audience("budget-audience",1,List.of("m1"));var campaign=new HashMap<>(draft("budget",1,maximumDiscount));
+        campaign.put("policy",Map.of("audience",Map.of("id","budget-audience","version",1),"terms",Map.of("percentageBps",percentage,"platformFundingBps",funding,"budget",cap)));
+        post("/v1/admin/campaigns",admin,"budget-create",campaign);approveAndPublish("budget");
+    }
+    private java.math.BigDecimal budgetValue(String field){return jdbc.queryForObject("SELECT "+field+" FROM marketing_budget WHERE tenant_id=? AND campaign_id='budget'",java.math.BigDecimal.class,tenant);}
+    @Test void percentageCapAndFundingComponentsConserveEveryCent() throws Exception {
+        seed();budgetCampaign("100.00",2500,3333,"5.00");
+        var definition=new HashMap<String,Object>(Map.of("definitionId","coupon-def","version",1,"storeId","store1","name","资方券","minimumSpend","0.00","discountAmount","2.00","validFrom",Instant.now().minusSeconds(10).toString(),"validTo",Instant.now().plusSeconds(3600).toString(),"quota",10,"stackable",true));definition.put("platformFundingBps",5000);
+        post("/v1/admin/coupon-definitions",admin,"definition",definition);var coupon=claimCoupon(member,"claim");var quote=post("/v1/quotes",member,"q",couponBasket(coupon,1));
+        assertEquals("5.00",quote.path("campaignDiscount").asString());assertEquals("18.00",quote.path("payable").asString());
+        assertEquals("2.66",quote.path("funding").path("platformFunding").asString());assertEquals("4.34",quote.path("funding").path("merchantFunding").asString());
+        var line=quote.path("funding").path("items").get(0);assertEquals("5.00",line.path("campaignDiscount").asString());assertEquals("2.00",line.path("couponDiscount").asString());
+        assertEquals(new java.math.BigDecimal("7.00"),new java.math.BigDecimal(line.path("platformFunding").asString()).add(new java.math.BigDecimal(line.path("merchantFunding").asString())));
+    }
+    @Test void budgetRaceCannotOverspendAndCancellationReleasesBeforeRetry() throws Exception {
+        seed();stock("sku1",3);budgetCampaign("3.00",0,5000,"3.00");var q1=post("/v1/quotes",member,"q1",basket(1));var q2=post("/v1/quotes",member,"q2",basket(1));
+        Reply first,second;
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var latch=new CountDownLatch(1);var a=pool.submit(()->{latch.await();return call("POST","/v1/orders",member,"o1",orderInput(q1));});var b=pool.submit(()->{latch.await();return call("POST","/v1/orders",member,"o2",orderInput(q2));});latch.countDown();first=a.get();second=b.get();
+            assertEquals(List.of(200,409),java.util.stream.Stream.of(first,second).map(Reply::status).sorted().toList());
+        }
+        assertEquals(new java.math.BigDecimal("3.00"),budgetValue("held"));var winner=first.status()==200?first.body():second.body();
+        post("/v1/orders/"+winner.path("orderId").asString()+"/cancel",member,"cancel",null);assertEquals(new java.math.BigDecimal("0.00"),budgetValue("held"));
+        var retried=post("/v1/orders",member,first.status()==200?"o2":"o1",orderInput(first.status()==200?q2:q1));payOrder(retried);
+        assertEquals(new java.math.BigDecimal("0.00"),budgetValue("held"));assertEquals(new java.math.BigDecimal("3.00"),budgetValue("spent"));
+        var refund=approve(requestReturn(retried,1,"r"),"a");finishRefund(refund,"refund");assertEquals(new java.math.BigDecimal("3.00"),budgetValue("spent"));
+    }
+    @Test void insufficientBudgetRollsBackPreviouslyReservedCouponAndQuote() throws Exception {
+        seed();stock("sku1",1);budgetCampaign("1.00",0,0,"3.00");couponDefinition("5.00",true,10);var coupon=claimCoupon(member,"claim");var q=post("/v1/quotes",member,"q",couponBasket(coupon,1));
+        assertEquals(409,call("POST","/v1/orders",member,"o",orderInput(q)).status());assertEquals("AVAILABLE",couponState(coupon));assertEquals(1,stockValue("available"));
+        assertEquals(new java.math.BigDecimal("0.00"),budgetValue("held"));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM trade_quote WHERE tenant_id=? AND consumed_order_id IS NOT NULL",Integer.class,tenant));
+    }
+    @Test void unknownPaymentRetainsBudgetAndFundingSnapshotSurvivesPause() throws Exception {
+        seed();stock("sku1",1);budgetCampaign("3.00",0,5000,"3.00");var q=post("/v1/quotes",member,"q",basket(1));
+        post("/v1/admin/campaigns/budget/1/pause",admin,"pause",Map.of("expectedVersion",3));
+        var order=post("/v1/orders",member,"o",orderInput(q));startPayment(order);post("/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null);reconcile(order);pump();
+        assertEquals(new java.math.BigDecimal("3.00"),budgetValue("held"));assertEquals(new java.math.BigDecimal("1.50"),jdbc.queryForObject("SELECT platform_funding FROM marketing_budget_hold WHERE tenant_id=?",java.math.BigDecimal.class,tenant));
+        assertEquals(q,call("GET","/v1/quotes/"+q.path("quoteId").asString(),member,null,null).body());
+    }
+    @Test void fundingAcrossMultipleSkusHasNoNegativeLineOrLostCent() throws Exception {
+        seed();post("/v1/admin/skus",admin,"sku2",Map.of("skuId","sku2","storeId","store1","title","小额商品","unitPrice","1.00"));budgetCampaign("10.00",0,3333,"3.00");couponDefinition("2.00",true,10);var coupon=claimCoupon(member,"claim");
+        var quote=post("/v1/quotes",member,"q",Map.of("storeId","store1","couponId",coupon.path("couponId").asString(),"items",List.of(Map.of("skuId","sku1","quantity",1),Map.of("skuId","sku2","quantity",1))));
+        java.math.BigDecimal platform=java.math.BigDecimal.ZERO,merchant=java.math.BigDecimal.ZERO,discount=java.math.BigDecimal.ZERO,payable=java.math.BigDecimal.ZERO;
+        for(var line:quote.path("funding").path("items")){
+            var p1=new java.math.BigDecimal(line.path("platformFunding").asString());var m1=new java.math.BigDecimal(line.path("merchantFunding").asString());var c1=new java.math.BigDecimal(line.path("campaignDiscount").asString());var c2=new java.math.BigDecimal(line.path("couponDiscount").asString());
+            assertEquals(c1.add(c2),p1.add(m1));assertTrue(p1.signum()>=0&&m1.signum()>=0);platform=platform.add(p1);merchant=merchant.add(m1);
+        }
+        for(var line:quote.path("items")){discount=discount.add(new java.math.BigDecimal(line.path("discount").asString()));var p1=new java.math.BigDecimal(line.path("payable").asString());assertTrue(p1.signum()>=0);payable=payable.add(p1);}
+        assertEquals(new java.math.BigDecimal("0.99"),platform);assertEquals(new java.math.BigDecimal("4.01"),merchant);assertEquals(new java.math.BigDecimal("5.00"),discount);assertEquals(new java.math.BigDecimal("21.00"),payable);
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));

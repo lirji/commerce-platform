@@ -21,12 +21,14 @@ public final class DecisionModels {
         }
     }
     public record Offer(Scope scope, String campaignId, long version, Instant from, Instant to,
-                        Money minimumSpend, Money discount, Condition condition) {
+                        Money minimumSpend, Money discount, Condition condition,int percentageBps) {
+        /** 旧固定减免调用保持兼容；百分比在gross确定后按分计算。 */
+        public Offer(Scope scope,String campaignId,long version,Instant from,Instant to,Money minimumSpend,Money discount,Condition condition){this(scope,campaignId,version,from,to,minimumSpend,discount,condition,0); }
         public Offer {
             Identifiers.require(campaignId);
             require(scope != null && version > 0 && from != null && to != null && from.isBefore(to)
                 && minimumSpend != null && discount != null && discount.compareTo(Money.ZERO) > 0
-                && condition != null, "活动版本无效");
+                && condition != null && percentageBps>=0 && percentageBps<=10000, "活动版本无效");
             Condition.validate(condition);
         }
     }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.campaign.infrastructure.BudgetMapper">
+ <insert id="create">INSERT INTO marketing_budget(tenant_id,budget_id,campaign_id,version,cap) VALUES(#{tenant},#{id},#{campaign},#{version},#{cap})</insert>
+ <update id="reserve">UPDATE marketing_budget SET held=held+#{input.discount} WHERE tenant_id=#{tenant} AND campaign_id=#{input.campaignId} AND version=#{input.version} AND (cap IS NULL OR held+spent+#{input.discount}&lt;=cap)</update>
+ <insert id="hold">INSERT INTO marketing_budget_hold(tenant_id,order_id,campaign_id,version,discount,platform_funding,merchant_funding,status) VALUES(#{tenant},#{order},#{input.campaignId},#{input.version},#{input.discount},#{input.platformFunding},#{input.merchantFunding},'HELD')</insert>
+ <select id="lock" resultType="com.lrj.commerce.campaign.infrastructure.BudgetMapper$Hold">SELECT campaign_id,version,CAST(discount AS CHAR) discount,status FROM marketing_budget_hold WHERE tenant_id=#{tenant} AND order_id=#{order} FOR UPDATE</select>
+ <update id="finishBudget">UPDATE marketing_budget SET held=held-#{hold.discount},spent=spent+<choose><when test="confirmed">#{hold.discount}</when><otherwise>0</otherwise></choose> WHERE tenant_id=#{tenant} AND campaign_id=#{hold.campaignId} AND version=#{hold.version} AND held&gt;=#{hold.discount}</update>
+ <update id="finishHold">UPDATE marketing_budget_hold SET status=#{status} WHERE tenant_id=#{tenant} AND order_id=#{order} AND status='HELD'</update>
+ <select id="list" resultType="com.lrj.commerce.campaign.api.CampaignFundingApi$Budget">SELECT budget_id,campaign_id,version,CAST(cap AS CHAR) cap,CAST(held AS CHAR) held,CAST(spent AS CHAR) spent FROM marketing_budget WHERE tenant_id=#{tenant} AND budget_id&gt;#{after} ORDER BY budget_id LIMIT #{limit}</select>
+</mapper>

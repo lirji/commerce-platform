@@ -13,14 +13,15 @@ import org.springframework.stereotype.Service;
 /** 发布切换与审计同事务；旧版本不会在切换中和新版本同时生效。 */
 @Service
 public class CampaignService implements CampaignApi {
-    private final MarketingAssets assets;private final java.time.Clock clock;private final CampaignMapper mapper; private final StoreApi stores; private final Commands commands;
-    public CampaignService(CampaignMapper mapper,StoreApi stores,Commands commands,MarketingAssets assets,java.time.Clock clock) {this.assets=assets;this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
+    private final com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets;private final MarketingAssets assets;private final java.time.Clock clock;private final CampaignMapper mapper; private final StoreApi stores; private final Commands commands;
+    public CampaignService(CampaignMapper mapper,StoreApi stores,Commands commands,MarketingAssets assets,java.time.Clock clock,com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets) {this.budgets=budgets;this.assets=assets;this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
     /** 草稿内容不可变，修改必须创建新版本。 */
     public View create(Actor actor,String key,Draft input) {
         actor.requireAdmin();Inputs.require(input!=null,"请求不能为空");Identifiers.require(input.campaignId());Inputs.text(input.name(),128);
         Inputs.require(input.version()>0&&input.validFrom()!=null&&input.validTo()!=null&&input.validFrom().isBefore(input.validTo())&&(input.rule()!=null||(input.policy()!=null&&input.policy().rule()!=null)),"活动版本无效");
         if(input.rule()!=null)input.rule().toCondition();
         if(input.policy()!=null)Inputs.require(input.policy().audience()!=null||input.policy().rule()!=null,"受治理活动至少引用一种可信资产");
+        if(input.policy()!=null&&input.policy().terms()!=null){var terms=input.policy().terms();Inputs.require(terms.percentageBps()>=0&&terms.percentageBps()<=10000&&terms.platformFundingBps()>=0&&terms.platformFundingBps()<=10000,"活动百分比参数无效");if(terms.budget()!=null)Inputs.require(money(terms.budget()).compareTo(Money.ZERO)>0,"活动预算必须大于零");}
         money(input.minimumSpend()); Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO)>0,"优惠必须大于零");
         return commands.run(actor,"campaign.create",key,input,View.class,()->{
             var store=stores.requireActive(actor,input.storeId());
@@ -30,6 +31,7 @@ public class CampaignService implements CampaignApi {
                 if(input.policy().audience()!=null)assets.requireFresh(actor.tenantId(),input.policy().audience(),clock.instant());
             }
             mapper.insert(actor.tenantId(),store.merchantId(),input,JsonCodec.write(rule),input.policy()==null?null:JsonCodec.write(input.policy()));
+            budgets.create(actor.tenantId(),java.util.UUID.randomUUID().toString(),input.campaignId(),input.version(),input.policy()==null||input.policy().terms()==null?null:input.policy().terms().budget());
             return view(mapper.find(actor.tenantId(),input.campaignId(),input.version()));
         });
     }
@@ -79,7 +81,7 @@ public class CampaignService implements CampaignApi {
             com.lrj.commerce.marketing.api.Condition condition=JsonCodec.read(r.ruleJson(),RuleNode.class).toCondition();
             var policy=r.policyJson()==null?null:JsonCodec.read(r.policyJson(),Policy.class);
             if(policy!=null&&policy.audience()!=null){String match=indexed.get(policy.audience()).match();if(!match.equals("HIT"))condition=new com.lrj.commerce.marketing.api.Condition.Literal(match.equals("MISS")?com.lrj.commerce.marketing.api.Condition.Truth.NO_MATCH:com.lrj.commerce.marketing.api.Condition.Truth.UNKNOWN);}
-            return new Offer(new Scope(actor.tenantId(),r.merchantId(),r.storeId()),r.campaignId(),r.version(),r.validFrom(),r.validTo(),money(r.minimumSpend()),money(r.discountAmount()),condition);
+            return new Offer(new Scope(actor.tenantId(),r.merchantId(),r.storeId()),r.campaignId(),r.version(),r.validFrom(),r.validTo(),money(r.minimumSpend()),money(r.discountAmount()),condition,policy==null||policy.terms()==null?0:policy.terms().percentageBps());
         }).toList();return new Candidates(offers,sources);
     }
 }

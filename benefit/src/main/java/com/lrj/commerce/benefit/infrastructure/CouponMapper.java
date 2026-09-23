@@ -6,7 +6,7 @@ import java.util.List;
 /** 发券额度和钱包状态都由数据库条件更新决定。 */
 @Mapper
 public interface CouponMapper {
-    record DefinitionRow(String definitionId,long version,String storeId,String name,String minimumSpend,String discountAmount,Instant validFrom,Instant validTo,int quota,boolean stackable,int issued) { }
+    record DefinitionRow(String definitionId,long version,String storeId,String name,String minimumSpend,String discountAmount,Instant validFrom,Instant validTo,int quota,boolean stackable,int issued,int platformFundingBps) { }
     void definition(@Param("tenant") String tenant,@Param("input") Definition input);
     DefinitionRow definitionFind(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
     DefinitionRow definitionLock(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);

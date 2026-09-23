@@ -11,16 +11,17 @@
     "S6",
     "S7a",
     "S8a",
-    "S8b1"
+    "S8b1",
+    "S8b2a"
   ],
-  "next": "S8b2",
+  "next": "S8b2b",
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
-  "verification": "docs/evidence/s8b1/verification.json",
+  "verification": "docs/evidence/s8b2a/verification.json",
   "git": {
-    "status": "S8b1_VALIDATED_READY_TO_DELIVER",
-    "previousPushedCommit": "64f9e4e",
-    "branch": "feat/coupon-order-holds"
+    "status": "S8b2a_VALIDATED_READY_TO_DELIVER",
+    "previousPushedCommit": "8c20699",
+    "branch": "feat/promotion-budget-funding"
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {

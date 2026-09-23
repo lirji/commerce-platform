@@ -7,8 +7,8 @@ import java.util.Map;
 /** 营销资产与审批协议，客户端不提交用于成交的事实值。 */
 @RestController @RequestMapping("/v1/admin")
 public class MarketingAssetController {
-    private final MarketingAssets assets;private final CampaignApi campaigns;
-    public MarketingAssetController(MarketingAssets assets,CampaignApi campaigns){this.assets=assets;this.campaigns=campaigns;}
+    private final CampaignFundingApi funding;private final MarketingAssets assets;private final CampaignApi campaigns;
+    public MarketingAssetController(MarketingAssets assets,CampaignApi campaigns,CampaignFundingApi funding){this.funding=funding;this.assets=assets;this.campaigns=campaigns;}
     /** 明确来源水位与新鲜度的不可变人群导入。 */
     @PostMapping("/audiences") public Object audience(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@RequestBody MarketingAssets.Audience input){return assets.createAudience(actor,key,input);}
     /** 只返回人群摘要，不泄漏全量会员清单。 */
@@ -23,4 +23,6 @@ public class MarketingAssetController {
     @GetMapping("/rule-fields") public Object fields(@AuthenticationPrincipal Actor actor){actor.requireAdmin();return Map.of("memberLevel","TEXT","orderAmount","DECIMAL");}
     /** 路径只允许三个审批动作，发布继续走已冻结接口。 */
     @PostMapping("/campaigns/{id}/{version}/{action:submit|approve|reject}") public Object review(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@PathVariable String id,@PathVariable long version,@PathVariable String action,@RequestBody CommerceController.Version input){return campaigns.review(actor,key,id,version,input.expectedVersion(),action);}
+    /** 预算余额来自权威数据库，旧版本仍可审计。 */
+    @GetMapping("/campaign-budgets") public Object budgets(@AuthenticationPrincipal Actor actor,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return funding.budgets(actor,after,limit);}
 }
