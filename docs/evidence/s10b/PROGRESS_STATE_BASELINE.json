@@ -1,0 +1,53 @@
+{
+  "task": "unified-commerce-new-build",
+  "status": "COMPLETE",
+  "completed": [
+    "S0",
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5a",
+    "S6",
+    "S7a",
+    "S8a",
+    "S8b1",
+    "S8b2a",
+    "S8b2b",
+    "S5b",
+    "S7b",
+    "S5",
+    "S7",
+    "S8",
+    "S9a",
+    "S9b",
+    "S9",
+    "S10a",
+    "S10b",
+    "S10"
+  ],
+  "next": "EXTERNAL_INTEGRATION_DEFERRED_BY_USER",
+  "fullPlatformComplete": true,
+  "previousMigration": "UNCHANGED_BLOCKED",
+  "verification": "docs/evidence/s10b/verification.json",
+  "git": {
+    "status": "IMPLEMENTATION_MERGED_AND_PUSHED_MAIN",
+    "sourceCommit": "44f1823ec606ef8c14447b1fdf5974c6517020b6",
+    "branch": "main",
+    "remote": "origin",
+    "documentationCheckpoint": "Documentation-only completion record; immutable implementation validation remains sourceCommit, and latest main checks are available on GitHub."
+  },
+  "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
+  "refinement": {
+    "S5a": "order/inventory/local outbox",
+    "S5b": "entitlement holds after S8 coupon contract; retained required scope",
+    "S6_needs": "S5a",
+    "S7a": "fulfillment/partial returns/refund local sandbox",
+    "S7b": "entitlement compensation after S8 policy; retained scope",
+    "S8a": "immutable audience/rule assets and governed campaign release",
+    "S8b": "benefit/coupon/budget/stacking/order holds/refund compensation"
+  },
+  "localBuildComplete": true,
+  "completionScope": "Approved S0-S10 local unified commerce build, including persisted sandbox; not real-provider or production readiness",
+  "ci": "docs/evidence/s10b/CI_RESULT.json"
+}

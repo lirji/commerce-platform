@@ -113,4 +113,21 @@ class MemberJourneyEffectsTest {
         post("/v1/admin/members/m1/status",admin,"freeze",Map.of("expectedVersion",version,"value","FROZEN","reason","冻结中止触达"));execute();
         assertEquals("CANCELLED",jdbc.queryForObject("SELECT status FROM journey_instance WHERE tenant_id=?",String.class,tenant));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM journey_notification WHERE tenant_id=?",Integer.class,tenant));
     }
+    /** 真实数据库竞争下频控只允许一个入组；冲突请求可重试，不能额外记账或发通知。 */
+    @Test void concurrentEnrollmentCannotExceedMemberCap() throws Exception {
+        seed();journey("parallel","MANUAL",controls(null));
+        var gate=new CountDownLatch(1);
+        try(var pool=Executors.newVirtualThreadPerTaskExecutor()){
+            var calls=new ArrayList<Future<Reply>>();
+            for(int n=0;n<6;n++){int index=n;calls.add(pool.submit(()->{gate.await();return call("POST","/v1/admin/journey-instances",admin,"parallel-"+index,Map.of("journeyId","parallel","version",1,"memberId","m1","eventKey","source-"+index));}));}
+            gate.countDown();int successes=0;
+            for(var f:calls){var response=f.get(20,TimeUnit.SECONDS);assertTrue(Set.of(200,409).contains(response.status()),response.body().toString());if(response.status()==200)successes++;}
+            assertEquals(1,successes);
+        }
+        execute();
+        assertEquals(1,jdbc.queryForObject("SELECT entries FROM journey_member_cap WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM journey_instance WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM journey_notification WHERE tenant_id=?",Integer.class,tenant));
+    }
+
 }

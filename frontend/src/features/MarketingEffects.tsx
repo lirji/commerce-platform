@@ -29,7 +29,7 @@ export function MarketingEffects({store}:{store:string}){
     ]}/><Space><Button onClick={()=>setAfter("")} disabled={!after}>回到首页</Button><Button disabled={report.data?.rows.length!==50} onClick={()=>setAfter(report.data!.rows.at(-1)!.seriesId)}>下一页</Button></Space>
    </Card>},
    {key:"journeys",label:"旅程执行",children:<Card>
-    <Alert type="info" title="此页按执行事实发生时间统计；入组、完成和触达次数不代表带来了相应成交。"/>
+    <Alert type="info" title="此页汇总各版本新增的执行事实，升级前记录不追溯补计。时间按执行发生时间；入组、完成和触达次数不代表带来了相应成交。"/>
     <Table<Journey> rowKey="journeyId" dataSource={journeys.data} pagination={false} loading={journeys.loading} columns={[
      {title:"旅程",dataIndex:"journeyId"},{title:"入组",dataIndex:"enrolled"},{title:"完成",dataIndex:"completed"},{title:"站内通知",dataIndex:"notified"},{title:"入组频控抑制",dataIndex:"entrySuppressed"},{title:"通知频控抑制",dataIndex:"notificationSuppressed"}
     ]}/><Space><Button onClick={()=>setJourneyAfter("")} disabled={!journeyAfter}>回到首页</Button><Button disabled={journeys.data?.length!==50} onClick={()=>setJourneyAfter(journeys.data!.at(-1)!.journeyId)}>下一页</Button></Space>

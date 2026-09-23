@@ -1,0 +1,5 @@
+MySQL version / latest migration / blank new column comments / blank new table comments
+8.4.11
+22
+0
+0

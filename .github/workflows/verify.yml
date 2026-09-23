@@ -52,6 +52,7 @@ jobs:
       - name: Browser fixtures and Chromium
         run: |
           python3 scripts/prepare-e2e.py
+          python3 scripts/seed-operations.py --fresh
           cd frontend
           npx playwright install --with-deps chromium
       - name: Real browser commerce acceptance

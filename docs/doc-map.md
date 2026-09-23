@@ -1,6 +1,6 @@
 # 文档地图
 
-同步范围：S0–S10 当前实现。历史切片证据保留当时计数和失败排查记录；最新验证入口为 `evidence/s10b/TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
+同步基线：fb7adf6，2026-09-23 增量核对本轮全部已提交与未提交改动。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；本轮最新验证入口为 `delivery/member-commerce-operations/OP08_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
 
 | 实现所有者 | 权威设计/契约 |
 |---|---|
@@ -18,3 +18,12 @@
 | 计划/状态/恢复/Git | design/unified-commerce/IMPLEMENTATION_SLICES.md、PROGRESS_STATE.json、../CODEX_PROGRESS.md、evidence/DELIVERY_RESULT.md |
 
 `CAPABILITY_MAP.md` 保留最初源仓扫描证据，不能把其中“待建设”当作当前完成状态。`previous-workspace-progress.md` 保留旧规则迁移门禁，不随本项目交付改变。当前连接/账号权限见 deploy/README.md；机密值只在忽略的本地文件中。
+
+| 本轮增量 | 权威资料 |
+|---|---|
+| 生命周期/经营授权/SPU/成长标签/人群/促销/旅程/分析 | design/member-commerce-operations/CONTRACTS.md、BACKEND_ARCHITECTURE.md |
+| 技术选择/前端/切片 | design/member-commerce-operations/TECH_SELECTION.md、FRONTEND_ARCHITECTURE.md、IMPLEMENTATION_SLICES.md |
+| 运营与演示/报表口径/回退 | delivery/member-commerce-operations/OPERATIONS_GUIDE.md |
+| 本轮计划/验收/审查/交付 | delivery/member-commerce-operations/DELIVERY_PLAN.md、OP01_TEST_RESULT.md 至 OP08_TEST_RESULT.md、REVIEW.md、DELIVERY_STATUS.md |
+
+原 S0–S10 进度原样留存 evidence/s10b/PROGRESS_STATE_BASELINE.json，不将新能力倒填为历史交付。8602 旧容器与 8603 新版隔离验收是不同运行事实；源码变更不代表旧容器已更新。

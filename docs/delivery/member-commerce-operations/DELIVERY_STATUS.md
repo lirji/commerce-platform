@@ -1,7 +1,7 @@
 # 交付状态
 
-当前 OP01 API/UI_BUILD_VERIFIED（浏览器在OP08）；OP02 API/UI_BUILD_VERIFIED；OP03 API/UI_BUILD_VERIFIED；OP04 API/UI_BUILD_VERIFIED；OP05 API/UI_BUILD_VERIFIED；OP06 API/UI_BUILD_VERIFIED；OP07 API/UI_BUILD_VERIFIED；OP08 IN_PROGRESS。OP01完整Maven147测试和前端构建通过，证据OP01_TEST_RESULT.md。基线 fb7adf6，分支 feat/member-commerce-operations。本轮证据独立记录，历史测试不复用为新证据。
+基线 fb7adf6，任务分支 feat/member-commerce-operations。OP01–OP07 DONE；OP08 LOCAL_VERIFIED，待正常 Git 推送及远程 CI。
 
-授权：用户要求出plan和执行改造计划后直接改造；独立分支、验证、正常合并推送main继承AGENTS授权。外部渠道与生产部署不在本轮范围。原主工作区两处用户修改保持原状。
+本轮后端165测试、前端构建、10个浏览器场景、种子重复执行、健康/鉴权 Smoke、npm audit 和集中审查通过，见 OP08_TEST_RESULT.md 与 verification.json。OP01–OP07 分阶段历史证据保留原测试计数。
 
-OP02完整Maven148测试与前端构建通过，证据OP02_TEST_RESULT.md。OP03完整Maven150测试和前端构建通过，证据OP03_TEST_RESULT.md。OP04完整Maven153测试和前端构建通过，证据OP04_TEST_RESULT.md。OP05完整Maven158测试和前端构建通过，证据OP05_TEST_RESULT.md。OP06完整Maven160测试和前端构建通过，证据OP06_TEST_RESULT.md。OP07完整Maven164测试和前端构建通过，证据OP07_TEST_RESULT.md。下一步：OP08浏览器验收、种子数据、审查、文档和Git/CI交付。
+用户明确授权计划后连续实施，独立分支、正常合并/推送 main 继承 AGENTS 持续授权。保护原 commerce-platform 两处用户未提交变更；所有变更在隔离工作树 commerce-platform-operations。旧8602容器不更新，新版在8603测试库验收。无真实渠道或生产部署。

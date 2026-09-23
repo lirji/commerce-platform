@@ -9,19 +9,19 @@ type Assignment={tagId:string;active:boolean;version:number;source:string;reason
 
 /** 经营与会员视图共用真实账本，配置发布不在浏览器计算成长。 */
 export function MemberGrowth({admin}:{admin:boolean}) {
- const [member,setMember]=useState("");const [after,setAfter]=useState(0);const [policyAfter,setPolicyAfter]=useState(0);
+ const [member,setMember]=useState("");const [tagAfter,setTagAfter]=useState("");const [after,setAfter]=useState(0);const [policyAfter,setPolicyAfter]=useState(0);
  const base=admin?(member?"/admin/member-growth/"+encode(member):null):"/members/me/growth";
  const wallet=useResource<Wallet>(base);
  const ledger=useResource<Entry[]>(base?`${base}/ledger?after=${after}`:null);
  const policies=useResource<Policy[]>(admin?`/admin/member-growth/policies?after=${policyAfter}`:null);
- const assignments=useResource<Assignment[]>(admin&&member?`/admin/member-tags/${encode(member)}/assignments`:null);
+ const assignments=useResource<Assignment[]>(admin&&member?`/admin/member-tags/${encode(member)}/assignments?after=${encode(tagAfter)}`:null);
  const refresh=()=>{wallet.refresh();ledger.refresh();assignments.refresh();};
  return <>
   <PageHead title={admin?"会员成长经营":"我的成长"} description="成长来自完成订单的净消费，成功退款按原规则冲回。成长不是可提现余额。"/>
   <ErrorNotice error={wallet.error}/><ErrorNotice error={ledger.error}/><ErrorNotice error={policies.error}/>
   <Tabs items={[
    {key:"wallet",label:"成长与账本",children:<Card>
-    {admin&&<Input.Search aria-label="查询会员成长" placeholder="输入会员标识查看成长" enterButton="查询会员" onSearch={v=>{setMember(v.trim());setAfter(0);}} style={{maxWidth:440,marginBottom:16}}/>}
+    {admin&&<Input.Search aria-label="查询会员成长" placeholder="输入会员标识查看成长" enterButton="查询会员" onSearch={v=>{setMember(v.trim());setAfter(0);setTagAfter("");}} style={{maxWidth:440,marginBottom:16}}/>}
     {wallet.data?<>
      <Descriptions items={[
       {key:"level",label:"等级",children:wallet.data.memberLevel},{key:"growth",label:"成长值",children:wallet.data.growth},
@@ -43,6 +43,7 @@ export function MemberGrowth({admin}:{admin:boolean}) {
        {title:"标签",dataIndex:"tagId"},{title:"生效",dataIndex:"active",render:v=>v?"是":"否"},{title:"版本",dataIndex:"version"},{title:"来源",dataIndex:"source"},{title:"原因",dataIndex:"reason"},
        {title:"操作",render:(_,r)=><CommandModal title={r.active?"撤销":"恢复"} buttonType="link" path={`/admin/member-tags/${encode(member)}/assign`} fields={[{name:"reason",label:"变更原因"}]} build={v=>({...v,tagId:r.tagId,expectedVersion:r.version,active:!r.active})} onDone={refresh}/>}
       ]}/>
+      <Space><Button disabled={!tagAfter} onClick={()=>setTagAfter("")}>标签首页</Button><Button disabled={assignments.data?.length!==50} onClick={()=>setTagAfter(assignments.data!.at(-1)!.tagId)}>下一页标签</Button></Space>
      </>}
     </>:<Alert type="info" title={admin?"选择会员后查看成长与标签":"正在读取会员成长"}/>}
    </Card>},

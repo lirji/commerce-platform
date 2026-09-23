@@ -1,0 +1,126 @@
+{
+  "baseCommit": "fb7adf6278ed98c49d8851102031b061bcbb68bf",
+  "codeFingerprintSha256": "64e3531e6bb6158702acf894ef394ab1ba4cf77c8a213c6f87a972198de83bc6",
+  "fingerprintScope": "tracked implementation/build/test files plus operations seed and browser suite; excludes documentation",
+  "jarSha256": "48aa91cbe05eb850e16b1f3af5dbf32d88bcb1ecbeac190f211e580cc6e42810",
+  "maven": {
+    "result": "PASS",
+    "tests": 165,
+    "suites": [
+      {
+        "name": "com.lrj.commerce.architecture.ModuleBoundaryTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.MarketingEffectsTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.MemberGrowthTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.MemberJourneyEffectsTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.MemberOperationsTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.PersistedCommerceTest",
+        "tests": "70",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.PrecisePromotionTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.ProductOperationsTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.SegmentTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.app.StoreAccessTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.marketing.MarketingDecisionTest",
+        "tests": "12",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.marketing.RuleEvaluatorTest",
+        "tests": "15",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.order.OrderLifecycleTest",
+        "tests": "45",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.lrj.commerce.kernel.MoneyTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ]
+  },
+  "frontendBuild": "PASS",
+  "npmAudit": "0 vulnerabilities",
+  "browser": {
+    "startTime": "2026-09-23T15:28:00.071Z",
+    "duration": 17852.449,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "browserResult": "PASS",
+  "runtime": "127.0.0.1:8603 / commerce_test_20260923",
+  "workers": "local bounded per-fixture event/journey pump; global workers disabled to preserve unrelated test tenants",
+  "migration": "V1-V22",
+  "seedReplay": "PASS same tenant stable commands",
+  "remoteCI": "PENDING"
+}
