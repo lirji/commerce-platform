@@ -62,6 +62,8 @@ jobs:
         with:
           name: commerce-verification
           retention-days: 7
+          # 仅上传下方显式列出的验收文件，不包含.local中的配置或凭据。
+          include-hidden-files: true
           path: |
             docs/evidence/s10b/ci-*.log
             .local/ci-evidence/browser-results.json
