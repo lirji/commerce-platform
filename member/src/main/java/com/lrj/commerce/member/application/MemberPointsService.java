@@ -138,6 +138,24 @@ public class MemberPointsService implements MemberPointsApi {
         if(mapper.sourceChange(tenant,fact.orderId(),completed,contribution)!=1)throw conflict("积分订单贡献更新冲突");
     }
 
+    /** 真实兑换只扣足额有效积分；账户锁也序列化跨兑换项目的并发消费。 */
+    @Transactional(propagation=Propagation.MANDATORY)
+    public void exchange(Actor actor,String redemptionId,long points) {
+        if(actor.role()!=Actor.Role.MEMBER)throw new DomainException(DomainException.Code.FORBIDDEN,"仅会员可兑换");
+        Identifiers.require(redemptionId);Inputs.require(points>0 && points<=1_000_000_000L,"兑换积分无效");
+        var member=Inputs.found(members.byActor(actor.tenantId(),actor.actorId()));
+        var locked=lock(actor.tenantId(),member.memberId());
+        if(!locked.status().equals("ACTIVE"))throw conflict("会员状态不可兑换");
+        var previous=mapper.exchange(actor.tenantId(),redemptionId);
+        if(previous!=null){if(!previous.memberId().equals(member.memberId()) || previous.points()!=points)throw conflict("积分兑换来源冲突");return;}
+        var selected=policy(mapper.effective(actor.tenantId(),clock.instant()));
+        if(selected==null || !selected.spendEnabled())throw conflict("积分消费当前未开启");
+        if(wallet(actor.tenantId(),member.memberId()).available()<points)throw conflict("可用积分不足");
+        debit(actor.tenantId(),member.memberId(),points);
+        mapper.exchangeInsert(actor.tenantId(),redemptionId,member.memberId(),points);
+        entry(actor.tenantId(),member.memberId(),Action.EXCHANGE,redemptionId,-points,selected.version(),"兑换券或权益扣除积分");
+    }
+
     /** 单轮20个批次，每个批次独立提交；实例竞争在会员行锁后再次检查。 */
     public void tick() {
         for(var due:mapper.due(clock.instant(),20))tx.executeWithoutResult(status->{

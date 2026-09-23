@@ -7,7 +7,7 @@ import java.util.List;
 public interface MemberPointsApi {
     /** 稳定持久化代码，新增动作不依赖枚举序号。 */
     enum Action {
-        EARN("EARN"), ADJUST("ADJUST"), REVOKE("REVOKE"), EXPIRE("EXPIRE"), HOLD("HOLD"), SPEND("SPEND"), RELEASE("RELEASE"), REFUND("REFUND");
+        EARN("EARN"), ADJUST("ADJUST"), REVOKE("REVOKE"), EXPIRE("EXPIRE"), HOLD("HOLD"), SPEND("SPEND"), RELEASE("RELEASE"), REFUND("REFUND"), EXCHANGE("EXCHANGE");
         private final String code;
         Action(String code){this.code=code;}
         @com.fasterxml.jackson.annotation.JsonValue public String getCode(){return code;}
@@ -32,6 +32,8 @@ public interface MemberPointsApi {
     Wallet expire(Actor actor,String key,String memberId);
     /** 权威订单及现金退款事实只由装配层提供。 */
     void observe(String tenant,MemberGrowthApi.OrderFact fact);
+    /** 兑换编排事务内扣分，来源防重且禁止透支；失败随资产发放回滚。 */
+    void exchange(Actor actor,String redemptionId,long points);
     /** 有界到期清理，保留账本和批次作退款审计。 */
     void tick();
 }

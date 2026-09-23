@@ -17,16 +17,31 @@ public class CouponService implements CouponApi {
     private final CouponMapper mapper;private final MemberApi members;private final StoreApi stores;private final Commands commands;private final Clock clock;
     public CouponService(CouponMapper mapper,MemberApi members,StoreApi stores,Commands commands,Clock clock){this.mapper=mapper;this.members=members;this.stores=stores;this.commands=commands;this.clock=clock;}
     /** 定义版本创建后不可修改，配额在领取事务中扣减。 */
-    public DefinitionView create(Actor actor,String key,Definition input){actor.requireAdmin();Inputs.require(input!=null&&input.version()>0&&input.quota()>0&&input.quota()<=1000000&&input.validFrom()!=null&&input.validTo()!=null&&input.validFrom().isBefore(input.validTo()),"券定义无效");Inputs.require(input.platformFundingBps()==null||(input.platformFundingBps()>=0&&input.platformFundingBps()<=10000),"券资方比例无效");Identifiers.require(input.definitionId());Inputs.text(input.name(),128);money(input.minimumSpend());Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO)>0,"券金额必须大于零");return commands.run(actor,"coupon.definition",key,input,DefinitionView.class,()->{stores.requireActive(actor,input.storeId());mapper.definition(actor.tenantId(),input);return definition(mapper.definitionFind(actor.tenantId(),input.definitionId(),input.version()));});}
+    public DefinitionView create(Actor actor,String key,Definition input){actor.requireAdmin();Inputs.require(input!=null&&input.version()>0&&input.quota()>0&&input.quota()<=1000000&&input.validFrom()!=null&&input.validTo()!=null&&input.validFrom().isBefore(input.validTo()),"券定义无效");Inputs.require(input.platformFundingBps()==null||(input.platformFundingBps()>=0&&input.platformFundingBps()<=10000),"券资方比例无效");Inputs.require(input.issuanceMode()==null || Set.of("PUBLIC","SOURCE_ONLY").contains(input.issuanceMode()),"券发行方式无效");Identifiers.require(input.definitionId());Inputs.text(input.name(),128);money(input.minimumSpend());Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO)>0,"券金额必须大于零");return commands.run(actor,"coupon.definition",key,input,DefinitionView.class,()->{stores.requireActive(actor,input.storeId());mapper.definition(actor.tenantId(),input);return definition(mapper.definitionFind(actor.tenantId(),input.definitionId(),input.version()));});}
     /** 消费者可见本店定义，但领取仍需服务端资格校验。 */
-    public List<DefinitionView> definitions(Actor actor,String store,String after,int limit){stores.requireActive(actor,store);Inputs.page(after,limit);return mapper.definitions(actor.tenantId(),store,after,limit).stream().map(this::definition).toList();}
+    public List<DefinitionView> definitions(Actor actor,String store,String after,int limit){stores.requireActive(actor,store);Inputs.page(after,limit);return mapper.definitions(actor.tenantId(),store,after,limit,actor.role()==Actor.Role.ADMIN).stream().map(this::definition).toList();}
     /** 锁定义序列化配额，当前读检查是否已领，重试不能多占额度。 */
     public Coupon claim(Actor actor,String key,String id,long version){Identifiers.require(id);Inputs.require(version>0,"券版本无效");return commands.run(actor,"coupon.claim",key,List.of(id,version),Coupon.class,()->{
         var member=members.current(actor);members.requireActive(actor,member.memberId());var definition=Inputs.found(mapper.definitionLock(actor.tenantId(),id,version));stores.requireActive(actor,definition.storeId());
+        if(!definition.issuanceMode().equals("PUBLIC"))throw conflict("此券只能通过受控活动获得");
         var existing=mapper.existing(actor.tenantId(),member.memberId(),id,version);if(existing!=null)return existing;
         if(clock.instant().isBefore(definition.validFrom())||!clock.instant().isBefore(definition.validTo())||mapper.issue(actor.tenantId(),id,version)!=1)throw conflict("券未生效、已过期或配额不足");
         String coupon=UUID.randomUUID().toString();mapper.coupon(actor.tenantId(),member.memberId(),coupon,definition);return mapper.find(actor.tenantId(),member.memberId(),coupon);
     });}
+    /** 兑换目录只绑定受控券，且发行窗口必须完整覆盖兑换窗口。 */
+    public void validateExchange(String tenant,String store,String id,long version,java.time.Instant from,java.time.Instant to) {
+        var d=Inputs.found(mapper.definitionFind(tenant,id,version));
+        Inputs.require(d.issuanceMode().equals("SOURCE_ONLY") && d.storeId().equals(store) && !from.isBefore(d.validFrom()) && !to.isAfter(d.validTo()),"兑换券需为同店受控券且覆盖兑换有效期");
+    }
+    /** 来源与发行配额同事务，重复来源绝不再发券。 */
+    @Transactional(propagation=Propagation.MANDATORY)
+    public Coupon grantFromPoints(String tenant,String member,String store,String source,String id,long version) {
+        Identifiers.require(source);var d=Inputs.found(mapper.definitionLock(tenant,id,version));
+        var old=mapper.bySource(tenant,source);
+        if(old!=null){if(!old.memberId().equals(member)||!old.definitionId().equals(id)||old.version()!=version)throw conflict("券兑换来源冲突");return old;}
+        if(!d.storeId().equals(store)||!d.issuanceMode().equals("SOURCE_ONLY")||clock.instant().isBefore(d.validFrom())||!clock.instant().isBefore(d.validTo())||mapper.issue(tenant,id,version)!=1)throw conflict("兑换券状态、有效期或额度不足");
+        var coupon=UUID.randomUUID().toString();mapper.sourceCoupon(tenant,member,coupon,source,d);return mapper.find(tenant,member,coupon);
+    }
     public List<Coupon> wallet(Actor actor,String after,int limit){Inputs.page(after,limit);return mapper.wallet(actor.tenantId(),members.current(actor).memberId(),after,limit);}
     /** 报价只校验资格，不消费券，最终占用发生在下单事务。 */
     public Coupon eligible(Actor actor,String id,String store,String gross){Identifiers.require(id);var coupon=Inputs.found(mapper.find(actor.tenantId(),members.current(actor).memberId(),id));validate(coupon,store);if(money(gross).compareTo(money(coupon.minimumSpend()))<0)throw conflict("未达到券门槛");return coupon;}
@@ -48,7 +63,7 @@ public class CouponService implements CouponApi {
         if(mapper.finish(tenant,order,hold.couponId(),expected,target)!=1||mapper.holdStatus(tenant,order,expected,holdTarget)!=1)throw conflict("券状态并发冲突");
     }
     private void validate(Coupon coupon,String store){if(!coupon.storeId().equals(store)||!coupon.status().equals("AVAILABLE")||clock.instant().isBefore(coupon.validFrom())||!clock.instant().isBefore(coupon.validTo()))throw conflict("券不属于本店、已占用或失效");}
-    private DefinitionView definition(CouponMapper.DefinitionRow r){return new DefinitionView(new Definition(r.definitionId(),r.version(),r.storeId(),r.name(),r.minimumSpend(),r.discountAmount(),r.validFrom(),r.validTo(),r.quota(),r.stackable(),r.platformFundingBps()),r.issued());}
+    private DefinitionView definition(CouponMapper.DefinitionRow r){return new DefinitionView(new Definition(r.definitionId(),r.version(),r.storeId(),r.name(),r.minimumSpend(),r.discountAmount(),r.validFrom(),r.validTo(),r.quota(),r.stackable(),r.platformFundingBps(),r.issuanceMode()),r.issued());}
     private Money money(String value){Inputs.text(value,32);try{return new Money(new BigDecimal(value));}catch(NumberFormatException ex){throw new DomainException(DomainException.Code.INVALID_INPUT,"金额格式无效");}}
     private DomainException conflict(String message){return new DomainException(DomainException.Code.CONFLICT,message);}
 }

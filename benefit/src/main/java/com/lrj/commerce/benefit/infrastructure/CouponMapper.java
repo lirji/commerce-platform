@@ -6,12 +6,14 @@ import java.util.List;
 /** 发券额度和钱包状态都由数据库条件更新决定。 */
 @Mapper
 public interface CouponMapper {
-    record DefinitionRow(String definitionId,long version,String storeId,String name,String minimumSpend,String discountAmount,Instant validFrom,Instant validTo,int quota,boolean stackable,int issued,int platformFundingBps) { }
+    record DefinitionRow(String definitionId,long version,String storeId,String name,String minimumSpend,String discountAmount,Instant validFrom,Instant validTo,int quota,boolean stackable,int issued,int platformFundingBps,String issuanceMode) { }
     void definition(@Param("tenant") String tenant,@Param("input") Definition input);
     DefinitionRow definitionFind(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
     DefinitionRow definitionLock(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
-    List<DefinitionRow> definitions(@Param("tenant") String tenant,@Param("store") String store,@Param("after") String after,@Param("limit") int limit);
+    List<DefinitionRow> definitions(@Param("tenant") String tenant,@Param("store") String store,@Param("after") String after,@Param("limit") int limit,@Param("admin") boolean admin);
     int issue(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
+    Coupon bySource(@Param("tenant") String tenant,@Param("source") String source);
+    void sourceCoupon(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("source") String source,@Param("definition") DefinitionRow definition);
     Coupon existing(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("version") long version);
     void coupon(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id,@Param("definition") DefinitionRow definition);
     Coupon find(@Param("tenant") String tenant,@Param("member") String member,@Param("id") String id);

@@ -6,7 +6,7 @@ import { ActionButton, CommandModal, ErrorNotice, instant, time } from "../share
 type Wallet = { memberId: string; available: number; held: number; debt: number; credit: number; version: number };
 type Entry = { sequenceId: number; action: string; sourceId: string; delta: number; available: number; debt: number; policyVersion: number; reason: string; createdAt: string; held: number };
 type Policy = { version: number; effectiveFrom: string; earnPerYuan: string; expiryDays: number; spendEnabled: boolean; pointsPerYuan: number; maxDeductionBps: number };
-const actions: Record<string, string> = { EARN: "消费奖励", ADJUST: "运营校准", REVOKE: "退款扣回", EXPIRE: "积分到期", HOLD: "订单冻结", SPEND: "支付核销", RELEASE: "取消释放", REFUND: "售后返还" };
+const actions: Record<string, string> = { EARN: "消费奖励", ADJUST: "运营校准", REVOKE: "退款扣回", EXPIRE: "积分到期", HOLD: "订单冻结", SPEND: "支付核销", RELEASE: "取消释放", REFUND: "售后返还", EXCHANGE: "积分兑换" };
 
 /** 积分资产从独立账本读取，不能用页面累计成交或成长值自行估算。 */
 export function MemberPoints({ admin }: { admin: boolean }) {

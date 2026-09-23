@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.benefit.infrastructure.PointOfferMapper">
+ <insert id="insert">INSERT INTO benefit_point_offer(tenant_id,offer_id,store_id,content_json,status,valid_from,valid_to,quota) VALUES(#{tenant},#{input.offerId},#{input.storeId},#{json},'ACTIVE',#{input.validFrom},#{input.validTo},#{input.quota})</insert>
+ <select id="find" resultType="com.lrj.commerce.benefit.infrastructure.PointOfferMapper$Row">SELECT content_json,status,issued,version FROM benefit_point_offer WHERE tenant_id=#{tenant} AND offer_id=#{id}</select>
+ <select id="lock" resultType="com.lrj.commerce.benefit.infrastructure.PointOfferMapper$Row">SELECT content_json,status,issued,version FROM benefit_point_offer WHERE tenant_id=#{tenant} AND offer_id=#{id} FOR UPDATE</select>
+ <select id="list" resultType="com.lrj.commerce.benefit.infrastructure.PointOfferMapper$Row">SELECT content_json,status,issued,version FROM benefit_point_offer WHERE tenant_id=#{tenant} AND store_id=#{store} AND offer_id&gt;#{after} AND (#{admin}=true OR (status='ACTIVE' AND valid_from&lt;=#{now} AND valid_to&gt;#{now})) ORDER BY offer_id LIMIT #{limit}</select>
+ <update id="status">UPDATE benefit_point_offer SET status=CASE WHEN #{input.active} THEN 'ACTIVE' ELSE 'INACTIVE' END,version=version+1 WHERE tenant_id=#{tenant} AND offer_id=#{id} AND version=#{input.expectedVersion}</update>
+ <update id="issue">UPDATE benefit_point_offer SET issued=issued+1 WHERE tenant_id=#{tenant} AND offer_id=#{id} AND status='ACTIVE' AND issued&lt;quota</update>
+ <select id="count" resultType="java.lang.Integer">SELECT redeemed FROM benefit_point_offer_member WHERE tenant_id=#{tenant} AND offer_id=#{id} AND member_id=#{member} FOR UPDATE</select>
+ <insert id="memberIssue">INSERT INTO benefit_point_offer_member(tenant_id,offer_id,member_id,redeemed) VALUES(#{tenant},#{id},#{member},1) ON DUPLICATE KEY UPDATE redeemed=redeemed+1</insert>
+ <insert id="receipt">INSERT INTO benefit_point_redemption(tenant_id,redemption_id,offer_id,member_id,points,kind,asset_id,created_at) VALUES(#{tenant},#{input.redemptionId},#{input.offerId},#{input.memberId},#{input.points},#{input.kind},#{input.assetId},#{input.createdAt})</insert>
+ <select id="receipts" resultType="com.lrj.commerce.benefit.api.PointOfferApi$Receipt">SELECT redemption_id,offer_id,member_id,points,kind,asset_id,created_at FROM benefit_point_redemption WHERE tenant_id=#{tenant} AND member_id=#{member} AND redemption_id&gt;#{after} ORDER BY redemption_id LIMIT #{limit}</select>
+</mapper>

@@ -12,24 +12,24 @@
 ## 已修改文件
 
 - commerce-platform-member-suite内LP04 member/trade/order-runtime/aftersales/payment/app/frontend/scripts与对应docs。
-- LP05_CONTRACT.md已建立，尚未实现。
+- LP05券/权益兑换、目录运营、会员回执已完成，后端189项与浏览器5场景通过。
 
 ## 未完成
 
-- LP05–LP11：兑换券/权益、行为人群、定向券、旅程效果、商品经营、整体验收、CI与Git主线交付。
+- LP06–LP11：行为人群、定向券、旅程效果、商品经营、整体验收、CI与Git主线交付。
 
 ## 当前问题
 
 - 无环境阻塞，原commerce-platform两处用户改动禁止动；8602 Docker fa97292保持。
-- 隔离库commerce_test_20260923已V28，下个迁移V29。8604验收应用workers=false，私密env禁止打印。
-- LP04已通过，正在记录/提交；LP05细契约已建立。
+- 隔离库commerce_test_20260923已V29，下个迁移V30。8604验收应用workers=false，私密env禁止打印。
+- LP04 11ddcc4已提交；LP05已验证，正在提交。8604运行.local/member-suite-lp05.jar。
 
 ## 下一步建议
 
-1. 读取新工作区docs/delivery/member-lifecycle-catalog-ui/STATUS.md及LP05_CONTRACT.md。
-2. 完成LP05，逐片继续LP06–LP11，不需重新确认范围和积分/深色偏好。
+1. 读取新工作区docs/delivery/member-lifecycle-catalog-ui/STATUS.md，继续LP06细契约。
+2. 从LP06开始逐片继续到LP11，不需重新确认范围和积分/深色偏好。
 3. 通过必要验收后按任务逻辑提交、正常合并推送main，保护原工作区。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS.md及commerce-platform-member-suite交付STATUS，按LP05–LP11未完成项持续执行，除真实阻塞无需等待继续。
+读取CODEX_PROGRESS.md及commerce-platform-member-suite交付STATUS，按LP06–LP11未完成项持续执行，除真实阻塞无需等待继续。

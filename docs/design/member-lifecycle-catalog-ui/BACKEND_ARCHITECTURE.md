@@ -34,3 +34,7 @@ V27增加持有/分配/返还及held账本快照；V28增加售后行积分列�
 LP04发布/回退边界：仅承诺新应用可读取旧报价/订单；积分启用后不允许回退至不处理积分持有的旧应用。先扩展数据库、更新全部交易写入实例，再由运营开启spendEnabled；不允许混用新旧交易写入实例处理积分单。当前部署为单应用进程，无滚动发布承诺。出现问题先关闭新积分消费、保留新代码完成在途单，再做补偿/前向修复。新请求redeemPoints为空时不序列化入幂等摘要，保留旧报价命令重放兼容。
 
 LP04必要附带修复：三次部分退款21.66+21.66+21.67触发旧PaymentMapper.reserveRefund金额比较冲突。真实MySQL证明 DECIMAL(43.32)+'21.67' <= DECIMAL(64.99)为false、显式DECIMAL参数为true；仅修正该退款额度SQL的参数运算类型，不能放宽资金上限。由PointsCheckoutTest部分退款守恒场景保护。
+
+## LP05 兑换边界
+
+benefit.PointOffer编排会员积分扣费和受控来源券/权益，同一Commands事务。member_point_exchange只记录积分消费来源，不拥有券定义；benefit_point_redemption记录真实资产ID。每人计数和总额度有锁、唯一键与CHECK兜底；会员行→目录行→资产定义固定锁序。兑换内容不可变，停启CAS审计。SOURCE_ONLY禁止公共领取。权益REQUESTED仍由原Outbox/Inbox消费者推进，回执不冒充到账。

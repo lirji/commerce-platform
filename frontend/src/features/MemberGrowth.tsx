@@ -1,4 +1,5 @@
 import { Alert, Button, Card, Descriptions, Input, Space, Table, Tabs } from "antd";
+import { PointOffers } from "./PointOffers";
 import { MemberPoints } from "./MemberPoints";
 import { MemberCycles } from "./MemberCycles";
 import { useState } from "react";
@@ -10,7 +11,7 @@ type Policy={version:number;effectiveFrom:string;growthPerYuan:string;levels:{co
 type Assignment={tagId:string;active:boolean;version:number;source:string;reason:string};
 
 /** 经营与会员视图共用真实账本，配置发布不在浏览器计算成长。 */
-export function MemberGrowth({admin}:{admin:boolean}) {
+export function MemberGrowth({admin,store}:{admin:boolean;store:string}) {
  const [member,setMember]=useState("");const [tagAfter,setTagAfter]=useState("");const [after,setAfter]=useState(0);const [policyAfter,setPolicyAfter]=useState(0);
  const base=admin?(member?"/admin/member-growth/"+encode(member):null):"/members/me/growth";
  const wallet=useResource<Wallet>(base);
@@ -22,6 +23,7 @@ export function MemberGrowth({admin}:{admin:boolean}) {
   <PageHead title={admin?"会员成长经营":"我的成长"} description="成长来自完成订单的净消费，成功退款按原规则冲回。成长不是可提现余额。"/>
   <ErrorNotice error={wallet.error}/><ErrorNotice error={ledger.error}/><ErrorNotice error={policies.error}/>
   <Tabs defaultActiveKey="wallet" items={[
+   {key:"exchange",label:"积分兑换",children:<PointOffers key={store} admin={admin} store={store}/>},
    {key:"points",label:"积分账户",children:<MemberPoints admin={admin}/>},
    {key:"cycles",label:"周期与等级权益",children:<MemberCycles admin={admin}/>},
    {key:"wallet",label:"成长与账本",children:<Card>

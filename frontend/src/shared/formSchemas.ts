@@ -13,6 +13,7 @@ export const dateFields: Field[] = [
   { name: "validTo", label: "结束时间", type: "datetime" },
 ];
 export const couponFields: Field[] = [
+  { name: "issuanceMode", label: "发行方式", type: "select", initial: "PUBLIC", options: [{ label: "公开领取", value: "PUBLIC" }, { label: "受控发放（积分兑换等）", value: "SOURCE_ONLY" }] },
   id("definitionId", "券定义标识"),
   version,
   name,

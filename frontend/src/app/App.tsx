@@ -216,7 +216,7 @@ export function App() {
   let content;
   if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
   else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
-  else if (page === "growth") content = <MemberGrowth admin={admin}/>;
+  else if (page === "growth") content = <MemberGrowth admin={admin} store={store}/>;
   else if (admin && page === "segments") content = <Segments/>;
   else if (admin && page === "effects") content = <MarketingEffects key={store} store={store}/>;
   else if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;

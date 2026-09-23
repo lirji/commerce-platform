@@ -30,4 +30,6 @@
  <select id="due" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Due">SELECT tenant_id,member_id,lot_id FROM member_point_lot WHERE active_balance=TRUE AND remaining&gt;0 AND expires_at&lt;=#{at} ORDER BY expires_at,tenant_id,lot_id LIMIT #{limit}</select>
  <insert id="entry">INSERT INTO member_point_ledger(tenant_id,member_id,action,source_id,delta,available,debt,policy_version,reason,created_at,held) VALUES(#{tenant},#{member},#{action},#{source},#{delta},#{wallet.available},#{wallet.debt},#{policy},#{reason},#{at},#{wallet.held})</insert>
  <select id="ledger" resultType="com.lrj.commerce.member.api.MemberPointsApi$Entry">SELECT sequence_id,action,source_id,delta,available,debt,policy_version,reason,created_at,held FROM member_point_ledger WHERE tenant_id=#{tenant} AND member_id=#{member} AND sequence_id&gt;#{after} ORDER BY sequence_id LIMIT #{limit}</select>
+ <select id="exchange" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Exchange">SELECT member_id,points FROM member_point_exchange WHERE tenant_id=#{tenant} AND redemption_id=#{id} FOR UPDATE</select>
+ <insert id="exchangeInsert">INSERT INTO member_point_exchange(tenant_id,redemption_id,member_id,points) VALUES(#{tenant},#{id},#{member},#{points})</insert>
 </mapper>

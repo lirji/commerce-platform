@@ -7,6 +7,9 @@ import java.util.List;
 /** 积分策略、贡献和批次由会员域独占；所有写入由会员行锁保护。 */
 @Mapper
 public interface PointsMapper {
+    record Exchange(String memberId,long points) { }
+    Exchange exchange(@Param("tenant") String tenant,@Param("id") String id);
+    void exchangeInsert(@Param("tenant") String tenant,@Param("id") String id,@Param("member") String member,@Param("points") long points);
     record PolicyRow(String policyJson) { }
     record Account(long debt,long version) { }
     record Totals(long credit,long held) { }

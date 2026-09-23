@@ -8,7 +8,7 @@
 |LP02|等级权益绑定、幂等发放与会员页面|LP01|benefit/app/frontend|周期续发、重复/降级、真实钱包|DONE|
 |LP03|积分策略、获取、到期和账本页面|LP01|member/app/frontend|幂等、乱序退款、过期债务|DONE|
 |LP04|积分订单抵扣与退款返还|LP03|trade/order/aftersales/frontend|冻结/取消/UNKNOWN/零元/部分退款|DONE|
-|LP05|积分兑换券和权益|LP03|benefit/member/frontend|原子扣分发放、库存不足回滚|TODO|
+|LP05|积分兑换券和权益|LP03|benefit/member/frontend|原子扣分发放、库存不足回滚|DONE|
 |LP06|会员行为、人群和详情|LP01|member/campaign/frontend|身份隔离、来源去重、分页分群|TODO|
 |LP07|定向发券与相对有效期|LP06|benefit/automation/frontend|任务恢复、频控、配额、撤销|TODO|
 |LP08|生命周期旅程与效果比较|LP06,LP07|automation/app/frontend|生日/沉睡/复购/加购、等待、退款成本|TODO|
@@ -16,4 +16,4 @@
 |LP10|批量及定时经营、渠道价格|LP09|catalog/trade/frontend|版本冲突、恢复、渠道报价|TODO|
 |LP11|深色经营工作台和整体验收|LP02–LP10|frontend/tests/scripts/docs|真实数据、空错状态、桌面窄屏、CI|TODO|
 
-当前下一片 LP05（券与权益兑换，见LP05_CONTRACT）。LP05–LP11 尚须细化对应契约，非环境阻塞。前端深色基础随 LP02 页面同步引入，LP11 最终收口。每片必要窄测试通过后继续，不反复请求继续。
+当前下一片 LP06（会员行为/人群/详情）。LP06–LP11 尚须细化对应契约，非环境阻塞。前端深色基础随 LP02 页面同步引入，LP11 最终收口。每片必要窄测试通过后继续，不反复请求继续。

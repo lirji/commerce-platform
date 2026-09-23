@@ -59,6 +59,11 @@ public class EntitlementService implements EntitlementApi,EventHandler {
     public View grantFromLevel(String tenant,String member,String store,String sourceId,Ref ref) {
         return grantFromSource(tenant,member,store,sourceId,null,ref,"LEVEL");
     }
+    /** 积分兑换沿用可靠发放消费者，不把受理伪称到账。 */
+    @Transactional(propagation=Propagation.MANDATORY)
+    public View grantFromPoints(String tenant,String member,String store,String sourceId,Ref ref) {
+        return grantFromSource(tenant,member,store,sourceId,null,ref,"POINTS");
+    }
     private View grantFromSource(String tenant,String member,String store,String effectId,String order,Ref ref,String sourceType) {
         Identifiers.require(effectId);validateRef(ref);var existing=mapper.bySource(tenant,sourceType,effectId);
         if(existing!=null){if(!existing.memberId().equals(member)||!existing.benefitId().equals(ref.benefitId())||existing.benefitVersion()!=ref.version())throw conflict();return existing;}
