@@ -35,7 +35,7 @@
     "sourceCommit": "44f1823ec606ef8c14447b1fdf5974c6517020b6",
     "branch": "main",
     "remote": "origin",
-    "documentationCheckpoint": "Subsequent documentation-only commit records this verified implementation; main HEAD workflow is checked again at final handoff."
+    "documentationCheckpoint": "Documentation-only completion record; immutable implementation validation remains sourceCommit, and latest main checks are available on GitHub."
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {
