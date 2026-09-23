@@ -1,0 +1,102 @@
+[
+  {
+    "repo": "transaction-center",
+    "head": "d85d392077bad72b905e014864e9c648e4c45c0b",
+    "dirty": true,
+    "files": [
+      {
+        "path": "transaction-center/transaction-order/src/main/java/com/lrj/trade/order/OrderService.java",
+        "sha256": "5aaf09b0efc2ac59655cb6829207b78c3464f891beee6928afbc798f101241c4"
+      },
+      {
+        "path": "transaction-center/transaction-order/src/main/java/com/lrj/trade/order/MerchantService.java",
+        "sha256": "a1c931600476bd2a9ee09637930d3c8f1feaba80ac1a2a2f3bb4d1bf77f8c20c"
+      },
+      {
+        "path": "transaction-center/transaction-catalog/src/main/java/com/lrj/trade/catalog/QuoteService.java",
+        "sha256": "68f9f92c291fc50189eb63c44f9882e9a34c28f55f23783335fe1f35b9de0317"
+      }
+    ]
+  },
+  {
+    "repo": "marketing-lowcode-platform",
+    "head": "1392ca97bfe9cc6cfcd67888d318e0b2b66efe9c",
+    "dirty": true,
+    "files": [
+      {
+        "path": "marketing-lowcode-platform/services/offer-decision-service/src/main/java/com/acme/marketing/decision/application/DecisionApplicationService.java",
+        "sha256": "525b9184c77487d3fb0b1953e42a9d826ade3d1d7df15c482a14b3cf647b5d1f"
+      },
+      {
+        "path": "marketing-lowcode-platform/services/journey-service/src/main/java/com/acme/marketing/journeyservice/application/JourneyApplicationService.java",
+        "sha256": "10b1f0c0d4067348219a8bf086537941a2465a26a179b14fbdf2f3f3a00be09d"
+      }
+    ]
+  },
+  {
+    "repo": "benefit-center",
+    "head": "30e433145416f0b9efcc8346d7b1f5d325e6cca1",
+    "dirty": true,
+    "files": [
+      {
+        "path": "benefit-center/benefit-application/src/main/java/com/lrj/benefit/application/port/in/AcceptAwardIntentUseCase.java",
+        "sha256": "a4f7e4dc99baa8ca20aeabffa90b3e000da9795b96abb476294e958deba819af"
+      }
+    ]
+  },
+  {
+    "repo": "drools-demo",
+    "head": "bc9a05234cdf25d1e453372ac5dec492f61c5997",
+    "dirty": true,
+    "files": [
+      {
+        "path": "drools-demo/activity-common/src/main/java/com/lrj/drools/activity/engine/ActivityRuleRuntimeService.java",
+        "sha256": "d2f9dc51b1283026aa50f3200813adf61bc4309bad4c16088893cd75d76fd28a"
+      }
+    ]
+  },
+  {
+    "repo": "wms-platform",
+    "head": "7b797330a60b798475a15c2d993f3cb1126e1df9",
+    "dirty": true,
+    "files": [
+      {
+        "path": "wms-platform/wms-fulfillment/src/main/java/com/lrj/wms/fulfillment/FulfillmentService.java",
+        "sha256": "b307676248e8a52f94c6b5f28c07c1324bc4f466a8b870440385d5f3d8f06c25"
+      }
+    ]
+  },
+  {
+    "repo": "auth-platform",
+    "head": "c07741a3398baeef32694ee7273612aaa64dd80d",
+    "dirty": false,
+    "files": [
+      {
+        "path": "auth-platform/pom.xml",
+        "sha256": "9c8e65ced20b53d7c772fdbb0045f39ad8705bab7242fd59220bbbe9b4e9bf80"
+      }
+    ]
+  },
+  {
+    "repo": "workflow-platform",
+    "head": "ef8e7ae6b2779ee4751a56434545a2997f293d4a",
+    "dirty": true,
+    "files": [
+      {
+        "path": "workflow-platform/pom.xml",
+        "sha256": "eaa14384c0802d1b3c5e056883ef6be1a574da4534a79590cd119835b9b5d1e3"
+      }
+    ]
+  },
+  {
+    "repo": "dev-infra",
+    "head": null,
+    "dirty": false,
+    "files": [
+      {
+        "path": "dev-infra/compose.yaml",
+        "sha256": "3e8c16937346c606c0f5e34b39ddba43e9325ac7e07b6efb6b28d2f4a2dc2ec4"
+      }
+    ]
+  }
+]

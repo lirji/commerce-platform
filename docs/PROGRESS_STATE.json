@@ -1,0 +1,15 @@
+{
+  "task": "unified-commerce-new-build",
+  "status": "IN_PROGRESS",
+  "completed": [
+    "S0",
+    "S1",
+    "S2",
+    "S3"
+  ],
+  "next": "S4",
+  "fullPlatformComplete": false,
+  "previousMigration": "UNCHANGED_BLOCKED",
+  "verification": "docs/evidence/verification.json",
+  "git": "DELIVERY_IN_PROGRESS"
+}

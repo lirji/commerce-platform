@@ -1,0 +1,2 @@
+# 保留 Maven 原始证据日志的行尾空格；源码仍接受正常空白检查。
+docs/evidence/*.log -whitespace

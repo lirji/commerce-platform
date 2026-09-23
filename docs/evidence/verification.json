@@ -1,0 +1,82 @@
+{
+  "status": "PASS",
+  "command": "mvn -o -B verify",
+  "scope": "S1-S3 domain kernel only",
+  "counts": {
+    "tests": 72,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "suite": "com.lrj.commerce.architecture.ModuleBoundaryTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.lrj.commerce.marketing.MarketingDecisionTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.lrj.commerce.marketing.RuleEvaluatorTest",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.lrj.commerce.order.OrderLifecycleTest",
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.lrj.commerce.kernel.MoneyTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "source_sample_drift": [],
+  "verified_files": {
+    "architecture-tests/pom.xml": "544b1283f052d255c1c488797d4ba9fdc6e91863ccd374e740cc2556616f5a2a",
+    "architecture-tests/src/test/java/com/lrj/commerce/architecture/ModuleBoundaryTest.java": "3df4c923d3e13af4d57a3f3e247787256c45d24204596126d98d80f0aecf3b31",
+    "marketing/pom.xml": "ed41dc56811f0cc36a167962a1b6de1b5527dffd84a2daafdb1d3d84c0035d8d",
+    "marketing/src/main/java/com/lrj/commerce/marketing/api/Condition.java": "9f4f5a94d104c195610154fac87080d2800909ede95ae4b9ae0d7de3dc0c43c8",
+    "marketing/src/main/java/com/lrj/commerce/marketing/api/DecisionModels.java": "efd600cc78220a84f0785ad043be3574f3a7cea222da6f73e20d0c02b62510c5",
+    "marketing/src/main/java/com/lrj/commerce/marketing/api/DecisionPort.java": "c91c12304370c4d82562fbb1c1895251cc8c37c860cf7cd07114c78e4309c67c",
+    "marketing/src/main/java/com/lrj/commerce/marketing/api/Fact.java": "df63e1f86b285817395154e4652cfd62a919e0748adeb3ea943009197e75d0d0",
+    "marketing/src/main/java/com/lrj/commerce/marketing/application/MarketingDecisionService.java": "87d9543a8f4d5094be87c4d90833ea3c97af65608498c4c112106d96da3805c3",
+    "marketing/src/main/java/com/lrj/commerce/marketing/domain/RuleEvaluator.java": "a341f521eecd5372edbb7e31b2eda07af272c5b07ea776a62c2355380a9f26e7",
+    "marketing/src/test/java/com/lrj/commerce/marketing/MarketingDecisionTest.java": "37c4391b86c106759c75d2a935d57a3c74cb6d752a29f1bd9f401f1ccff26576",
+    "marketing/src/test/java/com/lrj/commerce/marketing/RuleEvaluatorTest.java": "4e6c09a27a185b36fe13bbe0136335735af85d7e7d160261620408636366edbf",
+    "order/pom.xml": "3593f72d46f529cab24c466d425bacf45e949973726e8bb47dfcf187004bba08",
+    "order/src/main/java/com/lrj/commerce/order/api/OrderEvent.java": "98fb2af192540ebc88ece689844fd2b32958c27341b366f73c8b16ad2a83d939",
+    "order/src/main/java/com/lrj/commerce/order/api/OrderState.java": "b4cdfcbbbce147a401dee67147dc11d985f5924a4a4225d115a886cb0e6f93b8",
+    "order/src/main/java/com/lrj/commerce/order/domain/OrderLifecycle.java": "97049db85ce03f95603e3b5780cc4b4d0e1868c2f40cdd9253ac44e2aa802b89",
+    "order/src/test/java/com/lrj/commerce/order/OrderLifecycleTest.java": "7f4c7b5ee59e16d5ebbb058999593b4618f5f1436e9da3a8af5feede146d692f",
+    "pom.xml": "ea43a611ba4ed0c670188dc4c48d2a0633fcbd303ca6b317b6d9030512a16f45",
+    "shared-kernel/pom.xml": "1360d8c7db95f1675c5d5711a8905b8f11ff5d2cc281d101098fd0c4e976ed1c",
+    "shared-kernel/src/main/java/com/lrj/commerce/kernel/DomainException.java": "a1542c039e5b924059bf44bd3ecd1af49629616e8dac26ea3baaf1b0d0d2bf7d",
+    "shared-kernel/src/main/java/com/lrj/commerce/kernel/Identifiers.java": "798e514f3f08840e092e0ac0bc52af4389efd97a5f765fd560763cb614b226ee",
+    "shared-kernel/src/main/java/com/lrj/commerce/kernel/Money.java": "90957611f44943871378a64cd4f1b61761ca056190c88062f1d2256aecd9f239",
+    "shared-kernel/src/test/java/com/lrj/commerce/kernel/MoneyTest.java": "5dd9cd2aa1e7363a296496ac6a79bb376ba1ce61232410bd41a61b53a455e85f"
+  },
+  "unverified": [
+    "database transactions and concurrency",
+    "HTTP and identity authorization",
+    "actual payment and benefits",
+    "Outbox recovery",
+    "frontend",
+    "production capacity",
+    "full platform boundary readiness"
+  ]
+}

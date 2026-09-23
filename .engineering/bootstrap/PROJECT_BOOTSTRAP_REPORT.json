@@ -1,0 +1,115 @@
+{
+  "protocol": "project-bootstrap-report/v1",
+  "projectSummary": {
+    "name": "commerce-platform",
+    "mode": "FULL_BOOTSTRAP",
+    "workspace": "REFERENCE_SYSTEM",
+    "status": "PARTIAL",
+    "completedScope": "M0 domain kernel; S1-S3",
+    "userDecision": "新建设任务，旧迁移保持门禁",
+    "fullPlatformComplete": false
+  },
+  "requirements": {
+    "ref": "docs/design/unified-commerce/BRIEF.md"
+  },
+  "nonFunctionalRequirements": {
+    "inputBounds": "CONFIRMED_IN_C1_C3",
+    "productionCapacity": "UNKNOWN",
+    "sla": "UNKNOWN",
+    "rtoRpo": "UNKNOWN"
+  },
+  "domainModel": {
+    "ref": "docs/design/unified-commerce/BACKEND_ARCHITECTURE.md"
+  },
+  "architecture": {
+    "style": "MODULAR_MONOLITH",
+    "ref": "docs/design/unified-commerce/BACKEND_ARCHITECTURE.md",
+    "fullBoundaryReadiness": "NOT_VERIFIED",
+    "implementedBoundaryEvidence": "docs/evidence/verification.json"
+  },
+  "technologyDecisions": [
+    {
+      "ref": "docs/design/unified-commerce/TECH_SELECTION.md"
+    }
+  ],
+  "adr": [
+    {
+      "id": "D1",
+      "decision": "New construction; do not replace or unblock old migration"
+    },
+    {
+      "id": "D2",
+      "decision": "Pure bounded rule kernel first; no arbitrary scripts"
+    },
+    {
+      "id": "D3",
+      "decision": "One application target with owned modules and local transaction boundaries"
+    }
+  ],
+  "engineeringBaseline": {
+    "java": "21.0.11",
+    "maven": "3.9.12",
+    "build": "PASS",
+    "productionDependencies": [],
+    "git": "INITIAL_REPOSITORY_DELIVERY_PENDING"
+  },
+  "projectStructure": [
+    "shared-kernel",
+    "marketing",
+    "order",
+    "architecture-tests",
+    "docs"
+  ],
+  "implementation": {
+    "status": "PARTIAL",
+    "completed": [
+      "S1",
+      "S2",
+      "S3"
+    ],
+    "notImplemented": [
+      "database",
+      "HTTP",
+      "identity",
+      "payment",
+      "events",
+      "UI"
+    ]
+  },
+  "verification": {
+    "ref": "docs/evidence/verification.json",
+    "build": "PASS",
+    "tests": 72,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "knownRisks": [
+    {
+      "ref": "docs/design/unified-commerce/RISKS.md"
+    }
+  ],
+  "technicalDebt": [
+    {
+      "description": "Global boundary readiness requires real contracts and persistence for remaining modules",
+      "status": "OPEN"
+    }
+  ],
+  "nextMilestones": [
+    {
+      "id": "S4",
+      "description": "Isolated MySQL master data, release and persisted quote API",
+      "status": "PLANNED"
+    }
+  ],
+  "evidence": [
+    {
+      "type": "REPOSITORY_EVIDENCE",
+      "ref": "docs/evidence/source-evidence.json"
+    },
+    {
+      "type": "RUNTIME_EVIDENCE",
+      "ref": "docs/evidence/maven-verify.log"
+    }
+  ]
+}
