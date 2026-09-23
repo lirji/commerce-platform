@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 const access = JSON.parse(readFileSync(new URL("../../.local/member-suite-access.json", import.meta.url), "utf8"));
@@ -6,7 +7,7 @@ async function openPoints(page: Page, role: "admin" | "member") {
   await page.goto("/");
   await page.getByLabel("访问凭据", { exact: true }).fill(access[role + "Token"]);
   await page.getByRole("button", { name: "进入平台", exact: true }).click();
-  await page.getByRole("menuitem", { name: role === "admin" ? "会员成长" : "我的成长", exact: true }).click();
+  await navigate(page, role === "admin" ? "会员成长" : "我的成长");
   await page.getByRole("tab", { name: "积分账户", exact: true }).click();
 }
 test("积分经营与会员账本：真实余额、版本校准和无管理越权入口", async ({ page, browser }) => {

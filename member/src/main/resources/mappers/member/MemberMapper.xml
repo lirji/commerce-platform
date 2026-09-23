@@ -9,4 +9,5 @@
  <select id="find" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND member_id=#{id}</select>
  <select id="list" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND member_id &gt; #{after} ORDER BY member_id LIMIT #{limit}</select>
 <select id="byActor" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND actor_id=#{actor}</select>
+<select id="stats" resultType="com.lrj.commerce.member.api.MemberApi$Stats">SELECT COUNT(*) total,COALESCE(SUM(status='ACTIVE'),0) active,COALESCE(SUM(status='FROZEN'),0) frozen,COALESCE(SUM(status='CLOSED'),0) closed FROM member_record WHERE tenant_id=#{tenant}</select>
 </mapper>

@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 const access = JSON.parse(readFileSync(new URL("../../.local/member-suite-access.json", import.meta.url), "utf8"));
@@ -7,7 +8,7 @@ async function login(page: Page, admin: boolean) {
   await page.getByRole("button", { name: "进入平台", exact: true }).click();
 }
 test("定向发券：固定人群、相对期限、真实钱包与撤销回执", async ({ page, browser }) => {
-  await login(page, true);await page.getByRole("menuitem", { name: "定向发券", exact: true }).click();
+  await login(page, true);await navigate(page, "定向发券");
   await page.getByRole("button", { name: "创建定向发券", exact: true }).click();
   await page.getByLabel("发券批次标识", { exact: true }).fill("ui-delivery");await page.getByLabel("发券批次名称", { exact: true }).fill("浏览器会员关怀");
   await page.getByLabel("受控券定义", { exact: true }).click();await page.getByText("会员关怀受控券 · v1", { exact: true }).click();
@@ -18,7 +19,7 @@ test("定向发券：固定人群、相对期限、真实钱包与撤销回执",
   const row = page.getByRole("row").filter({ hasText: "ui-delivery" });
   await expect(row).toContainText("运行中");await page.getByRole("button", { name: "推进一批发券", exact: true }).click();
   await expect(row).toContainText("已完成");await expect(row).toContainText("2 / 2 / 0");
-  const member = await browser.newPage();await login(member, false);await member.getByRole("menuitem", { name: "优惠券", exact: true }).click();
+  const member = await browser.newPage();await login(member, false);await navigate(member, "优惠券");
   await expect(member.getByRole("menuitem", { name: "定向发券", exact: true })).toHaveCount(0);
   await member.getByRole("tab", { name: "我的优惠券", exact: true }).click();
   await expect(member.getByText("会员关怀受控券", { exact: true })).toBeVisible();

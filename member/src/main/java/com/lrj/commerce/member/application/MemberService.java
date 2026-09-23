@@ -12,6 +12,8 @@ import java.util.List;
 public class MemberService implements MemberApi {
  private final MemberMapper mapper; private final Commands commands; private final com.lrj.commerce.runtime.Outbox outbox;
  public MemberService(MemberMapper mapper,Commands commands,com.lrj.commerce.runtime.Outbox outbox) {this.mapper=mapper;this.commands=commands;this.outbox=outbox;}
+ /** 会员属于租户而非单一门店，总览明确此口径。 */
+ public Stats stats(Actor actor){actor.requireAdmin();return mapper.stats(actor.tenantId());}
  /** 变更与审计共用事务；乐观锁避免不同运营覆盖彼此决定。 */
  public View change(Actor actor,String key,String id,String action,Change input) {
   actor.requireAdmin(); Identifiers.require(id);

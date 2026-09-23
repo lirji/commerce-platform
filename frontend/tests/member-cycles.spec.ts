@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 const access = JSON.parse(readFileSync(new URL("../../.local/member-suite-access.json", import.meta.url), "utf8"));
@@ -10,7 +11,7 @@ async function login(page: Page, role = "admin") {
 }
 test("周期经营：查询考核、礼包绑定与幂等补发", async ({ page }) => {
   await login(page);
-  await page.getByRole("menuitem", { name: "会员成长", exact: true }).click();
+  await navigate(page, "会员成长");
   await page.getByRole("tab", { name: "周期与等级权益", exact: true }).click();
   await page.getByLabel("查询会员周期", { exact: true }).fill("suite-member");
   await page.getByRole("button", { name: "查看周期", exact: true }).click();
@@ -26,7 +27,7 @@ test("周期经营：查询考核、礼包绑定与幂等补发", async ({ page 
 });
 test("会员周期与权益钱包展示真实已发余额", async ({ page }) => {
   await login(page, "member");
-  await page.getByRole("menuitem", { name: "我的成长", exact: true }).click();
+  await navigate(page, "我的成长");
   await page.getByRole("tab", { name: "周期与等级权益", exact: true }).click();
   await expect(page.getByRole("tabpanel", { name: "周期与等级权益", exact: true }).getByText("120", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "执行周期考核", exact: true })).toHaveCount(0);

@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
@@ -6,7 +7,7 @@ const evidence = process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/member-suite-ev
 async function open(page: Page, admin: boolean) {
   await page.goto("/"); await page.getByLabel("访问凭据", { exact: true }).fill(admin ? access.adminToken : access.exchangeToken);
   await page.getByRole("button", { name: "进入平台", exact: true }).click();
-  await page.getByRole("menuitem", { name: admin ? "会员成长" : "我的成长", exact: true }).click();
+  await navigate(page, admin ? "会员成长" : "我的成长");
   await page.getByRole("tab", { name: "积分兑换", exact: true }).click();
 }
 async function api(path: string, token: string, body?: unknown) {

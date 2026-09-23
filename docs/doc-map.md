@@ -1,6 +1,6 @@
 # 文档地图
 
-同步基线：fb7adf6，2026-09-23 增量核对本轮全部已提交与未提交改动。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；本轮最新验证入口为 `delivery/member-commerce-operations/OP08_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
+同步基线：fb7adf6，2026-09-23 增量核对本轮全部已提交与未提交改动。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；最新验证入口为 `delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
 
 | 实现所有者 | 权威设计/契约 |
 |---|---|
@@ -27,3 +27,13 @@
 | 本轮计划/验收/审查/交付 | delivery/member-commerce-operations/DELIVERY_PLAN.md、OP01_TEST_RESULT.md 至 OP08_TEST_RESULT.md、REVIEW.md、DELIVERY_STATUS.md |
 
 原 S0–S10 进度原样留存 evidence/s10b/PROGRESS_STATE_BASELINE.json，不将新能力倒填为历史交付。8602 旧容器与 8603 新版隔离验收是不同运行事实；源码变更不代表旧容器已更新。
+
+
+| LP01–LP11 本轮权威入口 | 位置 |
+|---|---|
+| 业务范围、架构、技术复用、接口及各片契约 | design/member-lifecycle-catalog-ui/ |
+| 11片进度与证据 | delivery/member-lifecycle-catalog-ui/STATUS.md、LP01–LP10_EVIDENCE.md、LP11_TEST_RESULT.md |
+| 玩法操作、统计口径、种子和回退 | delivery/member-lifecycle-catalog-ui/OPERATIONS_GUIDE.md |
+| 最终CI/Git/本地Docker事实 | delivery/member-lifecycle-catalog-ui/CI_RESULT.json、DELIVERY_RESULT.md、DEPLOYMENT_RESULT.md |
+
+本轮总览由MemberApi/CatalogApi的Stats及MarketingEffectsApi.daily聚合组成；App只装配域API。可信渠道来自Actor.channel及CredentialMapper，不来自请求参数；Quote/Order保存渠道。V34为本轮最新迁移。源代码修改与实际Docker部署仍分别记录，旧证据不倒填。

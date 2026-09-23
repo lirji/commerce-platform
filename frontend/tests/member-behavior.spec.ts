@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
@@ -18,7 +19,7 @@ test("行为经营：真实商品交互、本人偏好、会员详情与行为�
   await page.getByRole("button", { name: "返回店铺", exact: true }).click();
   await product.getByRole("button", { name: "加入购物袋", exact: true }).click();
   await expect.poll(async () => (await api("/admin/member-behavior/behavior-member")).facts.cart30).toBe(1);
-  await page.getByRole("menuitem", { name: "我的成长", exact: true }).click();
+  await navigate(page, "我的成长");
   await page.getByRole("tab", { name: "会员详情与行为", exact: true }).click();
   await expect(page.locator(".ant-statistic").filter({ hasText: "近30天浏览" })).toContainText("1");
   await page.getByRole("button", { name: "编辑生日与偏好", exact: true }).click();
@@ -29,12 +30,12 @@ test("行为经营：真实商品交互、本人偏好、会员详情与行为�
   await expect(page.getByRole("dialog")).toHaveCount(0);await expect(page.getByText("已关闭", { exact: true })).toBeVisible();
   await page.screenshot({ path: `${evidence}/member-behavior-profile.png`, fullPage: true });
   const admin = await browser.newPage();await login(admin, true);
-  await admin.getByRole("menuitem", { name: "会员档案", exact: true }).click();
+  await navigate(admin, "会员档案");
   await admin.getByRole("row").filter({ hasText: "behavior-member" }).getByRole("button", { name: "会员详情", exact: true }).click();
   await expect(admin.getByRole("dialog")).toContainText("06-18");await expect(admin.getByRole("dialog")).toContainText("暂无成交事实");
   await admin.screenshot({ path: `${evidence}/member-behavior-admin.png`, fullPage: true });
   await admin.getByRole("button", { name: "关闭", exact: true }).click();
-  await admin.getByRole("menuitem", { name: "动态人群", exact: true }).click();
+  await navigate(admin, "动态人群");
   await admin.getByRole("button", { name: "发布人群定义", exact: true }).click();
   await admin.getByLabel("人群标识", { exact: true }).fill("ui-behavior-segment");await admin.getByLabel("名称", { exact: true }).fill("浏览后加购人群");
   await admin.getByLabel("规则字段", { exact: true }).click();await admin.getByText("30天加购次数", { exact: true }).click();

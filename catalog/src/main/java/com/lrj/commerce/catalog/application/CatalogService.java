@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 public class CatalogService implements CatalogApi {
     private final java.time.Clock clock;private final CatalogMapper mapper; private final StoreApi stores; private final Commands commands;
     public CatalogService(CatalogMapper mapper,StoreApi stores,Commands commands,java.time.Clock clock) {this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
+    /** 总览是租户管理员能力，门店有效性仍由权威服务判断。 */
+    public Stats stats(Actor actor,String store){actor.requireAdmin();stores.requireActive(actor,store);return mapper.stats(actor.tenantId(),store);}
     /** 初始发布快照不可变，重复命令返回原创建结果。 */
     public View create(Actor actor,String key,Create input) {
         actor.requireAdmin(); Inputs.require(input!=null,"请求不能为空");

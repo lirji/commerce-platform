@@ -2,35 +2,35 @@
 
 ## 任务目标
 
-会员周期权益、积分兑换/抵扣、行为人群、定向券、生命周期旅程与效果、商品经营、深色工作台，连续11片完成后CI/Git主线与本地Docker交付。
+会员链路与商品经营补齐、深色工作台，完成验证、CI、正常Git主线发布和本地Docker。
 
 ## 已完成
 
-- LP01–LP10完成；LP09 7e87684，LP10准备提交。
-- 后端218项PASS，商品专项12项PASS，新商品经营浏览器2条PASS。
+- LP01–LP10已提交，最新77628be；LP11本地完成，准备提交。
+- 全量后端220 PASS、浏览器21/21 PASS、npm audit 0漏洞、种子新建重放PASS。
+- 深色总览实际汇总70元收款/35元退款/35元净收，桌面与390px复核。
 
 ## 已修改文件
 
-- commerce-platform-member-suite内catalog/runtime/trade/order/app/frontend/scripts与V34及LP10文档。
-- LP11_CONTRACT.md与未接入的Dashboard.tsx为下一片草案，不纳入LP10。
+- 当前commerce-platform-member-suite内LP11成员/商品/效果Stats、DashboardController、导航/按页加载/主题、种子和浏览器测试、文档。
 
 ## 未完成
 
-- LP11真实经营总览、折叠搜索导航、手机布局、动态加载、全部UI验收、文档、CI/Git与本地Docker。
+- LP11提交与任务分支推送，CI通过后正常推送main；本地Docker8602更新、烟测、最终文档提交。
 
 ## 当前问题
 
-- 无环境阻塞；原commerce-platform用户改动禁止动，8602 Docker仍fa97292。
-- 隔离库commerce_test_20260923已V34，下个迁移V35；私密env禁止打印/修改。
-- 8604运行.local/member-suite-lp10.jar，workers=false；Maven只复制dist，先npm build；运行独立jar副本。
-- 周期考核全局每轮20人，测试库旧租户积累需有界多轮推进，已修测试假设。
+- 无环境阻塞，原commerce-platform用户改动保持，禁止覆盖/清理。
+- 8604运行.local/member-suite-lp11-verified.jar；隔离库V34，workers=false。8602仍fa97292旧版本。
+- .local/runtime.env私密且保留原密钥，禁止打印。已为本工作区生成.local/compose.env并静态校验PASS。
+- jar SHA256 0b8b7aadb862b1783718bc34c92f99fdb52cb412b41bc81994017c5020751bad，最终dist逐文件匹配。
 
 ## 下一步建议
 
-1. 提交LP10（排除LP11草案），按LP11_CONTRACT落实域聚合总览及UI。
-2. 全套后端/浏览器、正常Git推送CI，保护原工作区后正常更新远程main。
-3. 复用dev_infra更新已授权本地Docker，不生产部署。
+1. 核查并提交LP11，git push任务分支触发CI，不绕过失败。
+2. CI通过后正常快进origin/main，不操作原脏工作区；更新本地同源Docker app，复用dev_infra。
+3. 保存CI/镜像/部署与最终状态，文档提交也正常推送main；保持追踪最新CI。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS.md及交付STATUS，从LP11继续全部剩余工作；不重复询问业务选择或等待继续。
+读取CODEX_PROGRESS.md及docs/PROGRESS_STATE.json，从待交付LP11继续CI/Git/本地Docker收尾，不重复实施或等待继续。

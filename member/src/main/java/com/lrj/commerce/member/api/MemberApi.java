@@ -3,6 +3,9 @@ import com.lrj.commerce.runtime.api.Actor;
 import java.util.List;
 /** Member边界只暴露不可变业务投影，表由本模块独占。 */
 public interface MemberApi {
+ record Stats(long total,long active,long frozen,long closed) { }
+ /** 当前租户会员状态分布，不从分页列表推算总数。 */
+ Stats stats(Actor actor);
  record Create(String memberId, String actorId, String displayName, String memberLevel) { }
  record View(String memberId, String actorId, String displayName, String memberLevel, String status, long version) { }
  record Change(long expectedVersion,String value,String reason) { }

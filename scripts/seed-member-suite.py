@@ -21,18 +21,22 @@ else:
     access={'tenant':'member-suite-'+str(uuid.uuid4()),'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'operatorToken':secrets.token_hex(32),'checkoutToken':secrets.token_hex(32),'exchangeToken':secrets.token_hex(32),'behaviorToken':secrets.token_hex(32),'deliveryToken':secrets.token_hex(32),'journeyToken':secrets.token_hex(32),'baseUrl':base,'schema':schema,'storeId':'brand-store','seedAt':datetime.datetime.now(datetime.timezone.utc).isoformat()}
     fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
     with os.fdopen(fd,'w') as f:json.dump(access,f,indent=2)
+if 'dashboardToken' not in access:
+    access['dashboardToken']=secrets.token_hex(32)
+    fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
+    with os.fdopen(fd,'w') as f:json.dump(access,f,indent=2)
 # 仅身份夹具直写凭据表，业务数据一律通过API持久化；不将明文凭据写入SQL或日志。
 sql=''
-for field,actor,role in [('adminToken','ops-admin','ADMIN'),('memberToken','ops-buyer','MEMBER'),('operatorToken','ops-clerk','OPERATOR'),('checkoutToken','points-buyer','MEMBER'),('exchangeToken','exchange-buyer','MEMBER'),('behaviorToken','behavior-buyer','MEMBER'),('deliveryToken','delivery-buyer','MEMBER'),('journeyToken','journey-buyer','MEMBER')]:
+for field,actor,role in [('adminToken','ops-admin','ADMIN'),('memberToken','ops-buyer','MEMBER'),('operatorToken','ops-clerk','OPERATOR'),('checkoutToken','points-buyer','MEMBER'),('exchangeToken','exchange-buyer','MEMBER'),('behaviorToken','behavior-buyer','MEMBER'),('deliveryToken','delivery-buyer','MEMBER'),('journeyToken','journey-buyer','MEMBER'),('dashboardToken','dashboard-buyer','MEMBER')]:
     digest=hashlib.sha256(access[field].encode()).hexdigest()
     sql+=f"INSERT INTO platform_credential(token_hash,tenant_id,actor_id,role,expires_at) VALUES('{digest}','{access['tenant']}','{actor}','{role}',DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY)) ON DUPLICATE KEY UPDATE expires_at=DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY);\n"
 p=subprocess.run(['docker','exec','-i','-e','MYSQL_PWD',os.getenv('COMMERCE_MYSQL_CONTAINER','dev-infra-mysql84-1'),'mysql','-ucommerce_app',schema],input=sql,text=True,capture_output=True,env=dict(os.environ,MYSQL_PWD=env['COMMERCE_DB_PASSWORD']),timeout=15)
 if p.returncode:raise SystemExit('Could not provision fixture identities; private diagnostics suppressed.')
 sequence=0
-def post(route,body=None):
+def post(route,body=None,identity="adminToken"):
     global sequence
     sequence+=1
-    req=urllib.request.Request(base+'/v1'+route,data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json','Idempotency-Key':'member-suite-seed-'+str(sequence)})
+    req=urllib.request.Request(base+'/v1'+route,data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+access[identity],'Content-Type':'application/json','Idempotency-Key':'member-suite-seed-'+str(sequence)})
     try:
         with urllib.request.urlopen(req,timeout=15) as response:return json.load(response)
     except urllib.error.HTTPError as e:raise SystemExit(f'Operations seed failed: {route} HTTP {e.code}; no credentials logged.')
@@ -74,6 +78,28 @@ post('/operations/specification-templates',{'templateId':'coffee-pack','version'
 post('/operations/products/points-coffee/merchandising',{'storeId':'brand-store','expectedVersion':0,'categoryId':'coffee','description':'日常品牌精品咖啡，适合早餐与午后时光。图片为经营演示示意图，正式经营可替换商品图片。','images':[{'url':'/media/coffee.svg','alt':'日常品牌咖啡包装示意图'}],'reason':'补齐商品经营演示资料'})
 post('/operations/skus/points-coffee/barcode',{'storeId':'brand-store','expectedVersion':0,'barcode':'DAILY-COFFEE-01','reason':'演示门店条码检索'})
 post('/admin/skus',{'skuId':'schedule-coffee','storeId':'brand-store','title':'渠道经营咖啡','unitPrice':'35.00'})
+# 总览演示走真实报价、支付、退款与投影重建，不伪造前端经营曲线。
+post('/admin/members',{'memberId':'dashboard-member','actorId':'dashboard-buyer','displayName':'经营总览演示会员','memberLevel':'BASIC'})
+post('/admin/inventory/receipts',{'storeId':'brand-store','skuId':'schedule-coffee','quantity':10})
+q=post('/quotes',{'storeId':'brand-store','items':[{'skuId':'schedule-coffee','quantity':1}]},'dashboardToken')
+o=post('/orders',{'quoteId':q['quoteId'],'address':{'recipient':'经营演示','phone':'13800000000','detail':'本地隔离演示地址'}},'dashboardToken')
+pay=post('/orders/'+o['orderId']+'/payments',identity='dashboardToken')
+post('/admin/sandbox/payments/'+pay['paymentId']+'/fact',{'status':'PAID'})
+post('/orders/'+o['orderId']+'/payment/reconcile',identity='dashboardToken')
+# 支付事实消费者推进订单后才申请退款；仅推进当前种子租户。
+for _ in range(8):
+    req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})
+    with urllib.request.urlopen(req,timeout=15) as response:json.load(response)
+case=post('/aftersales',{'orderId':o['orderId'],'reason':'经营分析整单退款演示','items':[{'skuId':'schedule-coffee','quantity':1}]},'dashboardToken')
+approved=post('/admin/aftersales/'+case['caseId']+'/approve')
+post('/admin/sandbox/refunds/'+approved['refundId']+'/success')
+post('/admin/refunds/'+approved['refundId']+'/reconcile')
+q2=post('/quotes',{'storeId':'brand-store','items':[{'skuId':'schedule-coffee','quantity':1}]},'dashboardToken')
+o2=post('/orders',{'quoteId':q2['quoteId'],'address':{'recipient':'经营演示','phone':'13800000000','detail':'本地隔离演示地址'}},'dashboardToken')
+pay2=post('/orders/'+o2['orderId']+'/payments',identity='dashboardToken')
+post('/admin/sandbox/payments/'+pay2['paymentId']+'/fact',{'status':'PAID'})
+post('/orders/'+o2['orderId']+'/payment/reconcile',identity='dashboardToken')
+post('/admin/marketing-effects/rebuild',{'after':'','limit':100})
 # 演示仅受理后不假称到账；正式消费者读取持久事件完成发放。
 for _ in range(6):
     req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})

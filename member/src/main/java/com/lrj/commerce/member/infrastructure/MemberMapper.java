@@ -5,6 +5,7 @@ import java.util.List;
 /** 仅访问member权威表，所有谓词绑定可信tenant。 */
 @Mapper
 public interface MemberMapper {
+ MemberApi.Stats stats(String tenant);
  int change(@Param("tenant") String tenant,@Param("id") String id,@Param("action") String action,@Param("input") MemberApi.Change input);
  void history(@Param("tenant") String tenant,@Param("id") String id,@Param("action") String action,@Param("before") String before,@Param("input") MemberApi.Change input,@Param("actor") String actor);
  List<MemberApi.History> changes(@Param("tenant") String tenant,@Param("id") String id,@Param("after") long after,@Param("limit") int limit);

@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 const access = JSON.parse(
@@ -25,7 +26,7 @@ async function api(path: string, role: "admin" | "member" = "admin") {
   return r.json();
 }
 async function nav(page: Page, label: string) {
-  await page.getByRole("menuitem", { name: label, exact: true }).click();
+  await navigate(page, label);
 }
 async function submit(page: Page, title: string) {
   await page.getByRole("button", { name: title, exact: true }).click();
@@ -76,6 +77,7 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
   await expect(member.getByText("结果待确认", { exact: true })).toBeVisible();
   const order = (await api("/orders", "member"))[0];
   await login(admin, "admin");
+  await nav(admin, "订单工作台");
   await admin
     .getByRole("button", { name: "查看详情", exact: true })
     .first()

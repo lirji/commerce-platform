@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 const access=JSON.parse(readFileSync(new URL("../../.local/member-suite-access.json",import.meta.url),"utf8"));
@@ -6,7 +7,7 @@ async function login(page:Page,admin:boolean){await page.goto("/");await page.ge
 async function submit(page:Page){await page.getByRole("button",{name:"确认提交",exact:true}).click();}
 test("商品经营：类目模板、固定规格、展示图片条码及会员筛选",async({page,browser})=>{
  const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
- await login(page,true);await page.getByRole("menuitem",{name:"商品管理",exact:true}).click();await page.getByRole("tab",{name:"类目与模板",exact:true}).click();
+ await login(page,true);await navigate(page, "商品管理");await page.getByRole("tab",{name:"类目与模板",exact:true}).click();
  await page.getByRole("button",{name:"创建类目",exact:true}).click();await page.getByLabel("类目标识",{exact:true}).fill("ui-coffee");await page.getByLabel("类目名称",{exact:true}).fill("手冲咖啡");await submit(page);await expect(page.getByRole("dialog")).toHaveCount(0);await expect(page.getByRole("row").filter({hasText:"ui-coffee"})).toBeVisible();
  await page.getByRole("tab",{name:"规格模板",exact:true}).click();await page.getByRole("button",{name:"创建规格模板",exact:true}).click();await page.getByLabel("模板标识",{exact:true}).fill("ui-roast");await page.getByLabel("模板名称",{exact:true}).fill("手冲烘焙模板");await page.getByLabel("属性与允许值",{exact:true}).fill("烘焙=轻烘,中烘");await submit(page);await expect(page.getByRole("dialog")).toHaveCount(0);
  await page.getByRole("tab",{name:"商品资料（SPU）",exact:true}).click();await page.getByRole("button",{name:"创建商品",exact:true}).click();for(const [label,value]of[["商品标识","ui-filter-coffee"],["商品名称","手冲风味咖啡"],["分类","咖啡"],["品牌","日常品牌"]])await page.getByLabel(label,{exact:true}).fill(value);await submit(page);await expect(page.getByRole("dialog")).toHaveCount(0);

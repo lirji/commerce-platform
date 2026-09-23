@@ -1,30 +1,33 @@
 {
-  "task": "member-commerce-operations",
-  "status": "COMPLETE",
-  "baseline": "fb7adf6278ed98c49d8851102031b061bcbb68bf",
-  "priorState": "docs/evidence/s10b/PROGRESS_STATE_BASELINE.json",
+  "task": "member-lifecycle-catalog-ui",
+  "status": "DELIVERING",
+  "baseline": "fa972929a4b53bc8348bf2f8d4422808f097a75b",
+  "priorState": "docs/delivery/member-lifecycle-catalog-ui/PREVIOUS_PROGRESS_STATE.json",
   "slices": {
-    "OP01": "DONE",
-    "OP02": "DONE",
-    "OP03": "DONE",
-    "OP04": "DONE",
-    "OP05": "DONE",
-    "OP06": "DONE",
-    "OP07": "DONE",
-    "OP08": "DONE"
+    "LP01": "DONE",
+    "LP02": "DONE",
+    "LP03": "DONE",
+    "LP04": "DONE",
+    "LP05": "DONE",
+    "LP06": "DONE",
+    "LP07": "DONE",
+    "LP08": "DONE",
+    "LP09": "DONE",
+    "LP10": "DONE",
+    "LP11": "LOCAL_DONE_CI_PENDING"
   },
-  "verification": "docs/delivery/member-commerce-operations/OP08_TEST_RESULT.md",
-  "delivery": "IMPLEMENTATION_MERGED_AND_PUSHED_MAIN",
-  "completionScope": "日常经营与会员营销内部闭环；不含真实渠道、生产部署或容量/灾备承诺",
+  "verification": "docs/delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md",
+  "delivery": "LOCAL_VALIDATION_PASS_REMOTE_PENDING",
+  "completionScope": "会员周期/积分/行为/人群/定向券/生命周期旅程/效果、商品经营与深色工作台；本地Docker",
   "externalIntegration": "DEFERRED_BY_USER",
   "previousMigration": "UNCHANGED_BLOCKED",
   "git": {
-    "sourceCommit": "b9666dfe329dfb9d1df3d5fd559711402ad26ea9",
-    "branch": "feat/member-commerce-operations",
+    "branch": "feat/member-lifecycle-catalog-ui",
     "target": "origin/main",
-    "method": "normal fast-forward push; original dirty local main preserved",
-    "documentationCheckpoint": "Completion records may be a newer commit; immutable implementation validation remains sourceCommit; latest main checks available on GitHub."
+    "latestSliceCommit": "77628be",
+    "preserveDirtyWorktree": "commerce-platform: CommerceController.java / CampaignService.java / .engineering/exploration"
   },
-  "ci": "docs/delivery/member-commerce-operations/CI_RESULT.json",
-  "next": "NONE_IN_APPROVED_SCOPE"
+  "ci": "PENDING",
+  "deployment": "PENDING_LOCAL_DOCKER",
+  "next": "PUSH_BRANCH_CI_THEN_MAIN_AND_LOCAL_DOCKER"
 }

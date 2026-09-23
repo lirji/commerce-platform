@@ -17,6 +17,8 @@ import java.time.*;
 public class MarketingEffectsService implements MarketingEffectsApi,EventHandler {
  private final Clock clock;private final EffectsMapper mapper;private final OrderApi orders;private final QuoteApi quotes;private final RefundApi refunds;private final StoreApi stores;private final Commands commands;
  public MarketingEffectsService(EffectsMapper mapper,OrderApi orders,QuoteApi quotes,RefundApi refunds,StoreApi stores,Commands commands,Clock clock){this.clock=clock;this.mapper=mapper;this.orders=orders;this.quotes=quotes;this.refunds=refunds;this.stores=stores;this.commands=commands;}
+ /** 有界UTC窗口由Controller生成，接口仍防止内部调用无界扫描。 */
+ public List<Daily> daily(Actor actor,String store,Instant from,Instant to){check(actor,store,from,to,"",100);return mapper.daily(actor.tenantId(),store,from,to);}
  public String consumer(){return "marketing-effects-v1";}
  public Set<String> types(){return Set.of("order.created.v1","order.paid.v1","order.ready.v1","order.completed.v1","order.cancelled.v1","refund.succeeded.v1");}
  /** 事件只是核对信号，实际金额均通过权威领域API重新读取。 */

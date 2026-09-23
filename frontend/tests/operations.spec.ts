@@ -1,3 +1,4 @@
+import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
@@ -11,7 +12,7 @@ async function api(path:string,body?:unknown,role:Role="admin",status=200){
 async function login(page:Page,role:Role="admin"){
  await page.goto("/");await page.getByLabel("访问凭据",{exact:true}).fill(access[role+"Token"]);await page.getByRole("button",{name:"进入平台",exact:true}).click();await expect(page.getByRole("button",{name:"退出",exact:true})).toBeVisible();
 }
-async function nav(page:Page,label:string){await page.getByRole("menuitem",{name:label,exact:true}).click();}
+async function nav(page:Page,label:string){await navigate(page, label);}
 async function submit(page:Page){await page.getByRole("button",{name:"确认提交",exact:true}).click();await expect(page.getByRole("dialog")).toHaveCount(0);}
 async function events(){for(let i=0;i<8;i++){if(await api("/admin/events/pump",null)===0)break;}}
 

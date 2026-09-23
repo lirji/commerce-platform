@@ -6,75 +6,41 @@ import {
   Form,
   Input,
   Layout,
+  Drawer,
+  Grid,
+  Spin,
   Menu,
   Select,
   Space,
   Typography,
 } from "antd";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import type { Actor, Capabilities, Store } from "../shared/contracts";
 import { request, setAccessToken, useResource } from "../shared/api";
 import { ErrorNotice } from "../shared/ui";
-import { Orders } from "../features/Orders";
-import { Shop } from "../features/Shop";
-import { MemberWallet } from "../features/MemberWallet";
-import { AdminData, specs } from "../features/AdminData";
-import { Marketing } from "../features/Marketing";
-import { Journeys } from "../features/Journeys";
-import { OpsPages } from "../features/OpsPages";
-import { ProductOperations } from "../features/ProductOperations";
-import { MemberGrowth } from "../features/MemberGrowth";
-import { CouponDeliveries } from "../features/CouponDeliveries";
-import { Segments } from "../features/Segments";
-import { MarketingEffects } from "../features/MarketingEffects";
+// 按业务页面加载，登录和总览不下载所有经营表单。
+const Orders=lazy(()=>import("../features/Orders").then(m=>({default:m.Orders})));
+const Shop=lazy(()=>import("../features/Shop").then(m=>({default:m.Shop})));
+const MemberWallet=lazy(()=>import("../features/MemberWallet").then(m=>({default:m.MemberWallet})));
+const AdminData=lazy(()=>import("../features/AdminData").then(m=>({default:m.AdminData})));
+const Marketing=lazy(()=>import("../features/Marketing").then(m=>({default:m.Marketing})));
+const Journeys=lazy(()=>import("../features/Journeys").then(m=>({default:m.Journeys})));
+const OpsPages=lazy(()=>import("../features/OpsPages").then(m=>({default:m.OpsPages})));
+const ProductOperations=lazy(()=>import("../features/ProductOperations").then(m=>({default:m.ProductOperations})));
+const MemberGrowth=lazy(()=>import("../features/MemberGrowth").then(m=>({default:m.MemberGrowth})));
+const CouponDeliveries=lazy(()=>import("../features/CouponDeliveries").then(m=>({default:m.CouponDeliveries})));
+const Segments=lazy(()=>import("../features/Segments").then(m=>({default:m.Segments})));
+const MarketingEffects=lazy(()=>import("../features/MarketingEffects").then(m=>({default:m.MarketingEffects})));
+const Dashboard=lazy(()=>import("../features/Dashboard").then(m=>({default:m.Dashboard})));
+
 const groups = [
-  {
-    label: "交易与交付",
-    children: [
-      ["orders", "订单工作台"],
-      ["fulfillments", "履约队列"],
-      ["aftersales", "售后审批"],
-      ["refunds", "退款核对"],
-    ],
-  },
-  {
-    label: "营销运营",
-    children: [
-      ["campaigns", "活动管理"],
-      ["effects", "营销效果"],
-      ["audiences", "人群快照"],
-      ["segments", "动态人群"],
-      ["rules", "动态规则"],
-      ["budgets", "营销预算"],
-      ["coupons", "优惠券"],
-      ["coupon-deliveries", "定向发券"],
-      ["definitions", "权益定义"],
-      ["entitlements", "权益台账"],
-    ],
-  },
-  {
-    label: "自动化运营",
-    children: [
-      ["journeys", "营销旅程"],
-      ["instances", "旅程实例"],
-      ["pages", "低代码页面"],
-      ["events", "异步事件"],
-    ],
-  },
-  {
-    label: "业务基础",
-    children: [
-      ["members", "会员档案"],
-      ["growth", "会员成长"],
-      ["member-tags", "会员标签字典"],
-      ["merchants", "商家管理"],
-      ["stores", "店铺管理"],
-      ["store-grants", "经营授权"],
-      ["skus", "商品管理"],
-      ["inventory", "库存额度"],
-    ],
-  },
+ {key:"member",label:"会员经营",children:[["members","会员档案"],["growth","会员成长"],["member-tags","会员标签字典"],["segments","动态人群"],["audiences","人群快照"]]},
+ {key:"catalog",label:"商品与门店",children:[["skus","商品管理"],["inventory","库存额度"],["merchants","商家管理"],["stores","店铺管理"],["store-grants","经营授权"]]},
+ {key:"marketing",label:"营销与旅程",children:[["campaigns","活动管理"],["effects","营销效果"],["rules","动态规则"],["budgets","营销预算"],["coupons","优惠券"],["coupon-deliveries","定向发券"],["definitions","权益定义"],["entitlements","权益台账"],["journeys","营销旅程"],["instances","旅程实例"]]},
+ {key:"trade",label:"交易与交付",children:[["orders","订单工作台"],["fulfillments","履约队列"],["aftersales","售后审批"],["refunds","退款核对"]]},
+ {key:"platform",label:"平台工具",children:[["pages","低代码页面"],["events","异步事件"]]},
 ];
+const adminPages=[["dashboard","经营总览"],...groups.flatMap(g=>g.children)];
 function route() {
   const [page, query] = location.hash.slice(1).split("?");
   return {
@@ -83,6 +49,7 @@ function route() {
   };
 }
 export function App() {
+  const screens=Grid.useBreakpoint();const compact=screens.md===false;const [menuOpen,setMenuOpen]=useState(false);const [openGroups,setOpenGroups]=useState<string[]>([]);
   const [actor, setActor] = useState<Actor>();
   const [locationState, setLocationState] = useState(route);
   const [loginError, setLoginError] = useState<Error>();
@@ -97,12 +64,14 @@ export function App() {
     actor ? "/runtime-capabilities" : null,
   );
   const navigate = (page: string, store = locationState.store) => {
+    setMenuOpen(false);
+    const group=groups.find(g=>g.children.some(([key])=>key===page));if(group)setOpenGroups([group.key]);
     location.hash = page + (store ? "?store=" + encodeURIComponent(store) : "");
   };
   useEffect(() => {
     if (actor && stores.data?.length && !locationState.store)
       navigate(
-        locationState.page || (actor.role === "ADMIN" ? "orders" : actor.role === "OPERATOR" ? "skus" : "shop"),
+        locationState.page || (actor.role === "ADMIN" ? "dashboard" : actor.role === "OPERATOR" ? "skus" : "shop"),
         stores.data[0].storeId,
       );
   }, [actor, stores.data, locationState.store]);
@@ -154,7 +123,7 @@ export function App() {
                 try {
                   const identity = await request<Actor>("/me");
                   setActor(identity);
-                  navigate(identity.role === "ADMIN" ? "orders" : identity.role === "OPERATOR" ? "skus" : "shop", "");
+                  navigate(identity.role === "ADMIN" ? "dashboard" : identity.role === "OPERATOR" ? "skus" : "shop", "");
                 } catch (e) {
                   setAccessToken("");
                   setLoginError(e instanceof Error ? e : new Error("登录失败"));
@@ -193,19 +162,18 @@ export function App() {
     );
   const operator = actor.role === "OPERATOR";
   const admin = actor.role !== "MEMBER";
-  const page = locationState.page || (admin ? "orders" : "shop");
+  const page = locationState.page || (operator ? "skus" : admin ? "dashboard" : "shop");
   const store = locationState.store;
   const caps = capabilities.data ?? {
     sandboxEnabled: false,
     workersEnabled: false,
   };
   const menu = operator ? [{ key: "skus", label: "授权商品经营" }] : admin
-    ? groups.map((g, i) => ({
-        type: "group" as const,
-        key: String(i),
+    ? [{key:"dashboard",label:"经营总览"},...groups.map((g) => ({
+        key: g.key,
         label: g.label,
         children: g.children.map(([key, label]) => ({ key, label })),
-      }))
+      }))]
     : [
         ["shop", "逛店铺"],
         ["orders", "我的订单"],
@@ -216,7 +184,8 @@ export function App() {
         ["notifications", "消息"],
       ].map(([key, label]) => ({ key, label }));
   let content;
-  if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
+  if (!operator && admin && page === "dashboard") content = <Dashboard key={store} store={store} navigate={navigate}/>;
+  else if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
   else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
   else if (admin && page === "coupon-deliveries") content = <CouponDeliveries key={store} store={store}/>;
   else if (page === "growth") content = <MemberGrowth admin={admin} store={store}/>;
@@ -233,7 +202,7 @@ export function App() {
     content = <Marketing kind={page} store={store} />;
   else if (page === "journeys") content = <Journeys store={store} />;
   else if (page === "pages") content = <OpsPages store={store} />;
-  else if (specs[page])
+  else if (adminPages.some(([key])=>key===page))
     content = (
       <AdminData
         key={page + store}
@@ -249,24 +218,18 @@ export function App() {
     );
   return (
     <Layout className={admin ? "app admin-app" : "app member-app"}>
-      {admin && (
-        <Layout.Sider width={224} theme="light" className="sidebar">
-          <div className="brand">
-            <span className="brand-mark">商</span>
-            <span>
-              统一电商<span className="brand-sub">运营工作空间</span>
-            </span>
-          </div>
-          <Menu
-            mode="inline"
-            selectedKeys={[page]}
-            items={menu}
-            onClick={({ key }) => navigate(key)}
-          />
-        </Layout.Sider>
-      )}
+      {admin&&!compact&&<Layout.Sider width={224} theme="light" className="sidebar">
+        <div className="brand"><span className="brand-mark">商</span><span>日常经营<span className="brand-sub">COMMERCE WORKSPACE</span></span></div>
+        <div className="nav-caption">经营工作空间</div>
+        <Menu mode="inline" selectedKeys={[page]} openKeys={openGroups} onOpenChange={keys=>setOpenGroups(keys)} items={menu} onClick={({key})=>navigate(key)}/>
+        <div className="sidebar-note">会员 · 商品 · 营销<br/>让每一次经营都有据可循</div>
+      </Layout.Sider>}
+      {admin&&compact&&<Drawer title="经营导航" placement="left" size={280} open={menuOpen} onClose={()=>setMenuOpen(false)}><Menu mode="inline" selectedKeys={[page]} openKeys={openGroups} onOpenChange={keys=>setOpenGroups(keys)} items={menu} onClick={({key})=>navigate(key)}/></Drawer>}
       <Layout>
         <Layout.Header className="topbar">
+          {admin&&compact&&<Button aria-label="打开经营导航" onClick={()=>setMenuOpen(true)}>菜单</Button>}
+          {admin&&!operator&&<Select<string | null> className="nav-search" aria-label="搜索功能" showSearch={{optionFilterProp:"label"}} placeholder="搜索经营功能…" value={null} options={adminPages.map(([value,label])=>({value,label}))} onChange={v=>{if(v)navigate(v);}} popupMatchSelectWidth={260}/>}
+
           {!admin && (
             <div className="brand">
               <span className="brand-mark">商</span>
@@ -279,7 +242,7 @@ export function App() {
               aria-label="当前店铺"
               value={store || undefined}
               placeholder="选择店铺"
-              style={{ width: 210 }}
+              style={{ width: compact ? 170 : 210 }}
               options={stores.data?.map((s) => ({
                 value: s.storeId,
                 label: s.name,
@@ -314,7 +277,7 @@ export function App() {
           <ErrorNotice error={stores.error} />
           <ErrorNotice error={capabilities.error} />
           <div key={actor.tenantId + actor.actorId + page + store}>
-            {content}
+            <Suspense fallback={<div className="page-loading"><Spin description="正在加载经营页面"/></div>}>{content}</Suspense>
           </div>
         </Layout.Content>
         <Layout.Footer className="footer">

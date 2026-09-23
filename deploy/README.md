@@ -34,7 +34,7 @@
 - 诊断：`docker compose --env-file .local/compose.env ps`、`logs --tail=100 app`。不要公开 `docker inspect` 完整环境或 `compose config` 展开的机密；校验使用 `config --quiet`。
 - API 错误返回 traceId；事件/旅程列表展示状态、尝试数和待处理记录；隔离记录由管理员核查后按接口重试。Worker 开关关闭会停止自动推进，应用健康不能证明积压为零。
 - `./deploy/down.sh` 仅停止本应用；之后 up 恢复。同源 UI 和业务数据应仍可查询。共享 MySQL 不受这些命令管理。
-- 发布前保存已验证 jar/image 的不可变引用；先验证迁移与事件兼容，再切应用版本。Flyway 已应用的 V1–V22 不允许改历史或执行 clean。V13 扩展了权益来源和可空订单关联，不能无验证回退到 S8 旧应用。S9+ 也需要检查具体 schema/事件兼容，不承诺任意旧镜像能滚回。
+- 发布前保存已验证 jar/image 的不可变引用；先验证迁移与事件兼容，再切应用版本。Flyway 已应用的 V1–V34 不允许改历史或执行 clean。V13 扩展了权益来源和可空订单关联，不能无验证回退到 S8 旧应用。S9+ 也需要检查具体 schema/事件兼容，不承诺任意旧镜像能滚回。
 - 已提交的支付/退款、券使用、发权益和通知是业务事实；镜像回退不撤销这些效果，应走售后/权益补偿流程。地址密钥与数据库备份必须匹配保存；本次未执行备份恢复演练，不宣称达到 RTO/RPO。
 
 ## 外部适配后置清单
@@ -50,6 +50,15 @@
 
 ## 会员经营增量
 
-新增 V16–V22，不新增环境变量或公共中间件。OPERATOR 商品授权、CLOSED 会员和会员事件旅程不兼容任意旧镜像回退。新版可在宿主机另用 COMMERCE_PORT=8603 启动 jar，显式将 COMMERCE_DB_URL 指向 COMMERCE_TEST_DB_URL；不要改私密配置链接或重启既有 8602 容器。本轮 seed、报表回填、权限与玩法说明见 [经营手册](../docs/delivery/member-commerce-operations/OPERATIONS_GUIDE.md)。
+新增 V16–V22，不新增环境变量或公共中间件。OPERATOR 商品授权、CLOSED 会员和会员事件旅程不兼容任意旧镜像回退。新版可在宿主机另用 COMMERCE_PORT=8603 启动 jar，显式将 COMMERCE_DB_URL 指向 COMMERCE_TEST_DB_URL；保留私密配置和密钥；该阶段的隔离验收不代表容器更新，最新部署以本轮部署记录为准。本轮 seed、报表回填、权限与玩法说明见 [经营手册](../docs/delivery/member-commerce-operations/OPERATIONS_GUIDE.md)。
 
 新增浏览器脚本还需 `scripts/seed-operations.py --fresh`，schema 默认 commerce_local，测试库需显式 COMMERCE_E2E_SCHEMA=commerce_test_20260923。令牌仅在 `.local/operations-access.json`，版本有效期沿首次种子时间；脚本不会清数据或覆盖运营修改。
+
+
+## 会员链路与深色工作台增量（LP01–LP11）
+
+V23–V34追加会员周期/积分/行为、定向发券/旅程效果、商品资料/经营任务/渠道价。无新增公共组件或环境变量。完整玩法和失败恢复见 [运营手册](../docs/delivery/member-lifecycle-catalog-ui/OPERATIONS_GUIDE.md)，当前交付/运行状态见 [进度](../docs/delivery/member-lifecycle-catalog-ui/STATUS.md) 与 [部署记录](../docs/delivery/member-lifecycle-catalog-ui/DEPLOYMENT_RESULT.md)。
+
+`.local/member-suite-access.json` 保存专项演示身份。运行 `COMMERCE_E2E_BASE_URL=http://127.0.0.1:8602 python3 scripts/seed-member-suite.py --fresh` 通过API创建新隔离演示租户，不清数据；随后不带 `--fresh` 可验证重放。生日、券、人群与兑换有效窗固定于首次创建，过期后可新建夹具，不覆盖运营数据。认证MINI_APP渠道需要受控运维设置platform_credential.sales_channel，没有客户端自选接口。
+
+本轮启用新功能前需所有应用与worker升级；特别是新旅程节点、积分订单行与渠道报价不能交给旧版本处理。升级后不得直接回退到仅V22语义的镜像。失败时先限制新增入口并停止worker，再核对数据库与既有订单快照，使用兼容修复版本恢复；保持数据和地址密钥，不能将镜像回退当作业务补偿。
