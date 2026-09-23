@@ -252,6 +252,7 @@ export function OpsPages({ store }: { store: string }) {
   return (
     <>
       <PageHead
+        eyebrow="平台工具"
         title="低代码运营页面"
         description="组合可信数据源与业务动作，预览、审批后发布。"
         extra={

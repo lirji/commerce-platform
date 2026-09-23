@@ -1,4 +1,4 @@
-import { Button, Card, Drawer, Space, Table, Tabs } from "antd";
+import { Button, Drawer, Space, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";
@@ -7,8 +7,12 @@ import {
   CommandModal,
   Detail,
   ErrorNotice,
+  ListPanel,
   PageHead,
+  PrimaryCell,
+  RecordHero,
   Status,
+  Workbench,
   type Field,
   type Values,
   instant,
@@ -65,8 +69,7 @@ export const specs: Record<string, Spec> = {
       { name: "memberLevel", label: "会员等级" },
     ],
     columns: [
-      ["displayName", "会员名称"],
-      ["memberId", "会员标识"],
+      ["displayName", "会员"],
       ["actorId", "认证主体"],
       ["memberLevel", "等级"],
       ["status", "状态"],
@@ -320,6 +323,25 @@ export const specs: Record<string, Spec> = {
     ],
   },
 };
+const eyebrows: Record<string, string> = {
+  members: "会员经营",
+  "member-tags": "会员经营",
+  audiences: "会员经营",
+  merchants: "商品与门店",
+  stores: "商品与门店",
+  "store-grants": "商品与门店",
+  skus: "商品与门店",
+  inventory: "商品与门店",
+  coupons: "营销与旅程",
+  definitions: "营销与旅程",
+  entitlements: "营销与旅程",
+  budgets: "营销与旅程",
+  instances: "营销与旅程",
+  fulfillments: "交易与交付",
+  aftersales: "交易与交付",
+  refunds: "交易与交付",
+  events: "平台工具",
+};
 function cell(key: string, value: unknown): ReactNode {
   if (key === "status") return <Status value={string(value)} />;
   if (
@@ -374,10 +396,17 @@ export function AdminData({
     const state = string(r.status);
     return (
       <Space wrap>
-        <Button size="small" onClick={() => setDetail(r)}>
-          详情
-        </Button>
-        {kind === "members" && <MemberActions row={r} onDone={refresh} />}
+        {kind === "members" ? (
+          <MemberActions
+            row={r}
+            onDone={refresh}
+            onRecord={() => setDetail(r)}
+          />
+        ) : (
+          <Button size="small" onClick={() => setDetail(r)}>
+            详情
+          </Button>
+        )}
         {kind === "store-grants" && <CommandModal title={r.active ? "撤销授权" : "恢复授权"} buttonType="link"
           path={"/admin/store-grants/"+target+"/status"} fields={[{name:"reason",label:"变更原因"}]}
           build={v=>({...v,active:!r.active,expectedVersion:r.version})} onDone={refresh}/>}
@@ -490,9 +519,13 @@ export function AdminData({
       </Space>
     );
   }
+  const detailTitle = detail
+    ? string(detail.name || detail.title || detail.displayName || detail[spec.id])
+    : spec.title;
   return (
-    <>
+    <Workbench>
       <PageHead
+        eyebrow={eyebrows[kind] ?? "经营工作台"}
         title={spec.title}
         description={spec.description}
         extra={
@@ -548,7 +581,12 @@ export function AdminData({
         }
       />
       <ErrorNotice error={resource.error} />
-      <Card>
+      <ListPanel
+        count={rows?.length ?? 0}
+        after={after}
+        onHome={() => setAfter("")}
+        onNext={() => setAfter(string(rows!.at(-1)![spec.id]))}
+      >
         <Table<Row>
           rowKey={(r) => string(r[spec.id])}
           dataSource={rows}
@@ -556,36 +594,62 @@ export function AdminData({
           pagination={false}
           scroll={{ x: 800 }}
           columns={[
-            ...spec.columns.map(([key, label]) => ({
+            ...spec.columns.map(([key, label], index) => ({
               title: label,
               dataIndex: key,
               ellipsis: true,
-              render: (v: unknown) => cell(key, v),
+              render: (v: unknown, r: Row) =>
+                index === 0 ? (
+                  <PrimaryCell
+                    title={cell(key, v)}
+                    subtitle={key === spec.id ? undefined : string(r[spec.id])}
+                  />
+                ) : (
+                  cell(key, v)
+                ),
             })),
-            { title: "操作", width: 280, render: (_, r) => actions(r) },
+            {
+              title: "操作",
+              width: kind === "members" ? 148 : 280,
+              align: "right" as const,
+              className: "row-actions-cell",
+              render: (_, r) => actions(r),
+            },
           ]}
         />
-        <div className="pager">
-          <Button disabled={!after} onClick={() => setAfter("")}>
-            首页
-          </Button>
-          <span>当前页 {rows?.length ?? 0} 条</span>
-          <Button
-            disabled={(rows?.length ?? 0) < 50}
-            onClick={() => setAfter(string(rows!.at(-1)![spec.id]))}
-          >
-            下一页
-          </Button>
-        </div>
-      </Card>
+      </ListPanel>
       <Drawer
-        title="业务记录详情"
+        className="record-drawer"
+        title={detail ? detailTitle : "业务记录详情"}
         open={!!detail}
         onClose={() => setDetail(undefined)}
-        width={680}
+        width={720}
       >
-        <Detail value={detail} />
+        {detail && (
+          <>
+            <RecordHero
+              eyebrow={spec.title}
+              title={detailTitle}
+              id={
+                <Typography.Text copyable={{ text: string(detail[spec.id]) }}>
+                  {string(detail[spec.id])}
+                </Typography.Text>
+              }
+              status={detail.status ? string(detail.status) : undefined}
+              metrics={spec.columns
+                .filter(([key]) =>
+                  ["unitPrice", "amount", "refundAmount", "cap", "discountAmount", "available", "memberCount", "remainingUnits"].includes(key),
+                )
+                .slice(0, 3)
+                .map(([key, label]) => ({
+                  label,
+                  value: cell(key, detail[key]),
+                }))}
+            />
+            <Detail value={detail} />
+          </>
+        )}
       </Drawer>
-    </>
+    </Workbench>
   );
 }

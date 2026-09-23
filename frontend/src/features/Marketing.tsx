@@ -1,11 +1,8 @@
 import {
   Button,
-  Card,
   Drawer,
   Form,
-  Input,
   Modal,
-  Select,
   Space,
   Table,
 } from "antd";
@@ -17,12 +14,14 @@ import {
   Detail,
   ErrorNotice,
   Fields,
+  ListPanel,
   PageHead,
+  PrimaryCell,
   Status,
+  Workbench,
   initialDate,
   instant,
   money,
-  type Values,
 } from "../shared/ui";
 import { CampaignPreview } from "./CampaignPreview";
 import { CampaignEditor, Governance, RuleEditor } from "../shared/marketing";
@@ -38,8 +37,9 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
   const [open, setOpen] = useState(false);
   const command = useCommand();
   return (
-    <>
+    <Workbench>
       <PageHead
+        eyebrow="营销与旅程"
         title={kind === "rules" ? "动态规则资产" : "营销活动"}
         description={
           kind === "rules"
@@ -60,7 +60,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
         }
       />
       <ErrorNotice error={resource.error} />
-      <Card>
+      <ListPanel>
         <Table
           rowKey={(r) =>
             "campaignId" in r.content ? r.content.campaignId : r.content.ruleId
@@ -70,7 +70,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           pagination={false}
           scroll={{ x: 720 }}
           columns={[
-            { title: "名称", render: (_, r) => r.content.name },
+            { title: "名称", render: (_, r) => <PrimaryCell title={r.content.name} subtitle={"campaignId" in r.content ? r.content.campaignId : r.content.ruleId} /> },
             { title: "版本", render: (_, r) => r.content.version },
             {
               title: "优惠",
@@ -123,12 +123,13 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
             },
           ]}
         />
-      </Card>
+      </ListPanel>
       <Drawer
+        className="record-drawer"
         title="版本配置"
         open={!!detail}
         onClose={() => setDetail(undefined)}
-        width={680}
+        width={720}
       >
         <Detail value={detail} />
       </Drawer>
@@ -175,6 +176,6 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           </Button>
         </Form>
       </Modal>
-    </>
+    </Workbench>
   );
 }

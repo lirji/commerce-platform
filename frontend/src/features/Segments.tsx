@@ -1,8 +1,8 @@
-import { Alert, Button, Card, Drawer, Form, Modal, Space, Table } from "antd";
+import { Alert, Button, Drawer, Form, Modal, Space, Table } from "antd";
 import { useState } from "react";
 import type { Rule } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
-import { ActionButton, ErrorNotice, Fields, PageHead, Status, time } from "../shared/ui";
+import { ActionButton, ErrorNotice, Fields, ListPanel, PageHead, PrimaryCell, Status, Workbench, time } from "../shared/ui";
 import { RuleEditor } from "../shared/marketing";
 type Definition={segmentId:string;version:number;name:string;rule:Rule;ttlSeconds:number;refreshSeconds:number;maxMembers:number};
 type Segment={content:Definition;audienceId:string;enabled:boolean;lockVersion:number};
@@ -15,11 +15,12 @@ export function Segments(){
  const runs=useResource<Run[]>(selected?`/admin/segments/${encode(selected.content.segmentId)}/runs?after=${encode(runAfter)}`:null);
  const command=useCommand();const [form]=Form.useForm();
  const refresh=()=>{resource.refresh();runs.refresh();};
- return <>
-  <PageHead title="动态人群" description="按可信会员事实分批刷新，完整结果才发布为可引用受众版本。" extra={<Space><Button onClick={refresh}>刷新列表</Button><Button type="primary" onClick={()=>{form.resetFields();command.clear();setOpen(true);}}>发布人群定义</Button><ActionButton label="执行一批刷新任务" path="/admin/segments/pump" onDone={refresh}/></Space>}/>
+ return <Workbench>
+  <PageHead eyebrow="会员经营" title="动态人群" description="按可信会员事实分批刷新，完整结果才发布为可引用受众版本。" extra={<Space><Button onClick={refresh}>刷新列表</Button><Button type="primary" onClick={()=>{form.resetFields();command.clear();setOpen(true);}}>发布人群定义</Button><ActionButton label="执行一批刷新任务" path="/admin/segments/pump" onDone={refresh}/></Space>}/>
   <ErrorNotice error={resource.error}/>
-  <Card><Table<Segment> rowKey={r=>r.content.segmentId} dataSource={resource.data} loading={resource.loading} pagination={false} scroll={{x:1050}} columns={[
-   {title:"人群",render:(_,r)=><>{r.content.name}<br/>{r.content.segmentId}</>},{title:"定义版本",render:(_,r)=>r.content.version},
+  <ListPanel count={resource.data?.length??0} after={after} onHome={()=>setAfter("")} onNext={()=>setAfter(resource.data!.at(-1)!.content.segmentId)} homeLabel="回到首页">
+   <Table<Segment> rowKey={r=>r.content.segmentId} dataSource={resource.data} loading={resource.loading} pagination={false} scroll={{x:1050}} columns={[
+   {title:"人群",render:(_,r)=><PrimaryCell title={r.content.name} subtitle={r.content.segmentId}/>},{title:"定义版本",render:(_,r)=>r.content.version},
    {title:"周期",render:(_,r)=>r.enabled?`${r.content.refreshSeconds}秒` : "手工刷新"},
    {title:"快照有效期",render:(_,r)=>`${r.content.ttlSeconds}秒`},
    {title:"操作",render:(_,r)=><Space wrap>
@@ -28,8 +29,9 @@ export function Segments(){
     <Button onClick={()=>{setSelected(r);setRunAfter("");}}>任务与受众版本</Button>
     <Button onClick={()=>{form.setFieldsValue({...r.content,version:r.content.version+1});command.clear();setOpen(true);}}>复制为新定义</Button>
    </Space>}
-  ]}/><Space><Button disabled={!after} onClick={()=>setAfter("")}>回到首页</Button><Button disabled={resource.data?.length!==50} onClick={()=>setAfter(resource.data!.at(-1)!.content.segmentId)}>下一页</Button></Space></Card>
-  <Drawer title={`${selected?.content.name??"人群"} · 刷新任务`} open={!!selected} onClose={()=>setSelected(undefined)} size="large">
+  ]}/>
+  </ListPanel>
+  <Drawer className="record-drawer" title={`${selected?.content.name??"人群"} · 刷新任务`} open={!!selected} onClose={()=>setSelected(undefined)} size="large">
    <Alert type="info" title="活动仍绑定指定受众快照；需发布新活动版本才能切换到新受众。" description={`受众标识：${selected?.audienceId??""}`} style={{marginBottom:16}}/>
    <ErrorNotice error={runs.error}/><Space><Button onClick={runs.refresh}>刷新进度</Button><ActionButton label="执行一批" path="/admin/segments/pump" onDone={refresh}/></Space>
    <Table<Run> rowKey="runId" dataSource={runs.data} loading={runs.loading} pagination={false} scroll={{x:850}} columns={[
@@ -53,5 +55,5 @@ export function Segments(){
     <Button type="primary" htmlType="submit" loading={command.busy}>发布定义</Button>
    </Form>
   </Modal>
- </>;
+ </Workbench>;
 }

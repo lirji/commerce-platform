@@ -63,6 +63,7 @@ export function MemberWallet({
         }
         description="账户资产与处理进度来自真实业务记录。"
         extra={<Button onClick={refresh}>刷新</Button>}
+        eyebrow="会员服务"
       />
       {[available, wallet, benefits, notices, cases].map((r, i) => (
         <ErrorNotice key={i} error={r.error} />
@@ -184,7 +185,7 @@ export function MemberWallet({
         </Space>
       )}
       {section === "aftersales" && (
-        <Card>
+        <Card className="list-panel">
           <Table<Aftersale>
             rowKey="caseId"
             dataSource={cases.data}

@@ -22,8 +22,12 @@ import {
   Blank,
   CommandModal,
   ErrorNotice,
+  ListPanel,
   PageHead,
+  PrimaryCell,
+  RecordHero,
   Status,
+  Workbench,
   money,
   time,
 } from "../shared/ui";
@@ -40,8 +44,9 @@ export function Orders({
     (admin ? "/admin/orders" : "/orders") + `?after=${encode(after)}`,
   );
   return (
-    <>
+    <Workbench>
       <PageHead
+        eyebrow={admin ? "交易与交付" : "会员服务"}
         title={admin ? "订单工作台" : "我的订单"}
         description={
           admin
@@ -51,7 +56,12 @@ export function Orders({
         extra={<Button onClick={resource.refresh}>刷新队列</Button>}
       />
       <ErrorNotice error={resource.error} />
-      <Card>
+      <ListPanel
+        count={resource.data?.length ?? 0}
+        after={after}
+        onHome={() => setAfter("")}
+        onNext={() => setAfter(resource.data!.at(-1)!.orderId)}
+      >
         <Table<Order>
           rowKey="orderId"
           dataSource={resource.data}
@@ -67,7 +77,7 @@ export function Orders({
               dataIndex: "orderId",
               render: (v: string) => (
                 <Button type="link" onClick={() => setSelected(v)}>
-                  {v.slice(0, 8)}…
+                  <PrimaryCell title={v.slice(0, 8) + "…"} subtitle={v} />
                 </Button>
               ),
             },
@@ -87,20 +97,9 @@ export function Orders({
             },
           ]}
         />
-        <div className="pager">
-          <Button disabled={!after} onClick={() => setAfter("")}>
-            首页
-          </Button>
-          <span>当前页 {resource.data?.length ?? 0} 条</span>
-          <Button
-            disabled={(resource.data?.length ?? 0) < 50}
-            onClick={() => setAfter(resource.data!.at(-1)!.orderId)}
-          >
-            下一页
-          </Button>
-        </div>
-      </Card>
+      </ListPanel>
       <Drawer
+        className="record-drawer"
         size={760}
         open={!!selected}
         onClose={() => setSelected(undefined)}
@@ -117,7 +116,7 @@ export function Orders({
           />
         )}
       </Drawer>
-    </>
+    </Workbench>
   );
 }
 function OrderDetails({
@@ -152,46 +151,40 @@ function OrderDetails({
       <ErrorNotice error={command.error} />
       {value && (
         <>
+          <RecordHero
+            eyebrow="交易记录"
+            title={<Typography.Text copyable>{id}</Typography.Text>}
+            id={value.storeId}
+            status={value.status}
+            metrics={[
+              { label: "应付金额", value: money(value.payable) },
+              { label: "会员", value: value.memberId },
+              { label: "创建时间", value: time(value.createdAt) },
+            ]}
+          />
           <Descriptions
             column={2}
-            bordered
             items={[
-              {
-                key: "id",
-                label: "订单编号",
-                children: <Typography.Text copyable>{id}</Typography.Text>,
-                span: 2,
-              },
-              {
-                key: "state",
-                label: "状态",
-                children: <Status value={value.status} />,
-              },
-              {
-                key: "amount",
-                label: "应付金额",
-                children: money(value.payable),
-              },
-              { key: "member", label: "会员", children: value.memberId },
-              {
-                key: "created",
-                label: "创建时间",
-                children: time(value.createdAt),
-              },
+              { key: "kind", label: "支付方式", children: value.paymentKind || "—" },
+              { key: "expires", label: "支付截止", children: time(value.expiresAt) },
+              { key: "version", label: "版本", children: value.version },
+              { key: "lines", label: "商品行数", children: value.items.length },
             ]}
           />
-          <Table<QuoteLine>
-            rowKey="skuId"
-            dataSource={value.items}
-            pagination={false}
-            columns={[
-              { title: "商品", dataIndex: "title" },
-              { title: "数量", dataIndex: "quantity" },
-              { title: "行实付", dataIndex: "payable", render: money },
-              { title: "抵扣积分", dataIndex: "points", render: v => v ?? 0 },
-              { title: "积分抵扣额", dataIndex: "pointDiscount", render: v => money(v ?? "0.00") },
-            ]}
-          />
+          <Card size="small" title="商品明细" className="detail-block">
+            <Table<QuoteLine>
+              rowKey="skuId"
+              dataSource={value.items}
+              pagination={false}
+              columns={[
+                { title: "商品", dataIndex: "title" },
+                { title: "数量", dataIndex: "quantity" },
+                { title: "行实付", dataIndex: "payable", render: money },
+                { title: "抵扣积分", dataIndex: "points", render: v => v ?? 0 },
+                { title: "积分抵扣额", dataIndex: "pointDiscount", render: v => money(v ?? "0.00") },
+              ]}
+            />
+          </Card>
           <Space wrap className="section-actions">
             <Button onClick={refresh}>刷新状态</Button>
             {!admin &&

@@ -12,7 +12,7 @@ export function Dashboard({store,navigate}:{store:string;navigate:(page:string)=
  const summary=data.data;const daily=summary?.daily??[];const sums=summary?.totals;
  const maximum=Math.max(1,...daily.map(d=>Number(d[metric])));const hasOrders=daily.some(d=>d.orders>0);
  return <div className="dashboard">
-  <PageHead title="经营总览" description="把会员关系、商品经营与成交结果放在同一个视野。" extra={<Button onClick={data.refresh} loading={data.loading}>刷新总览</Button>}/>
+  <PageHead eyebrow="经营工作台" title="经营总览" description="把会员关系、商品经营与成交结果放在同一个视野。" extra={<Button onClick={data.refresh} loading={data.loading}>刷新总览</Button>}/>
   <ErrorNotice error={data.error}/><Spin spinning={data.loading}>
   {summary&&sums&&<>
    <div className="dashboard-intro"><span className="live-dot"/><span>当前门店 · 近30个UTC自然日</span><span className="dashboard-updated">读取于 {time(summary.generatedAt)}</span></div>

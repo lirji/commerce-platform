@@ -19,13 +19,16 @@ async function events(){for(let i=0;i<8;i++){if(await api("/admin/events/pump",n
 test("会员生命周期：资料、冻结恢复、终态及审计记录",async({page})=>{
  await login(page);await nav(page,"会员档案");
  const row=page.getByRole("row").filter({hasText:"lifecycle-member"});
- await row.getByRole("button",{name:"编辑资料",exact:true}).click();await page.getByLabel("显示名称",{exact:true}).fill("生命周期已核验");await page.getByLabel("变更原因",{exact:true}).fill("浏览器资料修订");await submit(page);
+ async function more(name:string){await row.getByRole("button",{name:"更多",exact:true}).click();await page.getByRole("menuitem",{name,exact:true}).click();}
+ await more("编辑资料");await page.getByLabel("显示名称",{exact:true}).fill("生命周期已核验");await page.getByLabel("变更原因",{exact:true}).fill("浏览器资料修订");await submit(page);
  await expect(row).toContainText("生命周期已核验");
  for(const option of ["冻结","恢复正常","注销（不可恢复，保留交易记录）"]){
-  await row.getByRole("button",{name:"变更状态",exact:true}).click();await page.getByLabel("目标状态",{exact:true}).click();await page.locator(".ant-select-item-option-content").filter({hasText:new RegExp("^"+option.replace(/[()]/g,"\\$&")+"$")}).click();await page.getByLabel("变更原因",{exact:true}).fill("浏览器状态验收："+option);await submit(page);
+  await more("变更状态");await page.getByLabel("目标状态",{exact:true}).click();await page.locator(".ant-select-item-option-content").filter({hasText:new RegExp("^"+option.replace(/[()]/g,"\\$&")+"$")}).click();await page.getByLabel("变更原因",{exact:true}).fill("浏览器状态验收："+option);await submit(page);
  }
- await expect(row.getByRole("button",{name:"变更状态",exact:true})).toBeDisabled();
- await row.getByRole("button",{name:"变更记录",exact:true}).click();await expect(page.getByRole("dialog")).toContainText("浏览器资料修订");await page.screenshot({path:`${evidence}/operations-member-history.png`,fullPage:true});
+ await row.getByRole("button",{name:"更多",exact:true}).click();
+ await expect(page.getByRole("menuitem",{name:"变更状态",exact:true})).toBeDisabled();
+ await page.keyboard.press("Escape");
+ await more("变更记录");await expect(page.getByRole("dialog")).toContainText("浏览器资料修订");await page.screenshot({path:`${evidence}/operations-member-history.png`,fullPage:true});
 });
 
 test("门店运营：商品规格、调价上下架与当前会话即时撤权",async({page})=>{

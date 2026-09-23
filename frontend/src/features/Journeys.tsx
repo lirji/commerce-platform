@@ -16,8 +16,11 @@ import {
   Detail,
   ErrorNotice,
   Fields,
+  ListPanel,
   PageHead,
+  PrimaryCell,
   Status,
+  Workbench,
   initialDate,
   instant,
   localDateTime,
@@ -223,8 +226,9 @@ export function Journeys({ store }: { store: string }) {
   const [draft, setDraft] = useState<Journey>();
   const command = useCommand();
   return (
-    <>
+    <Workbench>
       <PageHead
+        eyebrow="营销与旅程"
         title="营销旅程"
         description="以会员、动态人群、支付事实或手工入组启动，带频控逐节点执行。"
         extra={
@@ -245,14 +249,14 @@ export function Journeys({ store }: { store: string }) {
         }
       />
       <ErrorNotice error={resource.error} />
-      <Card>
+      <ListPanel>
         <Table<Governed<Journey>>
           rowKey={(r) => r.content.journeyId}
           dataSource={resource.data}
           loading={resource.loading}
           pagination={false}
           columns={[
-            { title: "旅程", render: (_, r) => r.content.name },
+            { title: "旅程", render: (_, r) => <PrimaryCell title={r.content.name} subtitle={r.content.journeyId} /> },
             {
               title: "触发方式",
               render: (_, r) =>
@@ -299,9 +303,10 @@ export function Journeys({ store }: { store: string }) {
             },
           ]}
         />
-      </Card>
+      </ListPanel>
       <JourneyScans/>
       <Drawer
+        className="record-drawer"
         title="旅程节点与版本"
         open={!!detail}
         onClose={() => setDetail(undefined)}
@@ -421,6 +426,6 @@ export function Journeys({ store }: { store: string }) {
           </Button>
         </Form>
       </Drawer>
-    </>
+    </Workbench>
   );
 }

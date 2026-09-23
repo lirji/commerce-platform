@@ -15,7 +15,7 @@ export function MarketingEffects({store}:{store:string}){
  const command=useCommand();const refresh=()=>{report.refresh();journeys.refresh();};
  if(!store)return <Alert type="info" title="请选择分析门店"/>;
  return <>
-  <PageHead title="营销与旅程效果" description="用成交快照和成功退款核对活动版本，先看清经营结果，再调整下一轮配置。" extra={<Button onClick={refresh}>刷新结果</Button>}/>
+  <PageHead eyebrow="营销与旅程" title="营销与旅程效果" description="用成交快照和成功退款核对活动版本，先看清经营结果，再调整下一轮配置。" extra={<Button onClick={refresh}>刷新结果</Button>}/>
   <Card style={{marginBottom:16}}><Form layout="inline" initialValues={{from:initialDate(-86400*30),to:initialDate(86400)}} onFinish={v=>{setRange({from:instant(v.from),to:instant(v.to)});setAfter("");setJourneyAfter("");}}>
    <Fields fields={[{name:"from",label:"下单 / 入组 / 批次起点",type:"datetime"},{name:"to",label:"选择终点（不含）",type:"datetime"}]}/><Button htmlType="submit">查询（最多93天）</Button>
   </Form></Card>

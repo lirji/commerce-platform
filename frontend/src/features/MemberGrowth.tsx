@@ -21,7 +21,7 @@ export function MemberGrowth({admin,store}:{admin:boolean;store:string}) {
  const assignments=useResource<Assignment[]>(admin&&member?`/admin/member-tags/${encode(member)}/assignments?after=${encode(tagAfter)}`:null);
  const refresh=()=>{wallet.refresh();ledger.refresh();assignments.refresh();};
  return <>
-  <PageHead title={admin?"会员成长经营":"我的成长"} description="成长来自完成订单的净消费，成功退款按原规则冲回。成长不是可提现余额。"/>
+  <PageHead eyebrow={admin?"会员经营":"会员服务"} title={admin?"会员成长经营":"我的成长"} description="成长来自完成订单的净消费，成功退款按原规则冲回。成长不是可提现余额。"/>
   <ErrorNotice error={wallet.error}/><ErrorNotice error={ledger.error}/><ErrorNotice error={policies.error}/>
   <Tabs defaultActiveKey="wallet" items={[
    {key:"behavior",label:"会员详情与行为",children:<MemberBehavior admin={admin}/>},
