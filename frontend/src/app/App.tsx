@@ -59,6 +59,7 @@ const groups = [
       ["members", "会员档案"],
       ["merchants", "商家管理"],
       ["stores", "店铺管理"],
+      ["store-grants", "经营授权"],
       ["skus", "商品管理"],
       ["inventory", "库存额度"],
     ],
@@ -81,7 +82,7 @@ export function App() {
     addEventListener("hashchange", listener);
     return () => removeEventListener("hashchange", listener);
   }, []);
-  const stores = useResource<Store[]>(actor ? "/stores" : null);
+  const stores = useResource<Store[]>(actor ? (actor.role === "OPERATOR" ? "/operations/stores" : "/stores") : null);
   const capabilities = useResource<Capabilities>(
     actor ? "/runtime-capabilities" : null,
   );
@@ -91,7 +92,7 @@ export function App() {
   useEffect(() => {
     if (actor && stores.data?.length && !locationState.store)
       navigate(
-        locationState.page || (actor.role === "ADMIN" ? "orders" : "shop"),
+        locationState.page || (actor.role === "ADMIN" ? "orders" : actor.role === "OPERATOR" ? "skus" : "shop"),
         stores.data[0].storeId,
       );
   }, [actor, stores.data, locationState.store]);
@@ -143,7 +144,7 @@ export function App() {
                 try {
                   const identity = await request<Actor>("/me");
                   setActor(identity);
-                  navigate(identity.role === "ADMIN" ? "orders" : "shop", "");
+                  navigate(identity.role === "ADMIN" ? "orders" : identity.role === "OPERATOR" ? "skus" : "shop", "");
                 } catch (e) {
                   setAccessToken("");
                   setLoginError(e instanceof Error ? e : new Error("登录失败"));
@@ -180,14 +181,15 @@ export function App() {
         </main>
       </div>
     );
-  const admin = actor.role === "ADMIN";
+  const operator = actor.role === "OPERATOR";
+  const admin = actor.role !== "MEMBER";
   const page = locationState.page || (admin ? "orders" : "shop");
   const store = locationState.store;
   const caps = capabilities.data ?? {
     sandboxEnabled: false,
     workersEnabled: false,
   };
-  const menu = admin
+  const menu = operator ? [{ key: "skus", label: "授权商品经营" }] : admin
     ? groups.map((g, i) => ({
         type: "group" as const,
         key: String(i),
@@ -203,7 +205,8 @@ export function App() {
         ["notifications", "消息"],
       ].map(([key, label]) => ({ key, label }));
   let content;
-  if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;
+  if (operator) content = <Alert type="info" title="商品经营工作空间" description="当前店铺列表仅包含已授权范围；授权撤销后请刷新店铺目录。" />;
+  else if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;
   else if (!admin) {
     if (page === "shop")
       content = (

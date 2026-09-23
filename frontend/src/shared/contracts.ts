@@ -2,7 +2,7 @@
 export type Actor = {
   tenantId: string;
   actorId: string;
-  role: "ADMIN" | "MEMBER";
+  role: "ADMIN" | "MEMBER" | "OPERATOR";
 };
 export type Capabilities = { sandboxEnabled: boolean; workersEnabled: boolean };
 export type Store = {

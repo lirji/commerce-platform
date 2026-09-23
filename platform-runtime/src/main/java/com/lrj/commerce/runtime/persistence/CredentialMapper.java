@@ -6,4 +6,5 @@ import com.lrj.commerce.runtime.api.Actor;
 @Mapper
 public interface CredentialMapper {
     Actor authenticate(String tokenHash);
+    boolean activeOperator(@org.apache.ibatis.annotations.Param("tenant") String tenant,@org.apache.ibatis.annotations.Param("actor") String actor);
 }

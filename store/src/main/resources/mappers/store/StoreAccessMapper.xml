@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.store.infrastructure.StoreAccessMapper">
+ <sql id="columns">grant_id,actor_id,resource_type,resource_id,permission,active,version,reason</sql>
+ <insert id="insert">INSERT INTO store_operator_grant(tenant_id,grant_id,actor_id,resource_type,resource_id,permission,reason) VALUES(#{tenant},#{input.grantId},#{input.actorId},#{input.resourceType},#{input.resourceId},#{input.permission},#{input.reason})</insert>
+ <select id="find" resultType="com.lrj.commerce.store.api.StoreAccessApi$Grant">SELECT <include refid="columns"/> FROM store_operator_grant WHERE tenant_id=#{tenant} AND grant_id=#{id}</select>
+ <update id="change">UPDATE store_operator_grant SET active=#{input.active},reason=#{input.reason},version=version+1 WHERE tenant_id=#{tenant} AND grant_id=#{id} AND version=#{input.expectedVersion}</update>
+ <select id="list" resultType="com.lrj.commerce.store.api.StoreAccessApi$Grant">SELECT <include refid="columns"/> FROM store_operator_grant WHERE tenant_id=#{tenant} AND grant_id&gt;#{after} ORDER BY grant_id LIMIT #{limit}</select>
+ <select id="allowed" resultType="boolean">SELECT EXISTS(SELECT 1 FROM store_operator_grant WHERE tenant_id=#{tenant} AND actor_id=#{actor} AND active=TRUE AND permission='CATALOG' AND ((resource_type='STORE' AND resource_id=#{store}) OR (resource_type='MERCHANT' AND resource_id=#{merchant})))</select>
+ <select id="stores" resultType="com.lrj.commerce.store.api.StoreApi$View">
+  SELECT s.store_id,s.merchant_id,s.name,s.status,s.version FROM store_record s WHERE s.tenant_id=#{tenant} AND s.status='ACTIVE' AND s.store_id&gt;#{after}
+  AND EXISTS(SELECT 1 FROM store_operator_grant g WHERE g.tenant_id=s.tenant_id AND g.actor_id=#{actor} AND g.active=TRUE AND g.permission='CATALOG' AND ((g.resource_type='STORE' AND g.resource_id=s.store_id) OR (g.resource_type='MERCHANT' AND g.resource_id=s.merchant_id)))
+  ORDER BY s.store_id LIMIT #{limit}
+ </select>
+</mapper>

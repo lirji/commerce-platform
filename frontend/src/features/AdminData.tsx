@@ -39,6 +39,16 @@ const version: Field = {
 };
 import { dateFields, couponFields, couponBody } from "../shared/formSchemas";
 export const specs: Record<string, Spec> = {
+  "store-grants": {
+    title: "商家与门店经营授权",
+    description: "仅向已有运营身份授予商品经营权。商家授权包含其未来新增门店；不授予会员库、资金、订单或平台发布权限。",
+    path: "/admin/store-grants", id: "grantId",
+    fields: [id("grantId","授权标识"),id("actorId","运营主体"),
+      {name:"resourceType",label:"资源范围",type:"select",options:[{label:"单个门店",value:"STORE"},{label:"商家及所有门店",value:"MERCHANT"}]},
+      id("resourceId","门店或商家标识"),{name:"reason",label:"授权原因"}],
+    build:v=>({...v,permission:"CATALOG"}),
+    columns:[["actorId","运营主体"],["resourceType","范围"],["resourceId","资源"],["active","启用"],["version","版本"],["reason","原因"]],
+  },
   members: {
     title: "会员档案",
     description: "维护会员与认证主体的对应关系。",
@@ -364,6 +374,9 @@ export function AdminData({
           详情
         </Button>
         {kind === "members" && <MemberActions row={r} onDone={refresh} />}
+        {kind === "store-grants" && <CommandModal title={r.active ? "撤销授权" : "恢复授权"} buttonType="link"
+          path={"/admin/store-grants/"+target+"/status"} fields={[{name:"reason",label:"变更原因"}]}
+          build={v=>({...v,active:!r.active,expectedVersion:r.version})} onDone={refresh}/>}
         {kind === "fulfillments" && capabilities.sandboxEnabled && (
           <>
             {state === "READY" && !r.blocked && (

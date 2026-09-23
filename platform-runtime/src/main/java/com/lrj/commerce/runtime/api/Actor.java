@@ -5,7 +5,7 @@ import com.lrj.commerce.kernel.Identifiers;
 
 /** 由认证边界构造的业务身份，租户不能从请求体替换。 */
 public record Actor(String tenantId, String actorId, Role role) {
-    public enum Role { ADMIN, MEMBER }
+    public enum Role { ADMIN, MEMBER, OPERATOR }
     public Actor {
         Identifiers.require(tenantId); Identifiers.require(actorId);
         if (role == null) throw new DomainException(DomainException.Code.FORBIDDEN, "身份角色无效");

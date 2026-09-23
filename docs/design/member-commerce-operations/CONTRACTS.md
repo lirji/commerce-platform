@@ -14,3 +14,7 @@
 |效果|/admin/marketing-effects|日期/店铺/活动版本限定，实付/退款/净额/平台与商家补贴、观察窗口与口径|
 
 细分 DTO 随对应切片在此追加，必须在产品实现前确定并保持向后兼容；若改变上述业务边界，先更新计划与影响分析。实际代码DTO为字段精确契约，完成时同步示例。
+
+## OP02 授权 DTO
+
+POST /admin/store-grants `{grantId,actorId,resourceType:MERCHANT|STORE,resourceId,permission:CATALOG,reason}`，初始ACTIVE/version0；POST /admin/store-grants/{id}/status `{expectedVersion,active,reason}` 撤销或恢复，不改绑定。GET同族按grantId分页。GET /operations/stores仅返回当前有效授权覆盖的正常店铺，商家授权含其未来新店铺（界面提示）。ADMIN可管理全部，MEMBER无经营权，OPERATOR仅CATALOG授权范围；不授予会员库、资金、订单、全租户营销发布或二次授权权力。授权主体必须有本租户有效OPERATOR凭据；凭据签发继续沿用既有身份接入流程。
