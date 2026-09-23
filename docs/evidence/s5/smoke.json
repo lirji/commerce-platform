@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "orderId": "307822b2-c308-4c84-9001-79d346b8f0da",
+  "states": [
+    "PENDING_PAYMENT",
+    "CANCELLED"
+  ],
+  "environment": "commerce_local"
+}

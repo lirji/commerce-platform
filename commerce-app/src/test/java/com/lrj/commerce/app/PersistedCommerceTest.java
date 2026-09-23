@@ -129,6 +129,77 @@ class PersistedCommerceTest {
         assertEquals(413,call("POST","/v1/quotes",member,"huge",Map.of("padding","x".repeat(66000))).status());
         assertEquals(400,call("GET","/v1/catalog?storeId=store1&limit=101",member,null,null).status());
     }
+    private void stock(String sku,int quantity) throws Exception {
+        post("/v1/admin/inventory/receipts",admin,UUID.randomUUID().toString(),Map.of("storeId","store1","skuId",sku,"quantity",quantity));
+    }
+    private Object orderInput(JsonNode quote) {
+        return Map.of("quoteId",quote.path("quoteId").asString(),"address",Map.of("recipient","收货测试","phone","13800000000","detail","隔离测试地址123"));
+    }
+    private long stockValue(String column) {
+        // 列名仅来自本测试常量，业务Mapper不允许动态客户端列名。
+        return jdbc.queryForObject("SELECT "+column+" FROM inventory_stock WHERE tenant_id=? AND sku_id='sku1'",Long.class,tenant);
+    }
+    @Test void orderReservesOnceAndCancellationReleasesOnce() throws Exception {
+        seed();stock("sku1",3);var q=post("/v1/quotes",member,"quote",basket(2));
+        var order=post("/v1/orders",member,"order",orderInput(q));String id=order.path("orderId").asString();
+        assertEquals("PENDING_PAYMENT",order.path("status").asString());
+        assertEquals(order,post("/v1/orders",member,"order",orderInput(q)));
+        assertEquals(1,stockValue("available"));assertEquals(2,stockValue("held"));
+        assertEquals(409,call("POST","/v1/orders",member,"different-key",orderInput(q)).status());
+        byte[] encrypted=jdbc.queryForObject("SELECT address_cipher FROM order_record WHERE tenant_id=? AND order_id=?",byte[].class,tenant,id);
+        assertFalse(new String(encrypted,java.nio.charset.StandardCharsets.UTF_8).contains("隔离测试地址"));
+        assertFalse(order.has("address"));
+        assertEquals("CANCELLED",post("/v1/orders/"+id+"/cancel",member,"cancel",null).path("status").asString());
+        post("/v1/orders/"+id+"/cancel",member,"cancel-again",null);
+        assertEquals(3,stockValue("available"));assertEquals(0,stockValue("held"));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM platform_event WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(404,call("GET","/v1/orders/"+id,other,null,null).status());
+        assertEquals(404,call("POST","/v1/orders/"+id+"/cancel",other,"foreign-cancel",null).status());
+    }
+    @Test void simultaneousOrdersCannotOversellOrConsumeOneQuoteTwice() throws Exception {
+        seed();stock("sku1",1);var q1=post("/v1/quotes",member,"q1",basket(1));var q2=post("/v1/quotes",member,"q2",basket(1));
+        try(var pool=Executors.newFixedThreadPool(2)) {
+            var latch=new CountDownLatch(1);
+            var a=pool.submit(()->{latch.await();return call("POST","/v1/orders",member,"o1",orderInput(q1));});
+            var b=pool.submit(()->{latch.await();return call("POST","/v1/orders",member,"o2",orderInput(q2));});latch.countDown();
+            assertEquals(List.of(200,409),java.util.stream.Stream.of(a.get(),b.get()).map(Reply::status).sorted().toList());
+        }
+        assertEquals(0,stockValue("available"));assertEquals(1,stockValue("held"));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM order_record WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM trade_quote WHERE tenant_id=? AND consumed_order_id IS NOT NULL",Integer.class,tenant));
+    }
+    @Test void parallelDuplicateOrdersHaveSingleEffect() throws Exception {
+        seed();stock("sku1",10);var q=post("/v1/quotes",member,"q",basket(2));
+        try(var pool=Executors.newFixedThreadPool(4)) {
+            List<Callable<Reply>> tasks=new ArrayList<>();for(int i=0;i<4;i++)tasks.add(()->call("POST","/v1/orders",member,"o",orderInput(q)));
+            Set<String> ids=new HashSet<>();for(var f:pool.invokeAll(tasks)){var r=f.get();assertEquals(200,r.status(),r.body().toString());ids.add(r.body().path("orderId").asString());}assertEquals(1,ids.size());
+        }
+        assertEquals(8,stockValue("available"));assertEquals(2,stockValue("held"));
+    }
+    @Test void failedSecondSkuRollsBackQuoteInventoryAndEventsAndCanRetry() throws Exception {
+        seed();stock("sku1",2);
+        post("/v1/admin/skus",admin,"sku2",Map.of("skuId","sku2","storeId","store1","title","第二商品","unitPrice","10.00"));
+        var q=post("/v1/quotes",member,"q",Map.of("storeId","store1","items",List.of(Map.of("skuId","sku1","quantity",1),Map.of("skuId","sku2","quantity",1))));
+        assertEquals(409,call("POST","/v1/orders",member,"o",orderInput(q)).status());
+        assertEquals(2,stockValue("available"));assertEquals(0,stockValue("held"));
+        for(String table:List.of("order_record","inventory_hold","platform_event")) assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM "+table+" WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM trade_quote WHERE tenant_id=? AND consumed_order_id IS NOT NULL",Integer.class,tenant));
+        stock("sku2",1);assertEquals("PENDING_PAYMENT",post("/v1/orders",member,"o",orderInput(q)).path("status").asString());
+    }
+    @Test void expiredQuoteCannotBecomeOrder() throws Exception {
+        seed();stock("sku1",1);var q=post("/v1/quotes",member,"q",basket(1));
+        jdbc.update("UPDATE trade_quote SET expires_at=? WHERE tenant_id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(10)),tenant);
+        assertEquals(409,call("POST","/v1/orders",member,"o",orderInput(q)).status());assertEquals(1,stockValue("available"));
+    }
+    @Test void freeOrderConfirmsStockWithoutPretendingChannelPayment() throws Exception {
+        seed();stock("sku1",1);post("/v1/admin/campaigns",admin,"campaign",draft("free",1,"100.00"));
+        post("/v1/admin/campaigns/free/1/publish",admin,"publish",Map.of("expectedVersion",0));
+        var q=post("/v1/quotes",member,"q",basket(1));var order=post("/v1/orders",member,"o",orderInput(q));
+        assertEquals("PAID",order.path("status").asString());assertEquals("NO_PAYMENT_REQUIRED",order.path("paymentKind").asString());
+        assertEquals(0,stockValue("held"));assertEquals(1,stockValue("sold"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='order.paid.v1'",Integer.class,tenant));
+        assertEquals(409,call("POST","/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null).status());
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));

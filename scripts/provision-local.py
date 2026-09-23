@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """为本项目创建隔离数据库和专用账号，不读取或输出其他项目数据。"""
 from pathlib import Path
-import os, secrets, subprocess, sys
+import base64, os, secrets, subprocess, sys
 root = Path(__file__).resolve().parents[1]
 env_file = root / '.local' / 'runtime.env'
 if env_file.exists():
@@ -29,4 +29,5 @@ with os.fdopen(fd,'w') as f:
     f.write("export COMMERCE_TEST_DB_URL='jdbc:mysql://127.0.0.1:43306/commerce_test_20260923?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true'\n")
     f.write("export COMMERCE_DB_USER='commerce_app'\n")
     f.write(f"export COMMERCE_DB_PASSWORD='{password}'\n")
+    f.write(f"export COMMERCE_ADDRESS_KEY='{base64.b64encode(secrets.token_bytes(32)).decode()}'\n")
 print('Created project-only schemas and account; secrets saved with mode 0600 in .local/runtime.env.')

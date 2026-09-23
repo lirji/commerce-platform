@@ -53,4 +53,13 @@ public class QuoteService implements QuoteApi {
         Identifiers.require(id);var member=members.current(actor);
         return JsonCodec.read(Inputs.found(mapper.read(actor.tenantId(),member.memberId(),id)),View.class);
     }
+    /** 锁后取当前时间验证TTL，不能在锁等待前通过一次检查就消费过期报价。 */
+    @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public View consume(Actor actor,String id,String orderId) {
+        Identifiers.require(id);Identifiers.require(orderId);var member=members.current(actor);
+        var locked=Inputs.found(mapper.lock(actor.tenantId(),member.memberId(),id));
+        if(locked.consumedOrderId()!=null||!clock.instant().isBefore(locked.expiresAt())) throw new DomainException(DomainException.Code.CONFLICT,"报价已消费或过期");
+        if(mapper.consume(actor.tenantId(),id,orderId)!=1) throw new DomainException(DomainException.Code.CONFLICT,"报价消费冲突");
+        return JsonCodec.read(locked.snapshotJson(),View.class);
+    }
 }

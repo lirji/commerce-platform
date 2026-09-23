@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.inventory.infrastructure.InventoryMapper">
+ <insert id="receive">INSERT INTO inventory_stock(tenant_id,store_id,sku_id,available,held,sold,version) VALUES(#{tenant},#{input.storeId},#{input.skuId},#{input.quantity},0,0,0) ON DUPLICATE KEY UPDATE available=available+#{input.quantity},version=version+1</insert>
+ <select id="find" resultType="com.lrj.commerce.inventory.api.InventoryApi$Stock">SELECT store_id,sku_id,available,held,sold,version FROM inventory_stock WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id=#{sku}</select>
+ <select id="list" resultType="com.lrj.commerce.inventory.api.InventoryApi$Stock">SELECT store_id,sku_id,available,held,sold,version FROM inventory_stock WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id &gt; #{after} ORDER BY sku_id LIMIT #{limit}</select>
+ <update id="reserve">UPDATE inventory_stock SET available=available-#{quantity},held=held+#{quantity},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id=#{sku} AND available&gt;=#{quantity}</update>
+ <insert id="insertHold">INSERT INTO inventory_hold(tenant_id,order_id,store_id,sku_id,quantity,status) VALUES(#{tenant},#{order},#{store},#{sku},#{quantity},'RESERVED')</insert>
+ <select id="holds" resultType="com.lrj.commerce.inventory.infrastructure.InventoryMapper$Hold">SELECT store_id,sku_id,quantity,status FROM inventory_hold WHERE tenant_id=#{tenant} AND order_id=#{order} ORDER BY sku_id FOR UPDATE</select>
+ <update id="terminal">UPDATE inventory_hold SET status=#{status} WHERE tenant_id=#{tenant} AND order_id=#{order} AND sku_id=#{sku} AND status='RESERVED'</update>
+ <update id="confirmStock">UPDATE inventory_stock SET held=held-#{hold.quantity},sold=sold+#{hold.quantity},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{hold.storeId} AND sku_id=#{hold.skuId} AND held&gt;=#{hold.quantity}</update>
+ <update id="releaseStock">UPDATE inventory_stock SET held=held-#{hold.quantity},available=available+#{hold.quantity},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{hold.storeId} AND sku_id=#{hold.skuId} AND held&gt;=#{hold.quantity}</update>
+</mapper>

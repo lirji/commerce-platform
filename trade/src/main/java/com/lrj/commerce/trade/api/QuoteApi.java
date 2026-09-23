@@ -15,4 +15,6 @@ public interface QuoteApi {
     }
     View create(Actor actor,String key,Request input);
     View read(Actor actor,String id);
+    /** 订单本地事务内消费一次报价，不能直接暴露为HTTP端点。 */
+    View consume(Actor actor,String id,String orderId);
 }

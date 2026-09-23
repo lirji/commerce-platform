@@ -8,6 +8,8 @@ server:
       min-spare: 4
     max-connections: 256
     accept-count: 64
+commerce:
+  address-key: ${COMMERCE_ADDRESS_KEY}
 spring:
   application:
     name: commerce-platform
