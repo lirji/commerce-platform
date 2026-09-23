@@ -8,10 +8,12 @@ import java.util.List;
 public interface ProductMapper {
  record SkuRow(String skuId,String storeId,String title,String unitPrice,long revision,String status,String productId,String specificationsJson) { }
  void insertProduct(@Param("tenant") String tenant,@Param("input") ProductOperationsApi.ProductInput input);
+ ProductOperationsApi.Product productLock(String tenant,String store,String id);
  ProductOperationsApi.Product product(@Param("tenant") String tenant,@Param("store") String store,@Param("id") String id);
  int changeProduct(@Param("tenant") String tenant,@Param("id") String id,@Param("input") ProductOperationsApi.ProductChange input);
  List<ProductOperationsApi.Product> products(@Param("tenant") String tenant,@Param("store") String store,@Param("after") String after,@Param("limit") int limit);
  void insertVariant(@Param("tenant") String tenant,@Param("input") ProductOperationsApi.Variant input,@Param("specifications") String specifications,@Param("hash") String hash);
+ SkuRow skuLock(String tenant,String store,String id);
  SkuRow sku(@Param("tenant") String tenant,@Param("store") String store,@Param("id") String id);
  List<SkuRow> skus(@Param("tenant") String tenant,@Param("store") String store,@Param("after") String after,@Param("limit") int limit);
  int change(@Param("tenant") String tenant,@Param("id") String id,@Param("input") ProductOperationsApi.Change input);

@@ -35,7 +35,7 @@ test("门店运营：商品规格、调价上下架与当前会话即时撤权",
  await submit(page);await expect(page.getByText("浏览器规格商品",{exact:true})).toBeVisible();
  await page.getByRole("tab",{name:"销售规格与上下架",exact:true}).click();await page.getByRole("button",{name:"创建销售规格",exact:true}).click();
  for(const [label,value] of [["SKU标识","ui-sku"],["所属商品标识（SPU）","ui-product"],["销售名称","浏览器白色杯"],["售价（元）","59.00"],["规格组合","颜色=白色\n容量=350ml"]])await page.getByLabel(label,{exact:true}).fill(value);
- await submit(page);const row=page.getByRole("row").filter({hasText:"ui-sku"});await expect(row).toContainText("白色");
+ await page.getByRole("button",{name:"保存销售规格",exact:true}).click();await expect(page.getByRole("dialog")).toHaveCount(0);const row=page.getByRole("row").filter({hasText:"ui-sku"});await expect(row).toContainText("白色");
  await row.getByRole("button",{name:"调价 / 上下架",exact:true}).click();await page.getByLabel("售价（元）",{exact:true}).fill("49.00");await page.getByLabel("销售状态",{exact:true}).click();await page.locator(".ant-select-item-option-content").filter({hasText:/^上架$/}).click();await page.getByLabel("修订原因",{exact:true}).fill("新品首发价格");await submit(page);await expect(row).toContainText("49.00");
  await row.getByRole("button",{name:"修订记录",exact:true}).click();await expect(page.getByRole("dialog")).toContainText("新品首发价格");await page.screenshot({path:`${evidence}/operations-product-history.png`,fullPage:true});await page.getByRole("button",{name:"关闭",exact:true}).click();
  const grant=(await api("/admin/store-grants"))[0];await api("/admin/store-grants/clerk-catalog/status",{expectedVersion:grant.version,active:false,reason:"验证在途会话撤权"});

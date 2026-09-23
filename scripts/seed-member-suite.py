@@ -69,6 +69,10 @@ post('/admin/coupon-definitions',{'definitionId':'target-care','version':1,'stor
 post('/admin/audiences',{'audienceId':'target-care-audience','version':1,'name':'会员关怀演示人群','source':'ISOLATED_DEMO','watermark':at(0),'validUntil':at(7200),'memberIds':['delivery-member','suite-member']})
 post('/admin/members',{'memberId':'journey-member','actorId':'journey-buyer','displayName':'生日旅程会员','memberLevel':'BASIC'})
 post('/admin/member-behavior/journey-member/profile',{'expectedVersion':0,'birthday':now.strftime('%m-%d'),'journeyEnabled':True,'reason':'隔离生命周期旅程演示'})
+post('/operations/catalog-categories',{'categoryId':'coffee','storeId':'brand-store','name':'咖啡精选'})
+post('/operations/specification-templates',{'templateId':'coffee-pack','version':1,'storeId':'brand-store','name':'咖啡包装模板','fields':[{'name':'包装','values':['小盒','大盒']}]})
+post('/operations/products/points-coffee/merchandising',{'storeId':'brand-store','expectedVersion':0,'categoryId':'coffee','description':'日常品牌精品咖啡，适合早餐与午后时光。图片为经营演示示意图，正式经营可替换商品图片。','images':[{'url':'/media/coffee.svg','alt':'日常品牌咖啡包装示意图'}],'reason':'补齐商品经营演示资料'})
+post('/operations/skus/points-coffee/barcode',{'storeId':'brand-store','expectedVersion':0,'barcode':'DAILY-COFFEE-01','reason':'演示门店条码检索'})
 # 演示仅受理后不假称到账；正式消费者读取持久事件完成发放。
 for _ in range(6):
     req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})

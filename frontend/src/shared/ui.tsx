@@ -14,7 +14,7 @@ import {
   Typography,
 } from "antd";
 import { palette } from "../theme";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { ApiError, useCommand } from "./api";
 export const time = (v: unknown) =>
   v ? new Date(String(v)).toLocaleString("zh-CN", { hour12: false }) : "—";
@@ -22,6 +22,8 @@ export const money = (v: unknown) => (v == null ? "—" : `¥${String(v)}`);
 const labels: Record<string, string> = {
   ACTIVE: "可用",
   REVOCATION_DONE: "撤销处理完成",
+  RETIRED: "已停用",
+  IDLE: "等待下一轮",
   REVOKING: "撤销处理中",
   FROZEN: "已停用",
   DRAFT: "草稿",
@@ -233,6 +235,7 @@ export function CommandModal({
   initialValues?: Values;
   buttonType?: "primary" | "default" | "link";
 }) {
+  const formId = useId();
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
   const command = useCommand();
@@ -260,6 +263,7 @@ export function CommandModal({
         <ErrorNotice error={command.error} />
         <Form
           form={form}
+          name={`command-${formId}`}
           layout="vertical"
           initialValues={{
             ...Object.fromEntries(

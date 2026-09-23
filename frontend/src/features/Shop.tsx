@@ -15,7 +15,8 @@ import {
   Typography,
 } from "antd";
 import { useState } from "react";
-import type { Coupon, Order, Quote, Sku } from "../shared/contracts";
+import { CatalogFilters, type CatalogItem, type Category } from "./CatalogMerchandising";
+import type { Coupon, Order, Quote } from "../shared/contracts";
 import { encode, post, useCommand, useResource } from "../shared/api";
 import { Blank, ErrorNotice, PageHead, money } from "../shared/ui";
 export function Shop({
@@ -25,11 +26,13 @@ export function Shop({
   store: string;
   onOrder: () => void;
 }) {
-  const products = useResource<Sku[]>(
-    store ? "/catalog?storeId=" + encode(store) : null,
-  );
+  const [filters,setFilters]=useState("");const [after,setAfter]=useState("");
+  const products = useResource<CatalogItem[]>(store ? `/catalog/search?storeId=${encode(store)}&after=${encode(after)}&${filters}` : null);
+  const categories = useResource<Category[]>(store?`/catalog/categories?storeId=${encode(store)}`:null);
+  const [titles,setTitles]=useState<Record<string,string>>({});
   const coupons = useResource<Coupon[]>("/coupons");
-  const [info, setInfo] = useState<Sku>();
+  const [info, setInfo] = useState<CatalogItem>();
+  const details=useResource<CatalogItem>(info?`/catalog/items/${encode(info.skuId)}?storeId=${encode(store)}`:null);
   const [signalError, setSignalError] = useState<Error>();
   const signal = (kind: "BROWSE" | "ADD_TO_CART", skuId: string) => {
     const eventId = crypto.randomUUID();
@@ -76,7 +79,8 @@ export function Shop({
       <ErrorNotice error={products.error} />
       <ErrorNotice error={signalError} />
       <Modal title={info?.title} open={!!info} onCancel={() => setInfo(undefined)} footer={<Button onClick={() => setInfo(undefined)}>返回店铺</Button>}>
-        <Descriptions items={[{ key: "price", label: "当前售价", children: money(info?.unitPrice) }, { key: "sku", label: "商品标识", children: info?.skuId }]} />
+        <ErrorNotice error={details.error}/>
+        {details.data&&<><Descriptions items={[{ key: "price", label: "当前售价", children: money(details.data.unitPrice) }, { key: "sku", label: "商品标识", children: details.data.skuId },{key:"category",label:"商品类目",children:details.data.categoryName??"未分类"},{key:"barcode",label:"商品条码",children:details.data.barcode??"—"},{key:"specs",label:"规格",children:details.data.specifications.map(s=>`${s.name}：${s.value}`).join(" / ")||"标准规格"}]} /><div className="catalog-gallery">{details.data.images.map(image=><img key={image.url} src={image.url} alt={image.alt} referrerPolicy="no-referrer" loading="lazy"/>)}</div><p className="product-description">{details.data.description||"商家尚未补充详细说明"}</p></>}
       </Modal>
       {!store ? (
         <Blank text="请先选择店铺" />
@@ -96,15 +100,15 @@ export function Shop({
               商<span>品</span>
             </div>
           </div>
+          <ErrorNotice error={categories.error}/><CatalogFilters categories={categories.data??[]} onSearch={query=>{setFilters(query);setAfter("");}}/>
           <Row gutter={[20, 20]}>
             {products.data?.map((sku, index) => (
               <Col xs={24} sm={12} lg={8} key={sku.skuId}>
                 <Card className="product-card" title={<span>{sku.title}</span>} extra={<Button type="link" onClick={() => { setInfo(sku); signal("BROWSE", sku.skuId); }}>查看商品</Button>}>
                   <div
                     className={"product-art art-" + (index % 3)}
-                    aria-hidden="true"
                   >
-                    <span>{sku.title.slice(0, 1)}</span>
+                    <ProductImage key={sku.images[0]?.url??sku.skuId} image={sku.images[0]} title={sku.title}/>
                   </div>
                   <div className="product-bottom">
                     <div>
@@ -113,7 +117,7 @@ export function Shop({
                     </div>
                     <Button
                       disabled={sku.status !== "ACTIVE"}
-                      onClick={() => { setQuantity(sku.skuId, (basket[sku.skuId] ?? 0) + 1); signal("ADD_TO_CART", sku.skuId); }}
+                      onClick={() => { setTitles(old=>({...old,[sku.skuId]:sku.title}));setQuantity(sku.skuId, (basket[sku.skuId] ?? 0) + 1); signal("ADD_TO_CART", sku.skuId); }}
                     >
                       加入购物袋
                     </Button>
@@ -127,7 +131,8 @@ export function Shop({
               </Col>
             ))}
           </Row>
-          {products.data?.length === 0 && <Blank text="这家店铺暂未上架商品" />}
+          {products.data?.length === 0 && <Blank text={filters?"没有符合筛选条件的商品":"这家店铺暂未上架商品"} />}
+          <Space style={{marginTop:20}}><Button disabled={!after} onClick={()=>setAfter("")}>商品首页</Button><Button disabled={products.data?.length!==50} onClick={()=>setAfter(products.data!.at(-1)!.skuId)}>下一页商品</Button></Space>
         </>
       )}
       <Drawer
@@ -143,7 +148,7 @@ export function Shop({
           .map(([id, n]) => (
             <div className="bag-line" key={id}>
               <span>
-                {products.data?.find((s) => s.skuId === id)?.title ?? id}
+                {titles[id] ?? id}
               </span>
               <InputNumber
                 aria-label={id + "数量"}
@@ -289,3 +294,5 @@ export function Shop({
     </>
   );
 }
+
+function ProductImage({image,title}:{image?:{url:string;alt:string};title:string}){const [failed,setFailed]=useState(false);return image&&!failed?<img src={image.url} alt={image.alt} referrerPolicy="no-referrer" loading="lazy" onError={()=>setFailed(true)}/>:<span>{title.slice(0,1)}</span>;}

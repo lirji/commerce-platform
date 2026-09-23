@@ -20,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class SecurityConfiguration {
     @Bean SecurityFilterChain security(HttpSecurity http,CredentialMapper credentials) throws Exception {
         return http.csrf(c->c.disable()).sessionManagement(c->c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(c->c.requestMatchers("/actuator/health","/","/index.html","/assets/**").permitAll()
+            .authorizeHttpRequests(c->c.requestMatchers("/actuator/health","/","/index.html","/assets/**","/media/**").permitAll()
                 .requestMatchers("/v1/admin/**").hasAuthority("ADMIN")
                 .requestMatchers("/v1/me","/v1/runtime-capabilities").hasAnyAuthority("ADMIN","MEMBER","OPERATOR")
                 .requestMatchers("/v1/operations/**").hasAnyAuthority("ADMIN","OPERATOR")

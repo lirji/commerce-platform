@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="咖啡包装示意图">
+ <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#182641"/><stop offset="1" stop-color="#273c58"/></linearGradient><linearGradient id="pack" x2="1" y2="1"><stop stop-color="#e5dec7"/><stop offset="1" stop-color="#b6a986"/></linearGradient></defs>
+ <rect width="640" height="480" fill="url(#bg)"/><circle cx="468" cy="102" r="150" fill="#819bc0" opacity=".12"/>
+ <ellipse cx="320" cy="414" rx="178" ry="22" fill="#0b1322" opacity=".55"/><path d="M215 82h210l-14 45 22 251q-107 42-226 0l22-251z" fill="url(#pack)"/>
+ <path d="M215 82h210v22H215z" fill="#b2a47f"/><path d="M235 176h176v158H235z" rx="12" fill="#183533"/>
+ <path d="M299 206c-27 31-16 52 7 45 25-8 24-42 8-48-9 26-11 32-19 43" fill="none" stroke="#e4cea5" stroke-width="3"/>
+ <text x="323" y="281" text-anchor="middle" fill="#f0e2c4" font-family="sans-serif" font-size="24" letter-spacing="4">DAILY ROAST</text>
+ <text x="323" y="306" text-anchor="middle" fill="#9fac9f" font-family="sans-serif" font-size="10" letter-spacing="4">COFFEE COLLECTION</text>
+ <path d="M219 368q105 35 208 0" fill="none" stroke="#a2916b" stroke-width="2"/>
+</svg>

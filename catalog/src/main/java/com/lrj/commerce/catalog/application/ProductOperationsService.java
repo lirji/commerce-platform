@@ -12,8 +12,8 @@ import java.math.BigDecimal;
 /** 规格不可换绑，商品修订原子写当前投影和历史，不重写已成交报价。 */
 @Service
 public class ProductOperationsService implements ProductOperationsApi {
- private final ProductMapper mapper;private final CatalogMapper catalog;private final StoreAccessApi access;private final Commands commands;
- public ProductOperationsService(ProductMapper mapper,CatalogMapper catalog,StoreAccessApi access,Commands commands){this.mapper=mapper;this.catalog=catalog;this.access=access;this.commands=commands;}
+ private final MerchandisingMapper merchandising;private final ProductMapper mapper;private final CatalogMapper catalog;private final StoreAccessApi access;private final Commands commands;
+ public ProductOperationsService(ProductMapper mapper,CatalogMapper catalog,StoreAccessApi access,Commands commands,MerchandisingMapper merchandising){this.merchandising=merchandising;this.mapper=mapper;this.catalog=catalog;this.access=access;this.commands=commands;}
  /** 商品主数据归属门店，授权检查放在命令内使重试也遵循事务。 */
  public Product create(Actor actor,String key,ProductInput input){
   Inputs.require(input!=null,"商品不能为空");Identifiers.require(input.productId());metadata(input.title(),input.category(),input.brand());access.requireCatalog(actor,input.storeId());
@@ -33,7 +33,7 @@ public class ProductOperationsService implements ProductOperationsApi {
   var specs=new TreeMap<String,String>();for(var spec:input.specifications()){Inputs.require(spec!=null,"规格不能为空");String name=Inputs.text(spec.name(),64).strip(),value=Inputs.text(spec.value(),64).strip();Inputs.require(specs.put(name,value)==null,"规格名称不能重复");}
   var normalized=new Variant(input.skuId(),input.productId(),input.storeId(),input.title(),price(input.unitPrice()),specs.entrySet().stream().map(e->new Specification(e.getKey(),e.getValue())).toList());
   return commands.run(actor,"product.variant",key,normalized,Sku.class,()->{
-   access.requireCatalog(actor,input.storeId());Inputs.found(mapper.product(actor.tenantId(),input.storeId(),input.productId()));String json=JsonCodec.write(normalized.specifications());
+   access.requireCatalog(actor,input.storeId());Inputs.found(mapper.productLock(actor.tenantId(),input.storeId(),input.productId()));validateTemplate(actor.tenantId(),normalized);String json=JsonCodec.write(normalized.specifications());
    mapper.insertVariant(actor.tenantId(),normalized,json,JsonCodec.hash(json));catalog.snapshot(actor.tenantId(),input.skuId(),"新建待上架规格",actor.actorId());return view(mapper.sku(actor.tenantId(),input.storeId(),input.skuId()));
   });
  }
@@ -49,6 +49,11 @@ public class ProductOperationsService implements ProductOperationsApi {
  public List<Sku> skus(Actor actor,String store,String after,int limit){access.requireCatalog(actor,store);Inputs.page(after,limit);return mapper.skus(actor.tenantId(),store,after,limit).stream().map(this::view).toList();}
  /** 历史记录也验证当前授权，撤权后不能通过旧链接读取。 */
  public List<Revision> history(Actor actor,String store,String id,long after,int limit){access.requireCatalog(actor,store);Identifiers.require(id);Inputs.require(after>=0,"版本游标无效");Inputs.page("",limit);Inputs.found(mapper.sku(actor.tenantId(),store,id));return mapper.history(actor.tenantId(),store,id,after,limit);}
+ /** 先持SPU锁再读取绑定，防止创建规格与首次绑定模板同时绕过约束。 */
+ private void validateTemplate(String tenant,Variant input){var profile=merchandising.profileCurrent(tenant,input.storeId(),input.productId());if(profile==null||profile.templateId()==null)return;
+  var template=JsonCodec.read(Inputs.found(merchandising.template(tenant,input.storeId(),profile.templateId(),profile.templateVersion())),com.lrj.commerce.catalog.api.CatalogMerchandisingApi.Template.class);
+  Inputs.require(input.specifications().size()==template.fields().size(),"规格必须完整匹配绑定模板");for(var field:template.fields()){var value=input.specifications().stream().filter(s->s.name().equals(field.name())).findFirst();Inputs.require(value.isPresent()&&field.values().contains(value.get().value()),"规格属性或取值不符合绑定模板");}
+ }
  private Sku view(ProductMapper.SkuRow r){return new Sku(r.skuId(),r.storeId(),r.title(),r.unitPrice(),r.revision(),r.status(),r.productId(),r.specificationsJson()==null?List.of():Arrays.asList(JsonCodec.read(r.specificationsJson(),Specification[].class)));}
  private void metadata(String title,String category,String brand){Inputs.text(title,128);Inputs.text(category,64);Inputs.text(brand,64);}
  private String price(String value){Inputs.text(value,32);try{return new Money(new BigDecimal(value)).amount().toPlainString();}catch(NumberFormatException e){throw new DomainException(DomainException.Code.INVALID_INPUT,"金额格式无效");}}
