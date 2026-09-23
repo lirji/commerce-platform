@@ -22,7 +22,7 @@ public class EntitlementService implements EntitlementApi,EventHandler {
     public void validateBinding(String tenant,String store,Ref ref,Instant from,Instant to){validateRef(ref);var d=Inputs.found(mapper.definitionFind(tenant,ref.benefitId(),ref.version()));if(!d.storeId().equals(store)||from.isBefore(d.validFrom())||to.isAfter(d.validTo())||!clock.instant().isBefore(d.validTo()))throw conflict();}
     /** 下单最终预留额度，未付款时不生成可消费余额。 */
     @Transactional(propagation=Propagation.MANDATORY)
-    public void reserveOrder(Actor actor,String order,String member,String store,Ref ref){if(ref==null)return;validateRef(ref);var d=Inputs.found(mapper.definitionFind(actor.tenantId(),ref.benefitId(),ref.version()));if(!d.storeId().equals(store)||clock.instant().isBefore(d.validFrom())||!clock.instant().isBefore(d.validTo())||mapper.reserveQuota(actor.tenantId(),ref.benefitId(),ref.version())!=1)throw conflict();mapper.grant(actor.tenantId(),UUID.randomUUID().toString(),order,member,d);}
+    public void reserveOrder(Actor actor,String order,String member,String store,Ref ref){if(ref==null)return;validateRef(ref);var d=Inputs.found(mapper.definitionFind(actor.tenantId(),ref.benefitId(),ref.version()));if(!d.storeId().equals(store)||clock.instant().isBefore(d.validFrom())||!clock.instant().isBefore(d.validTo())||mapper.reserveQuota(actor.tenantId(),ref.benefitId(),ref.version())!=1)throw conflict();mapper.grant(actor.tenantId(),UUID.randomUUID().toString(),order,member,d,"ORDER",order);}
     /** 付款只产生发放任务，真实余额由独立幂等消费者授予。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public void confirmOrder(String tenant,String order){var grant=mapper.byOrder(tenant,order);if(grant==null)return;if(grant.status().equals(State.CANCELLED))throw conflict();if(!grant.status().equals(State.RESERVED))return;var d=Inputs.found(mapper.definitionFind(tenant,grant.benefitId(),grant.benefitVersion()));if(mapper.finishQuota(tenant,grant,true)!=1)throw conflict();Instant expires=clock.instant().plus(Duration.ofDays(d.validityDays()));change(tenant,grant,State.REQUESTED,0,0,expires);var requested=mapper.find(tenant,grant.grantId());outbox.append(tenant,"benefit.grant.requested.v1",grant.grantId(),requested.version(),Map.of("grantId",grant.grantId()));}
@@ -30,7 +30,8 @@ public class EntitlementService implements EntitlementApi,EventHandler {
     public void releaseOrder(String tenant,String order){var grant=mapper.byOrder(tenant,order);if(grant==null||grant.status().equals(State.CANCELLED))return;if(!grant.status().equals(State.RESERVED)||mapper.finishQuota(tenant,grant,false)!=1)throw conflict();change(tenant,grant,State.CANCELLED,0,0,null);}
     /** 已消费单位留下待人工补偿，不产生负余额或伪造成功撤回。 */
     @Transactional(propagation=Propagation.MANDATORY)
-    public void reverseOrder(String tenant,String order){var grant=mapper.byOrder(tenant,order);if(grant==null||Set.of(State.REVOKED,State.COMPENSATION_REQUIRED,State.COMPENSATED).contains(grant.status()))return;if(!Set.of(State.REQUESTED,State.AVAILABLE,State.CONSUMED).contains(grant.status()))throw conflict();int consumed=grant.status().equals(State.REQUESTED)?0:grant.units()-grant.remainingUnits();change(tenant,grant,consumed==0?State.REVOKED:State.COMPENSATION_REQUIRED,0,consumed,grant.expiresAt());entry(tenant,grant.grantId(),"REVOKE",grant.remainingUnits(),0,order);if(consumed>0)entry(tenant,grant.grantId(),"COMPENSATION_REQUIRED",consumed,0,order);}
+    public void reverseOrder(String tenant,String order){var grants=mapper.orderGrants(tenant,order);Inputs.require(grants.size()<=321,"订单权益数量超出自动补偿上限");for(var grant:grants)reverseGrant(tenant,order,grant);}
+    private void reverseGrant(String tenant,String order,View grant){if(grant==null||Set.of(State.REVOKED,State.COMPENSATION_REQUIRED,State.COMPENSATED).contains(grant.status()))return;if(!Set.of(State.REQUESTED,State.AVAILABLE,State.CONSUMED).contains(grant.status()))throw conflict();int consumed=grant.status().equals(State.REQUESTED)?0:grant.units()-grant.remainingUnits();change(tenant,grant,consumed==0?State.REVOKED:State.COMPENSATION_REQUIRED,0,consumed,grant.expiresAt());entry(tenant,grant.grantId(),"REVOKE",grant.remainingUnits(),0,order);if(consumed>0)entry(tenant,grant.grantId(),"COMPENSATION_REQUIRED",consumed,0,order);}
     public List<View> wallet(Actor actor,String after,int limit){Inputs.page(after,limit);return mapper.list(actor.tenantId(),members.current(actor).memberId(),after,limit);}
     public List<View> adminList(Actor actor,String after,int limit){actor.requireAdmin();Inputs.page(after,limit);return mapper.list(actor.tenantId(),null,after,limit);}
     /** 账本详情也验证会员归属，不因知道grantId而越权。 */
@@ -42,10 +43,20 @@ public class EntitlementService implements EntitlementApi,EventHandler {
     public String consumer(){return "internal-entitlement-grant-v1";}
     public Set<String> types(){return Set.of("benefit.grant.requested.v1");}
     /** 退款先到则状态已REVOKED，迟到的授予事件不能复活余额。 */
-    public void handle(Event event){var grant=Inputs.found(mapper.lock(event.tenantId(),event.aggregateId()));if(grant.status().equals(State.RESERVED)||grant.status().equals(State.CANCELLED))throw conflict();if(!grant.status().equals(State.REQUESTED))return;if(grant.version()!=event.aggregateVersion())throw conflict();change(event.tenantId(),grant,State.AVAILABLE,grant.units(),0,grant.expiresAt());entry(event.tenantId(),grant.grantId(),"GRANT",grant.units(),grant.units(),grant.orderId());}
+    public void handle(Event event){var grant=Inputs.found(mapper.lock(event.tenantId(),event.aggregateId()));if(grant.status().equals(State.RESERVED)||grant.status().equals(State.CANCELLED))throw conflict();if(!grant.status().equals(State.REQUESTED))return;if(grant.version()!=event.aggregateVersion())throw conflict();change(event.tenantId(),grant,State.AVAILABLE,grant.units(),0,grant.expiresAt());entry(event.tenantId(),grant.grantId(),"GRANT",grant.units(),grant.units(),grant.orderId()==null?grant.sourceId():grant.orderId());}
     private void change(String tenant,View grant,State status,int remaining,int debt,Instant expires){if(mapper.change(tenant,grant,status,remaining,debt,expires)!=1)throw conflict();}
     private void entry(String tenant,String grant,String action,int units,int balance,String reference){mapper.entry(tenant,UUID.randomUUID().toString(),grant,action,units,balance,reference);}
     private void validateRef(Ref ref){Inputs.require(ref!=null&&ref.version()>0,"权益引用无效");Identifiers.require(ref.benefitId());}
     private DefinitionView definition(EntitlementMapper.DefinitionRow d){return new DefinitionView(new Definition(d.benefitId(),d.version(),d.storeId(),d.name(),d.units(),d.quota(),d.validFrom(),d.validTo(),d.validityDays()),d.reserved(),d.issued());}
     private DomainException conflict(){return new DomainException(DomainException.Code.CONFLICT,"权益额度、余额、有效期或状态冲突");}
+    /** 原节点键去重；与旅程检查点同事务提交受理，随后仍走独立发放消费者。 */
+    @Transactional(propagation=Propagation.MANDATORY)
+    public View grantFromJourney(String tenant,String member,String store,String effectId,String order,Ref ref){
+        Identifiers.require(effectId);validateRef(ref);var existing=mapper.bySource(tenant,"JOURNEY",effectId);if(existing!=null)return existing;
+        members.requireActive(new Actor(tenant,"journey-worker",Actor.Role.ADMIN),member);var d=Inputs.found(mapper.definitionFind(tenant,ref.benefitId(),ref.version()));
+        if(!d.storeId().equals(store)||clock.instant().isBefore(d.validFrom())||!clock.instant().isBefore(d.validTo())||mapper.reserveQuota(tenant,ref.benefitId(),ref.version())!=1)throw conflict();
+        String id=UUID.randomUUID().toString();mapper.grant(tenant,id,order,member,d,"JOURNEY",effectId);var grant=mapper.find(tenant,id);
+        if(mapper.finishQuota(tenant,grant,true)!=1)throw conflict();change(tenant,grant,State.REQUESTED,0,0,clock.instant().plus(Duration.ofDays(d.validityDays())));
+        var requested=mapper.find(tenant,id);outbox.append(tenant,"benefit.grant.requested.v1",id,requested.version(),Map.of("grantId",id));return requested;
+    }
 }

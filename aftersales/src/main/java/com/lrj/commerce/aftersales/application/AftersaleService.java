@@ -64,4 +64,7 @@ public class AftersaleService implements AftersaleApi,EventHandler {
     private void change(String tenant,AftersaleMapper.Row row,String status,String refundId){if(mapper.change(tenant,row.caseId(),row.version(),status,refundId)!=1)throw conflict();}
     private View view(AftersaleMapper.Row row){return new View(row.caseId(),row.orderId(),row.memberId(),row.status(),row.returnRequired(),row.refundAmount(),row.refundId(),row.version(),List.of(JsonCodec.read(row.itemsJson(),Line[].class)));}
     private DomainException conflict(){return new DomainException(DomainException.Code.CONFLICT,"售后当前状态或退款事实冲突");}
+    /** 使用当前锁定读，迟到的付款事件不能基于旧快照启动退款后的营销。 */
+    @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public boolean fullyReturned(String tenant,String order){int returned=mapper.returned(tenant,order).stream().mapToInt(AftersaleMapper.Returned::quantity).sum();int original=orders.internalRead(tenant,order).items().stream().mapToInt(l->l.quantity()).sum();return returned>=original;}
 }

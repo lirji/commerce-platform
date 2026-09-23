@@ -15,4 +15,6 @@ public class CommerceApplication {
     public static void main(String[] args) {SpringApplication.run(CommerceApplication.class,args);}
     @Bean Clock clock() {return Clock.systemUTC();}
     @Bean DecisionPort decisions() {return new MarketingDecisionService();}
+    /** 装配层适配纯规则实现，其他业务模块只依赖公开求值端口。 */
+    @Bean com.lrj.commerce.marketing.api.RuleDecisionPort ruleDecisions(){var evaluator=new com.lrj.commerce.marketing.domain.RuleEvaluator();return (condition,facts)->com.lrj.commerce.marketing.api.Condition.Truth.valueOf(evaluator.evaluate(condition,facts).name());}
 }

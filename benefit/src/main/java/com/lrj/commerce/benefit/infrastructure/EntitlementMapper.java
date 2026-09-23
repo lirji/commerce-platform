@@ -12,7 +12,7 @@ public interface EntitlementMapper {
     List<DefinitionRow> definitions(@Param("tenant") String tenant,@Param("store") String store,@Param("after") String after,@Param("limit") int limit);
     int reserveQuota(@Param("tenant") String tenant,@Param("id") String id,@Param("version") long version);
     int finishQuota(@Param("tenant") String tenant,@Param("grant") View grant,@Param("issued") boolean issued);
-    void grant(@Param("tenant") String tenant,@Param("id") String id,@Param("order") String order,@Param("member") String member,@Param("definition") DefinitionRow definition);
+    void grant(@Param("tenant") String tenant,@Param("id") String id,@Param("order") String order,@Param("member") String member,@Param("definition") DefinitionRow definition,@Param("sourceType") String sourceType,@Param("sourceId") String sourceId);
     View byOrder(@Param("tenant") String tenant,@Param("order") String order);
     View find(@Param("tenant") String tenant,@Param("id") String id);
     View lock(@Param("tenant") String tenant,@Param("id") String id);
@@ -22,4 +22,6 @@ public interface EntitlementMapper {
     List<View> list(@Param("tenant") String tenant,@Param("member") String member,@Param("after") String after,@Param("limit") int limit);
     void entry(@Param("tenant") String tenant,@Param("id") String id,@Param("grant") String grant,@Param("action") String action,@Param("units") int units,@Param("balance") int balance,@Param("reference") String reference);
     List<Ledger> ledger(@Param("tenant") String tenant,@Param("grant") String grant,@Param("after") String after,@Param("limit") int limit);
+    View bySource(@Param("tenant") String tenant,@Param("type") String type,@Param("id") String id);
+    List<View> orderGrants(@Param("tenant") String tenant,@Param("order") String order);
 }

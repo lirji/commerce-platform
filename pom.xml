@@ -25,6 +25,7 @@
     <module>payment</module>
     <module>fulfillment</module>
     <module>aftersales</module>
+    <module>marketing-automation</module>
         <module>commerce-app</module>
         <module>shared-kernel</module>
         <module>marketing</module>

@@ -601,6 +601,85 @@ class PersistedCommerceTest {
         jdbc.update("UPDATE benefit_grant SET expires_at=? WHERE tenant_id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(1)),tenant);
         assertEquals(409,call("POST","/v1/entitlements/"+id+"/consume",member,"expired",Map.of("units",1)).status());assertEquals(3,jdbc.queryForObject("SELECT remaining_units FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));
     }
+    private Map<String,Object> journey(String id,String trigger,int duration,List<Map<String,Object>> nodes) {
+        return Map.of("journeyId",id,"version",1,"storeId","store1","name","会员关怀旅程","trigger",trigger,"validFrom",Instant.now().minusSeconds(30).toString(),"validTo",Instant.now().plusSeconds(300).toString(),"maxDurationSeconds",duration,"entry",nodes.getFirst().get("id"),"nodes",nodes);
+    }
+    private Map<String,Object> endNode(){return Map.of("id","end","kind","END");}
+    private Map<String,Object> noticeNode(String next){return Map.of("id","notice","kind","NOTIFY","title","会员关怀","body","权益已进入您的账户","next",next);}
+    private void publishJourney(Map<String,Object> definition) throws Exception {
+        String id=(String)definition.get("journeyId");post("/v1/admin/journeys",admin,"create-"+id,definition);
+        int version=0;for(String action:List.of("submit","approve","publish"))post("/v1/admin/journeys/"+id+"/1/"+action,admin,action+"-"+id,Map.of("expectedVersion",version++));
+    }
+    private JsonNode enroll(String id,String event) throws Exception {return post("/v1/admin/journey-instances",admin,"enroll-"+event,Map.of("journeyId",id,"version",1,"memberId","m1","eventKey",event));}
+    private void journeyPump() throws Exception {post("/v1/admin/journeys/pump",admin,null,null);}
+    private void journeyBenefit(int quota) throws Exception {
+        post("/v1/admin/entitlement-definitions",admin,"journey-benefit",Map.of("benefitId","journey-credit","version",1,"storeId","store1","name","旅程体验权益","units",2,"quota",quota,"validFrom",Instant.now().minusSeconds(120).toString(),"validTo",Instant.now().plusSeconds(7200).toString(),"validityDays",1));
+    }
+    private Map<String,Object> grantNode(String next){return Map.of("id","grant","kind","GRANT","benefit",Map.of("benefitId","journey-credit","version",1),"next",next);}
+    private String journeyState(String id){return jdbc.queryForObject("SELECT status FROM journey_instance WHERE tenant_id=? AND instance_id=?",String.class,tenant,id);}
+    @Test void journeyRejectsCyclesUnreachableNodesAndUntrustedRules() throws Exception {
+        seed();var cycle=journey("cycle","MANUAL",60,List.of(Map.of("id","wait","kind","WAIT","seconds",1,"next","wait")));
+        assertEquals(400,call("POST","/v1/admin/journeys",admin,"cycle",cycle).status());
+        assertEquals(400,call("POST","/v1/admin/journeys",admin,"unreachable",journey("unreachable","MANUAL",60,List.of(endNode(),Map.of("id","orphan","kind","END")))).status());
+        var rule=Map.of("kind","COMPARE","field","clientDiscount","operator","EQ","valueType","TEXT","value","VIP");
+        assertEquals(400,call("POST","/v1/admin/journeys",admin,"rule",journey("rule","MANUAL",60,List.of(Map.of("id","check","kind","DECIDE","rule",rule,"yesNext","end","noNext","end"),endNode()))).status());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM journey_definition WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void journeyRequiresApprovalAndPersistsWaitBeforeExactlyOneNotification() throws Exception {
+        seed();var definition=journey("welcome","MANUAL",120,List.of(Map.of("id","wait","kind","WAIT","seconds",30,"next","notice"),noticeNode("end"),endNode()));
+        post("/v1/admin/journeys",admin,"create",definition);assertEquals(409,call("POST","/v1/admin/journeys/welcome/1/publish",admin,"early",Map.of("expectedVersion",0)).status());
+        int version=0;for(String action:List.of("submit","approve","publish"))post("/v1/admin/journeys/welcome/1/"+action,admin,action,Map.of("expectedVersion",version++));
+        var instance=enroll("welcome","event1");assertEquals(instance,enroll("welcome","event1"));String id=instance.path("instanceId").asString();journeyPump();journeyPump();
+        assertEquals("WAITING",journeyState(id));assertEquals(0,call("GET","/v1/notifications",member,null,null).body().size());
+        jdbc.update("UPDATE journey_instance SET due_at=CURRENT_TIMESTAMP(6) WHERE tenant_id=?",tenant);journeyPump();journeyPump();journeyPump();
+        assertEquals("COMPLETED",journeyState(id));assertEquals(1,call("GET","/v1/notifications",member,null,null).body().size());assertEquals(3,jdbc.queryForObject("SELECT steps FROM journey_instance WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(403,call("POST","/v1/admin/journey-instances",member,"forbidden",Map.of("journeyId","welcome","version",1,"memberId","m1","eventKey","e2")).status());
+    }
+    @Test void journeyUnknownFactStopsWithoutTakingAwardBranch() throws Exception {
+        seed();var rule=Map.of("kind","COMPARE","field","orderAmount","operator","GTE","valueType","DECIMAL","value","1");
+        publishJourney(journey("unknown","MANUAL",120,List.of(Map.of("id","check","kind","DECIDE","rule",rule,"yesNext","notice","noNext","end"),noticeNode("end"),endNode())));
+        var instance=enroll("unknown","event");journeyPump();assertEquals("COMPLETED",journeyState(instance.path("instanceId").asString()));
+        assertEquals("RULE_UNKNOWN",jdbc.queryForObject("SELECT result FROM journey_instance WHERE tenant_id=?",String.class,tenant));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM journey_notification WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void journeyCancelAndDeadlinePreventFutureEffectsAndEnforceOwnership() throws Exception {
+        seed();publishJourney(journey("stop","MANUAL",120,List.of(noticeNode("end"),endNode())));
+        String first=enroll("stop","one").path("instanceId").asString(),second=enroll("stop","two").path("instanceId").asString();
+        assertEquals(404,call("POST","/v1/admin/journey-instances/"+first+"/cancel",token("foreign-"+UUID.randomUUID(),"admin","ADMIN"),"cancel",null).status());
+        post("/v1/admin/journey-instances/"+first+"/cancel",admin,"cancel",null);jdbc.update("UPDATE journey_instance SET deadline=CURRENT_TIMESTAMP(6) WHERE tenant_id=? AND instance_id=?",tenant,second);journeyPump();
+        assertEquals("CANCELLED",journeyState(first));assertEquals("TIMED_OUT",journeyState(second));assertEquals(0,call("GET","/v1/notifications",member,null,null).body().size());
+    }
+    @Test void concurrentJourneyWorkersCommitOneGrantAndResumeNextNode() throws Exception {
+        seed();journeyBenefit(1);publishJourney(journey("grant","MANUAL",120,List.of(grantNode("notice"),noticeNode("end"),endNode())));var instance=enroll("grant","one");
+        try(var pool=Executors.newFixedThreadPool(2)){var a=pool.submit(()->{journeyPump();return true;});var b=pool.submit(()->{journeyPump();return true;});a.get();b.get();}
+        journeyPump();journeyPump();pump();assertEquals("COMPLETED",journeyState(instance.path("instanceId").asString()));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=? AND source_type='JOURNEY' AND order_id IS NULL",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'",Integer.class,tenant));assertEquals(1,call("GET","/v1/notifications",member,null,null).body().size());
+    }
+    @Test void failedJourneyNodeRetriesBoundedlyAndManualRetryKeepsCheckpoint() throws Exception {
+        seed();journeyBenefit(1);publishJourney(journey("limited","MANUAL",120,List.of(grantNode("end"),endNode())));enroll("limited","first");journeyPump();journeyPump();
+        var blocked=enroll("limited","second");String id=blocked.path("instanceId").asString();
+        for(int i=0;i<5;i++){jdbc.update("UPDATE journey_instance SET due_at=CURRENT_TIMESTAMP(6) WHERE tenant_id=? AND instance_id=?",tenant,id);journeyPump();}
+        assertEquals("ISOLATED",journeyState(id));assertEquals(0,jdbc.queryForObject("SELECT steps FROM journey_instance WHERE tenant_id=? AND instance_id=?",Integer.class,tenant,id));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));
+        post("/v1/admin/journey-instances/"+id+"/retry",admin,"retry",null);assertEquals("RUNNING",journeyState(id));
+        jdbc.update("UPDATE journey_instance SET deadline=CURRENT_TIMESTAMP(6) WHERE tenant_id=? AND instance_id=?",tenant,id);journeyPump();assertEquals("TIMED_OUT",journeyState(id));
+    }
+    @Test void paidJourneyGrantsAreReversedAndLaterNodesCancelledAfterFullRefund() throws Exception {
+        var order=pendingOrder();journeyBenefit(1);publishJourney(journey("paid","ORDER_PAID",120,List.of(grantNode("wait"),Map.of("id","wait","kind","WAIT","seconds",60,"next","notice"),noticeNode("end"),endNode())));
+        payOrder(order);pump();journeyPump();pump();journeyPump();
+        assertEquals("AVAILABLE",jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?",String.class,tenant));
+        var refund=approve(requestReturn(order,1,"r"),"a");finishRefund(refund,"refund");pump();
+        assertEquals("REVOKED",jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?",String.class,tenant));
+        assertEquals("CANCELLED",jdbc.queryForObject("SELECT status FROM journey_instance WHERE tenant_id=?",String.class,tenant));journeyPump();
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM journey_notification WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void latePaidJourneyEventAfterRefundDoesNotEnroll() throws Exception {
+        var order=pendingOrder();publishJourney(journey("late","ORDER_PAID",120,List.of(noticeNode("end"),endNode())));payOrder(order);
+        jdbc.update("UPDATE platform_event SET available_at=? WHERE tenant_id=? AND event_type='order.paid.v1'",java.sql.Timestamp.from(Instant.now().plusSeconds(3600)),tenant);
+        var refund=approve(requestReturn(order,1,"r"),"a");finishRefund(refund,"refund");pump();
+        jdbc.update("UPDATE platform_event SET available_at=CURRENT_TIMESTAMP(6) WHERE tenant_id=? AND event_type='order.paid.v1'",tenant);pump();
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM journey_instance WHERE tenant_id=?",Integer.class,tenant));
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));

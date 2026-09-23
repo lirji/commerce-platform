@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "instanceId": "504c5bde-927b-4cbe-af5b-8d6476ae6753",
+  "status": "COMPLETED",
+  "steps": 3,
+  "procedure": "Create WAIT checkpoint; stop owned application process; restart same built jar; observe completion from persistent state. Shared MySQL was never restarted."
+}

@@ -35,4 +35,7 @@ public record RuleNode(String kind,String field,String operator,String valueType
             default -> throw new DomainException(DomainException.Code.INVALID_INPUT,"未知规则节点");
         };
     }
+    /** 各运营入口使用同一可信字段目录，先验证AST资源边界再检查字段。 */
+    public void requireTrustedFields(){toCondition();checkFields();}
+    private void checkFields(){if(kind.equals("COMPARE")){String type=MarketingAssets.TRUSTED_FIELDS.get(field);Inputs.require(type!=null&&type.equals(valueType),"规则字段或类型不在可信目录");}else children.forEach(RuleNode::checkFields);}
 }

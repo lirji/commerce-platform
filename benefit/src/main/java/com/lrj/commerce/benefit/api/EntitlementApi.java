@@ -14,7 +14,7 @@ public interface EntitlementApi {
     record Ref(String benefitId,long version) { }
     record Definition(String benefitId,long version,String storeId,String name,int units,int quota,Instant validFrom,Instant validTo,int validityDays) { }
     record DefinitionView(Definition content,int reserved,int issued) { }
-    record View(String grantId,String orderId,String memberId,String benefitId,long benefitVersion,String name,State status,int units,int remainingUnits,int debtUnits,Instant expiresAt,long version) { }
+    record View(String grantId,String orderId,String memberId,String benefitId,long benefitVersion,String name,State status,int units,int remainingUnits,int debtUnits,Instant expiresAt,long version,String sourceType,String sourceId) { }
     record Ledger(String entryId,String action,int units,int balance,String reference,Instant createdAt) { }
     record Consume(int units) { }
     record Resolution(String resolution,String reference) { }
@@ -30,4 +30,6 @@ public interface EntitlementApi {
     List<Ledger> ledger(Actor actor,String grant,String after,int limit);
     View consume(Actor actor,String key,String grant,Consume input);
     View resolve(Actor actor,String key,String grant,Resolution input);
+    /** 旅程节点本地事务中受理权益；来源标识和订单关联各自独立。 */
+    View grantFromJourney(String tenant,String member,String store,String effectId,String order,Ref ref);
 }

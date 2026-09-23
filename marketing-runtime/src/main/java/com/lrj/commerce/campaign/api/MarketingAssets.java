@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 /** 版本化规则与人群资产，不将客户端事实注入交易决策。 */
 public interface MarketingAssets {
+    java.util.Map<String,String> TRUSTED_FIELDS=java.util.Map.of("memberLevel","TEXT","orderAmount","DECIMAL");
     record Ref(String id,long version) { }
     record Audience(String audienceId,long version,String name,String source,Instant watermark,Instant validUntil,List<String> memberIds) { }
     record AudienceView(String audienceId,long version,String name,String source,Instant watermark,Instant validUntil,int memberCount) { }

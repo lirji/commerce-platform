@@ -20,7 +20,7 @@ public class MarketingAssetController {
     /** 列最新版本规则资产。 */
     @GetMapping("/rules") public Object rules(@AuthenticationPrincipal Actor actor,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return assets.rules(actor,after,limit);}
     /** 字段类型来自固定可信数据提供方。 */
-    @GetMapping("/rule-fields") public Object fields(@AuthenticationPrincipal Actor actor){actor.requireAdmin();return Map.of("memberLevel","TEXT","orderAmount","DECIMAL");}
+    @GetMapping("/rule-fields") public Object fields(@AuthenticationPrincipal Actor actor){actor.requireAdmin();return MarketingAssets.TRUSTED_FIELDS;}
     /** 路径只允许三个审批动作，发布继续走已冻结接口。 */
     @PostMapping("/campaigns/{id}/{version}/{action:submit|approve|reject}") public Object review(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@PathVariable String id,@PathVariable long version,@PathVariable String action,@RequestBody CommerceController.Version input){return campaigns.review(actor,key,id,version,input.expectedVersion(),action);}
     /** 预算余额来自权威数据库，旧版本仍可审计。 */

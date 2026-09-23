@@ -15,4 +15,6 @@ public interface AftersaleApi {
     View approve(Actor actor,String key,String id);
     View reject(Actor actor,String key,String id);
     View receiveReturn(Actor actor,String key,String id);
+    /** 内部事务复核原订单是否已经全部退货退款完成。 */
+    boolean fullyReturned(String tenant,String order);
 }

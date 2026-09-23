@@ -7,8 +7,8 @@ import org.springframework.scheduling.annotation.*;
 @Configuration @EnableScheduling
 @ConditionalOnProperty(name="commerce.workers-enabled",havingValue="true")
 public class EventWorker {
-    private final com.lrj.commerce.payment.api.RefundApi refunds;private final EventDispatcher events;private final com.lrj.commerce.payment.api.PaymentApi payments;
-    public EventWorker(EventDispatcher events,com.lrj.commerce.payment.api.PaymentApi payments,com.lrj.commerce.payment.api.RefundApi refunds){this.refunds=refunds;this.events=events;this.payments=payments;}
+    private final com.lrj.commerce.journey.api.JourneyApi journeys;private final com.lrj.commerce.payment.api.RefundApi refunds;private final EventDispatcher events;private final com.lrj.commerce.payment.api.PaymentApi payments;
+    public EventWorker(EventDispatcher events,com.lrj.commerce.payment.api.PaymentApi payments,com.lrj.commerce.payment.api.RefundApi refunds,com.lrj.commerce.journey.api.JourneyApi journeys){this.journeys=journeys;this.refunds=refunds;this.events=events;this.payments=payments;}
     /** 固定延迟避免单实例重入，不创建无界线程或任务队列。 */
-    @Scheduled(fixedDelay=1000) public void deliver(){payments.tick();refunds.tick();events.tick();}
+    @Scheduled(fixedDelay=1000) public void deliver(){payments.tick();refunds.tick();events.tick();journeys.tick();}
 }

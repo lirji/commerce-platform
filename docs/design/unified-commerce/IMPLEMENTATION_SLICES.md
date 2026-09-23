@@ -13,7 +13,7 @@
 | S6 | 隔离支付适配、支付未知/关单、事件可靠投递与重复消费 | S5 | payment/jobs/装配 | 渠道沙箱及 DB；真实渠道另需明确配置 | DONE（96测试；真实渠道后置） |
 | S7 | 履约、退货、退款及权益冲正，补偿与对账闭环 | S6 | fulfillment/aftersales | WMS/渠道契约或隔离沙箱 | DONE (130 tests; S8b2b evidence) |
 | S8 | 活动、人群、规则版本发布、权益及券、叠加/资金分摊 | S4–S7 | marketing/benefit/trade | 授权、审计、规则与人群来源 | DONE (130 tests; S8b2b evidence) |
-| S9 | 旅程实例、等待/触达/超时/取消、恢复和运营低代码发布 | S8 | marketing/journey/lowcode | 持久调度、渠道隔离 | TODO |
+| S9 | 旅程实例、等待/触达/超时/取消、恢复和运营低代码发布 | S8 | marketing/journey/lowcode | 持久调度、渠道隔离 | S9a DONE (138 tests + restart); S9b TODO |
 | S10 | 管理台和消费端真实接口、数据库 seed、部署文件与全链路验证 | 各后端 API 完成时逐页跟进，最终依赖 S9 | frontend/runtime | 沿用已有设计资产，另出前端架构 | TODO |
 
 S4–S10 是里程碑切片候选，实施前按单次有界闭环细化，保留这些 ID 为父项，不一次铺完空模块。DB runtime 在 S4 首次介入；API 前先冻结授权/身份/主数据/幂等/DTO 契约。S1–S3 只接受 C1–C4，不连接旧系统，不解除旧规则迁移。
