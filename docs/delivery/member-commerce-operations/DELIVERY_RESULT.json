@@ -1,0 +1,29 @@
+{
+  "skill": "task-git-delivery",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "sourceCommit": "b9666dfe329dfb9d1df3d5fd559711402ad26ea9",
+  "branch": "feat/member-commerce-operations",
+  "target": "origin/main",
+  "push": "PASS",
+  "merge": "FAST_FORWARD",
+  "commits": [
+    "b9666dfe329dfb9d1df3d5fd559711402ad26ea9 test(operations): 完成经营闭环浏览器验收种子与交付文档",
+    "8fb3f672e9429eb6bbf4ca160171462efb62f1ea feat(marketing): 增加会员事件旅程频控与成交退款效果分析",
+    "f20da861e741d9d5797ac9b6e40064400a3e4ffd feat(marketing): 增加商品范围阶梯优惠预览与活动版本复用",
+    "c81a96c55aa2bacab25358990c5fde71db79e051 feat(marketing): 接入可信会员事实与可恢复动态人群刷新",
+    "8ca89b183eea66709e07fbf1f7bcfef50db556bf feat(member): 增加版本化成长等级退款冲正账本与标签经营",
+    "e5dabb657b037159281a250683f984f5b19cd7a4 feat(catalog): 实现商品规格上下架调价和修订历史",
+    "ec00b8c074bbbc6ebf8d62087d4cd3f0c34111e0 feat(store): 增加商家门店商品经营授权与即时撤销",
+    "205016fdb1859701d6c185c08768e0f65fefed22 feat(member): 建立经营改造计划并实现会员生命周期"
+  ],
+  "validation": "OP08_TEST_RESULT.md / CI_RESULT.json",
+  "excludedDirtyPaths": [
+    "original-worktree/commerce-app/src/main/java/com/lrj/commerce/app/CommerceController.java",
+    "original-worktree/marketing-runtime/src/main/java/com/lrj/commerce/campaign/application/CampaignService.java",
+    "original-worktree/.engineering/exploration/"
+  ],
+  "productionDeploy": "NOT_EXECUTED",
+  "unresolved": [],
+  "completionScope": "Approved operations/member-marketing implementation; external channels deferred"
+}

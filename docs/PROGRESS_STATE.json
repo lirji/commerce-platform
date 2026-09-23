@@ -1,6 +1,6 @@
 {
   "task": "member-commerce-operations",
-  "status": "LOCAL_VERIFIED_CI_PENDING",
+  "status": "COMPLETE",
   "baseline": "fb7adf6278ed98c49d8851102031b061bcbb68bf",
   "priorState": "docs/evidence/s10b/PROGRESS_STATE_BASELINE.json",
   "slices": {
@@ -11,11 +11,20 @@
     "OP05": "DONE",
     "OP06": "DONE",
     "OP07": "DONE",
-    "OP08": "LOCAL_VERIFIED"
+    "OP08": "DONE"
   },
   "verification": "docs/delivery/member-commerce-operations/OP08_TEST_RESULT.md",
-  "delivery": "LOCAL_COMMITS_NOT_YET_PUSHED",
+  "delivery": "IMPLEMENTATION_MERGED_AND_PUSHED_MAIN",
   "completionScope": "日常经营与会员营销内部闭环；不含真实渠道、生产部署或容量/灾备承诺",
   "externalIntegration": "DEFERRED_BY_USER",
-  "previousMigration": "UNCHANGED_BLOCKED"
+  "previousMigration": "UNCHANGED_BLOCKED",
+  "git": {
+    "sourceCommit": "b9666dfe329dfb9d1df3d5fd559711402ad26ea9",
+    "branch": "feat/member-commerce-operations",
+    "target": "origin/main",
+    "method": "normal fast-forward push; original dirty local main preserved",
+    "documentationCheckpoint": "Completion records may be a newer commit; immutable implementation validation remains sourceCommit; latest main checks available on GitHub."
+  },
+  "ci": "docs/delivery/member-commerce-operations/CI_RESULT.json",
+  "next": "NONE_IN_APPROVED_SCOPE"
 }
