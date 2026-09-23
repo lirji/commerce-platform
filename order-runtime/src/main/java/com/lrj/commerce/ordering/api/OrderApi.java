@@ -27,4 +27,6 @@ public interface OrderApi {
     View internalRead(String tenant,String id);
     /** 到期只请求取消，支付未知必须保留库存。 */
     int expire(Actor actor,String key);
+    /** 履约可信事实推进生命周期，必须加入调用者本地事务。 */
+    View fulfillmentFact(String tenant,String id,boolean delivered);
 }

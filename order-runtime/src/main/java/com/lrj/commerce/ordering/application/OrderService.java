@@ -104,4 +104,12 @@ public class OrderService implements OrderApi {
         var next=new OrderLifecycle(OrderState.valueOf(row.status()),row.version()).apply(event);
         if(mapper.change(tenant,row.orderId(),row.version(),next.state().name())!=1)throw new DomainException(DomainException.Code.CONFLICT,"订单并发版本冲突");return next;
     }
+    /** 物流事实不倒退订单；重复由调用者与当前终态共同去重。 */
+    @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public View fulfillmentFact(String tenant,String id,boolean delivered){
+        var row=Inputs.found(mapper.internalLock(tenant,id));String target=delivered?"COMPLETED":"FULFILLING";
+        if(row.status().equals(target)||(!delivered&&row.status().equals("COMPLETED")))return view(row);
+        transition(tenant,row,delivered?OrderEvent.CONFIRM_DELIVERY:OrderEvent.START_FULFILLMENT);
+        var result=view(mapper.internalRead(tenant,id));outbox.append(tenant,delivered?"order.completed.v1":"order.fulfilling.v1",id,result.version(),result);return result;
+    }
 }

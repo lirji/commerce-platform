@@ -34,6 +34,7 @@ class PersistedCommerceTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired Commands commands;
     @Autowired com.lrj.commerce.payment.api.PaymentApi payments;
+    @Autowired com.lrj.commerce.payment.api.RefundApi refunds;
     private final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
     private final JsonMapper json=JsonMapper.builder().findAndAddModules().build();
     private String tenant,admin,member,other;
@@ -230,7 +231,7 @@ class PersistedCommerceTest {
         // 模拟ACK丢失导致同事件再次可见，Inbox必须阻止重复业务副作用。
         jdbc.update("UPDATE platform_event SET status='PENDING',available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='payment.paid.v1'",tenant);
         pump();assertEquals(paid,readOrder(order));assertEquals(1,stockValue("sold"));
-        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=? AND consumer_id='order-payment-v1'",Integer.class,tenant));
         assertEquals(409,call("POST","/v1/admin/sandbox/payments/"+payment.path("paymentId").asString()+"/fact",admin,"reverse",Map.of("status","OPEN")).status());
     }
     @Test void concurrentCloseAndChannelSuccessChooseOneDurableFact() throws Exception {
@@ -259,7 +260,7 @@ class PersistedCommerceTest {
         jdbc.update("UPDATE platform_event SET payload_json='{}' WHERE event_id=?",event);
         for(int i=0;i<5;i++){pump();jdbc.update("UPDATE platform_event SET available_at=CURRENT_TIMESTAMP(3) WHERE event_id=?",event);}
         assertEquals("ISOLATED",jdbc.queryForObject("SELECT status FROM platform_event WHERE event_id=?",String.class,event));
-        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=?",Integer.class,tenant));assertEquals(1,stockValue("held"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=? AND consumer_id='order-payment-v1'",Integer.class,tenant));assertEquals(1,stockValue("held"));
         assertEquals(403,call("POST","/v1/admin/events/"+event+"/retry",member,"retry",null).status());
         jdbc.update("UPDATE platform_event SET payload_json=? WHERE event_id=?",original,event);
         post("/v1/admin/events/"+event+"/retry",admin,"retry",null);pump();
@@ -294,6 +295,93 @@ class PersistedCommerceTest {
         post("/v1/admin/orders/expire",admin,"expire",null);
         assertEquals("CANCELLED",readOrder(order).path("status").asString());assertEquals(2,stockValue("available"));
         assertEquals(409,call("POST","/v1/orders/"+order.path("orderId").asString()+"/payments",member,"late",null).status());
+    }
+    private JsonNode payOrder(JsonNode order) throws Exception {var payment=startPayment(order);sandbox(payment,"PAID");reconcile(order);pump();return readOrder(order);}
+    private void ship(JsonNode order) throws Exception {post("/v1/admin/fulfillments/"+order.path("orderId").asString()+"/ship",admin,"ship",Map.of("trackingNo","SANDBOX-TRACKING"));}
+    private JsonNode requestReturn(JsonNode order,int quantity,String key) throws Exception {return post("/v1/aftersales",member,key,Map.of("orderId",order.path("orderId").asString(),"reason","隔离测试退货","items",List.of(Map.of("skuId","sku1","quantity",quantity))));}
+    private JsonNode approve(JsonNode request,String key) throws Exception {return post("/v1/admin/aftersales/"+request.path("caseId").asString()+"/approve",admin,key,null);}
+    private JsonNode finishRefund(JsonNode request,String key) throws Exception {
+        String refund=request.path("refundId").asString();post("/v1/admin/sandbox/refunds/"+refund+"/success",admin,key,null);
+        post("/v1/admin/refunds/"+refund+"/reconcile",admin,null,null);pump();
+        return call("GET","/v1/aftersales/"+request.path("caseId").asString(),member,null,null).body();
+    }
+    @Test void shipmentAndDeliveryAdvanceOrderAndRejectTrackingReplacement() throws Exception {
+        var order=payOrder(pendingOrder());ship(order);assertEquals("FULFILLING",readOrder(order).path("status").asString());
+        assertEquals(409,call("POST","/v1/admin/fulfillments/"+order.path("orderId").asString()+"/ship",admin,"replace",Map.of("trackingNo","CHANGED")).status());
+        post("/v1/admin/fulfillments/"+order.path("orderId").asString()+"/deliver",admin,"deliver",null);
+        assertEquals("COMPLETED",readOrder(order).path("status").asString());
+        post("/v1/admin/fulfillments/"+order.path("orderId").asString()+"/deliver",admin,"duplicate-delivery",null);
+        assertEquals(404,call("GET","/v1/orders/"+order.path("orderId").asString()+"/fulfillment",other,null,null).status());
+    }
+    @Test void beforeShipmentRefundBlocksShippingAndWaitsForRealRefundFact() throws Exception {
+        var order=payOrder(pendingOrder());var request=requestReturn(order,1,"r");String id=request.path("caseId").asString();
+        assertEquals(409,call("POST","/v1/admin/fulfillments/"+order.path("orderId").asString()+"/ship",admin,"blocked",Map.of("trackingNo","TRACK")).status());
+        var refunding=approve(request,"approve");assertEquals("REFUNDING",refunding.path("status").asString());assertEquals(2,stockValue("available"));assertEquals(0,stockValue("sold"));
+        var unknown=post("/v1/admin/refunds/"+refunding.path("refundId").asString()+"/reconcile",admin,null,null);assertEquals("UNKNOWN",unknown.path("status").asString());
+        assertEquals("REFUNDING",call("GET","/v1/aftersales/"+id,member,null,null).body().path("status").asString());
+        assertEquals("COMPLETED",finishRefund(refunding,"refund").path("status").asString());
+        assertEquals("CANCELLED",call("GET","/v1/orders/"+order.path("orderId").asString()+"/fulfillment",member,null,null).body().path("status").asString());
+        // 模拟退款事件重复投递，库存与累计金额都不能再增加。
+        jdbc.update("UPDATE platform_event SET status='PENDING',available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='refund.succeeded.v1'",tenant);pump();
+        assertEquals(2,stockValue("available"));assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void partialReturnsUseOriginalAllocationAndNeverOverRefund() throws Exception {
+        seed();stock("sku1",3);post("/v1/admin/campaigns",admin,"campaign",draft("partial",1,"1.00"));post("/v1/admin/campaigns/partial/1/publish",admin,"publish",Map.of("expectedVersion",0));
+        var order=post("/v1/orders",member,"o",orderInput(post("/v1/quotes",member,"q",basket(3))));payOrder(order);ship(order);
+        String[] amounts={"24.66","24.67","24.67"};
+        for(int n=0;n<3;n++){
+            var request=requestReturn(order,1,"return-"+n);assertEquals(amounts[n],request.path("refundAmount").asString());
+            var approved=approve(request,"approve-"+n);assertEquals("WAIT_RETURN",approved.path("status").asString());assertEquals(3-n,stockValue("sold"));
+            var refunding=post("/v1/admin/aftersales/"+request.path("caseId").asString()+"/receive-return",admin,"receive-"+n,null);
+            assertEquals("REFUNDING",refunding.path("status").asString());assertEquals("COMPLETED",finishRefund(refunding,"refund-"+n).path("status").asString());
+        }
+        assertEquals(new java.math.BigDecimal("74.00"),jdbc.queryForObject("SELECT SUM(amount) FROM payment_refund WHERE tenant_id=?",java.math.BigDecimal.class,tenant));
+        assertEquals(3,stockValue("available"));assertEquals(0,stockValue("sold"));
+        assertEquals(400,call("POST","/v1/aftersales",member,"over-return",Map.of("orderId",order.path("orderId").asString(),"reason","多退","items",List.of(Map.of("skuId","sku1","quantity",1)))).status());
+    }
+    @Test void onlyOneActiveCaseAndRejectionReleasesShipmentHold() throws Exception {
+        var order=payOrder(pendingOrder());var request=requestReturn(order,1,"r");
+        assertEquals(409,call("POST","/v1/aftersales",member,"second",Map.of("orderId",order.path("orderId").asString(),"reason","重复申请","items",List.of(Map.of("skuId","sku1","quantity",1)))).status());
+        post("/v1/admin/aftersales/"+request.path("caseId").asString()+"/reject",admin,"reject",null);ship(order);
+        assertEquals("FULFILLING",readOrder(order).path("status").asString());assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void returnApprovalCannotBypassPhysicalReceiptAndRejectsOverReturn() throws Exception {
+        var order=payOrder(pendingOrder());ship(order);var request=requestReturn(order,1,"r");
+        assertEquals(409,call("POST","/v1/admin/aftersales/"+request.path("caseId").asString()+"/receive-return",admin,"early",null).status());
+        approve(request,"approve");assertEquals(1,stockValue("sold"));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(403,call("POST","/v1/admin/aftersales/"+request.path("caseId").asString()+"/receive-return",member,"forged",null).status());
+        assertEquals(404,call("GET","/v1/aftersales/"+request.path("caseId").asString(),other,null,null).status());
+    }
+    @Test void zeroValueReturnCompletesWithoutChannelRefund() throws Exception {
+        seed();stock("sku1",1);post("/v1/admin/campaigns",admin,"c",draft("free",1,"100.00"));post("/v1/admin/campaigns/free/1/publish",admin,"p",Map.of("expectedVersion",0));
+        var order=post("/v1/orders",member,"o",orderInput(post("/v1/quotes",member,"q",basket(1))));var request=requestReturn(order,1,"r");var approved=approve(request,"a");pump();
+        assertEquals("COMPLETED",call("GET","/v1/aftersales/"+request.path("caseId").asString(),member,null,null).body().path("status").asString());
+        assertEquals("NO_PAYMENT_REQUIRED",jdbc.queryForObject("SELECT provider FROM payment_refund WHERE tenant_id=?",String.class,tenant));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund_sandbox WHERE tenant_id=?",Integer.class,tenant));assertEquals(1,stockValue("available"));
+    }
+    @Test void refundEvidenceMismatchKeepsCaseOpenAndDoesNotRestoreInventoryTwice() throws Exception {
+        var order=payOrder(pendingOrder());var approved=approve(requestReturn(order,1,"r"),"a");String id=approved.path("refundId").asString();
+        post("/v1/admin/sandbox/refunds/"+id+"/success",admin,"success",null);jdbc.update("UPDATE payment_refund_sandbox SET amount=amount+1 WHERE tenant_id=?",tenant);
+        assertEquals(409,call("POST","/v1/admin/refunds/"+id+"/reconcile",admin,null,null).status());
+        assertEquals("UNKNOWN",jdbc.queryForObject("SELECT status FROM payment_refund WHERE tenant_id=?",String.class,tenant));assertEquals(2,stockValue("available"));
+        assertEquals("REFUNDING",call("GET","/v1/aftersales/"+approved.path("caseId").asString(),member,null,null).body().path("status").asString());
+    }
+    @Test void concurrentRefundReservationsCannotExceedReceivedAmount() throws Exception {
+        var order=payOrder(pendingOrder());String orderId=order.path("orderId").asString();var actor=new Actor(tenant,"admin",Actor.Role.ADMIN);
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var latch=new CountDownLatch(1);List<Callable<Boolean>> tasks=new ArrayList<>();
+            for(int n=0;n<2;n++){String caseId="capacity-"+n;tasks.add(()->{latch.await();try{commands.run(actor,"test.refund.capacity",caseId,caseId,String.class,()->{refunds.request(tenant,caseId,orderId,"25.00");return "ok";});return true;}catch(com.lrj.commerce.kernel.DomainException conflict){return false;}});}
+            var first=pool.submit(tasks.get(0));var second=pool.submit(tasks.get(1));latch.countDown();assertNotEquals(first.get(),second.get());
+        }
+        assertEquals(new java.math.BigDecimal("25.00"),jdbc.queryForObject("SELECT refund_reserved FROM payment_attempt WHERE tenant_id=?",java.math.BigDecimal.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void simultaneousAftersaleApplicationsLeaveOneActiveCase() throws Exception {
+        var order=payOrder(pendingOrder());Object input=Map.of("orderId",order.path("orderId").asString(),"reason","并发申请","items",List.of(Map.of("skuId","sku1","quantity",1)));
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var latch=new CountDownLatch(1);var a=pool.submit(()->{latch.await();return call("POST","/v1/aftersales",member,"r1",input);});var b=pool.submit(()->{latch.await();return call("POST","/v1/aftersales",member,"r2",input);});latch.countDown();
+            assertEquals(List.of(200,409),java.util.stream.Stream.of(a.get(),b.get()).map(Reply::status).sorted().toList());
+        }
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM aftersales_case WHERE tenant_id=?",Integer.class,tenant));
     }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));

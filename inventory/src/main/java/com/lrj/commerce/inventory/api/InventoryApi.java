@@ -16,4 +16,6 @@ public interface InventoryApi {
     void confirm(String tenantId,String orderId);
     /** 只释放未确认预占，资金未知期间不得调用。 */
     void release(String tenantId,String orderId);
+    /** 售后可信收货，按case/SKU防止重复回补原已确认库存。 */
+    void returnItems(String tenant,String order,String caseId,String sku,int quantity);
 }

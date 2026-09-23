@@ -10,4 +10,8 @@
  <update id="terminal">UPDATE inventory_hold SET status=#{status} WHERE tenant_id=#{tenant} AND order_id=#{order} AND sku_id=#{sku} AND status='RESERVED'</update>
  <update id="confirmStock">UPDATE inventory_stock SET held=held-#{hold.quantity},sold=sold+#{hold.quantity},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{hold.storeId} AND sku_id=#{hold.skuId} AND held&gt;=#{hold.quantity}</update>
  <update id="releaseStock">UPDATE inventory_stock SET held=held-#{hold.quantity},available=available+#{hold.quantity},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{hold.storeId} AND sku_id=#{hold.skuId} AND held&gt;=#{hold.quantity}</update>
+ <select id="returned" resultType="int">SELECT quantity FROM inventory_return WHERE tenant_id=#{tenant} AND case_id=#{caseId} AND sku_id=#{sku}</select>
+ <update id="addReturned">UPDATE inventory_hold SET returned_quantity=returned_quantity+#{quantity} WHERE tenant_id=#{tenant} AND order_id=#{order} AND sku_id=#{sku} AND status='CONFIRMED' AND returned_quantity+#{quantity}&lt;=quantity</update>
+ <insert id="recordReturn">INSERT INTO inventory_return(tenant_id,case_id,sku_id,quantity) VALUES(#{tenant},#{caseId},#{sku},#{quantity})</insert>
+ <update id="restore">UPDATE inventory_stock SET available=available+#{quantity},sold=sold-#{quantity},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id=#{sku} AND sold&gt;=#{quantity}</update>
 </mapper>

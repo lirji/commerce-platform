@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper">
+ <sql id="view">case_id,order_id,member_id,status,return_required,CAST(refund_amount AS CHAR) refund_amount,refund_id,version,items_json</sql>
+ <insert id="insert">INSERT INTO aftersales_case(tenant_id,case_id,order_id,member_id,status,return_required,refund_amount,version,reason,items_json) VALUES(#{tenant},#{view.caseId},#{view.orderId},#{view.memberId},#{view.status},#{view.returnRequired},#{view.refundAmount},#{view.version},#{reason},#{items})</insert>
+ <insert id="line">INSERT INTO aftersales_line(tenant_id,case_id,sku_id,quantity,refund_amount) VALUES(#{tenant},#{caseId},#{line.skuId},#{line.quantity},#{line.refundAmount})</insert>
+ <select id="find" resultType="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper$Row">SELECT <include refid="view"/> FROM aftersales_case WHERE tenant_id=#{tenant} AND case_id=#{id}</select>
+ <select id="lock" resultType="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper$Row">SELECT <include refid="view"/> FROM aftersales_case WHERE tenant_id=#{tenant} AND case_id=#{id} FOR UPDATE</select>
+ <select id="list" resultType="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper$Row">SELECT <include refid="view"/> FROM aftersales_case WHERE tenant_id=#{tenant} <if test="member != null">AND member_id=#{member}</if> AND case_id&gt;#{after} ORDER BY case_id LIMIT #{limit}</select>
+ <select id="returned" resultType="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper$Returned">SELECT l.sku_id,l.quantity FROM aftersales_line l JOIN aftersales_case c ON c.tenant_id=l.tenant_id AND c.case_id=l.case_id WHERE c.tenant_id=#{tenant} AND c.order_id=#{order} AND c.status='COMPLETED' ORDER BY c.case_id,l.sku_id FOR UPDATE</select>
+ <update id="change">UPDATE aftersales_case SET status=#{status},refund_id=#{refundId},version=version+1 WHERE tenant_id=#{tenant} AND case_id=#{id} AND version=#{version}</update>
+</mapper>

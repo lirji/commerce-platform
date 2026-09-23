@@ -16,4 +16,8 @@ public interface InventoryMapper {
     int terminal(@Param("tenant") String tenant,@Param("order") String order,@Param("sku") String sku,@Param("status") String status);
     int confirmStock(@Param("tenant") String tenant,@Param("hold") Hold hold);
     int releaseStock(@Param("tenant") String tenant,@Param("hold") Hold hold);
+    Integer returned(@Param("tenant") String tenant,@Param("caseId") String caseId,@Param("sku") String sku);
+    int addReturned(@Param("tenant") String tenant,@Param("order") String order,@Param("sku") String sku,@Param("quantity") int quantity);
+    void recordReturn(@Param("tenant") String tenant,@Param("caseId") String caseId,@Param("sku") String sku,@Param("quantity") int quantity);
+    int restore(@Param("tenant") String tenant,@Param("store") String store,@Param("sku") String sku,@Param("quantity") int quantity);
 }

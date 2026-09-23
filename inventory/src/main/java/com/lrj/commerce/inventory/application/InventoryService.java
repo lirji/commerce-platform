@@ -47,4 +47,13 @@ public class InventoryService implements InventoryApi {
             if(changed!=1||mapper.terminal(tenant,order,hold.skuId(),target)!=1) throw new DomainException(DomainException.Code.CONFLICT,"库存并发状态冲突");
         }
     }
+    /** 原预占行锁串行累计退货数量，退货台账和可售回补同事务。 */
+    @Transactional(propagation=Propagation.MANDATORY)
+    public void returnItems(String tenant,String order,String caseId,String sku,int quantity){
+        Inputs.require(quantity>0&&quantity<=10000,"退货数量无效");
+        var hold=mapper.holds(tenant,order).stream().filter(h->h.skuId().equals(sku)).findFirst().orElseThrow(()->new DomainException(DomainException.Code.NOT_FOUND,"原库存确认不存在"));
+        Integer previous=mapper.returned(tenant,caseId,sku);if(previous!=null){if(previous!=quantity)throw new DomainException(DomainException.Code.CONFLICT,"退货幂等数量冲突");return;}
+        if(mapper.addReturned(tenant,order,sku,quantity)!=1||mapper.restore(tenant,hold.storeId(),sku,quantity)!=1)throw new DomainException(DomainException.Code.CONFLICT,"累计退货超出已确认数量");
+        mapper.recordReturn(tenant,caseId,sku,quantity);
+    }
 }

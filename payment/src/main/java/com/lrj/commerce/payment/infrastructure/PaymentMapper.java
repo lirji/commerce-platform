@@ -17,4 +17,5 @@ public interface PaymentMapper {
     java.util.List<Check> due(@Param("tenant") String tenant);
     java.util.List<String> dueTenants(@Param("after") String after);
     int claimCheck(@Param("tenant") String tenant,@Param("id") String id,@Param("attempts") int attempts,@Param("delay") int delay);
+    int reserveRefund(@Param("tenant") String tenant,@Param("id") String id,@Param("amount") String amount);
 }

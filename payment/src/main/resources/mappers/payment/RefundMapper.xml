@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.payment.infrastructure.RefundMapper">
+ <sql id="view">refund_id,case_id,order_id,CAST(amount AS CHAR) amount,currency,provider,status,version</sql>
+ <select id="byCase" resultType="com.lrj.commerce.payment.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND case_id=#{caseId} FOR UPDATE</select>
+ <select id="find" resultType="com.lrj.commerce.payment.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND refund_id=#{id}</select>
+ <select id="lock" resultType="com.lrj.commerce.payment.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND refund_id=#{id} FOR UPDATE</select>
+ <insert id="insert">INSERT INTO payment_refund(tenant_id,refund_id,case_id,order_id,amount,currency,provider,status,version) VALUES(#{tenant},#{view.refundId},#{view.caseId},#{view.orderId},#{view.amount},#{view.currency},#{view.provider},#{view.status},#{view.version})</insert>
+ <update id="succeed">UPDATE payment_refund SET status='SUCCEEDED',version=version+1,channel_transaction_id=#{transaction},evidence_json=#{proof} WHERE tenant_id=#{tenant} AND refund_id=#{id} AND status='UNKNOWN'</update>
+ <select id="list" resultType="com.lrj.commerce.payment.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND refund_id&gt;#{after} ORDER BY refund_id LIMIT #{limit}</select>
+ <insert id="ensureChannel">INSERT INTO payment_refund_sandbox(tenant_id,refund_id,order_id,amount,currency,status) VALUES(#{tenant},#{view.refundId},#{view.orderId},#{view.amount},#{view.currency},'UNKNOWN') ON DUPLICATE KEY UPDATE refund_id=refund_id</insert>
+ <select id="channel" resultType="com.lrj.commerce.payment.api.RefundChannel$Evidence">SELECT refund_id,tenant_id,order_id,CAST(amount AS CHAR) amount,currency,status,transaction_id FROM payment_refund_sandbox WHERE tenant_id=#{tenant} AND refund_id=#{id}</select>
+ <update id="channelSuccess">UPDATE payment_refund_sandbox SET status='SUCCEEDED',transaction_id=#{transaction} WHERE tenant_id=#{tenant} AND refund_id=#{id} AND status='UNKNOWN'</update>
+ <select id="due" resultType="com.lrj.commerce.payment.infrastructure.RefundMapper$Check">SELECT tenant_id,refund_id,check_attempts FROM payment_refund WHERE tenant_id=#{tenant} AND status='UNKNOWN' AND check_attempts&lt;5 AND next_check_at&lt;=CURRENT_TIMESTAMP(3) ORDER BY next_check_at,refund_id LIMIT 5</select>
+ <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM payment_refund WHERE tenant_id&gt;#{after} AND status='UNKNOWN' AND check_attempts&lt;5 AND next_check_at&lt;=CURRENT_TIMESTAMP(3) ORDER BY tenant_id LIMIT 4</select>
+ <update id="claim">UPDATE payment_refund SET check_attempts=check_attempts+1,next_check_at=TIMESTAMPADD(SECOND,#{delay},CURRENT_TIMESTAMP(3)) WHERE tenant_id=#{check.tenantId} AND refund_id=#{check.refundId} AND check_attempts=#{check.checkAttempts} AND check_attempts&lt;5 AND status='UNKNOWN' AND next_check_at&lt;=CURRENT_TIMESTAMP(3)</update>
+</mapper>

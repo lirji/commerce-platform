@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "orderId": "84e1e616-a804-462e-ab27-30160b08bf7b",
+  "caseId": "ae9b51b4-60e1-4d3f-b618-45f96a4e8c23",
+  "refundId": "0f28c640-da3b-49f3-a8ca-0b67d36fa9f3",
+  "refundAmount": "59.00",
+  "finalCase": "COMPLETED",
+  "flow": "pay -> ship -> deliver -> return -> receive -> refund -> complete",
+  "automaticRefundReconciliation": true
+}

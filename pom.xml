@@ -22,6 +22,8 @@
         <module>inventory</module>
         <module>order-runtime</module>
     <module>payment</module>
+    <module>fulfillment</module>
+    <module>aftersales</module>
         <module>commerce-app</module>
         <module>shared-kernel</module>
         <module>marketing</module>
