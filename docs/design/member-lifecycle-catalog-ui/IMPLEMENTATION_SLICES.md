@@ -14,6 +14,6 @@
 |LP08|生命周期旅程与效果比较|LP06,LP07|automation/app/frontend|生日/沉睡/复购/加购、等待、退款成本|DONE|
 |LP09|商品类目、规格模板、条码图片、检索|—|catalog/app/frontend|权限、唯一、筛选、非法模板|DONE|
 |LP10|批量及定时经营、渠道价格|LP09|catalog/trade/frontend|版本冲突、恢复、渠道报价|DONE|
-|LP11|深色经营工作台和整体验收|LP02–LP10|frontend/tests/scripts/docs|真实数据、空错状态、桌面窄屏、CI|LOCAL_DONE_CI_PENDING|
+|LP11|深色经营工作台和整体验收|LP02–LP10|frontend/tests/scripts/docs|真实数据、空错状态、桌面窄屏、CI|DONE|
 
-LP01–LP11本地实现与验证完成：220项后端、21条浏览器通过。正在按授权完成远程CI、主线推送和本地Docker，实际交付状态见STATUS及各RESULT，不把本地通过等同部署完成。
+LP01–LP11 DONE。全量后端220项、浏览器21条、远程实现CI及本地Docker通过，正常快进到origin/main。最终不可变实现、CI和镜像记录分别见DELIVERY_RESULT、CI_RESULT与DEPLOYMENT_RESULT。

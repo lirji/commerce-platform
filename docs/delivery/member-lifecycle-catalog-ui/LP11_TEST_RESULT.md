@@ -8,3 +8,5 @@
 - packaged jar含同源UI/API，8604运行 `.local/member-suite-lp11-verified.jar`，SHA256 `0b8b7aadb862b1783718bc34c92f99fdb52cb412b41bc81994017c5020751bad`；隔离MySQL V34。此次最后打包仅合入已类型检查的CSS/历史分页，不修改已验证后端。
 
 统计口径和边界见OPERATIONS_GUIDE，代码审查见REVIEW。远程CI与实际Docker部署另由CI_RESULT、DEPLOYMENT_RESULT记录，不能从本地PASS推断远程已完成。
+
+部署后补验：8602自动worker开启，经营计划与总览浏览器2/2 PASS。任务中间态断言兼容SCHEDULED/RUNNING/COMPLETED（后台可能先于页面刷新完成），仍严格核对成功1项、实际售价、唯一回执与历史；新增窄验收1/1 PASS。业务实现与部署jar未变。

@@ -1,6 +1,6 @@
 {
   "task": "member-lifecycle-catalog-ui",
-  "status": "DELIVERING",
+  "status": "COMPLETE",
   "baseline": "fa972929a4b53bc8348bf2f8d4422808f097a75b",
   "priorState": "docs/delivery/member-lifecycle-catalog-ui/PREVIOUS_PROGRESS_STATE.json",
   "slices": {
@@ -14,20 +14,23 @@
     "LP08": "DONE",
     "LP09": "DONE",
     "LP10": "DONE",
-    "LP11": "LOCAL_DONE_CI_PENDING"
+    "LP11": "DONE"
   },
   "verification": "docs/delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md",
-  "delivery": "LOCAL_VALIDATION_PASS_REMOTE_PENDING",
+  "delivery": "IMPLEMENTATION_MERGED_AND_PUSHED_MAIN_LOCAL_DOCKER_VERIFIED",
   "completionScope": "会员周期/积分/行为/人群/定向券/生命周期旅程/效果、商品经营与深色工作台；本地Docker",
   "externalIntegration": "DEFERRED_BY_USER",
   "previousMigration": "UNCHANGED_BLOCKED",
   "git": {
     "branch": "feat/member-lifecycle-catalog-ui",
     "target": "origin/main",
-    "latestSliceCommit": "77628be",
-    "preserveDirtyWorktree": "commerce-platform: CommerceController.java / CampaignService.java / .engineering/exploration"
+    "latestSliceCommit": "701b4f1",
+    "preserveDirtyWorktree": "commerce-platform: CommerceController.java / CampaignService.java / .engineering/exploration",
+    "sourceCommit": "701b4f115777e5fbe8c3d18712cca2154d932fab",
+    "method": "normal fast-forward push; original dirty local main preserved",
+    "documentationCheckpoint": "Completion records and test stability may be newer; business implementation and deployed jar remain sourceCommit. Latest main checks available on GitHub."
   },
-  "ci": "PENDING",
-  "deployment": "PENDING_LOCAL_DOCKER",
-  "next": "PUSH_BRANCH_CI_THEN_MAIN_AND_LOCAL_DOCKER"
+  "ci": "docs/delivery/member-lifecycle-catalog-ui/CI_RESULT.json",
+  "deployment": "docs/delivery/member-lifecycle-catalog-ui/DEPLOYMENT_RESULT.md",
+  "next": "NONE_IN_APPROVED_SCOPE"
 }
