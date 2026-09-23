@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.member.infrastructure.CycleMapper">
+  <insert id="policy">INSERT INTO member_cycle_policy(tenant_id,version,effective_from,policy_json) VALUES(#{tenant},#{p.version},#{p.effectiveFrom},#{json})</insert>
+  <select id="effective" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
+  <select id="policies" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
+  <select id="contribution" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Contribution">SELECT member_id,occurred_at,contribution FROM member_cycle_contribution WHERE tenant_id=#{tenant} AND source_id=#{source}</select>
+  <insert id="insertContribution">INSERT INTO member_cycle_contribution(tenant_id,source_id,member_id,occurred_at,contribution) VALUES(#{tenant},#{source},#{member},#{at},#{amount})</insert>
+  <update id="updateContribution">UPDATE member_cycle_contribution SET contribution=#{amount} WHERE tenant_id=#{tenant} AND source_id=#{source}</update>
+  <select id="sum" resultType="long">SELECT COALESCE(SUM(contribution),0) FROM member_cycle_contribution WHERE tenant_id=#{tenant} AND member_id=#{member} AND occurred_at&gt;=#{from} AND occurred_at&lt;#{to}</select>
+  <select id="view" resultType="com.lrj.commerce.member.api.MemberCycleApi$View">SELECT member_id,TRUE enabled,policy_version,cycle_start,cycle_end,current_growth,retention_growth,member_level,version FROM member_cycle_account WHERE tenant_id=#{tenant} AND member_id=#{member}</select>
+  <insert id="insertView">INSERT INTO member_cycle_account(tenant_id,member_id,policy_version,cycle_start,cycle_end,current_growth,retention_growth,member_level,version) VALUES(#{tenant},#{v.memberId},#{v.policyVersion},#{v.cycleStart},#{v.cycleEnd},#{v.currentGrowth},#{v.retentionGrowth},#{v.memberLevel},#{v.version})</insert>
+  <update id="updateView">UPDATE member_cycle_account SET policy_version=#{v.policyVersion},cycle_start=#{v.cycleStart},cycle_end=#{v.cycleEnd},current_growth=#{v.currentGrowth},retention_growth=#{v.retentionGrowth},member_level=#{v.memberLevel},version=#{v.version} WHERE tenant_id=#{tenant} AND member_id=#{v.memberId} AND version=#{expected}</update>
+  <select id="due" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Due">
+    SELECT m.tenant_id,m.member_id FROM member_record m
+    JOIN member_cycle_policy p ON p.tenant_id=m.tenant_id AND p.effective_from&lt;=#{at}
+    LEFT JOIN member_cycle_account a ON a.tenant_id=m.tenant_id AND a.member_id=m.member_id
+    WHERE m.status&lt;&gt;'CLOSED'
+      AND NOT EXISTS(SELECT 1 FROM member_cycle_policy newer WHERE newer.tenant_id=p.tenant_id AND newer.effective_from&lt;=#{at} AND (newer.effective_from&gt;p.effective_from OR (newer.effective_from=p.effective_from AND newer.version&gt;p.version)))
+      AND (a.member_id IS NULL OR a.cycle_end&lt;=#{at} OR a.policy_version&lt;&gt;p.version)
+    ORDER BY COALESCE(a.cycle_end,p.effective_from),m.tenant_id,m.member_id LIMIT #{limit}
+  </select>
+</mapper>

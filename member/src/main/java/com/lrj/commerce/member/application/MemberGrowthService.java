@@ -14,8 +14,8 @@ import java.time.temporal.ChronoUnit;
 /** 以来源净贡献对账，重复/乱序完成和退款事实不会重复加减成长。 */
 @Service
 public class MemberGrowthService implements MemberGrowthApi {
- private final GrowthMapper mapper;private final MemberMapper members;private final Commands commands;private final Outbox outbox;private final Clock clock;
- public MemberGrowthService(GrowthMapper mapper,MemberMapper members,Commands commands,Outbox outbox,Clock clock){this.mapper=mapper;this.members=members;this.commands=commands;this.outbox=outbox;this.clock=clock;}
+ private final MemberCycleApi cycles;private final GrowthMapper mapper;private final MemberMapper members;private final Commands commands;private final Outbox outbox;private final Clock clock;
+ public MemberGrowthService(GrowthMapper mapper,MemberMapper members,Commands commands,Outbox outbox,Clock clock,MemberCycleApi cycles){this.cycles=cycles;this.mapper=mapper;this.members=members;this.commands=commands;this.outbox=outbox;this.clock=clock;}
  /** 不可变发布防止退款时使用新成长率，生效时间限定新订单。 */
  public Policy publish(Actor actor,String key,Policy input){
   actor.requireAdmin();Inputs.require(input!=null&&input.version()>0&&input.effectiveFrom()!=null,"策略版本或时间无效");
@@ -45,6 +45,7 @@ public class MemberGrowthService implements MemberGrowthApi {
   return commands.run(actor,"member.growth.adjust",key,new Object[]{id,input},Wallet.class,()->{
    var member=lock(actor.tenantId(),id);Inputs.require(!member.status().equals("CLOSED"),"注销会员不可人工调整");var account=mapper.account(actor.tenantId(),id);
    if(account.version()!=input.expectedVersion())throw new DomainException(DomainException.Code.CONFLICT,"成长版本已变化");
+   cycles.contribute(actor.tenantId(),id,"manual-"+JsonCodec.hash(actor.actorId()+":"+key).substring(0,48),clock.instant(),input.delta());
    apply(actor.tenantId(),member,account,input.delta(),new BigDecimal(account.netSpend()),"manual-"+JsonCodec.hash(key).substring(0,32),0,input.reason(),true);return wallet(actor.tenantId(),id);
   });
  }
@@ -67,7 +68,9 @@ public class MemberGrowthService implements MemberGrowthApi {
   long contribution=net.multiply(new BigDecimal(source.growthRate())).setScale(0,RoundingMode.DOWN).longValueExact();long delta=contribution-source.contribution();
   var account=mapper.account(tenant,fact.memberId());BigDecimal newNet=new BigDecimal(account.netSpend()).add(net.subtract(new BigDecimal(source.netSpend())));
   mapper.updateSource(tenant,fact.orderId(),completed,contribution,net.toPlainString());
+  cycles.contribute(tenant,fact.memberId(),"order-"+fact.orderId(),fact.orderedAt(),contribution);
   if(delta!=0||newNet.compareTo(new BigDecimal(account.netSpend()))!=0)apply(tenant,member,account,delta,newNet,fact.orderId(),source.policyVersion(),fact.refundId()==null?"完成订单净消费成长":"成功退款重算净成长",true);
+  else cycles.assess(tenant,fact.memberId());
  }
  /** 规则所需数据从权威会员投影读取，不接收客户端自报标签。 */
  public Facts facts(String tenant,String id){Identifiers.require(tenant);Identifiers.require(id);var member=Inputs.found(members.find(tenant,id));var account=mapper.account(tenant,id);return new Facts(id,member.memberLevel(),member.status(),account==null?0:account.growth(),account==null?"0.00":account.netSpend(),mapper.tags(tenant,id));}
@@ -85,6 +88,7 @@ public class MemberGrowthService implements MemberGrowthApi {
   if(active!=null)for(var threshold:active.levels())if(Math.max(0,balance)>=threshold.minimumGrowth())level=threshold.code();
   if(mapper.accountChange(tenant,member.memberId(),balance,net.toPlainString(),policyVersion,account.version())!=1)throw new DomainException(DomainException.Code.CONFLICT,"成长账本版本冲突");
   if(ledger)mapper.entry(tenant,member.memberId(),source,delta,balance,sourcePolicy,reason);
+  if(cycles.assess(tenant,member.memberId()))return;
   if(!member.memberLevel().equals(level)){mapper.level(tenant,member.memberId(),level);outbox.append(tenant,"member.level.changed.v1",member.memberId(),member.version()+1,new LevelChanged(member.memberId(),member.memberLevel(),level,balance,policyVersion));}
  }
  private Wallet wallet(String tenant,String id){var member=Inputs.found(members.find(tenant,id));var a=mapper.account(tenant,id);return new Wallet(id,a==null?0:a.growth(),a==null?"0.00":a.netSpend(),member.memberLevel(),a==null?0:a.policyVersion(),a==null?0:a.version());}
