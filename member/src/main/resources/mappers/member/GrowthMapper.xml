@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.member.infrastructure.GrowthMapper">
+ <insert id="policy">INSERT INTO member_growth_policy(tenant_id,version,effective_from,policy_json) VALUES(#{tenant},#{input.version},#{input.effectiveFrom},#{json})</insert>
+ <select id="effective" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$PolicyRow">SELECT version,effective_from,CAST(policy_json AS CHAR) policy_json FROM member_growth_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
+ <select id="policies" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$PolicyRow">SELECT version,effective_from,CAST(policy_json AS CHAR) policy_json FROM member_growth_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
+ <select id="lockMember" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND member_id=#{member} FOR UPDATE</select>
+ <insert id="ensureAccount">INSERT INTO member_growth_account(tenant_id,member_id) VALUES(#{tenant},#{member}) ON DUPLICATE KEY UPDATE member_id=member_id</insert>
+ <select id="account" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$Account">SELECT growth,CAST(net_spend AS CHAR) net_spend,policy_version,version FROM member_growth_account WHERE tenant_id=#{tenant} AND member_id=#{member}</select>
+ <update id="accountChange">UPDATE member_growth_account SET growth=#{growth},net_spend=#{net},policy_version=#{policy},version=version+1 WHERE tenant_id=#{tenant} AND member_id=#{member} AND version=#{version}</update>
+ <update id="level">UPDATE member_record SET member_level=#{level},version=version+1 WHERE tenant_id=#{tenant} AND member_id=#{member}</update>
+ <select id="source" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$Source">SELECT order_id,member_id,CAST(paid AS CHAR) paid,completed,policy_version,CAST(growth_rate AS CHAR) growth_rate,contribution,CAST(net_spend AS CHAR) net_spend FROM member_growth_order WHERE tenant_id=#{tenant} AND order_id=#{order}</select>
+ <insert id="insertSource">INSERT INTO member_growth_order(tenant_id,order_id,member_id,paid,completed,policy_version,growth_rate) VALUES(#{tenant},#{fact.orderId},#{fact.memberId},#{fact.paid},#{fact.completed},#{policy},#{rate})</insert>
+ <update id="updateSource">UPDATE member_growth_order SET completed=#{completed},contribution=#{contribution},net_spend=#{net} WHERE tenant_id=#{tenant} AND order_id=#{order}</update>
+ <select id="refund" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$Refund">SELECT order_id,CAST(amount AS CHAR) amount FROM member_growth_refund WHERE tenant_id=#{tenant} AND refund_id=#{id}</select>
+ <insert id="insertRefund">INSERT INTO member_growth_refund(tenant_id,refund_id,order_id,amount) VALUES(#{tenant},#{fact.refundId},#{fact.orderId},#{fact.refundAmount})</insert>
+ <select id="refunds" resultType="string">SELECT CAST(COALESCE(SUM(amount),0) AS CHAR) FROM member_growth_refund WHERE tenant_id=#{tenant} AND order_id=#{order}</select>
+ <insert id="entry">INSERT INTO member_growth_ledger(tenant_id,member_id,source_id,delta,balance,policy_version,reason) VALUES(#{tenant},#{member},#{source},#{delta},#{balance},#{policy},#{reason})</insert>
+ <select id="ledger" resultType="com.lrj.commerce.member.api.MemberGrowthApi$Entry">SELECT sequence_id,source_id,delta,balance,policy_version,reason,created_at FROM member_growth_ledger WHERE tenant_id=#{tenant} AND member_id=#{member} AND sequence_id&gt;#{after} ORDER BY sequence_id LIMIT #{limit}</select>
+ <select id="tags" resultType="string">SELECT tag_id FROM member_tag_assignment WHERE tenant_id=#{tenant} AND member_id=#{member} AND active=TRUE ORDER BY tag_id LIMIT 65</select>
+ <insert id="tag">INSERT INTO member_tag_definition(tenant_id,tag_id,name) VALUES(#{tenant},#{input.tagId},#{input.name})</insert>
+ <select id="tagDefinition" resultType="com.lrj.commerce.member.api.MemberTagApi$Definition">SELECT tag_id,name FROM member_tag_definition WHERE tenant_id=#{tenant} AND tag_id=#{id}</select>
+ <select id="tagDefinitions" resultType="com.lrj.commerce.member.api.MemberTagApi$Definition">SELECT tag_id,name FROM member_tag_definition WHERE tenant_id=#{tenant} AND tag_id&gt;#{after} ORDER BY tag_id LIMIT #{limit}</select>
+ <select id="assignment" resultType="com.lrj.commerce.member.api.MemberTagApi$Assignment">SELECT tag_id,active,version,source,reason FROM member_tag_assignment WHERE tenant_id=#{tenant} AND member_id=#{member} AND tag_id=#{tag}</select>
+ <insert id="assign">INSERT INTO member_tag_assignment(tenant_id,member_id,tag_id,active,version,source,reason) VALUES(#{tenant},#{member},#{input.tagId},#{input.active},1,'MANUAL',#{input.reason}) ON DUPLICATE KEY UPDATE active=#{input.active},version=version+1,reason=#{input.reason}</insert>
+ <select id="assignments" resultType="com.lrj.commerce.member.api.MemberTagApi$Assignment">SELECT tag_id,active,version,source,reason FROM member_tag_assignment WHERE tenant_id=#{tenant} AND member_id=#{member} AND tag_id&gt;#{after} ORDER BY tag_id LIMIT #{limit}</select>
+</mapper>

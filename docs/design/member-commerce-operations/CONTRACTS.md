@@ -24,3 +24,11 @@ POST /admin/store-grants `{grantId,actorId,resourceType:MERCHANT|STORE,resourceI
 POST /operations/products `{productId,storeId,title,category,brand}`，GET同路由需storeId/after/limit；SPU是单店经营商品，本轮不自动跨商家共享所有权。POST /operations/products/{id} `{storeId,expectedVersion,title,category,brand}` 修订元资料。POST /operations/skus `{skuId,productId,storeId,title,unitPrice,specifications:[{name,value}]}`：1–8个规格，属性名不能重复，排序规范化后同SPU组合唯一；无规格商品使用“款式:标准”明确建模。新SKU默认FROZEN（待上架）。POST /operations/skus/{id} `{storeId,expectedVersion,title,unitPrice,status:ACTIVE|FROZEN,reason}`；GET同族按storeId分页返回全部状态；GET /operations/skus/{id}/history需storeId和after版本游标。
 
 已有旧SKU可在经营端编辑，不强行补造SPU/规格。规格组合创建后不可换绑，变更组合须创建新SKU，避免库存与历史订单语义混淆。上下架/调价在同一修订事务提交并记录原因；原快照报价在有效期内仍可提交，紧急禁售需要额外取消报价/订单流程，不在本轮暗改成交承诺。
+
+## OP04 成长与标签 DTO
+
+POST /admin/member-growth/policies `{version,effectiveFrom,growthPerYuan,levels:[{code,minimumGrowth}]}`：发布不可变配置，生效时间不得早于当前时刻（允许60秒传输误差），首档门槛0、递增、最多8档，成长率0–1000且最多两位小数。订单按创建时已生效策略固定成长率；完成后按扣除成功退款的实付金额向下取整计算成长。没适用策略的历史订单不追溯奖励。退款沿原策略冲回，重复/乱序事实按来源净额重算，不直接累计事件金额。
+
+GET /admin/member-growth/policies分页；GET /admin/member-growth/{memberId}、/ledger；POST /admin/member-growth/{memberId}/adjust `{expectedVersion,delta,reason}`，人工校准必须入账，不是可提现余额。余额允许因人工扣减后的退款形成负成长，等级按max(0,余额)判断，不丢失冲回债务。等级在成长变更或显式重算时按当前生效门槛刷新，策略发布不隐含全会员同步升级。POST /admin/member-growth/{memberId}/recalculate显式重算等级。会员本人GET /members/me/growth与/ledger，不可指定其他会员。
+
+POST /admin/member-tags `{tagId,name}`；GET同路由分页；POST /admin/member-tags/{memberId}/assign `{tagId,active,expectedVersion,reason}`，初次expectedVersion0，记录版本、来源MANUAL和原因；GET /admin/member-tags/{memberId}/assignments分页。单会员最多64个活跃标签，字典与关联均绑定租户。内部facts端口返回可信成长/净消费/等级/状态和标签，不开放客户端事实覆盖。

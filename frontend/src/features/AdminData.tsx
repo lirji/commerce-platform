@@ -39,6 +39,10 @@ const version: Field = {
 };
 import { dateFields, couponFields, couponBody } from "../shared/formSchemas";
 export const specs: Record<string, Spec> = {
+  "member-tags": {
+    title:"会员标签字典",description:"标签标识供人群和促销规则稳定引用；在会员成长页维护会员标签关联。",
+    path:"/admin/member-tags",id:"tagId",fields:[id("tagId","标签标识"),name],columns:[["tagId","标识"],["name","名称"]],
+  },
   "store-grants": {
     title: "商家与门店经营授权",
     description: "仅向已有运营身份授予商品经营权。商家授权包含其未来新增门店；不授予会员库、资金、订单或平台发布权限。",

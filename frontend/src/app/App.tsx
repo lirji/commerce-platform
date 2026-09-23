@@ -23,6 +23,7 @@ import { Marketing } from "../features/Marketing";
 import { Journeys } from "../features/Journeys";
 import { OpsPages } from "../features/OpsPages";
 import { ProductOperations } from "../features/ProductOperations";
+import { MemberGrowth } from "../features/MemberGrowth";
 const groups = [
   {
     label: "交易与交付",
@@ -58,6 +59,8 @@ const groups = [
     label: "业务基础",
     children: [
       ["members", "会员档案"],
+      ["growth", "会员成长"],
+      ["member-tags", "会员标签字典"],
       ["merchants", "商家管理"],
       ["stores", "店铺管理"],
       ["store-grants", "经营授权"],
@@ -202,12 +205,14 @@ export function App() {
         ["orders", "我的订单"],
         ["coupons", "优惠券"],
         ["benefits", "我的权益"],
+        ["growth", "我的成长"],
         ["aftersales", "售后"],
         ["notifications", "消息"],
       ].map(([key, label]) => ({ key, label }));
   let content;
   if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
   else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
+  else if (page === "growth") content = <MemberGrowth admin={admin}/>;
   else if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;
   else if (!admin) {
     if (page === "shop")
