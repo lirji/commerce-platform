@@ -49,6 +49,8 @@ post('/admin/entitlement-definitions',{'benefitId':'monthly-coffee','version':1,
 post('/admin/member-cycle-benefits',{'bindingId':'gold-monthly','policyVersion':1,'level':'GOLD','storeId':'brand-store','validUntil':at(86400*300),'benefits':[{'benefitId':'monthly-coffee','version':1}]})
 post('/admin/member-growth/suite-member/adjust',{'expectedVersion':0,'delta':120,'reason':'隔离演示周期成长'})
 post('/admin/member-cycle-benefits/suite-member/grant')
+post('/admin/member-points/policies',{'version':1,'effectiveFrom':at(0),'earnPerYuan':'1.00','expiryDays':30,'spendEnabled':True,'pointsPerYuan':100,'maxDeductionBps':5000})
+post('/admin/member-points/suite-member/adjust',{'expectedVersion':0,'delta':1200,'reason':'隔离演示积分入账'})
 # 演示仅受理后不假称到账；正式消费者读取持久事件完成发放。
 for _ in range(6):
     req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})

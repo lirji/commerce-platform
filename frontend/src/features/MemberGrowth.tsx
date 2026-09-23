@@ -1,4 +1,5 @@
 import { Alert, Button, Card, Descriptions, Input, Space, Table, Tabs } from "antd";
+import { MemberPoints } from "./MemberPoints";
 import { MemberCycles } from "./MemberCycles";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
@@ -21,6 +22,7 @@ export function MemberGrowth({admin}:{admin:boolean}) {
   <PageHead title={admin?"会员成长经营":"我的成长"} description="成长来自完成订单的净消费，成功退款按原规则冲回。成长不是可提现余额。"/>
   <ErrorNotice error={wallet.error}/><ErrorNotice error={ledger.error}/><ErrorNotice error={policies.error}/>
   <Tabs defaultActiveKey="wallet" items={[
+   {key:"points",label:"积分账户",children:<MemberPoints admin={admin}/>},
    {key:"cycles",label:"周期与等级权益",children:<MemberCycles admin={admin}/>},
    {key:"wallet",label:"成长与账本",children:<Card>
     {admin&&<Input.Search aria-label="查询会员成长" placeholder="输入会员标识查看成长" enterButton="查询会员" onSearch={v=>{setMember(v.trim());setAfter(0);setTagAfter("");}} style={{maxWidth:440,marginBottom:16}}/>}

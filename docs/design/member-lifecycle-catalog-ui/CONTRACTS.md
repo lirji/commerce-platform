@@ -26,3 +26,14 @@ LP02 等级权益绑定、LP03 积分及 LP04–LP11 的具体 DTO/状态/接口
 - 礼包发放全有或全无，配额不足回滚；定时事件使用已有5次重试/隔离及人工重试入口。降级不追溯撤销已授予权益，仍按原有效期享有，下一周期按新等级发放。已过 validUntil 不发放，历史周期不补发。
 - 新权益来源 LEVEL；POINTS 等待 LP05 再启用。原 ORDER/JOURNEY 的语义和接口兼容。
 - 前端：成长页面增加周期考核、策略配置、等级权益配置与补发；会员看到周期起止、本期/保级成长、等级和真实权益钱包。enabled=false 显示“尚未启用或尚未完成首次考核”，不编造进度。
+
+## LP03 积分账本
+
+- POST /v1/admin/member-points/policies：`{version,effectiveFrom,earnPerYuan,expiryDays,spendEnabled,pointsPerYuan,maxDeductionBps}`。每元获取0–1000（最多2位小数），有效天数1–366；兑换率1–100000积分/元、抵扣上限0–10000基点；spendEnabled默认false。不可变版本，生效时间现在至未来一年。获取按原下单时间选策略，完成订单按实际现金净消费向下取整奖励，退款仍用原策略。
+- GET 同路径 after/limit；GET /v1/admin/member-points/{id}、/v1/members/me/points：`{memberId,available,held,debt,credit,version}`。available=max(0,未过期剩余credit-debt)，held不可重复消费；读取按真实时间排除过期积分，即使到期任务延后也不可消费。
+- GET 对应 /ledger：`[{sequenceId,action,sourceId,delta,available,debt,policyVersion,reason,createdAt}]`，after=0/limit<=100；delta为净资产变化，过期已失去的积分退款免再次扣回并记录0变动原因。
+- POST /v1/admin/member-points/{id}/adjust：`{expectedVersion,delta,reason}`，整数±10亿；正向需有效积分策略，负向优先扣未过期积分，不足形成debt。单命令最多处理200个来源批次，碎片超过上限且尚有未处理余额时拒绝并提示分批，不能误建债务。
+- POST /v1/admin/member-points/{id}/expire：有界处理最多100个已过期批次，返回最新Wallet；定时器每轮20批。GET无隐式写。积分仅会员本人可读、管理员可配置/校准；冻结/注销不可人工赠分，真实退款仍可冲回。
+- 来源：订单/退款事实只走内部端口；每订单一份贡献和奖励批次，退款唯一。退款先到先记来源，完成再按净现金奖励；同一来源金额或会员不一致拒绝。单来源奖励<=10^12积分，账户债务<=9×10^15。
+- 入账有效期为首次完成奖励入账时刻+expiryDays×24小时，UTC精确毫秒；退款不延长。已过期未使用部分免扣，剩余先扣原批次可用，已经消费或抵偿过欠项的部分形成待偿扣回；后续新增积分优先抵偿欠项。不可兑换现金。
+- LP04/LP05尚未接入消费，LP03仅发布策略和独立获取/退款/到期账本。held字段为已批准后续抵扣分配预留且本片恒0；不因此宣称抵扣/兑换完成。

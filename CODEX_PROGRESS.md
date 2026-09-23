@@ -10,7 +10,8 @@
 - 建立独立工作区 commerce-platform-member-suite，分支 feat/member-lifecycle-catalog-ui，基线 fa97292。
 - 完成需求/技术未知/架构与 LP01/LP02 契约，落盘11片连续交付计划。
 - LP01周期等级策略/考核/到期调度完成，本地提交dc0fa52。
-- LP02等级礼包/幂等发放/会员页面/深色主题基础完成，170项后端测试与12个浏览器场景通过。
+- LP02等级礼包/幂等发放/会员页面/深色主题基础完成，170项后端测试与12个浏览器场景通过，本地提交186c261。
+- LP03独立积分获取/退款/到期/校准/待偿扣回账本及页面完成，174项完整后端与3个相关浏览器场景通过。
 
 ## 已修改文件
 
@@ -20,18 +21,18 @@
 
 ## 未完成
 
-- LP03–LP11 产品实现、验证、种子、CI 和 Git 交付。
+- LP04–LP11 产品实现、验证、种子、CI 和 Git 交付。
 
 ## 当前问题
 
-- LP01–LP02已完成，无环境阻塞；LP03尚未实现。
-- 8604隔离验收实例运行.local/member-suite-lp02.jar，workers=false；8602现有Docker未变。
+- LP01–LP03已完成，无环境阻塞；LP04尚未实现。
+- 8604隔离验收实例运行.local/member-suite-lp03.jar，workers=false；8602现有Docker未变。
 - 原 commerce-platform 两处用户未提交改动禁止动；8602 Docker fa97292 保持运行。
-- V1–V22 已执行，V23、V24已在隔离测试库应用，下一迁移V25。新工作区 .local/runtime.env 指向原私密配置，禁止打印或修改。
+- V1–V22 已执行，V23–V26已在隔离测试库应用，下一迁移V27。新工作区 .local/runtime.env 指向原私密配置，禁止打印或修改。
 
 ## 下一步建议
 
-1. 按新工作区 docs/design/member-lifecycle-catalog-ui/IMPLEMENTATION_SLICES.md 开始 LP03。
+1. 按新工作区 docs/design/member-lifecycle-catalog-ui/IMPLEMENTATION_SLICES.md 开始 LP04。
 2. 先实现周期等级真实 API 和数据库验证，再继续其余片；细契约在对应实现前补齐。
 3. 读取 docs/delivery/member-lifecycle-catalog-ui/STATUS.md 跟踪实测结果。
 
