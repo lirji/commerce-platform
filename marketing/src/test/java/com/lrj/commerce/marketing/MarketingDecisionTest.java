@@ -113,4 +113,14 @@ class MarketingDecisionTest {
         org.junit.jupiter.api.Assertions.assertNull(quote.selected());org.junit.jupiter.api.Assertions.assertEquals(Money.ZERO,quote.discount());
         org.junit.jupiter.api.Assertions.assertEquals(Reason.ELIGIBLE,quote.trace().getFirst().reason());
     }
+    @Test void tiersUseEligibleSpendAndNeverDiscountExcludedLines() {
+        var pricing=new Pricing(List.of(),List.of("sku-b"),List.of(new Tier(Money.minor(1000),Money.minor(200),0),new Tier(Money.minor(2000),Money.minor(500),2000)));
+        var offer=new Offer(scope,"scoped",1,now.minusSeconds(1),now.plusSeconds(1),Money.ZERO,Money.minor(400),member,0,pricing);
+        var quote=service.decide(request(List.of(line("a",2500),line("b",10000)),List.of(offer),facts,now));
+        assertEquals(400,quote.discount().minorUnits());assertEquals(400,quote.lines().get(0).discount().minorUnits());assertEquals(0,quote.lines().get(1).discount().minorUnits());
+        assertEquals(Reason.BELOW_MINIMUM,service.decide(request(List.of(line("a",999),line("b",10000)),List.of(offer),facts,now)).trace().getFirst().reason());
+        assertEquals(Reason.OUTSIDE_PRODUCT_SCOPE,service.decide(request(List.of(line("b",10000)),List.of(offer),facts,now)).trace().getFirst().reason());
+        assertThrows(DomainException.class,()->new Pricing(List.of(),List.of(),List.of(new Tier(Money.minor(2000),Money.minor(500),0),new Tier(Money.minor(1000),Money.minor(300),0))));
+    }
+
 }

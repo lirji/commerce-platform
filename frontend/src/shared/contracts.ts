@@ -48,6 +48,7 @@ export type Campaign = {
       platformFundingBps: number;
       budget: string | null;
       grant?: BenefitRef;
+      pricing?: {includedSkuIds:string[];excludedSkuIds:string[];tiers:{minimumSpend:string;discountAmount:string;percentageBps:number}[]};
     };
   };
 };

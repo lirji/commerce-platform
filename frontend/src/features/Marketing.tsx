@@ -24,6 +24,7 @@ import {
   money,
   type Values,
 } from "../shared/ui";
+import { CampaignPreview } from "./CampaignPreview";
 import { CampaignEditor, Governance, RuleEditor } from "../shared/marketing";
 export function Marketing({ kind, store }: { kind: string; store: string }) {
   const path = kind === "rules" ? "/admin/rules" : "/admin/campaigns";
@@ -90,6 +91,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
                   <Button size="small" onClick={() => setDetail(r)}>
                     查看配置
                   </Button>
+                  {"campaignId" in r.content && <><CampaignPreview campaign={r.content}/><CampaignEditor store={r.content.storeId} onDone={resource.refresh} initialCampaign={r.content} label="复制新版本"/></>}
                   {"campaignId" in r.content ? (
                     <Governance
                       base={path}

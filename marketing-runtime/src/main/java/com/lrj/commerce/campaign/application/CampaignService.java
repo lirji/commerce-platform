@@ -13,15 +13,15 @@ import org.springframework.stereotype.Service;
 /** 发布切换与审计同事务；旧版本不会在切换中和新版本同时生效。 */
 @Service
 public class CampaignService implements CampaignApi {
-    private final com.lrj.commerce.benefit.api.EntitlementApi entitlements;private final com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets;private final MarketingAssets assets;private final java.time.Clock clock;private final CampaignMapper mapper; private final StoreApi stores; private final Commands commands;
-    public CampaignService(CampaignMapper mapper,StoreApi stores,Commands commands,MarketingAssets assets,java.time.Clock clock,com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets,com.lrj.commerce.benefit.api.EntitlementApi entitlements) {this.entitlements=entitlements;this.budgets=budgets;this.assets=assets;this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
+    private final com.lrj.commerce.member.api.MemberApi members;private final com.lrj.commerce.member.api.MemberGrowthApi memberGrowth;private final com.lrj.commerce.catalog.api.CatalogApi catalog;private final com.lrj.commerce.marketing.api.DecisionPort decisions;private final com.lrj.commerce.benefit.api.EntitlementApi entitlements;private final com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets;private final MarketingAssets assets;private final java.time.Clock clock;private final CampaignMapper mapper; private final StoreApi stores; private final Commands commands;
+    public CampaignService(CampaignMapper mapper,StoreApi stores,Commands commands,MarketingAssets assets,java.time.Clock clock,com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets,com.lrj.commerce.benefit.api.EntitlementApi entitlements,com.lrj.commerce.member.api.MemberApi members,com.lrj.commerce.member.api.MemberGrowthApi memberGrowth,com.lrj.commerce.catalog.api.CatalogApi catalog,com.lrj.commerce.marketing.api.DecisionPort decisions) {this.members=members;this.memberGrowth=memberGrowth;this.catalog=catalog;this.decisions=decisions;this.entitlements=entitlements;this.budgets=budgets;this.assets=assets;this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
     /** 草稿内容不可变，修改必须创建新版本。 */
     public View create(Actor actor,String key,Draft input) {
         actor.requireAdmin();Inputs.require(input!=null,"请求不能为空");Identifiers.require(input.campaignId());Inputs.text(input.name(),128);
         Inputs.require(input.version()>0&&input.validFrom()!=null&&input.validTo()!=null&&input.validFrom().isBefore(input.validTo())&&(input.rule()!=null||(input.policy()!=null&&input.policy().rule()!=null)),"活动版本无效");
-        if(input.rule()!=null)input.rule().toCondition();
-        if(input.policy()!=null)Inputs.require(input.policy().audience()!=null||input.policy().rule()!=null,"受治理活动至少引用一种可信资产");
-        if(input.policy()!=null&&input.policy().terms()!=null){var terms=input.policy().terms();Inputs.require(terms.percentageBps()>=0&&terms.percentageBps()<=10000&&terms.platformFundingBps()>=0&&terms.platformFundingBps()<=10000,"活动百分比参数无效");if(terms.budget()!=null)Inputs.require(money(terms.budget()).compareTo(Money.ZERO)>0,"活动预算必须大于零");}
+        if(input.rule()!=null)input.rule().requireTrustedFields();
+        if(input.policy()!=null)Inputs.require(input.policy().audience()!=null||input.policy().rule()!=null||(input.policy().terms()!=null&&input.policy().terms().pricing()!=null),"受治理活动需引用可信资产或声明精细价格策略");
+        if(input.policy()!=null&&input.policy().terms()!=null){var terms=input.policy().terms();pricing(terms.pricing());Inputs.require(terms.percentageBps()>=0&&terms.percentageBps()<=10000&&terms.platformFundingBps()>=0&&terms.platformFundingBps()<=10000,"活动百分比参数无效");if(terms.budget()!=null)Inputs.require(money(terms.budget()).compareTo(Money.ZERO)>0,"活动预算必须大于零");}
         money(input.minimumSpend()); Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO)>0,"优惠必须大于零");
         return commands.run(actor,"campaign.create",key,input,View.class,()->{
             var store=stores.requireActive(actor,input.storeId());
@@ -76,14 +76,35 @@ public class CampaignService implements CampaignApi {
     }
     /** 人群资格只影响对应活动，MISS/UNKNOWN不会被活动内部NOT反转。 */
     public Candidates candidates(Actor actor,String storeId,String memberId,java.time.Instant now){
-        var rows=mapper.published(actor.tenantId(),storeId);if(rows.size()>100)throw new DomainException(DomainException.Code.LIMIT_EXCEEDED,"活动候选超过上限");
+        return candidates(actor.tenantId(),memberId,mapper.published(actor.tenantId(),storeId),now);
+    }
+    private Candidates candidates(String tenant,String memberId,List<CampaignMapper.Row> rows,java.time.Instant now){
+        if(rows.size()>100)throw new DomainException(DomainException.Code.LIMIT_EXCEEDED,"活动候选超过上限");
         var refs=rows.stream().filter(r->r.policyJson()!=null).map(r->JsonCodec.read(r.policyJson(),Policy.class).audience()).filter(java.util.Objects::nonNull).distinct().toList();
-        var sources=assets.sources(actor.tenantId(),memberId,refs,now);var indexed=new java.util.HashMap<MarketingAssets.Ref,MarketingAssets.Source>();for(var source:sources)indexed.put(new MarketingAssets.Ref(source.audienceId(),source.version()),source);
+        var sources=assets.sources(tenant,memberId,refs,now);var indexed=new java.util.HashMap<MarketingAssets.Ref,MarketingAssets.Source>();for(var source:sources)indexed.put(new MarketingAssets.Ref(source.audienceId(),source.version()),source);
         var offers=rows.stream().map(r->{
             com.lrj.commerce.marketing.api.Condition condition=JsonCodec.read(r.ruleJson(),RuleNode.class).toCondition();
             var policy=r.policyJson()==null?null:JsonCodec.read(r.policyJson(),Policy.class);
             if(policy!=null&&policy.audience()!=null){String match=indexed.get(policy.audience()).match();if(!match.equals("HIT"))condition=new com.lrj.commerce.marketing.api.Condition.Literal(match.equals("MISS")?com.lrj.commerce.marketing.api.Condition.Truth.NO_MATCH:com.lrj.commerce.marketing.api.Condition.Truth.UNKNOWN);}
-            return new Offer(new Scope(actor.tenantId(),r.merchantId(),r.storeId()),r.campaignId(),r.version(),r.validFrom(),r.validTo(),money(r.minimumSpend()),money(r.discountAmount()),condition,policy==null||policy.terms()==null?0:policy.terms().percentageBps());
+            return new Offer(new Scope(tenant,r.merchantId(),r.storeId()),r.campaignId(),r.version(),r.validFrom(),r.validTo(),money(r.minimumSpend()),money(r.discountAmount()),condition,policy==null||policy.terms()==null?0:policy.terms().percentageBps(),policy==null||policy.terms()==null?null:pricing(policy.terms().pricing()));
         }).toList();return new Candidates(offers,sources);
     }
+    /** 预览真实会员和目录价格，但不存报价、不预占库存/预算、不发权益。 */
+    public PreviewResult preview(Actor actor,String id,long version,Preview input){
+        actor.requireAdmin();Identifiers.require(id);Inputs.require(version>0&&input!=null&&input.items()!=null&&!input.items().isEmpty()&&input.items().size()<=100,"预览购物清单无效");
+        var row=Inputs.found(mapper.find(actor.tenantId(),id,version));members.requireActive(actor,input.memberId());stores.requireActive(actor,row.storeId());
+        var quantities=new java.util.TreeMap<String,Integer>();for(var item:input.items()){Inputs.require(item!=null&&item.quantity()>0&&item.quantity()<=10000,"购买数量无效");Identifiers.require(item.skuId());int count=quantities.getOrDefault(item.skuId(),0)+item.quantity();Inputs.require(count<=10000,"合并购买数量超限");quantities.put(item.skuId(),count);}
+        var skus=catalog.published(actor,row.storeId(),new java.util.ArrayList<>(quantities.keySet()));
+        var lines=skus.stream().map(sku->new Line(sku.skuId(),sku.skuId(),money(sku.unitPrice()),quantities.get(sku.skuId()))).toList();
+        var at=input.at()==null?clock.instant():input.at();var candidates=candidates(actor.tenantId(),input.memberId(),List.of(row),at);
+        Money gross=lines.stream().map(line->line.unitPrice().multiply(line.quantity())).reduce(Money.ZERO,Money::add);
+        var result=decisions.decide(new Request(new Scope(actor.tenantId(),row.merchantId(),row.storeId()),input.memberId(),at,lines,MemberRuleFacts.from(memberGrowth.facts(actor.tenantId(),input.memberId()),gross.amount().toPlainString()),candidates.offers()));
+        return new PreviewResult(result.gross().amount().toPlainString(),result.discount().amount().toPlainString(),result.payable().amount().toPlainString(),result.lines().stream().map(line->new PreviewLine(line.skuId(),line.gross().amount().toPlainString(),line.discount().amount().toPlainString(),line.payable().amount().toPlainString())).toList(),result.trace(),candidates.sources(),"仅模拟该活动版本；不含优惠券，不预占库存或预算，实际下单再次校验。模拟时间不回溯会员事实。");
+    }
+    private com.lrj.commerce.marketing.api.DecisionModels.Pricing pricing(CampaignApi.Pricing input){
+        if(input==null)return null;
+        Inputs.require(input.tiers()!=null&&input.tiers().size()<=8,"阶梯数量无效");
+        return new com.lrj.commerce.marketing.api.DecisionModels.Pricing(input.includedSkuIds(),input.excludedSkuIds(),input.tiers().stream().map(tier->{Inputs.require(tier!=null,"阶梯不能为空");return new com.lrj.commerce.marketing.api.DecisionModels.Tier(money(tier.minimumSpend()),money(tier.discountAmount()),tier.percentageBps());}).toList());
+    }
+
 }

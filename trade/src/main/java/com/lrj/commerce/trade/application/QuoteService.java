@@ -58,7 +58,7 @@ public class QuoteService implements QuoteApi {
             Money campaignPlatform=promotion==null?Money.ZERO:new Money(new BigDecimal(promotion.platformFunding()));
             int couponBps=couponApplication==null?0:couponApplication.platformFundingBps();
             Money couponPlatform=Money.minor(java.math.BigInteger.valueOf(couponDiscount.minorUnits()).multiply(java.math.BigInteger.valueOf(couponBps)).divide(java.math.BigInteger.valueOf(10000)).longValueExact());
-            var campaignLines=decisions.allocate(lines,campaignDiscount);
+            var campaignLines=selectedCampaign==null?decisions.allocate(lines,Money.ZERO):priced.lines();
             var couponBase=campaignLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.payable(),1)).toList();
             var couponLines=decisions.allocate(couponBase,couponDiscount);
             var campaignFunded=decisions.allocate(campaignLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.discount(),1)).toList(),campaignPlatform);

@@ -9,6 +9,8 @@ import java.util.Map;
 public class MarketingAssetController {
     private final CampaignFundingApi funding;private final MarketingAssets assets;private final CampaignApi campaigns;
     public MarketingAssetController(MarketingAssets assets,CampaignApi campaigns,CampaignFundingApi funding){this.funding=funding;this.assets=assets;this.campaigns=campaigns;}
+    /** 只读模拟不走命令账本，没有额度或交易副作用。 */
+    @PostMapping("/campaigns/{id}/{version}/preview") public Object preview(@AuthenticationPrincipal Actor actor,@PathVariable String id,@PathVariable long version,@RequestBody CampaignApi.Preview input){return campaigns.preview(actor,id,version,input);}
     /** 明确来源水位与新鲜度的不可变人群导入。 */
     @PostMapping("/audiences") public Object audience(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@RequestBody MarketingAssets.Audience input){return assets.createAudience(actor,key,input);}
     /** 只返回人群摘要，不泄漏全量会员清单。 */

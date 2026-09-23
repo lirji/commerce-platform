@@ -37,21 +37,33 @@ public final class MarketingDecisionService implements DecisionPort {
         }
         var trace = new ArrayList<Trace>();
         Selection selected = null;
+        List<Line> selectedLines=lines;
         Money discount = Money.ZERO;
         for (Offer offer : offers) {
-            Reason reason = reason(request, offer, gross);
+            var eligible=offer.pricing()==null?lines:lines.stream().filter(line->offer.pricing().includes(line.skuId())).toList();
+            Money eligibleGross=eligible.stream().map(line->line.unitPrice().multiply(line.quantity())).reduce(Money.ZERO,Money::add);
+            Tier tier=null;
+            if(offer.pricing()!=null)for(var threshold:offer.pricing().tiers())if(eligibleGross.compareTo(threshold.minimumSpend())>=0)tier=threshold;
+            Reason reason = eligible.isEmpty()?Reason.OUTSIDE_PRODUCT_SCOPE:reason(request, offer, eligibleGross);
+            if(reason==Reason.ELIGIBLE&&offer.pricing()!=null&&!offer.pricing().tiers().isEmpty()&&tier==null)reason=Reason.BELOW_MINIMUM;
             trace.add(new Trace(offer.campaignId(), offer.version(), reason));
             if (reason != Reason.ELIGIBLE) continue;
-            Money proposed=offer.percentageBps()==0?offer.discount():Money.minor(BigInteger.valueOf(gross.minorUnits()).multiply(BigInteger.valueOf(offer.percentageBps())).divide(BigInteger.valueOf(10000)).longValueExact());
+            int bps=tier==null?offer.percentageBps():tier.percentageBps();Money cap=tier==null?offer.discount():tier.discount();
+            Money proposed=bps==0?cap:Money.minor(BigInteger.valueOf(eligibleGross.minorUnits()).multiply(BigInteger.valueOf(bps)).divide(BigInteger.valueOf(10000)).longValueExact());
+            if(proposed.compareTo(cap)>0)proposed=cap;
             if(proposed.compareTo(offer.discount())>0)proposed=offer.discount();
-            Money actual = proposed.compareTo(gross)>0?gross:proposed;
+            Money actual = proposed.compareTo(eligibleGross)>0?eligibleGross:proposed;
             // 已按活动标识排序；仅严格更优时替换，保证平局结果与输入顺序无关。
             if (actual.compareTo(discount) > 0) {
                 discount = actual;
                 selected = new Selection(offer.campaignId(), offer.version());
+                selectedLines=eligible;
             }
         }
-        return new Quote(gross, discount, gross.subtract(discount), selected, allocate(lines, gross, discount), trace);
+        // 分摊只能作用在中选活动覆盖的行，未参加商品不能承担活动优惠。
+        var shares=new java.util.HashMap<String,PricedLine>();for(var line:allocate(selectedLines,discount))shares.put(line.lineId(),line);
+        var allocated=lines.stream().map(line->{var share=shares.get(line.lineId());Money amount=line.unitPrice().multiply(line.quantity());return share==null?new PricedLine(line.lineId(),line.skuId(),amount,Money.ZERO,amount):share;}).toList();
+        return new Quote(gross, discount, gross.subtract(discount), selected, allocated, trace);
     }
 
     private Reason reason(Request request, Offer offer, Money gross) {

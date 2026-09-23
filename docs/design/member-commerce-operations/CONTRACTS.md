@@ -40,3 +40,9 @@ POST /admin/member-tags `{tagId,name}`；GET同路由分页；POST /admin/member
 POST /admin/segments `{segmentId,version,name,rule,ttlSeconds,refreshSeconds,maxMembers}` 发布不可变定义；TTL 300–86400秒，refreshSeconds=0手工或60–TTL秒，单任务上限100–100000会员。GET /admin/segments最新定义列表。POST /admin/segments/{id}/refresh创建持久任务，同人群只允许一个运行任务；后台与POST /admin/segments/pump每次最多处理100会员。GET /admin/segments/{id}/runs查看进度，POST /admin/segment-runs/{id}/cancel终止未发布任务，/retry恢复ISOLATED任务。失败最多5次后隔离，保留游标，重试不重复添加成员。POST /admin/segments/{id}/schedule `{expectedVersion,enabled}`启停周期刷新。
 
 扫描仅纳入任务开始前创建的会员，按memberId稳定游标；不同批次读取时刻不同，明确是刷新区间视图而非数据库同一时刻快照。仅ACTIVE会员可入组。未完成任务只写不可见成员投影，全部扫描成功才插入快照头，使版本原子可见；过期/超额/取消不发布。旧完整快照按原TTL可继续使用。动态快照ID使用保留前缀dyn-，手工导入不能使用。每次完整快照不可变，已有活动继续绑定原快照；运营发布新活动版本才切换受众，避免活动执行中隐式改圈选。
+
+## OP06 精细促销与预览 DTO
+
+Campaign.Policy.Terms增加可选pricing `{includedSkuIds:[],excludedSkuIds:[],tiers:[{minimumSpend,discountAmount,percentageBps}]}`。每个SKU集合最多100项；包含集为空表示全部，排除优先；最多8档门槛严格递增。全局minimumSpend及阶梯门槛按参与商品金额判断，选满足的最高档；percentageBps=0为固定减免，否则为优惠比例（1000表示减10%），discountAmount为该档上限，活动顶层discountAmount仍为总上限。优惠只分摊参与SKU；券继续按既有可叠加规则分摊剩余应付。仍单活动择优，平局按活动ID，避免未批准多活动叠加语义。带pricing的活动必须审批发布。
+
+POST /admin/campaigns/{id}/{version}/preview `{memberId,at?,items:[{skuId,quantity}]}`：平台管理员选择真实会员和在售商品，服务端读取成长/标签/等级/人群及价格；at只改变活动有效期观察，不伪造会员历史事实。可预览草稿/暂停版本，返回整单gross/discount/payable、逐行优惠和资格原因、受众来源。预览不保存报价、不占预算、不发券/权益，不代表实际下单成功；实际下单仍校验库存和预算。前端复制配置生成新草稿版本，通过原POST创建流程；版本内容不原位覆盖。
