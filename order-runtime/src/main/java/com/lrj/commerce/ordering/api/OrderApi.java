@@ -19,4 +19,12 @@ public interface OrderApi {
     List<View> list(Actor actor,String after,int limit);
     /** 支付未知时只能进入CLOSING，不能释放库存。 */
     View cancel(Actor actor,String key,String orderId);
+    /** 支付开始与本地支付意图同事务；先锁订单统一资金相关锁顺序。 */
+    View beginPayment(Actor actor,String id);
+    /** 可信支付事实消费入口，仅内部调用，不暴露HTTP任意事件。 */
+    View paymentFact(String tenant,String id,String amount,boolean paid);
+    /** 内部按租户查询，不接受客户端替换租户。 */
+    View internalRead(String tenant,String id);
+    /** 到期只请求取消，支付未知必须保留库存。 */
+    int expire(Actor actor,String key);
 }

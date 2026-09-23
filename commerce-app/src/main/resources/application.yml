@@ -9,6 +9,8 @@ server:
     max-connections: 256
     accept-count: 64
 commerce:
+  sandbox-enabled: ${COMMERCE_SANDBOX_ENABLED:false}
+  workers-enabled: ${COMMERCE_WORKERS_ENABLED:false}
   address-key: ${COMMERCE_ADDRESS_KEY}
 spring:
   application:

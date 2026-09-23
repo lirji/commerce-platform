@@ -23,3 +23,7 @@ Owner：backend-architecture-design。本次只固定已安装且可离线验证
 复用Java21，新增Spring Boot4.1.1 BOM（包含Spring7/Jackson3/Flyway/MySQL驱动），MyBatis starter4.0.1。JUnit随BOM统一，避免测试平台5/6混装；Surefire3.5.4。生产内核仍无框架依赖，新增runtime与持久化模块单独依赖Spring。实际MySQL通过dev-infra只读SELECT VERSION()确认8.4.11。
 
 官方依据：[Boot系统要求](https://docs.spring.io/spring-boot/system-requirements.html)、[管理依赖](https://docs.spring.io/spring-boot/appendix/dependency-versions/coordinates.html)、[MyBatis兼容矩阵](https://mybatis.org/spring-boot-starter/mybatis-spring-boot-autoconfigure/)、[Flyway MySQL支持](https://documentation.red-gate.com/fd/mysql-277579322.html)。MyBatis4.0声明支持Boot4.0+及Java17+；最终兼容以本项目真实启动/SQL测试为准。Spring/MyBatis/Flyway开源核心许可为Apache2.0，Connector/J为GPLv2+FOSS例外；当前本地应用使用，发布分发前保留依赖许可证清单。安全公告已查Spring官方页面，不将该查看声称为完整依赖漏洞扫描；上线扫描仍需单独证据。
+
+## S6异步选择
+
+选择数据库Outbox + 有界本地Worker，复用现有MySQL与Spring调度，不新增MQ。数据库行锁SKIP LOCKED防多实例重复领取；Inbox与本地副作用事务提交。此语义仅覆盖同库本地消费者，远程适配端口必须在业务事务外调用并持久化结果，不能推导端到端exactly-once。沙箱渠道独立账本持久化UNKNOWN/OPEN/PAID/CLOSED，使用配置开关显式启用；正式渠道后置。

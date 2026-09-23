@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "orderId": "1474f952-5dc6-4233-8115-f6dfa155ec92",
+  "paymentId": "80ec7980-0076-407d-ac14-6d9f29ce35d9",
+  "provider": "SANDBOX",
+  "initial": "UNKNOWN",
+  "finalOrder": "PAID",
+  "automaticReconciliationAndDelivery": true
+}

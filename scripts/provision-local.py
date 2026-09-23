@@ -30,4 +30,5 @@ with os.fdopen(fd,'w') as f:
     f.write("export COMMERCE_DB_USER='commerce_app'\n")
     f.write(f"export COMMERCE_DB_PASSWORD='{password}'\n")
     f.write(f"export COMMERCE_ADDRESS_KEY='{base64.b64encode(secrets.token_bytes(32)).decode()}'\n")
+    f.write("export COMMERCE_SANDBOX_ENABLED='true'\nexport COMMERCE_WORKERS_ENABLED='true'\n")
 print('Created project-only schemas and account; secrets saved with mode 0600 in .local/runtime.env.')

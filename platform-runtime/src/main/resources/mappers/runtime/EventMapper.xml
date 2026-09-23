@@ -2,4 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.runtime.persistence.EventMapper">
  <insert id="insert">INSERT INTO platform_event(event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,status) VALUES(#{id},#{tenant},#{type},#{aggregate},#{version},#{json},'PENDING')</insert>
+ <sql id="event">event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,created_at,attempts</sql>
+ <select id="pending" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE tenant_id=#{tenant} AND status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) AND event_type IN <foreach collection="types" item="t" open="(" separator="," close=")">#{t}</foreach> ORDER BY available_at,event_id LIMIT #{limit}</select>
+ <select id="lock" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id} AND status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) FOR UPDATE SKIP LOCKED</select>
+ <insert id="inbox">INSERT IGNORE INTO platform_inbox(consumer_id,event_id,tenant_id) VALUES(#{consumer},#{event.eventId},#{event.tenantId})</insert>
+ <update id="delivered">UPDATE platform_event SET status='DELIVERED' WHERE event_id=#{id} AND status='PENDING'</update>
+ <update id="failed">UPDATE platform_event SET attempts=attempts+1,status=IF(attempts&gt;=5,'ISOLATED','PENDING'),available_at=TIMESTAMPADD(SECOND,#{delay},CURRENT_TIMESTAMP(3)) WHERE event_id=#{id} AND status='PENDING'</update>
+ <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM platform_event WHERE status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) AND tenant_id&gt;#{after} AND event_type IN <foreach collection="types" item="t" open="(" separator="," close=")">#{t}</foreach> ORDER BY tenant_id LIMIT 4</select>
+ <select id="list" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT event_id,event_type,aggregate_id,status,attempts,available_at FROM platform_event WHERE tenant_id=#{tenant} AND event_id&gt;#{after} ORDER BY event_id LIMIT #{limit}</select>
+ <update id="retry">UPDATE platform_event SET status='PENDING',attempts=0,available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=#{tenant} AND event_id=#{id} AND status='ISOLATED'</update>
 </mapper>

@@ -1,6 +1,6 @@
 # 后端架构
 
-Owner：backend-architecture-design。用户约束：DDD + 模块化单体。应用目标一个业务进程；外部 IdP、支付渠道、WMS 等按适配边界保留。当前里程碑只构建领域库，没有可部署 HTTP 服务。
+Owner：backend-architecture-design。用户约束：DDD + 模块化单体。应用目标一个业务进程；外部 IdP、支付渠道、WMS 等按适配边界保留。S0–S3建立领域库；S4–S6已提供单一Spring Boot HTTP进程、MySQL持久化、沙箱支付与本地事件Worker。未实现模块仍按下述设计逐片建设。
 
 ## 逻辑模块及数据权威
 

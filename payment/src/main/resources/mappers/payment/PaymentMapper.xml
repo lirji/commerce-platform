@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.payment.infrastructure.PaymentMapper">
+ <sql id="view">payment_id,order_id,CAST(amount AS CHAR) amount,currency,provider,status,version</sql>
+ <select id="byOrder" resultType="com.lrj.commerce.payment.api.PaymentApi$View">SELECT <include refid="view"/> FROM payment_attempt WHERE tenant_id=#{tenant} AND order_id=#{order}</select>
+ <select id="find" resultType="com.lrj.commerce.payment.api.PaymentApi$View">SELECT <include refid="view"/> FROM payment_attempt WHERE tenant_id=#{tenant} AND payment_id=#{id}</select>
+ <select id="lock" resultType="com.lrj.commerce.payment.api.PaymentApi$View">SELECT <include refid="view"/> FROM payment_attempt WHERE tenant_id=#{tenant} AND payment_id=#{id} FOR UPDATE</select>
+ <insert id="insert">INSERT INTO payment_attempt(tenant_id,payment_id,order_id,amount,currency,provider,status,version) VALUES(#{tenant},#{view.paymentId},#{view.orderId},#{view.amount},#{view.currency},#{view.provider},#{view.status},#{view.version})</insert>
+ <update id="change">UPDATE payment_attempt SET status=#{status},version=version+1,channel_transaction_id=#{transaction},evidence_json=#{evidence} WHERE tenant_id=#{tenant} AND payment_id=#{id} AND version=#{version} AND status IN ('UNKNOWN','OPEN')</update>
+ <insert id="ensureChannel">INSERT INTO payment_sandbox_ledger(tenant_id,payment_id,order_id,amount,currency,status) VALUES(#{tenant},#{view.paymentId},#{view.orderId},#{view.amount},#{view.currency},'UNKNOWN') ON DUPLICATE KEY UPDATE payment_id=payment_id</insert>
+ <select id="channel" resultType="com.lrj.commerce.payment.api.PaymentChannel$Evidence">SELECT payment_id,tenant_id,order_id,CAST(amount AS CHAR) amount,currency,status,transaction_id FROM payment_sandbox_ledger WHERE tenant_id=#{tenant} AND payment_id=#{id}</select>
+ <update id="channelFact">UPDATE payment_sandbox_ledger SET status=#{status},transaction_id=#{transaction} WHERE tenant_id=#{tenant} AND payment_id=#{id} AND status IN ('UNKNOWN','OPEN')</update>
+ <update id="channelClose">UPDATE payment_sandbox_ledger SET status='CLOSED' WHERE tenant_id=#{tenant} AND payment_id=#{id} AND status='OPEN'</update>
+ <select id="due" resultType="com.lrj.commerce.payment.infrastructure.PaymentMapper$Check">SELECT tenant_id,payment_id,order_id,check_attempts FROM payment_attempt WHERE tenant_id=#{tenant} AND status IN ('UNKNOWN','OPEN') AND check_attempts&lt;5 AND next_check_at&lt;=CURRENT_TIMESTAMP(3) ORDER BY next_check_at,payment_id LIMIT 5</select>
+ <select id="dueTenants" resultType="string">SELECT DISTINCT tenant_id FROM payment_attempt WHERE tenant_id&gt;#{after} AND status IN ('UNKNOWN','OPEN') AND check_attempts&lt;5 AND next_check_at&lt;=CURRENT_TIMESTAMP(3) ORDER BY tenant_id LIMIT 4</select>
+ <update id="claimCheck">UPDATE payment_attempt SET check_attempts=check_attempts+1,next_check_at=TIMESTAMPADD(SECOND,#{delay},CURRENT_TIMESTAMP(3)) WHERE tenant_id=#{tenant} AND payment_id=#{id} AND check_attempts=#{attempts} AND check_attempts&lt;5 AND status IN ('UNKNOWN','OPEN') AND next_check_at&lt;=CURRENT_TIMESTAMP(3)</update>
+</mapper>

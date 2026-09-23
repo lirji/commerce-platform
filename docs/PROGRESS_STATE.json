@@ -7,16 +7,17 @@
     "S2",
     "S3",
     "S4",
-    "S5a"
+    "S5a",
+    "S6"
   ],
-  "next": "S6",
+  "next": "S7",
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
-  "verification": "docs/evidence/s5/verification.json",
+  "verification": "docs/evidence/s6/verification.json",
   "git": {
-    "status": "S5a_VALIDATED_READY_TO_DELIVER",
-    "sourceCommit": "5d4d3de",
-    "branch": "feat/order-inventory-loop"
+    "status": "S6_VALIDATED_READY_TO_DELIVER",
+    "previousPushedCommit": "343626c",
+    "branch": "feat/payment-events"
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {

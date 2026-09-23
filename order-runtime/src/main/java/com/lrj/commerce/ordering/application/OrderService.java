@@ -66,4 +66,42 @@ public class OrderService implements OrderApi {
         List<QuoteApi.Line> items=r.itemsJson()==null?List.of():Arrays.asList(JsonCodec.read(r.itemsJson(),QuoteApi.Line[].class));
         return new View(r.orderId(),r.memberId(),r.storeId(),r.merchantId(),r.quoteId(),r.payable(),r.status(),r.paymentKind(),r.version(),r.createdAt(),r.expiresAt(),items);
     }
+    /** 同事务锁住订单，取消/启动支付只能有一个先发生。 */
+    @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public View beginPayment(Actor actor,String id) {
+        var row=Inputs.found(mapper.lock(actor.tenantId(),members.current(actor).memberId(),id));
+        if(row.status().equals("PAYMENT_IN_PROGRESS")) return view(row);
+        Inputs.require(row.paymentKind().equals("CHANNEL_REQUIRED"),"零元订单无需渠道支付");
+        if(!clock.instant().isBefore(row.expiresAt())) throw new DomainException(DomainException.Code.CONFLICT,"订单已过期");
+        transition(actor.tenantId(),row,OrderEvent.START_PAYMENT);return view(mapper.internalRead(actor.tenantId(),id));
+    }
+    /** 只有渠道已证实的金额匹配事实才能改变订单与库存。 */
+    @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public View paymentFact(String tenant,String id,String amount,boolean paid) {
+        var row=Inputs.found(mapper.internalLock(tenant,id));
+        if(new BigDecimal(row.payable()).compareTo(new BigDecimal(amount))!=0) throw new DomainException(DomainException.Code.CONFLICT,"支付金额不匹配");
+        if((paid&&Set.of("PAID","FULFILLING","COMPLETED").contains(row.status()))||(!paid&&row.status().equals("CANCELLED"))) return view(row);
+        transition(tenant,row,paid?OrderEvent.PAYMENT_CONFIRMED:OrderEvent.PAYMENT_ABSENCE_CONFIRMED);
+        if(paid)inventory.confirm(tenant,id);else inventory.release(tenant,id);
+        var result=view(mapper.internalRead(tenant,id));outbox.append(tenant,paid?"order.paid.v1":"order.cancelled.v1",id,result.version(),result);return result;
+    }
+    /** 跨域只返回API投影，其他模块不读订单Mapper。 */
+    public View internalRead(String tenant,String id) {return view(Inputs.found(mapper.internalRead(tenant,id)));}
+    /** 批量任务每次最多20单，超时不是未支付证明。 */
+    public int expire(Actor actor,String key) {
+        actor.requireAdmin();return commands.run(actor,"order.expire",key,"expire",Integer.class,()->{
+            var rows=mapper.expired(actor.tenantId(),clock.instant());
+            for(var row:rows) {
+                var next=transition(actor.tenantId(),row,OrderEvent.REQUEST_CANCEL);
+                if(next.state()==OrderState.CANCELLED)inventory.release(actor.tenantId(),row.orderId());
+                var result=view(mapper.internalRead(actor.tenantId(),row.orderId()));
+                outbox.append(actor.tenantId(),next.state()==OrderState.CANCELLED?"order.cancelled.v1":"order.closing.v1",row.orderId(),result.version(),result);
+            }
+            return rows.size();
+        });
+    }
+    private OrderLifecycle transition(String tenant,OrderMapper.Row row,OrderEvent event) {
+        var next=new OrderLifecycle(OrderState.valueOf(row.status()),row.version()).apply(event);
+        if(mapper.change(tenant,row.orderId(),row.version(),next.state().name())!=1)throw new DomainException(DomainException.Code.CONFLICT,"订单并发版本冲突");return next;
+    }
 }

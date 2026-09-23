@@ -25,12 +25,15 @@ class PersistedCommerceTest {
         String url=System.getenv("COMMERCE_TEST_DB_URL");
         if(url==null||!url.contains("/commerce_test_20260923?")) throw new IllegalStateException("必须显式指定本项目隔离测试库");
         registry.add("spring.datasource.url",()->url);
+        registry.add("commerce.sandbox-enabled",()->true);
+        registry.add("commerce.workers-enabled",()->false);
         registry.add("spring.datasource.username",()->System.getenv("COMMERCE_DB_USER"));
         registry.add("spring.datasource.password",()->System.getenv("COMMERCE_DB_PASSWORD"));
     }
     @LocalServerPort int port;
     @Autowired JdbcTemplate jdbc;
     @Autowired Commands commands;
+    @Autowired com.lrj.commerce.payment.api.PaymentApi payments;
     private final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
     private final JsonMapper json=JsonMapper.builder().findAndAddModules().build();
     private String tenant,admin,member,other;
@@ -199,6 +202,98 @@ class PersistedCommerceTest {
         assertEquals(0,stockValue("held"));assertEquals(1,stockValue("sold"));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='order.paid.v1'",Integer.class,tenant));
         assertEquals(409,call("POST","/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null).status());
+    }
+    private JsonNode pendingOrder() throws Exception {
+        seed();stock("sku1",2);return post("/v1/orders",member,"o",orderInput(post("/v1/quotes",member,"q",basket(1))));
+    }
+    private JsonNode startPayment(JsonNode order) throws Exception {return post("/v1/orders/"+order.path("orderId").asString()+"/payments",member,"pay",null);}
+    private void sandbox(JsonNode payment,String status) throws Exception {post("/v1/admin/sandbox/payments/"+payment.path("paymentId").asString()+"/fact",admin,"fact-"+status,Map.of("status",status));}
+    private JsonNode reconcile(JsonNode order) throws Exception {return post("/v1/orders/"+order.path("orderId").asString()+"/payment/reconcile",member,null,null);}
+    private JsonNode readOrder(JsonNode order) throws Exception {return call("GET","/v1/orders/"+order.path("orderId").asString(),member,null,null).body();}
+    private void pump() throws Exception {post("/v1/admin/events/pump",admin,null,null);}
+    @Test void unknownPaymentCancellationKeepsStockUntilClosedProof() throws Exception {
+        var order=pendingOrder();var payment=startPayment(order);assertEquals("UNKNOWN",payment.path("status").asString());
+        assertEquals(payment,startPayment(order));
+        post("/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null);
+        assertEquals("UNKNOWN",reconcile(order).path("status").asString());pump();
+        assertEquals("CLOSING",readOrder(order).path("status").asString());assertEquals(1,stockValue("held"));
+        sandbox(payment,"OPEN");assertEquals("CLOSED",reconcile(order).path("status").asString());pump();
+        assertEquals("CANCELLED",readOrder(order).path("status").asString());assertEquals(2,stockValue("available"));assertEquals(0,stockValue("held"));
+        assertEquals(409,call("POST","/v1/admin/sandbox/payments/"+payment.path("paymentId").asString()+"/fact",admin,"late-paid",Map.of("status","PAID")).status());
+    }
+    @Test void paidFactWinsCancellationAndDuplicateDeliveryDoesNotDoubleConfirm() throws Exception {
+        var order=pendingOrder();var payment=startPayment(order);sandbox(payment,"PAID");
+        post("/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null);
+        assertEquals("PAID",reconcile(order).path("status").asString());pump();
+        assertNotNull(jdbc.queryForObject("SELECT evidence_json FROM payment_attempt WHERE tenant_id=?",String.class,tenant));
+        var paid=readOrder(order);assertEquals("PAID",paid.path("status").asString());assertEquals(1,stockValue("sold"));
+        // 模拟ACK丢失导致同事件再次可见，Inbox必须阻止重复业务副作用。
+        jdbc.update("UPDATE platform_event SET status='PENDING',available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='payment.paid.v1'",tenant);
+        pump();assertEquals(paid,readOrder(order));assertEquals(1,stockValue("sold"));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(409,call("POST","/v1/admin/sandbox/payments/"+payment.path("paymentId").asString()+"/fact",admin,"reverse",Map.of("status","OPEN")).status());
+    }
+    @Test void concurrentCloseAndChannelSuccessChooseOneDurableFact() throws Exception {
+        var order=pendingOrder();var payment=startPayment(order);sandbox(payment,"OPEN");
+        post("/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null);
+        try(var pool=Executors.newFixedThreadPool(2)) {
+            var latch=new CountDownLatch(1);
+            var close=pool.submit(()->{latch.await();return reconcile(order);});
+            var paid=pool.submit(()->{latch.await();return call("POST","/v1/admin/sandbox/payments/"+payment.path("paymentId").asString()+"/fact",admin,"race-paid",Map.of("status","PAID"));});
+            latch.countDown();var result=close.get();assertTrue(Set.of("PAID","CLOSED").contains(result.path("status").asString()));assertTrue(Set.of(200,409).contains(paid.get().status()));
+        }
+        reconcile(order);pump();String state=readOrder(order).path("status").asString();assertTrue(Set.of("PAID","CANCELLED").contains(state));
+        assertEquals(0,stockValue("held"));assertEquals(state.equals("PAID")?1:0,stockValue("sold"));
+    }
+    @Test void mismatchedChannelAmountCannotGeneratePaidEvent() throws Exception {
+        var order=pendingOrder();var payment=startPayment(order);sandbox(payment,"PAID");
+        jdbc.update("UPDATE payment_sandbox_ledger SET amount=amount+1 WHERE tenant_id=?",tenant);
+        assertEquals(409,call("POST","/v1/orders/"+order.path("orderId").asString()+"/payment/reconcile",member,null,null).status());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='payment.paid.v1'",Integer.class,tenant));
+        assertEquals(1,stockValue("held"));
+    }
+    @Test void failedConsumerRollsBackInboxThenIsolatesAndAuditedRetryRecovers() throws Exception {
+        var order=pendingOrder();var payment=startPayment(order);sandbox(payment,"PAID");reconcile(order);
+        String event=jdbc.queryForObject("SELECT event_id FROM platform_event WHERE tenant_id=? AND event_type='payment.paid.v1'",String.class,tenant);
+        String original=jdbc.queryForObject("SELECT payload_json FROM platform_event WHERE event_id=?",String.class,event);
+        jdbc.update("UPDATE platform_event SET payload_json='{}' WHERE event_id=?",event);
+        for(int i=0;i<5;i++){pump();jdbc.update("UPDATE platform_event SET available_at=CURRENT_TIMESTAMP(3) WHERE event_id=?",event);}
+        assertEquals("ISOLATED",jdbc.queryForObject("SELECT status FROM platform_event WHERE event_id=?",String.class,event));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=?",Integer.class,tenant));assertEquals(1,stockValue("held"));
+        assertEquals(403,call("POST","/v1/admin/events/"+event+"/retry",member,"retry",null).status());
+        jdbc.update("UPDATE platform_event SET payload_json=? WHERE event_id=?",original,event);
+        post("/v1/admin/events/"+event+"/retry",admin,"retry",null);pump();
+        assertEquals("PAID",readOrder(order).path("status").asString());assertEquals(1,stockValue("sold"));
+    }
+    @Test void expiredPaymentInProgressCannotReleaseUnknownFunds() throws Exception {
+        var order=pendingOrder();startPayment(order);
+        jdbc.update("UPDATE order_record SET expires_at=? WHERE tenant_id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(1)),tenant);
+        assertEquals(1,post("/v1/admin/orders/expire",admin,"expire",null).asInt());
+        assertEquals("CLOSING",readOrder(order).path("status").asString());assertEquals(1,stockValue("held"));
+        assertEquals(0,post("/v1/admin/orders/expire",admin,"expire-again",null).asInt());
+    }
+    @Test void paymentAndSandboxPermissionsAreTenantScoped() throws Exception {
+        var order=pendingOrder();var payment=startPayment(order);String id=order.path("orderId").asString();
+        assertEquals(404,call("GET","/v1/orders/"+id+"/payment",other,null,null).status());
+        assertEquals(404,call("POST","/v1/orders/"+id+"/payment/reconcile",other,null,null).status());
+        assertEquals(403,call("POST","/v1/admin/sandbox/payments/"+payment.path("paymentId").asString()+"/fact",member,"fact",Map.of("status","PAID")).status());
+    }
+    @Test void backgroundReconciliationRecoversAfterChannelSuccessWithoutClientReturn() throws Exception {
+        var order=pendingOrder();var payment=startPayment(order);sandbox(payment,"PAID");
+        // 后台有界轮转，模拟浏览器关闭后没有调用reconcile；不改动其他租户数据。
+        for(int i=0;i<100;i++) {
+            payments.tick();
+            String status=jdbc.queryForObject("SELECT status FROM payment_attempt WHERE tenant_id=?",String.class,tenant);
+            if(status.equals("PAID"))break;
+        }
+        assertEquals("PAID",jdbc.queryForObject("SELECT status FROM payment_attempt WHERE tenant_id=?",String.class,tenant));
+        pump();assertEquals("PAID",readOrder(order).path("status").asString());
+    }
+    @Test void expiryWithoutPaymentCanReleaseAndRejectLaterPayment() throws Exception {
+        var order=pendingOrder();jdbc.update("UPDATE order_record SET expires_at=? WHERE tenant_id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(1)),tenant);
+        post("/v1/admin/orders/expire",admin,"expire",null);
+        assertEquals("CANCELLED",readOrder(order).path("status").asString());assertEquals(2,stockValue("available"));
+        assertEquals(409,call("POST","/v1/orders/"+order.path("orderId").asString()+"/payments",member,"late",null).status());
     }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
