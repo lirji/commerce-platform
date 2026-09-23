@@ -10,8 +10,8 @@ import java.util.Set;
 /** 装配层连接交易事实与会员成长/积分，避免会员域反向依赖订单形成循环。 */
 @Component
 public class MemberGrowthHandler implements EventHandler {
- private final com.lrj.commerce.member.api.MemberPointsApi points;private final MemberGrowthApi growth;private final OrderApi orders;private final RefundApi refunds;
- public MemberGrowthHandler(MemberGrowthApi growth,OrderApi orders,RefundApi refunds,com.lrj.commerce.member.api.MemberPointsApi points){this.points=points;this.growth=growth;this.orders=orders;this.refunds=refunds;}
+ private final com.lrj.commerce.member.api.MemberBehaviorApi behavior;private final com.lrj.commerce.member.api.MemberPointsApi points;private final MemberGrowthApi growth;private final OrderApi orders;private final RefundApi refunds;
+ public MemberGrowthHandler(MemberGrowthApi growth,OrderApi orders,RefundApi refunds,com.lrj.commerce.member.api.MemberPointsApi points,com.lrj.commerce.member.api.MemberBehaviorApi behavior){this.behavior=behavior;this.points=points;this.growth=growth;this.orders=orders;this.refunds=refunds;}
  public String consumer(){return "member-growth-v1";}
  public Set<String> types(){return Set.of("order.completed.v1","refund.succeeded.v1");}
  /** 只消费已持久化真实状态，不信任事件载荷自报金额。 */
@@ -23,6 +23,6 @@ public class MemberGrowthHandler implements EventHandler {
   // 零元售后没有资金冲回，不伪造正金额退款账本。
   if(refund!=null&&new java.math.BigDecimal(refund.amount()).signum()==0)refund=null;
   var fact=new MemberGrowthApi.OrderFact(order.orderId(),order.memberId(),order.payable(),order.createdAt(),order.status().equals("COMPLETED"),refund==null?null:refund.refundId(),refund==null?null:refund.amount());
-  growth.observe(event.tenantId(),fact);points.observe(event.tenantId(),fact);
+  growth.observe(event.tenantId(),fact);points.observe(event.tenantId(),fact);behavior.projectOrder(event.tenantId(),order.orderId(),order.createdAt());
  }
 }

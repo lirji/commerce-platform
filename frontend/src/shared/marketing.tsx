@@ -101,12 +101,16 @@ export function RuleEditor({
                 { value: "memberNetSpend", label: "完成净消费" },
                 { value: "memberTags", label: "会员标签" },
                 { value: "memberStatus", label: "会员状态" },
+                { value: "memberBrowse30", label: "30天浏览次数" }, { value: "memberCart30", label: "30天加购次数" },
+                { value: "memberOrders30", label: "30天完成订单" }, { value: "memberSpend30", label: "30天净现金消费" },
+                { value: "memberDaysSinceOrder", label: "距最近成交天数" }, { value: "memberDaysSinceJoin", label: "入会天数" },
+                { value: "memberBirthdayToday", label: "今日生日（TRUE）" }, { value: "memberJourneyEnabled", label: "接收旅程（TRUE）" },
               ].filter(f=>!memberOnly||f.value!=="orderAmount")}
               onChange={(field) =>
                 change({
                   field,
-                  valueType: ["orderAmount","memberGrowth","memberNetSpend"].includes(field) ? "DECIMAL" : "TEXT",
-                  operator: field === "memberTags" ? "CONTAINS" : ["orderAmount","memberGrowth","memberNetSpend"].includes(field) ? "GTE" : "EQ",
+                  valueType: ["orderAmount","memberGrowth","memberNetSpend","memberBrowse30","memberCart30","memberOrders30","memberSpend30","memberDaysSinceOrder","memberDaysSinceJoin"].includes(field) ? "DECIMAL" : "TEXT",
+                  operator: field === "memberTags" ? "CONTAINS" : ["orderAmount","memberGrowth","memberNetSpend","memberBrowse30","memberCart30","memberOrders30","memberSpend30","memberDaysSinceOrder","memberDaysSinceJoin"].includes(field) ? "GTE" : "EQ",
                 })
               }
             />
@@ -114,7 +118,7 @@ export function RuleEditor({
               aria-label="比较方式"
               value={rule.operator}
               style={{ width: 110 }}
-              options={(rule.field === "memberTags" ? ["CONTAINS"] : ["memberLevel","memberStatus"].includes(rule.field??"")
+              options={(rule.field === "memberTags" ? ["CONTAINS"] : ["memberLevel","memberStatus","memberBirthdayToday","memberJourneyEnabled"].includes(rule.field??"")
                 ? ["EQ"]
                 : ["EQ", "GT", "GTE", "LT", "LTE"]
               ).map((x) => ({

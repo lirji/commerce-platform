@@ -1,16 +1,20 @@
 import { Button, Drawer, Space, Table } from "antd";
+import { MemberBehavior } from "./MemberBehavior";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
 import { CommandModal, ErrorNotice, time } from "../shared/ui";
 
 /** 资料与状态分开提交；冲突后刷新主列表再操作，避免覆盖他人决定。 */
 export function MemberActions({row,onDone}:{row:Record<string,unknown>;onDone:()=>void}) {
+ const [detail,setDetail]=useState(false);
  const [open,setOpen]=useState(false);const [after,setAfter]=useState(0);
  const base="/admin/members/"+encode(String(row.memberId));
  const history=useResource<Record<string,unknown>[]>(open?base+"/history?after="+after:null);
  const closed=row.status==="CLOSED";
  const done=()=>{onDone();history.refresh();};
  return <Space wrap>
+  <Button type="link" onClick={()=>setDetail(true)}>会员详情</Button>
+  <Drawer title="会员经营详情" open={detail} onClose={()=>setDetail(false)} size="large" destroyOnHidden>{detail&&<MemberBehavior admin memberId={String(row.memberId)}/>}</Drawer>
   <CommandModal title="编辑资料" path={base+"/profile"} disabled={closed} buttonType="link"
    fields={[{name:"value",label:"显示名称",initial:row.displayName},{name:"reason",label:"变更原因"}]}
    build={v=>({...v,expectedVersion:row.version})} onDone={done}/>

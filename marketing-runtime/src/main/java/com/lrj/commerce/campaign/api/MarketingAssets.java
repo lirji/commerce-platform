@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.util.List;
 /** 版本化规则与人群资产，不将客户端事实注入交易决策。 */
 public interface MarketingAssets {
-    java.util.Map<String,String> TRUSTED_FIELDS=java.util.Map.of("memberLevel","TEXT","orderAmount","DECIMAL","memberGrowth","DECIMAL","memberNetSpend","DECIMAL","memberStatus","TEXT","memberTags","TEXT");
+    java.util.Map<String,String> TRUSTED_FIELDS=java.util.Map.ofEntries(
+        java.util.Map.entry("memberLevel","TEXT"),java.util.Map.entry("orderAmount","DECIMAL"),java.util.Map.entry("memberGrowth","DECIMAL"),java.util.Map.entry("memberNetSpend","DECIMAL"),java.util.Map.entry("memberStatus","TEXT"),java.util.Map.entry("memberTags","TEXT"),
+        java.util.Map.entry("memberBrowse30","DECIMAL"),java.util.Map.entry("memberCart30","DECIMAL"),java.util.Map.entry("memberOrders30","DECIMAL"),java.util.Map.entry("memberSpend30","DECIMAL"),java.util.Map.entry("memberDaysSinceOrder","DECIMAL"),java.util.Map.entry("memberDaysSinceJoin","DECIMAL"),java.util.Map.entry("memberBirthdayToday","TEXT"),java.util.Map.entry("memberJourneyEnabled","TEXT"));
     record Ref(String id,long version) { }
     record Audience(String audienceId,long version,String name,String source,Instant watermark,Instant validUntil,List<String> memberIds) { }
     record AudienceView(String audienceId,long version,String name,String source,Instant watermark,Instant validUntil,int memberCount) { }

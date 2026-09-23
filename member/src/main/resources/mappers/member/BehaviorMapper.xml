@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.member.infrastructure.BehaviorMapper">
+ <sql id="ids"><foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach></sql>
+ <select id="profile" resultType="com.lrj.commerce.member.api.MemberBehaviorApi$Profile">SELECT birthday,journey_enabled,version FROM member_behavior_profile WHERE tenant_id=#{tenant} AND member_id=#{member}</select>
+ <insert id="ensure">INSERT INTO member_behavior_profile(tenant_id,member_id) VALUES(#{tenant},#{member}) ON DUPLICATE KEY UPDATE member_id=member_id</insert>
+ <update id="profileChange">UPDATE member_behavior_profile SET birthday=#{input.birthday},journey_enabled=#{input.journeyEnabled},version=version+1 WHERE tenant_id=#{tenant} AND member_id=#{member} AND version=#{input.expectedVersion}</update>
+ <select id="event" resultType="com.lrj.commerce.member.api.MemberBehaviorApi$Event">SELECT sequence_id,event_id,kind,store_id,sku_id,occurred_at FROM member_behavior_event WHERE tenant_id=#{tenant} AND member_id=#{member} AND event_id=#{id} FOR UPDATE</select>
+ <insert id="eventInsert">INSERT INTO member_behavior_event(tenant_id,member_id,event_id,kind,store_id,sku_id,occurred_at) VALUES(#{tenant},#{member},#{input.eventId},#{input.kind},#{input.storeId},#{input.skuId},#{at})</insert>
+ <select id="events" resultType="com.lrj.commerce.member.api.MemberBehaviorApi$Event">SELECT sequence_id,event_id,kind,store_id,sku_id,occurred_at FROM member_behavior_event WHERE tenant_id=#{tenant} AND member_id=#{member} AND sequence_id&gt;#{after} ORDER BY sequence_id LIMIT #{limit}</select>
+ <select id="dayCount" resultType="java.lang.Integer">SELECT browse_count+cart_count FROM member_behavior_day WHERE tenant_id=#{tenant} AND member_id=#{member} AND business_day=#{day} FOR UPDATE</select>
+ <insert id="dayAdd">INSERT INTO member_behavior_day(tenant_id,member_id,business_day,browse_count,cart_count,last_cart_at) VALUES(#{tenant},#{member},#{day},IF(#{kind}='BROWSE',1,0),IF(#{kind}='ADD_TO_CART',1,0),IF(#{kind}='ADD_TO_CART',#{at},NULL)) ON DUPLICATE KEY UPDATE browse_count=browse_count+IF(#{kind}='BROWSE',1,0),cart_count=cart_count+IF(#{kind}='ADD_TO_CART',1,0),last_cart_at=IF(#{kind}='ADD_TO_CART',#{at},last_cart_at)</insert>
+ <select id="sourceMember" resultType="string">SELECT member_id FROM member_growth_order WHERE tenant_id=#{tenant} AND order_id=#{order}</select>
+ <select id="source" resultType="com.lrj.commerce.member.infrastructure.BehaviorMapper$OrderSource">SELECT member_id,completed,CAST(net_spend AS CHAR) net_spend FROM member_growth_order WHERE tenant_id=#{tenant} AND order_id=#{order} FOR UPDATE</select>
+ <insert id="project">INSERT INTO member_behavior_order(tenant_id,order_id,member_id,ordered_at,completed,net_spend) VALUES(#{tenant},#{order},#{input.memberId},#{at},#{input.completed},#{input.netSpend}) ON DUPLICATE KEY UPDATE completed=#{input.completed},net_spend=#{input.netSpend}</insert>
+ <select id="facts" resultType="com.lrj.commerce.member.infrastructure.BehaviorMapper$Row">
+  SELECT m.member_id,COALESCE(b.browse30,0) browse30,COALESCE(b.cart30,0) cart30,COALESCE(o.completed_orders30,0) completed_orders30,CAST(COALESCE(o.net_spend30,0.00) AS CHAR) net_spend30,
+   (SELECT ordered_at FROM member_behavior_order l WHERE l.tenant_id=#{tenant} AND l.member_id=m.member_id AND l.completed=TRUE AND l.ordered_at&lt;=#{now} ORDER BY l.ordered_at DESC LIMIT 1) last_order_at,
+   b.last_cart_at,m.created_at joined_at,p.birthday,COALESCE(p.journey_enabled,TRUE) journey_enabled
+  FROM member_record m LEFT JOIN member_behavior_profile p ON p.tenant_id=m.tenant_id AND p.member_id=m.member_id
+  LEFT JOIN (SELECT member_id,SUM(browse_count) browse30,SUM(cart_count) cart30,MAX(last_cart_at) last_cart_at FROM member_behavior_day WHERE tenant_id=#{tenant} AND member_id IN <include refid="ids"/> AND business_day BETWEEN #{startDay} AND #{endDay} GROUP BY member_id) b ON b.member_id=m.member_id
+  LEFT JOIN (SELECT member_id,COUNT(*) completed_orders30,SUM(net_spend) net_spend30 FROM member_behavior_order WHERE tenant_id=#{tenant} AND member_id IN <include refid="ids"/> AND completed=TRUE AND ordered_at BETWEEN #{start} AND #{now} GROUP BY member_id) o ON o.member_id=m.member_id
+  WHERE m.tenant_id=#{tenant} AND m.member_id IN <include refid="ids"/> ORDER BY m.member_id
+ </select>
+</mapper>

@@ -14,8 +14,8 @@ import java.time.temporal.ChronoUnit;
 /** 以来源净贡献对账，重复/乱序完成和退款事实不会重复加减成长。 */
 @Service
 public class MemberGrowthService implements MemberGrowthApi {
- private final MemberCycleApi cycles;private final GrowthMapper mapper;private final MemberMapper members;private final Commands commands;private final Outbox outbox;private final Clock clock;
- public MemberGrowthService(GrowthMapper mapper,MemberMapper members,Commands commands,Outbox outbox,Clock clock,MemberCycleApi cycles){this.cycles=cycles;this.mapper=mapper;this.members=members;this.commands=commands;this.outbox=outbox;this.clock=clock;}
+ private final MemberBehaviorApi behavior;private final MemberCycleApi cycles;private final GrowthMapper mapper;private final MemberMapper members;private final Commands commands;private final Outbox outbox;private final Clock clock;
+ public MemberGrowthService(GrowthMapper mapper,MemberMapper members,Commands commands,Outbox outbox,Clock clock,MemberCycleApi cycles,MemberBehaviorApi behavior){this.behavior=behavior;this.cycles=cycles;this.mapper=mapper;this.members=members;this.commands=commands;this.outbox=outbox;this.clock=clock;}
  /** 不可变发布防止退款时使用新成长率，生效时间限定新订单。 */
  public Policy publish(Actor actor,String key,Policy input){
   actor.requireAdmin();Inputs.require(input!=null&&input.version()>0&&input.effectiveFrom()!=null,"策略版本或时间无效");
@@ -73,13 +73,14 @@ public class MemberGrowthService implements MemberGrowthApi {
   else cycles.assess(tenant,fact.memberId());
  }
  /** 规则所需数据从权威会员投影读取，不接收客户端自报标签。 */
- public Facts facts(String tenant,String id){Identifiers.require(tenant);Identifiers.require(id);var member=Inputs.found(members.find(tenant,id));var account=mapper.account(tenant,id);return new Facts(id,member.memberLevel(),member.status(),account==null?0:account.growth(),account==null?"0.00":account.netSpend(),mapper.tags(tenant,id));}
+ public Facts facts(String tenant,String id){Identifiers.require(tenant);Identifiers.require(id);var member=Inputs.found(members.find(tenant,id));var account=mapper.account(tenant,id);return new Facts(id,member.memberLevel(),member.status(),account==null?0:account.growth(),account==null?"0.00":account.netSpend(),mapper.tags(tenant,id),behavior.facts(tenant,List.of(id),clock.instant()).getFirst());}
  /** 单SQL批量投影，最多100会员及其64标签，避免分群时逐会员N+1。 */
  public List<Facts> scan(String tenant,String after,int limit,java.time.Instant before){
   Identifiers.require(tenant);Inputs.page(after,limit);Inputs.require(before!=null,"扫描截止时间缺失");
   var rows=mapper.scan(tenant,after,limit,before);var grouped=new LinkedHashMap<String,List<GrowthMapper.FactRow>>();
   for(var row:rows)grouped.computeIfAbsent(row.memberId(),ignored->new ArrayList<>()).add(row);
-  return grouped.values().stream().map(group->{var row=group.getFirst();return new Facts(row.memberId(),row.memberLevel(),row.status(),row.growth(),row.netSpend(),group.stream().map(GrowthMapper.FactRow::tagId).filter(Objects::nonNull).toList());}).toList();
+  var behaviors=behavior.facts(tenant,new ArrayList<>(grouped.keySet()),clock.instant()).stream().collect(java.util.stream.Collectors.toMap(MemberBehaviorApi.Facts::memberId,v->v));
+  return grouped.values().stream().map(group->{var row=group.getFirst();return new Facts(row.memberId(),row.memberLevel(),row.status(),row.growth(),row.netSpend(),group.stream().map(GrowthMapper.FactRow::tagId).filter(Objects::nonNull).toList(),behaviors.get(row.memberId()));}).toList();
  }
  private MemberApi.View lock(String tenant,String id){var member=Inputs.found(mapper.lockMember(tenant,id));mapper.ensureAccount(tenant,id);return member;}
  private void apply(String tenant,MemberApi.View member,GrowthMapper.Account account,long delta,BigDecimal net,String source,long sourcePolicy,String reason,boolean ledger){

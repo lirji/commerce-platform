@@ -8,6 +8,7 @@ import {
   Form,
   Input,
   InputNumber,
+  Modal,
   Row,
   Select,
   Space,
@@ -15,7 +16,7 @@ import {
 } from "antd";
 import { useState } from "react";
 import type { Coupon, Order, Quote, Sku } from "../shared/contracts";
-import { encode, useCommand, useResource } from "../shared/api";
+import { encode, post, useCommand, useResource } from "../shared/api";
 import { Blank, ErrorNotice, PageHead, money } from "../shared/ui";
 export function Shop({
   store,
@@ -28,6 +29,14 @@ export function Shop({
     store ? "/catalog?storeId=" + encode(store) : null,
   );
   const coupons = useResource<Coupon[]>("/coupons");
+  const [info, setInfo] = useState<Sku>();
+  const [signalError, setSignalError] = useState<Error>();
+  const signal = (kind: "BROWSE" | "ADD_TO_CART", skuId: string) => {
+    const eventId = crypto.randomUUID();
+    // 交互记录失败不会丢掉购物袋，错误可见但不改变购物决策。
+    post("/members/me/behavior/events", { eventId, kind, storeId: store, skuId }, eventId)
+      .then(() => setSignalError(undefined)).catch(e => setSignalError(e instanceof Error ? e : new Error("暂时无法保存互动记录")));
+  };
   const [basket, setBasket] = useState<Record<string, number>>({});
   const pointWallet = useResource<{ available: number }>("/members/me/points");
   const [redeemPoints, setRedeemPoints] = useState(0);
@@ -65,6 +74,10 @@ export function Shop({
         }
       />
       <ErrorNotice error={products.error} />
+      <ErrorNotice error={signalError} />
+      <Modal title={info?.title} open={!!info} onCancel={() => setInfo(undefined)} footer={<Button onClick={() => setInfo(undefined)}>返回店铺</Button>}>
+        <Descriptions items={[{ key: "price", label: "当前售价", children: money(info?.unitPrice) }, { key: "sku", label: "商品标识", children: info?.skuId }]} />
+      </Modal>
       {!store ? (
         <Blank text="请先选择店铺" />
       ) : (
@@ -86,7 +99,7 @@ export function Shop({
           <Row gutter={[20, 20]}>
             {products.data?.map((sku, index) => (
               <Col xs={24} sm={12} lg={8} key={sku.skuId}>
-                <Card className="product-card" title={<span>{sku.title}</span>}>
+                <Card className="product-card" title={<span>{sku.title}</span>} extra={<Button type="link" onClick={() => { setInfo(sku); signal("BROWSE", sku.skuId); }}>查看商品</Button>}>
                   <div
                     className={"product-art art-" + (index % 3)}
                     aria-hidden="true"
@@ -100,9 +113,7 @@ export function Shop({
                     </div>
                     <Button
                       disabled={sku.status !== "ACTIVE"}
-                      onClick={() =>
-                        setQuantity(sku.skuId, (basket[sku.skuId] ?? 0) + 1)
-                      }
+                      onClick={() => { setQuantity(sku.skuId, (basket[sku.skuId] ?? 0) + 1); signal("ADD_TO_CART", sku.skuId); }}
                     >
                       加入购物袋
                     </Button>
