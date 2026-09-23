@@ -2,40 +2,36 @@
 
 ## 任务目标
 
-按用户授权完成DDD模块化单体统一电商S0–S10，并正常提交、合并和推送main。真实外部IdP、支付、权益和WMS联调由用户明确后置；生产部署未授权。
+按已授权计划完成日常经营与会员营销闭环，方向为能力中台＋品牌自营商城。计划后连续实施，验证后正常交付远程main，不部署生产。
 
 ## 已完成
 
-- S0–S10本地建设全部完成：会员/商家/店铺/商品/库存、活动/人群/规则、券/预算/权益、报价订单支付、履约售后退款补偿、持久旅程和低代码运营。
-- React管理台与会员端、真实API、完整数据库演示数据、同源jar、容器、CI、架构审查与运行文档已交付。
-- 本地及远程均145后端测试、4浏览器场景通过；npm audit 0已知漏洞。重复seed和应用容器重启后6类业务数据快照保持一致。
-- 实现提交44f1823ec606ef8c14447b1fdf5974c6517020b6已正常合并推送origin/main；CI35855767648成功并下载产物核验。证据docs/evidence/s10b/CI_RESULT.json。
-- CI最初的MySQL初始化和rg可移植性问题均已修复；远程浏览器证据独立生成，不复用本地历史截图。
-- 参考仓修改未碰，旧规则迁移独立BLOCKED；共享MySQL未重启/清理。
+- 原S0–S10为历史已交付基线fb7adf6；新任务不能复用历史测试宣称完成。
+- 已核查代码、使用enterprise-feature-development及deliver-feature-end-to-end编排，完成本轮计划/架构/选型/契约/OP01–OP08切片。
+- 独立工作区commerce-platform-operations，分支feat/member-commerce-operations；原commerce-platform两处用户改动保留。
 
 ## 已修改文件
 
-- 全部实现分阶段在Git提交；最终S10b涉及Dockerfile/compose.yaml/deploy/scripts/.github、打包配置、两个审查修复及验证/设计文档。
-- 交付文档检查点eabdf8b已正常合并推送main，无额外业务代码变动；本次仅澄清恢复记录。
-- .local私密配置、访问令牌和工具均忽略，不在Git内。
+- docs/delivery/member-commerce-operations/：计划、报告、状态。
+- docs/design/member-commerce-operations/：架构、选型、契约、切片。
+- CODEX_PROGRESS.md。
 
 ## 未完成
 
-- 批准的S0–S10内部实现：无。
-- 真实外部联调按用户要求留待整体结束后另行安排；生产容量、HA/恢复、密钥轮换等见架构风险，未冒充已验收。
+- OP01会员生命周期API与UI构建已验证（147测试通过，浏览器待OP08），OP02权限正在实施，OP03商品及后续待完成。
+- 后续范围：OP02权限、OP03商品、OP04成长标签、OP05人群、OP06促销、OP07旅程效果、OP08验收交付均待完成。
 
 ## 当前问题
 
-- 无内部建设阻塞。运行入口http://127.0.0.1:8602，容器commerce-platform-app-1健康；宿主Java/Vite已停止。
-- MySQL8.4.11：主机43306，容器mysql84:3306；仅commerce_local、commerce_test_20260923。V1–V15历史迁移不可修改。
-- .local/runtime.env、.local/compose.env保存私密配置；.local/demo-access.json保存管理/会员登录令牌。
-- main远程origin=git@github.com:lirji/commerce-platform.git；无force push、无生产部署。
+- 无阻塞。当前8602旧容器不改；测试仅commerce_test_20260923；.local/runtime.env私密链接复用原凭据，禁止输出。
+- V1–V15不可修改。方案不新增Drools/中间件；复用AST/版本快照/持久任务。
 
 ## 下一步建议
 
-1. 本计划已完成。后续会话先核对Git事实与GitHub main最新CI；历史CI_RESULT绑定已验证实现，不需要重跑建设阶段。
-2. 后续用户安排真实联调时按deploy/README.md外部适配清单推进，不重做已完成切片，不自动触碰旧规则迁移或生产环境。
+1. 从docs/delivery/member-commerce-operations/DELIVERY_STATUS.md接续当前切片。
+2. 每切片代码、UI、真实数据库验证、文档及逻辑提交后继续，不等用户再次说继续。
+3. 最终完整验证与远程CI；保护原主工作树，不强推不部署生产。
 
 ## 恢复 Prompt
 
-读取本文件、docs/PROGRESS_STATE.json和docs/evidence/s10b/CI_RESULT.json。S0–S10内部平台及文档已交付，不要把本文件的历史检查点当成未完成切片；main最新CI可从GitHub查询。外部联调保持用户后置决定，生产部署未授权，保护共享基础设施和其他仓库。
+读取本文件和docs/delivery/member-commerce-operations/DELIVERY_STATUS.md，在/Users/liruijun/personal/LLM/commerce-platform-operations继续OP01–OP08已授权实施。不要重做历史S0–S10，不要覆盖原工作区用户改动，不要将未测结果标为完成。

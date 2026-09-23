@@ -5,6 +5,12 @@ import java.util.List;
 public interface MemberApi {
  record Create(String memberId, String actorId, String displayName, String memberLevel) { }
  record View(String memberId, String actorId, String displayName, String memberLevel, String status, long version) { }
+ record Change(long expectedVersion,String value,String reason) { }
+ record History(long version,String action,String beforeValue,String afterValue,String reason,String actorId,java.time.Instant createdAt) { }
+ /** 资料和状态分别建模，注销为不可恢复终态。 */
+ View change(Actor actor,String key,String memberId,String action,Change input);
+ /** 只读变更记录，按版本稳定分页。 */
+ List<History> history(Actor actor,String memberId,long after,int limit);
  /** 同一命令重试返回原结果。 */
  View create(Actor actor,String key,Create input);
  /** 从可信租户限定资源，禁止跨租户访问。 */

@@ -12,6 +12,32 @@ import java.util.List;
 public class MemberService implements MemberApi {
  private final MemberMapper mapper; private final Commands commands; 
  public MemberService(MemberMapper mapper,Commands commands) {this.mapper=mapper;this.commands=commands;}
+ /** 变更与审计共用事务；乐观锁避免不同运营覆盖彼此决定。 */
+ public View change(Actor actor,String key,String id,String action,Change input) {
+  actor.requireAdmin(); Identifiers.require(id);
+  Inputs.require(input!=null && input.expectedVersion()>=0,"变更版本无效");
+  Inputs.text(input.reason(),256); Inputs.text(input.value(),128);
+  Inputs.require(java.util.Set.of("PROFILE","STATUS").contains(action),"变更类型无效");
+  return commands.run(actor,"member."+action.toLowerCase(),key,new Object[]{id,input},View.class,()->{
+   var current=Inputs.found(mapper.find(actor.tenantId(),id));
+   if(current.version()!=input.expectedVersion() || current.status().equals("CLOSED"))
+    throw new DomainException(DomainException.Code.CONFLICT,"会员版本已变化或已注销，请刷新");
+   String before=current.displayName();
+   if(action.equals("STATUS")) {
+    before=current.status();
+    Inputs.require(java.util.Set.of("ACTIVE","FROZEN","CLOSED").contains(input.value()),"状态无效");
+    if(before.equals(input.value())) throw new DomainException(DomainException.Code.ILLEGAL_TRANSITION,"会员已处于目标状态");
+   }
+   if(mapper.change(actor.tenantId(),id,action,input)!=1) throw new DomainException(DomainException.Code.CONFLICT,"会员已被其他操作更新");
+   mapper.history(actor.tenantId(),id,action,before,input,actor.actorId());
+   return mapper.find(actor.tenantId(),id);
+  });
+ }
+ /** 会员生命周期审计不向普通会员或其他租户暴露。 */
+ public List<History> history(Actor actor,String id,long after,int limit) {
+  actor.requireAdmin(); Identifiers.require(id); Inputs.require(after>=0,"游标无效"); Inputs.page("",limit);
+  Inputs.found(mapper.find(actor.tenantId(),id));return mapper.changes(actor.tenantId(),id,after,limit);
+ }
  /** 权威主数据只能通过管理用例创建，输入和审计同事务。 */
  public View create(Actor actor,String key,Create input) {
   actor.requireAdmin(); Inputs.require(input!=null,"请求不能为空"); Identifiers.require(input.memberId()); Inputs.text(input.displayName(),128);

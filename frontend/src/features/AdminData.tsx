@@ -1,4 +1,5 @@
 import { Button, Card, Drawer, Space, Table, Tabs } from "antd";
+import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";
 import {
@@ -362,6 +363,7 @@ export function AdminData({
         <Button size="small" onClick={() => setDetail(r)}>
           详情
         </Button>
+        {kind === "members" && <MemberActions row={r} onDone={refresh} />}
         {kind === "fulfillments" && capabilities.sandboxEnabled && (
           <>
             {state === "READY" && !r.blocked && (

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.member.infrastructure.MemberMapper">
+ <update id="change">UPDATE member_record SET <choose><when test="action == 'PROFILE'">display_name=#{input.value}</when><otherwise>status=#{input.value}</otherwise></choose>,version=version+1 WHERE tenant_id=#{tenant} AND member_id=#{id} AND version=#{input.expectedVersion} AND status&lt;&gt;'CLOSED'</update>
+ <insert id="history">INSERT INTO member_change(tenant_id,member_id,version,action,before_value,after_value,reason,actor_id) VALUES(#{tenant},#{id},#{input.expectedVersion}+1,#{action},#{before},#{input.value},#{input.reason},#{actor})</insert>
+ <select id="changes" resultType="com.lrj.commerce.member.api.MemberApi$History">SELECT version,action,before_value,after_value,reason,actor_id,created_at FROM member_change WHERE tenant_id=#{tenant} AND member_id=#{id} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
  <insert id="insert">INSERT INTO member_record(tenant_id,member_id,actor_id,display_name,member_level,status,version) VALUES(#{tenant},#{input.memberId},#{input.actorId},#{input.displayName},#{input.memberLevel},'ACTIVE',0)</insert>
  <select id="find" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND member_id=#{id}</select>
  <select id="list" resultType="com.lrj.commerce.member.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND member_id &gt; #{after} ORDER BY member_id LIMIT #{limit}</select>
