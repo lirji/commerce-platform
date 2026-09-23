@@ -38,13 +38,14 @@ public class QuoteService implements QuoteApi {
             var store=stores.requireActive(actor,input.storeId());
             var skus=catalog.published(actor,input.storeId(),new ArrayList<>(quantities.keySet()));
             var lines=skus.stream().map(s->new DecisionModels.Line(s.skuId(),s.skuId(),new Money(new BigDecimal(s.unitPrice())),quantities.get(s.skuId()))).toList();
-            var offers=campaigns.published(actor,store.storeId());
             var now=clock.instant().truncatedTo(ChronoUnit.MILLIS);
+            var candidates=campaigns.candidates(actor,store.storeId(),member.memberId(),now);
+            var gross=lines.stream().map(l->l.unitPrice().multiply(l.quantity())).reduce(Money.ZERO,Money::add);
             var priced=decisions.decide(new DecisionModels.Request(new DecisionModels.Scope(actor.tenantId(),store.merchantId(),store.storeId()),member.memberId(),now,lines,
-                Map.of("memberLevel",new Fact.Text(member.memberLevel())),offers));
+                Map.of("memberLevel",new Fact.Text(member.memberLevel()),"orderAmount",new Fact.Decimal(gross.amount())),candidates.offers()));
             var skuById=new HashMap<String,CatalogApi.View>();skus.forEach(s->skuById.put(s.skuId(),s));
             var resultLines=priced.lines().stream().map(l->{var sku=skuById.get(l.skuId());return new Line(sku.skuId(),sku.revision(),sku.title(),quantities.get(sku.skuId()),sku.unitPrice(),l.gross().amount().toPlainString(),l.discount().amount().toPlainString(),l.payable().amount().toPlainString());}).toList();
-            var result=new View(UUID.randomUUID().toString(),member.memberId(),store.merchantId(),store.storeId(),"CNY",priced.gross().amount().toPlainString(),priced.discount().amount().toPlainString(),priced.payable().amount().toPlainString(),now,now.plusSeconds(300),resultLines,priced.selected(),priced.trace());
+            var result=new View(UUID.randomUUID().toString(),member.memberId(),store.merchantId(),store.storeId(),"CNY",priced.gross().amount().toPlainString(),priced.discount().amount().toPlainString(),priced.payable().amount().toPlainString(),now,now.plusSeconds(300),resultLines,priced.selected(),priced.trace(),candidates.sources());
             mapper.insert(actor.tenantId(),result,JsonCodec.write(result));return result;
         });
     }

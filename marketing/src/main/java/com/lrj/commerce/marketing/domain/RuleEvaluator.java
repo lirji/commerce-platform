@@ -24,6 +24,7 @@ public final class RuleEvaluator {
 
     private Outcome visit(Condition condition, Map<String, Fact> facts) {
         return switch (condition) {
+            case Condition.Literal literal -> Outcome.valueOf(literal.value().name());
             case Condition.Compare comparison -> compare(comparison, facts.get(comparison.field()));
             case Condition.Not not -> switch (visit(not.child(), facts)) {
                 case MATCH -> Outcome.NO_MATCH;

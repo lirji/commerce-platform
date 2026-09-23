@@ -5,7 +5,12 @@ import com.lrj.commerce.kernel.Identifiers;
 import java.util.List;
 
 /** 运营规则的有限语法树，不包含网络、数据库或通用表达式求值。 */
-public sealed interface Condition permits Condition.Compare, Condition.All, Condition.Any, Condition.Not {
+public sealed interface Condition permits Condition.Compare, Condition.All, Condition.Any, Condition.Not, Condition.Literal {
+    enum Truth { MATCH, NO_MATCH, UNKNOWN }
+    /** 仅可信运行时组合人群资格；运营JSON不开放此节点。 */
+    record Literal(Truth value) implements Condition {
+        public Literal { if(value==null)throw new DomainException(DomainException.Code.INVALID_INPUT,"资格结果不能为空"); }
+    }
     enum Operator { EQ, GT, GTE, LT, LTE }
 
     record Compare(String field, Operator operator, Fact expected) implements Condition {
@@ -52,6 +57,7 @@ public sealed interface Condition permits Condition.Compare, Condition.All, Cond
                 case Any any -> any.children();
                 case Not not -> List.of(not.child());
                 case Compare ignored -> List.of();
+                case Literal ignored -> List.of();
             };
             for (Condition child : children) pending.push(new Entry(child, entry.depth() + 1));
         }

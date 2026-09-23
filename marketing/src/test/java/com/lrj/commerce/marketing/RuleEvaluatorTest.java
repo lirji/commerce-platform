@@ -69,4 +69,13 @@ class RuleEvaluatorTest {
     private Condition comparison(String key) {
         return new Condition.Compare(key, Condition.Operator.EQ, new Fact.Text("MATCH"));
     }
+    @org.junit.jupiter.api.Test void trustedEligibilityLiteralPreservesUnknownUnderNot() {
+        var evaluator=new com.lrj.commerce.marketing.domain.RuleEvaluator();
+        for(var truth:com.lrj.commerce.marketing.api.Condition.Truth.values()) {
+            var node=new com.lrj.commerce.marketing.api.Condition.Literal(truth);
+            org.junit.jupiter.api.Assertions.assertEquals(truth.name(),evaluator.evaluate(node,java.util.Map.of()).name());
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(com.lrj.commerce.marketing.domain.RuleEvaluator.Outcome.UNKNOWN,
+            evaluator.evaluate(new com.lrj.commerce.marketing.api.Condition.Not(new com.lrj.commerce.marketing.api.Condition.Literal(com.lrj.commerce.marketing.api.Condition.Truth.UNKNOWN)),java.util.Map.of()));
+    }
 }

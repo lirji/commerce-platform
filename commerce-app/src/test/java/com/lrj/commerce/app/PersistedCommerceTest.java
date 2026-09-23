@@ -383,6 +383,58 @@ class PersistedCommerceTest {
         }
         assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM aftersales_case WHERE tenant_id=?",Integer.class,tenant));
     }
+    private void audience(String id,long version,List<String> members) throws Exception {
+        post("/v1/admin/audiences",admin,"audience-"+id+"-"+version,Map.of("audienceId",id,"version",version,"name","可信人群","source","approved-test-import","watermark",Instant.now().minusSeconds(1).toString(),"validUntil",Instant.now().plusSeconds(3600).toString(),"memberIds",members));
+    }
+    private Map<String,Object> governed(String id,Object policy) {
+        var result=new HashMap<>(draft(id,1,"3.00"));result.put("policy",policy);return result;
+    }
+    private void approveAndPublish(String id) throws Exception {
+        post("/v1/admin/campaigns/"+id+"/1/submit",admin,"submit-"+id,Map.of("expectedVersion",0));
+        post("/v1/admin/campaigns/"+id+"/1/approve",admin,"approve-"+id,Map.of("expectedVersion",1));
+        post("/v1/admin/campaigns/"+id+"/1/publish",admin,"publish-"+id,Map.of("expectedVersion",2));
+    }
+    @Test void governedCampaignRequiresApprovalAndBindsAudienceSource() throws Exception {
+        seed();audience("vip",1,List.of("m1"));post("/v1/admin/campaigns",admin,"c",governed("governed",Map.of("audience",Map.of("id","vip","version",1))));
+        assertEquals(409,call("POST","/v1/admin/campaigns/governed/1/publish",admin,"skip-review",Map.of("expectedVersion",0)).status());approveAndPublish("governed");
+        var quote=post("/v1/quotes",member,"q",basket(1));assertEquals("22.00",quote.path("payable").asString());assertEquals("HIT",quote.path("sources").get(0).path("match").asString());assertEquals("approved-test-import",quote.path("sources").get(0).path("source").asString());
+        audience("vip",2,List.of());assertEquals("22.00",post("/v1/quotes",member,"q2",basket(1)).path("payable").asString());
+        assertEquals(1,quote.path("sources").get(0).path("version").asInt());
+    }
+    @Test void staleAudienceIsUnknownAndCannotBeRescuedByNot() throws Exception {
+        seed();audience("fresh",1,List.of("m1"));var campaign=governed("fresh",Map.of("audience",Map.of("id","fresh","version",1)));
+        campaign.put("rule",Map.of("kind","NOT","children",List.of(Map.of("kind","COMPARE","field","memberLevel","operator","EQ","valueType","TEXT","value","BASIC"))));
+        post("/v1/admin/campaigns",admin,"c",campaign);approveAndPublish("fresh");var old=post("/v1/quotes",member,"q1",basket(1));assertEquals("22.00",old.path("payable").asString());
+        jdbc.update("UPDATE marketing_audience_snapshot SET watermark=?,valid_until=? WHERE tenant_id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(120)),java.sql.Timestamp.from(Instant.now().minusSeconds(60)),tenant);
+        var current=post("/v1/quotes",member,"q2",basket(1));assertEquals("25.00",current.path("payable").asString());assertEquals("UNKNOWN",current.path("sources").get(0).path("match").asString());assertEquals("CONDITION_UNKNOWN",current.path("trace").get(0).path("reason").asString());
+        assertEquals(old,call("GET","/v1/quotes/"+old.path("quoteId").asString(),member,null,null).body());
+    }
+    @Test void audienceMissAndCrossTenantReferenceFailClosed() throws Exception {
+        seed();audience("empty",1,List.of());post("/v1/admin/campaigns",admin,"c",governed("miss",Map.of("audience",Map.of("id","empty","version",1))));approveAndPublish("miss");
+        var quote=post("/v1/quotes",member,"q",basket(1));assertEquals("25.00",quote.path("payable").asString());assertEquals("MISS",quote.path("sources").get(0).path("match").asString());
+        assertEquals(404,call("POST","/v1/admin/campaigns",admin,"missing",governed("missing",Map.of("audience",Map.of("id","other-tenant-asset","version",1)))).status());
+        assertEquals(403,call("GET","/v1/admin/audiences",member,null,null).status());
+    }
+    @Test void reusableRuleMustBePublishedAndCannotChangeFrozenCampaign() throws Exception {
+        seed();Object rule=Map.of("kind","COMPARE","field","orderAmount","operator","GTE","valueType","DECIMAL","value","20.00");
+        post("/v1/admin/rules",admin,"rule1",Map.of("ruleId","spend","version",1,"name","消费门槛","rule",rule));
+        var campaign=governed("rule-bound",Map.of("rule",Map.of("id","spend","version",1)));campaign.remove("rule");
+        assertEquals(409,call("POST","/v1/admin/campaigns",admin,"before-publish",campaign).status());
+        post("/v1/admin/rules/spend/1/publish",admin,"rule-publish",null);post("/v1/admin/campaigns",admin,"c",campaign);approveAndPublish("rule-bound");
+        assertEquals("22.00",post("/v1/quotes",member,"q",basket(1)).path("payable").asString());
+        post("/v1/admin/rules",admin,"rule2",Map.of("ruleId","spend","version",2,"name","新门槛","rule",Map.of("kind","COMPARE","field","orderAmount","operator","GTE","valueType","DECIMAL","value","100.00")));
+        post("/v1/admin/rules/spend/2/publish",admin,"rule-publish2",null);
+        assertEquals("22.00",post("/v1/quotes",member,"q2",basket(1)).path("payable").asString());
+        assertEquals(400,call("POST","/v1/admin/rules",admin,"untrusted",Map.of("ruleId","bad","version",1,"name","未知字段","rule",Map.of("kind","COMPARE","field","clientVip","operator","EQ","valueType","TEXT","value","yes"))).status());
+    }
+    @Test void governanceRejectAndOptimisticVersionCannotBeBypassed() throws Exception {
+        seed();audience("vip",1,List.of("m1"));post("/v1/admin/campaigns",admin,"c",governed("rejected",Map.of("audience",Map.of("id","vip","version",1))));
+        post("/v1/admin/campaigns/rejected/1/submit",admin,"submit",Map.of("expectedVersion",0));
+        assertEquals(409,call("POST","/v1/admin/campaigns/rejected/1/approve",admin,"stale",Map.of("expectedVersion",0)).status());
+        post("/v1/admin/campaigns/rejected/1/reject",admin,"reject",Map.of("expectedVersion",1));
+        assertEquals(409,call("POST","/v1/admin/campaigns/rejected/1/publish",admin,"publish",Map.of("expectedVersion",2)).status());
+        assertEquals(403,call("POST","/v1/admin/campaigns/rejected/1/approve",member,"bad-role",Map.of("expectedVersion",2)).status());
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));

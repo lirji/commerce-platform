@@ -10,8 +10,8 @@ public interface QuoteApi {
     record Request(String storeId,List<Selection> items) { }
     record Line(String skuId,long revision,String title,int quantity,String unitPrice,String gross,String discount,String payable) { }
     record View(String quoteId,String memberId,String merchantId,String storeId,String currency,String gross,String discount,String payable,
-                Instant createdAt,Instant expiresAt,List<Line> items,DecisionModels.Selection campaign,List<DecisionModels.Trace> trace) {
-        public View { items=List.copyOf(items);trace=List.copyOf(trace); }
+                Instant createdAt,Instant expiresAt,List<Line> items,DecisionModels.Selection campaign,List<DecisionModels.Trace> trace,List<com.lrj.commerce.campaign.api.MarketingAssets.Source> sources) {
+        public View { items=List.copyOf(items);trace=List.copyOf(trace);sources=sources==null?List.of():List.copyOf(sources); }
     }
     View create(Actor actor,String key,Request input);
     View read(Actor actor,String id);

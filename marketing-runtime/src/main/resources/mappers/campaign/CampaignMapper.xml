@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.campaign.infrastructure.CampaignMapper">
- <sql id="columns">campaign_id,version,store_id,merchant_id,name,valid_from,valid_to,CAST(minimum_spend AS CHAR) minimum_spend,CAST(discount_amount AS CHAR) discount_amount,rule_json,status,lock_version</sql>
- <insert id="insert">INSERT INTO marketing_campaign(tenant_id,campaign_id,version,store_id,merchant_id,name,valid_from,valid_to,minimum_spend,discount_amount,rule_json) VALUES(#{tenant},#{input.campaignId},#{input.version},#{input.storeId},#{merchant},#{input.name},#{input.validFrom},#{input.validTo},#{input.minimumSpend},#{input.discountAmount},#{rule})</insert>
+ <sql id="columns">campaign_id,version,store_id,merchant_id,name,valid_from,valid_to,CAST(minimum_spend AS CHAR) minimum_spend,CAST(discount_amount AS CHAR) discount_amount,rule_json,status,lock_version,policy_json</sql>
+ <insert id="insert">INSERT INTO marketing_campaign(tenant_id,campaign_id,version,store_id,merchant_id,name,valid_from,valid_to,minimum_spend,discount_amount,rule_json,policy_json) VALUES(#{tenant},#{input.campaignId},#{input.version},#{input.storeId},#{merchant},#{input.name},#{input.validFrom},#{input.validTo},#{input.minimumSpend},#{input.discountAmount},#{rule},#{policy})</insert>
  <select id="find" resultType="com.lrj.commerce.campaign.infrastructure.CampaignMapper$Row">SELECT <include refid="columns"/> FROM marketing_campaign WHERE tenant_id=#{tenant} AND campaign_id=#{id} AND version=#{version}</select>
  <select id="lockGroup" resultType="com.lrj.commerce.campaign.infrastructure.CampaignMapper$Row">SELECT <include refid="columns"/> FROM marketing_campaign WHERE tenant_id=#{tenant} AND campaign_id=#{id} ORDER BY version FOR UPDATE</select>
  <update id="pauseOthers">UPDATE marketing_campaign SET status='PAUSED',lock_version=lock_version+1 WHERE tenant_id=#{tenant} AND campaign_id=#{id} AND status='PUBLISHED'</update>
