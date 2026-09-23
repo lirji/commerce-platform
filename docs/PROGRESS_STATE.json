@@ -10,16 +10,17 @@
     "S5a",
     "S6",
     "S7a",
-    "S8a"
+    "S8a",
+    "S8b1"
   ],
-  "next": "S8b",
+  "next": "S8b2",
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
-  "verification": "docs/evidence/s8a/verification.json",
+  "verification": "docs/evidence/s8b1/verification.json",
   "git": {
-    "status": "S8a_VALIDATED_READY_TO_DELIVER",
-    "previousPushedCommit": "3e08e65",
-    "branch": "feat/marketing-audience-governance"
+    "status": "S8b1_VALIDATED_READY_TO_DELIVER",
+    "previousPushedCommit": "64f9e4e",
+    "branch": "feat/coupon-order-holds"
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {

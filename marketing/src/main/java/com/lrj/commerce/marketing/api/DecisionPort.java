@@ -4,4 +4,6 @@ package com.lrj.commerce.marketing.api;
 public interface DecisionPort {
     /** 相同版本、事实、时间和购物行得到相同结果，无 IO 副作用。 */
     DecisionModels.Quote decide(DecisionModels.Request request);
+    /** 将已选总优惠按原行金额精确分摊，供券和活动组合使用。 */
+    java.util.List<DecisionModels.PricedLine> allocate(java.util.List<DecisionModels.Line> lines,com.lrj.commerce.kernel.Money discount);
 }

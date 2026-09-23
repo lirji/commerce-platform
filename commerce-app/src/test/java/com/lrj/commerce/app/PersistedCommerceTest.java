@@ -435,6 +435,64 @@ class PersistedCommerceTest {
         assertEquals(409,call("POST","/v1/admin/campaigns/rejected/1/publish",admin,"publish",Map.of("expectedVersion",2)).status());
         assertEquals(403,call("POST","/v1/admin/campaigns/rejected/1/approve",member,"bad-role",Map.of("expectedVersion",2)).status());
     }
+    private void couponDefinition(String discount,boolean stackable,int quota) throws Exception {
+        post("/v1/admin/coupon-definitions",admin,"definition",Map.of("definitionId","coupon-def","version",1,"storeId","store1","name","测试券","minimumSpend","0.00","discountAmount",discount,"validFrom",Instant.now().minusSeconds(10).toString(),"validTo",Instant.now().plusSeconds(3600).toString(),"quota",quota,"stackable",stackable));
+    }
+    private JsonNode claimCoupon(String token,String key) throws Exception {return post("/v1/coupons/coupon-def/1/claim",token,key,null);}
+    private Object couponBasket(JsonNode coupon,int quantity) {return Map.of("storeId","store1","items",List.of(Map.of("skuId","sku1","quantity",quantity)),"couponId",coupon.path("couponId").asString());}
+    private String couponState(JsonNode coupon){return jdbc.queryForObject("SELECT status FROM benefit_coupon WHERE tenant_id=? AND coupon_id=?",String.class,tenant,coupon.path("couponId").asString());}
+    @Test void couponStacksAndCancellationReleasesOnlyOnce() throws Exception {
+        seed();stock("sku1",3);couponDefinition("5.00",true,10);var coupon=claimCoupon(member,"claim");
+        assertEquals(coupon,claimCoupon(member,"claim-again"));assertEquals(1,jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=?",Integer.class,tenant));
+        post("/v1/admin/campaigns",admin,"c",draft("stack",1,"3.00"));post("/v1/admin/campaigns/stack/1/publish",admin,"p",Map.of("expectedVersion",0));
+        var q=post("/v1/quotes",member,"q",couponBasket(coupon,1));assertEquals("17.00",q.path("payable").asString());assertEquals("3.00",q.path("campaignDiscount").asString());assertEquals("5.00",q.path("coupon").path("discount").asString());
+        var order=post("/v1/orders",member,"o",orderInput(q));assertEquals("HELD",couponState(coupon));
+        post("/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null);assertEquals("AVAILABLE",couponState(coupon));
+        post("/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel2",null);assertEquals("AVAILABLE",couponState(coupon));
+    }
+    @Test void oneCouponCannotBeReservedByTwoConcurrentOrders() throws Exception {
+        seed();stock("sku1",2);couponDefinition("5.00",true,10);var coupon=claimCoupon(member,"claim");var q1=post("/v1/quotes",member,"q1",couponBasket(coupon,1));var q2=post("/v1/quotes",member,"q2",couponBasket(coupon,1));
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var latch=new CountDownLatch(1);var a=pool.submit(()->{latch.await();return call("POST","/v1/orders",member,"o1",orderInput(q1));});var b=pool.submit(()->{latch.await();return call("POST","/v1/orders",member,"o2",orderInput(q2));});latch.countDown();
+            assertEquals(List.of(200,409),java.util.stream.Stream.of(a.get(),b.get()).map(Reply::status).sorted().toList());
+        }
+        assertEquals(1,stockValue("held"));assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon_hold WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM trade_quote WHERE tenant_id=? AND consumed_order_id IS NOT NULL",Integer.class,tenant));
+    }
+    @Test void inventoryFailureRollsBackCouponAndCanRetrySameOrderCommand() throws Exception {
+        seed();couponDefinition("5.00",true,10);var coupon=claimCoupon(member,"claim");var quote=post("/v1/quotes",member,"q",couponBasket(coupon,1));
+        assertEquals(409,call("POST","/v1/orders",member,"o",orderInput(quote)).status());assertEquals("AVAILABLE",couponState(coupon));
+        stock("sku1",1);var order=post("/v1/orders",member,"o",orderInput(quote));startPayment(order);
+        post("/v1/orders/"+order.path("orderId").asString()+"/cancel",member,"cancel",null);reconcile(order);pump();assertEquals("HELD",couponState(coupon));
+    }
+    @Test void couponQuotaIsSafeAcrossDifferentMembers() throws Exception {
+        seed();couponDefinition("5.00",true,1);String second=token(tenant,"second","MEMBER");post("/v1/admin/members",admin,"m2",Map.of("memberId","m2","actorId","second","displayName","第二会员","memberLevel","VIP"));
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var latch=new CountDownLatch(1);var a=pool.submit(()->{latch.await();return call("POST","/v1/coupons/coupon-def/1/claim",member,"claim",null);});var b=pool.submit(()->{latch.await();return call("POST","/v1/coupons/coupon-def/1/claim",second,"claim",null);});latch.countDown();
+            assertEquals(List.of(200,409),java.util.stream.Stream.of(a.get(),b.get()).map(Reply::status).sorted().toList());
+        }
+        assertEquals(1,jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=?",Integer.class,tenant));assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void exclusiveCouponLosesToBetterCampaignWithoutBeingConsumed() throws Exception {
+        seed();couponDefinition("5.00",false,10);var coupon=claimCoupon(member,"claim");post("/v1/admin/campaigns",admin,"c",draft("better",1,"10.00"));post("/v1/admin/campaigns/better/1/publish",admin,"p",Map.of("expectedVersion",0));
+        var q=post("/v1/quotes",member,"q",couponBasket(coupon,1));assertEquals("15.00",q.path("payable").asString());assertEquals("NOT_SELECTED",q.path("couponStatus").asString());assertEquals("AVAILABLE",couponState(coupon));
+        assertEquals(404,call("POST","/v1/quotes",other,"foreign",couponBasket(coupon,1)).status());
+    }
+    @Test void partialRefundKeepsCouponUsedFullRefundReturnsAndOldEventCannotReleaseNewHold() throws Exception {
+        seed();stock("sku1",3);couponDefinition("5.00",true,10);var coupon=claimCoupon(member,"claim");var order=post("/v1/orders",member,"o",orderInput(post("/v1/quotes",member,"q",couponBasket(coupon,2))));payOrder(order);ship(order);assertEquals("USED",couponState(coupon));
+        for(int n=0;n<2;n++){
+            var request=requestReturn(order,1,"r"+n);approve(request,"a"+n);var receiving=post("/v1/admin/aftersales/"+request.path("caseId").asString()+"/receive-return",admin,"receive"+n,null);finishRefund(receiving,"refund"+n);pump();
+            assertEquals(n==0?"USED":"AVAILABLE",couponState(coupon));
+        }
+        var second=post("/v1/orders",member,"second-order",orderInput(post("/v1/quotes",member,"second-quote",couponBasket(coupon,1))));assertEquals("HELD",couponState(coupon));
+        jdbc.update("UPDATE platform_event SET status='PENDING',available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='aftersales.completed.v1'",tenant);pump();
+        assertEquals("HELD",couponState(coupon));assertEquals(second.path("orderId").asString(),jdbc.queryForObject("SELECT order_id FROM benefit_coupon WHERE tenant_id=?",String.class,tenant));
+    }
+    @Test void couponCanMakeOrderFreeAndReturnWithoutFabricatedPayment() throws Exception {
+        seed();stock("sku1",1);couponDefinition("100.00",true,1);var coupon=claimCoupon(member,"claim");var order=post("/v1/orders",member,"o",orderInput(post("/v1/quotes",member,"q",couponBasket(coupon,1))));
+        assertEquals("PAID",order.path("status").asString());assertEquals("USED",couponState(coupon));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM payment_attempt WHERE tenant_id=?",Integer.class,tenant));
+        approve(requestReturn(order,1,"r"),"a");pump();pump();assertEquals("AVAILABLE",couponState(coupon));
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));

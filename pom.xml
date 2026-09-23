@@ -18,7 +18,8 @@
         <module>store</module>
         <module>catalog</module>
         <module>marketing-runtime</module>
-        <module>trade</module>
+        <module>benefit</module>
+    <module>trade</module>
         <module>inventory</module>
         <module>order-runtime</module>
     <module>payment</module>

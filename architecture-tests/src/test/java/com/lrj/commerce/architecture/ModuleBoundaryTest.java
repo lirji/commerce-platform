@@ -16,7 +16,7 @@ class ModuleBoundaryTest {
     @Test void persistedModulesOnlyReachOtherDomainsThroughApi() throws Exception {
         var diagnostics=new StringWriter();
         var arguments=new java.util.ArrayList<>(List.of("-verbose:class","-filter:none"));
-        for(String module:List.of("shared-kernel","platform-runtime","member","merchant","store","catalog","marketing","marketing-runtime","trade","inventory","order","order-runtime","payment","fulfillment","aftersales")) {
+        for(String module:List.of("shared-kernel","platform-runtime","member","merchant","store","catalog","marketing","marketing-runtime","trade","inventory","order","order-runtime","payment","fulfillment","aftersales","benefit")) {
             Path classes=Path.of("..",module,"target","classes").toRealPath();
             arguments.add(classes.toString());
         }

@@ -62,6 +62,13 @@ public final class MarketingDecisionService implements DecisionPort {
         };
     }
 
+    /** 总优惠不能超过原金额，输入仍做完整有界校验再复用余数分摊。 */
+    public List<PricedLine> allocate(List<Line> input,Money discount){
+        if(input==null||input.isEmpty()||input.size()>100||input.stream().anyMatch(java.util.Objects::isNull)||discount==null)invalid("分摊输入无效");
+        var lines=input.stream().sorted(Comparator.comparing(Line::lineId)).toList();var ids=new HashSet<String>();Money gross=Money.ZERO;
+        for(var line:lines){if(!ids.add(line.lineId()))invalid("购物行标识重复");gross=gross.add(line.unitPrice().multiply(line.quantity()));}
+        if(discount.compareTo(gross)>0)invalid("分摊优惠超过原金额");return allocate(lines,gross,discount);
+    }
     private List<PricedLine> allocate(List<Line> lines, Money total, Money discount) {
         long[] cents = new long[lines.size()];
         BigInteger[] remainders = new BigInteger[lines.size()];

@@ -19,3 +19,13 @@
 - 固定减免与百分比候选、确定性互斥/叠加、预算及平台/商家资金分摊。
 - 报价只提供资格；数据库在订单事务中最终预占券/预算。取消释放，支付未知保持占用，付款确认核销。退款完成按明确券/权益政策冲正，不重算现行活动。
 - S8b具体DTO与金额/返还政策在实现前追加；此列表不代表已实现。
+
+## S8b1 券钱包与订单占用（本次可执行）
+
+- 券定义immutable：definitionId/version/storeId/name/minimumSpend/discountAmount/validFrom/validTo/quota/stackable。ADMIN创建；会员可查看本店可领取定义，每会员每定义版本一张；数据库issued<quota条件更新及唯一键，不能超发。已领再次领取返回同一张，不补发。
+- POST /v1/coupons/{definitionId}/{version}/claim；GET /v1/coupons个人钱包；GET /v1/coupon-definitions?storeId；ADMIN /v1/admin/coupon-definitions POST与GET。
+- Quote.Request新增可选couponId。券资格从钱包和定义读取，失效/跨店/非本人/非AVAILABLE拒绝；原价达到券门槛后可用。每单最多一张券。stackable=true允许与单项最佳活动叠加，封顶整单金额；false在券与活动中择优，同省钱优先不用券。活动间仍互斥，不声称任意组合全局最优。
+- Quote.View增加coupon快照，实际活动/券优惠分别保存，行分摊按最终总优惠重新精确分配。券参与报价但未选中时不占用。报价TTL不超过选中券有效期。
+- 下单本地事务中AVAILABLE→HELD绑定订单；报价消费、券占用、库存、订单与事件同事务。竞争失败全部回滚。已开始支付UNKNOWN/CLOSING保留券。
+- 付款确认HELD→USED；未付取消HELD→AVAILABLE（若过期则EXPIRED）。全量退货完成后USED→AVAILABLE/EXPIRED；部分退款保持USED，累计全量退货才返还。返还标记挂在原订单占用行，防旧退款事件释放已被新订单使用的券。
+- 该返还政策是当前隔离平台的明确默认；真实接入前可按商家政策另建版本，不倒改历史订单。权益授予与预算在S8b2继续，S5b/S7b父项待完整权益能力后结案。

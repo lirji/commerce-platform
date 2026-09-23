@@ -6,7 +6,7 @@ import java.util.List;
 
 /** 活动业务版本不可变，发布状态与并发版本单独维护。 */
 public interface CampaignApi {
-    record Draft(String campaignId,long version,String storeId,String name,Instant validFrom,Instant validTo,String minimumSpend,String discountAmount,RuleNode rule,Policy policy) { }
+    record Draft(String campaignId,long version,String storeId,String name,Instant validFrom,Instant validTo,String minimumSpend,String discountAmount,RuleNode rule,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) Policy policy) { }
     record Policy(MarketingAssets.Ref audience,MarketingAssets.Ref rule) { }
     record Candidates(List<Offer> offers,List<MarketingAssets.Source> sources) { }
     record View(Draft content,String merchantId,String status,long lockVersion) { }
