@@ -1,0 +1,501 @@
+:root {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  color: #111827;
+  background: #eef1f5;
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 3px;
+}
+.app {
+  min-height: 100vh;
+}
+.sidebar {
+  border-right: 1px solid #cbd5e1;
+  position: sticky !important;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  white-space: nowrap;
+}
+.sidebar .brand {
+  padding: 28px 22px;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: #fff;
+  background: #1d4ed8;
+  border-radius: 8px;
+  font-size: 20px;
+}
+.brand-sub {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.3px;
+  color: #4b5563;
+  margin-top: 3px;
+}
+.sidebar .ant-menu {
+  border: 0 !important;
+  padding: 0 10px;
+}
+.sidebar .ant-menu-item-group-title {
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-top: 8px;
+  color: #4b5563;
+}
+.sidebar .ant-menu-item {
+  height: 36px;
+  line-height: 36px;
+}
+.topbar {
+  height: 72px;
+  line-height: normal;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  border-bottom: 1px solid #cbd5e1;
+  gap: 20px;
+}
+.context-label {
+  color: #4b5563;
+  margin-right: 6px;
+  font-size: 13px;
+}
+.environment-badge {
+  font-size: 11px;
+  color: #b45309;
+  border: 1px solid #b45309;
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+.workspace {
+  padding: 28px 32px;
+  min-height: calc(100vh - 128px);
+}
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+.page-head h2 {
+  margin: 0 0 6px !important;
+  font-size: 25px !important;
+  letter-spacing: -0.6px;
+}
+.page-head .ant-typography-secondary {
+  font-size: 13px;
+}
+.footer {
+  background: transparent;
+  padding: 12px 32px 22px !important;
+  font-size: 11px;
+  color: #4b5563;
+  display: flex;
+  justify-content: space-between;
+}
+.muted {
+  color: #4b5563;
+  font-size: 13px;
+}
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 20px;
+  font-size: 12px;
+  color: #4b5563;
+}
+.json-detail {
+  background: #f7f9fc;
+  padding: 20px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.65;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+.section {
+  margin-top: 24px;
+}
+.section-actions {
+  margin: 20px 0;
+}
+.return-line,
+.bag-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #cbd5e1;
+  gap: 20px;
+}
+.login-page {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  min-height: 100vh;
+  background: white;
+}
+.login-story {
+  background: #10285d;
+  color: white;
+  padding: 60px 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-image: radial-gradient(
+    ellipse at 100% 60%,
+    #234883,
+    transparent 60%
+  );
+}
+.brand-light .brand-sub {
+  color: #d5deef;
+}
+.brand-light .brand-mark {
+  background: white;
+  color: #1d4ed8;
+}
+.login-story h1 {
+  font-size: clamp(32px, 3.5vw, 52px);
+  line-height: 1.55;
+  letter-spacing: -1.5px;
+  margin: 24px 0;
+}
+.login-story p {
+  color: #d5deef;
+  line-height: 2;
+  font-size: 16px;
+}
+.login-story small {
+  color: #d5deef;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.2px;
+}
+.login-main {
+  display: grid;
+  place-items: center;
+  padding: 50px;
+}
+.login-card {
+  max-width: 420px;
+  width: 100%;
+  box-shadow: none;
+}
+.login-card .ant-card-body {
+  padding: 0;
+}
+.login-card .eyebrow {
+  color: #1d4ed8;
+}
+.login-card h2 {
+  margin-top: 14px;
+}
+.login-card form {
+  margin-top: 28px;
+}
+.login-footnote {
+  font-size: 11px;
+  color: #4b5563;
+  margin-top: 20px;
+  line-height: 1.8;
+}
+.member-nav {
+  padding: 0 32px;
+  justify-content: center;
+  background: white;
+}
+.member-app .workspace {
+  max-width: 1320px;
+  width: 100%;
+  margin: auto;
+}
+.member-app .ant-btn:not(.ant-btn-sm) {
+  min-height: 44px;
+}
+.shop-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #dce5ef;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 38px 44px;
+  margin-bottom: 28px;
+  overflow: hidden;
+  color: #15294c;
+}
+.shop-banner h2 {
+  font-size: 32px;
+  line-height: 1.45;
+  margin: 14px 0;
+}
+.shop-banner p {
+  color: #334763;
+}
+.shop-symbol {
+  font-size: 130px;
+  font-weight: 800;
+  line-height: 1;
+  transform: rotate(-12deg);
+  letter-spacing: -12px;
+  color: #234777;
+  padding-right: 30px;
+}
+.shop-symbol span {
+  display: block;
+  font-size: 60px;
+  text-align: right;
+  color: #637ca0;
+}
+.product-art {
+  display: grid;
+  place-items: center;
+  height: 156px;
+  background: #f0e9db;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+.product-art span {
+  display: grid;
+  place-items: center;
+  width: 85px;
+  height: 85px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-family: serif;
+  font-size: 38px;
+  color: #684c30;
+}
+.art-1 {
+  background: #e0e8e7;
+}
+.art-1 span {
+  color: #365d5a;
+}
+.art-2 {
+  background: #e5e4ed;
+}
+.art-2 span {
+  color: #52486d;
+}
+.product-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.product-bottom strong {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.bag-indicator {
+  color: #1d4ed8;
+  font-size: 12px;
+  margin-top: 12px;
+}
+.coupon-value {
+  font-size: 38px;
+  color: #b45309;
+  font-weight: 700;
+  margin: 12px 0;
+}
+.balance-number {
+  font-size: 40px;
+  font-weight: 700;
+}
+.balance-number small {
+  font-size: 14px;
+  font-weight: 400;
+  color: #4b5563;
+}
+.rule-node {
+  border-left: 3px solid #cbd5e1;
+  padding: 12px 0 12px 16px;
+  margin: 8px 0;
+}
+.node-card {
+  margin-bottom: 12px;
+}
+.node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.node-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 8px;
+  margin: 24px 0 16px;
+}
+.readonly-preview {
+  border: 2px dashed #4338ca;
+  padding: 20px;
+  border-radius: 6px;
+}
+.ops-section {
+  margin: 16px 0;
+}
+.ant-table-cell {
+  font-size: 13px;
+}
+.ant-tag {
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .sidebar {
+    width: 184px !important;
+    min-width: 184px !important;
+    max-width: 184px !important;
+  }
+  .workspace {
+    padding: 20px;
+  }
+  .topbar {
+    padding: 0 20px;
+  }
+  .actor-name {
+    display: none;
+  }
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .login-story {
+    padding: 40px;
+  }
+  .login-main {
+    padding: 24px;
+  }
+  .shop-symbol {
+    font-size: 90px;
+  }
+  .shop-banner {
+    padding: 28px;
+  }
+  .product-bottom {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .login-page {
+    display: block;
+  }
+  .login-story {
+    min-height: 210px;
+    padding: 24px;
+  }
+  .login-story h1 {
+    font-size: 24px;
+    margin: 16px 0;
+  }
+  .login-story p,
+  .login-story small,
+  .login-story .eyebrow {
+    display: none;
+  }
+  .login-main {
+    padding: 28px 24px;
+  }
+  .member-app .topbar {
+    height: auto;
+    min-height: 72px;
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .member-app .topbar .brand {
+    display: none;
+  }
+  .member-nav {
+    padding: 0 8px;
+  }
+  .workspace {
+    padding: 20px 14px;
+  }
+  .shop-banner {
+    padding: 24px;
+  }
+  .shop-banner h2 {
+    font-size: 26px;
+  }
+  .shop-symbol {
+    display: none;
+  }
+  .node-grid {
+    grid-template-columns: 1fr;
+  }
+  .footer {
+    padding: 12px 16px !important;
+  }
+  .admin-app .sidebar {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+  }
+  .admin-app .brand {
+    font-size: 14px;
+    padding: 20px 12px;
+  }
+  .admin-app .brand-mark {
+    display: none;
+  }
+  .admin-app .topbar {
+    padding: 12px;
+    height: auto;
+    flex-wrap: wrap;
+  }
+  .admin-app .workspace {
+    min-width: 0;
+    padding: 14px;
+  }
+}

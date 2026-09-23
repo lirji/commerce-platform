@@ -11,5 +11,7 @@ public interface StoreApi {
  View requireActive(Actor actor,String id);
  /** 有界游标分页。 */
  List<View> list(Actor actor,String after,int limit);
+ /** 认证会员可浏览租户店铺目录，成交另行校验状态。 */
+ List<View> browse(Actor actor,String after,int limit);
  
 }

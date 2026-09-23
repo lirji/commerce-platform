@@ -1,0 +1,6 @@
+
+> commerce-console@0.1.0 build
+> tsc --noEmit && vite build
+
+src/features/OpsPages.tsx(12,1452): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ _key: number; }'.
+  No index signature with a parameter of type 'string' was found on type '{ _key: number; }'.

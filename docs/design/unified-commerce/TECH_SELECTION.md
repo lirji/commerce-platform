@@ -27,3 +27,7 @@ Owner：backend-architecture-design。本次只固定已安装且可离线验证
 ## S6异步选择
 
 选择数据库Outbox + 有界本地Worker，复用现有MySQL与Spring调度，不新增MQ。数据库行锁SKIP LOCKED防多实例重复领取；Inbox与本地副作用事务提交。此语义仅覆盖同库本地消费者，远程适配端口必须在业务事务外调用并持久化结果，不能推导端到端exactly-once。沙箱渠道独立账本持久化UNKNOWN/OPEN/PAID/CLOSED，使用配置开关显式启用；正式渠道后置。
+
+## S10a前端基线
+
+单React SPA，React/ReactDOM19.3.0、AntDesign6.6.5、Vite8.3.0、TypeScript7.0.2、Playwright1.63.0、Prettier3.9.9，精确解析见frontend/package-lock.json。Node24.12.0/npm11.6.2实测。参考仓已有React/Ant经验，不引入第二组件库或SSR。官方依据及界面/状态设计见FRONTEND_ARCHITECTURE.md；npm registry元数据确认React/Ant/Vite MIT、TypeScript/Playwright Apache2.0，npm audit未发现已知漏洞（证据s10a/npm-audit.json）。这不替代生产供应链持续扫描。

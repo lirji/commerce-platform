@@ -44,3 +44,11 @@
 - 下一步S10a前端：采用frontend-architecture-design和frontend-implementation技能，形成单应用管理台/消费端设计。随后S10b数据/运行/CI/整体验收。
 - 已核对Node24.12.0/npm11.6.2及官方兼容资料；拟选React19.3.0、AntDesign6.6.5、Vite8.3.0、TypeScript7.0.2，最终以锁文件、类型检查和安全审计为证据。前端尚未开始写代码。
 - 后台app仍是S9a session92918；V15只在隔离测试库生效，前端测试前重启最新jar。
+
+## S10a最新检查点（覆盖上方下一步）
+
+- S10a已实现管理台和消费端，规则/旅程/低代码可视编辑；真实前端API与必要运营读取接口、全局admin角色门禁。
+- 后端144项测试通过；前端严格类型/构建通过；npm audit 0漏洞；4个真实浏览器全链路场景通过。见docs/evidence/s10a/TEST_RESULT.md及截图。
+- S9b提交7714c91已推送main；当前分支feat/commerce-console，待验证证据收尾和Git交付。前端dev端口8601，session20109；后端8600已重启最终S10a jar（见本轮tool输出，日志.local/app-s10a-final.log）。
+- 下一步立即S10b：打包静态资源、幂等完整演示seed、Dockerfile/Compose复用dev-infra网络、CI、架构/代码审查与最终文档同步。当前S10整体未完成。
+- dev-infra网络名dev-infra；缓存镜像eclipse-temurin:21.0.12_8-jre-ubi9-minimal，官方镜像digest已查得fa6a3cd1e88402446002f86e0d06f5202d7d6ec02d525888f9c0ea2eeb5b07ad。禁止清理共享容器。

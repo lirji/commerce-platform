@@ -1,0 +1,52 @@
+
+> commerce-console@0.1.0 e2e
+> playwright test
+
+
+Running 3 tests using 1 worker
+
+(node:44591) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/commerce.spec.ts:8:1 › 真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正 (10.8s)
+(node:44637) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 tests/commerce.spec.ts:22:1 › 可视规则与低代码页面预览、审批、发布及窄屏 (4.2s)
+  ✓  3 tests/commerce.spec.ts:28:1 › 无效凭据不会进入应用，退出后清除会话 (847ms)
+
+
+  1) tests/commerce.spec.ts:8:1 › 真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正 ─────────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '沙箱发货' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '沙箱发货' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '沙箱发货' })
+
+
+      15 |  await member.getByRole('button',{name:'查看详情',exact:true}).first().click();await member.getByRole('button',{name:'发起支付',exact:true}).click();await expect(member.getByText('结果待确认',{exact:true})).toBeVisible();const order=(await api('/orders','member'))[0];
+      16 |  await login(admin,'admin');await admin.getByRole('button',{name:'查看详情',exact:true}).first().click();await admin.getByRole('button',{name:'查询支付',exact:true}).click();await admin.getByRole('button',{name:'沙箱：模拟收款',exact:true}).click();await admin.getByRole('button',{name:'核对渠道结果',exact:true}).click();await expect.poll(async()=> (await api('/admin/orders/'+order.orderId)).status,{timeout:15000}).toBe('PAID');
+    > 17 |  await admin.getByRole('button',{name:'关闭',exact:true}).click();await nav(admin,'履约队列');await expect(admin.getByRole('button',{name:'沙箱发货'})).toBeVisible();await admin.getByRole('button',{name:'沙箱发货'}).click();await admin.getByLabel('物流单号').fill('BROWSER-TRACK-001');await admin.getByRole('button',{name:'确认提交'}).click();await expect(admin.getByRole('button',{name:'沙箱签收'})).toBeVisible();await admin.getByRole('button',{name:'沙箱签收'}).click();await expect.poll(async()=> (await api('/admin/orders/'+order.orderId)).status).toBe('COMPLETED');
+         |                                                                                                                                               ^
+      18 |  await member.getByRole('button',{name:'刷新状态',exact:true}).click();await member.getByRole('button',{name:'申请售后',exact:true}).click();await member.getByRole('spinbutton',{name:'精品咖啡礼盒退货数量'}).fill('1');await member.getByRole('button',{name:'提交售后申请'}).click();await member.getByLabel('申请原因').fill('全链路验收退货');await member.getByRole('button',{name:'确认提交'}).click();
+      19 |  await nav(admin,'售后审批');await admin.getByRole('button',{name:'批准',exact:true}).click();await admin.getByRole('button',{name:'确认退货入库',exact:true}).click();await nav(admin,'退款核对');await admin.getByRole('button',{name:'沙箱：模拟退款成功',exact:true}).click();await admin.getByRole('button',{name:'核对退款',exact:true}).click();await expect.poll(async()=> (await api('/admin/aftersales'))[0].status,{timeout:15000}).toBe('COMPLETED');await expect.poll(async()=> (await api('/entitlements','member'))[0].status).toBe('REVOKED');
+      20 |  await nav(admin,'订单工作台');await admin.screenshot({path:'../docs/evidence/s10a/admin-orders.png',fullPage:true});expect(errors).toEqual([]);await admin.close();await member.close();
+        at /Users/liruijun/personal/LLM/commerce-platform/frontend/tests/commerce.spec.ts:17:143
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../.local/browser-results/commerce-真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../.local/browser-results/commerce-真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../.local/browser-results/commerce-真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正/error-context.md
+
+  1 failed
+    tests/commerce.spec.ts:8:1 › 真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正 ──────────────────────────────────────
+  2 passed (16.6s)

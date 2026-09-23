@@ -721,6 +721,18 @@ class PersistedCommerceTest {
         assertEquals(400,call("POST",path,admin,"mixed",Map.of("coupon",pageCoupon(),"enrollment",Map.of("journeyId","j","version",1,"memberId","m1","eventKey","e"))).status());
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon_definition WHERE tenant_id=?",Integer.class,tenant));
     }
+    @Test void consoleReadsRespectAdminTenantAndKeepMemberOrdersPrivate() throws Exception {
+        var order=pendingOrder();String id=order.path("orderId").asString();var payment=startPayment(order);
+        assertEquals(1,call("GET","/v1/stores",member,null,null).body().size());assertEquals(1,call("GET","/v1/admin/orders",admin,null,null).body().size());
+        assertEquals(id,call("GET","/v1/admin/orders/"+id,admin,null,null).body().path("orderId").asString());
+        assertFalse(call("GET","/v1/admin/orders/"+id,admin,null,null).body().has("address"));
+        assertEquals(403,call("GET","/v1/admin/journey-instances",member,null,null).status());assertEquals(403,call("GET","/v1/admin/coupon-definitions?storeId=store1",member,null,null).status());assertEquals(403,call("GET","/v1/admin/orders",member,null,null).status());assertEquals(403,call("GET","/v1/admin/orders/"+id+"/payment",member,null,null).status());
+        String foreign=token("foreign-"+UUID.randomUUID(),"admin","ADMIN");assertEquals(404,call("GET","/v1/admin/orders/"+id,foreign,null,null).status());assertEquals(404,call("POST","/v1/admin/orders/"+id+"/payment/reconcile",foreign,null,null).status());
+        sandbox(payment,"PAID");assertEquals("PAID",post("/v1/admin/orders/"+id+"/payment/reconcile",admin,null,null).path("status").asString());pump();
+        assertEquals("PAID",call("GET","/v1/admin/orders/"+id,admin,null,null).body().path("status").asString());
+        assertTrue(call("GET","/v1/runtime-capabilities",member,null,null).body().path("sandboxEnabled").asBoolean());
+        assertEquals(401,call("GET","/v1/runtime-capabilities",null,null,null).status());
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));

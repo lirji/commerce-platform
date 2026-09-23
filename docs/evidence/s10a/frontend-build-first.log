@@ -1,0 +1,11 @@
+
+> commerce-console@0.1.0 build
+> tsc --noEmit && vite build
+
+src/features/Marketing.tsx(13,769): error TS1005: ',' expected.
+src/features/Marketing.tsx(13,770): error TS1136: Property assignment expected.
+src/features/Marketing.tsx(13,772): error TS1128: Declaration or statement expected.
+src/features/Marketing.tsx(15,1): error TS1128: Declaration or statement expected.
+src/features/OpsPages.tsx(15,812): error TS1005: '}' expected.
+src/features/OpsPages.tsx(19,3654): error TS1005: '}' expected.
+src/features/Orders.tsx(13,2884): error TS1005: '}' expected.

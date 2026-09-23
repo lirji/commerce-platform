@@ -11,4 +11,7 @@ public interface PaymentApi {
     View sandboxFact(Actor actor,String key,String paymentId,SandboxFact fact);
     /** 有界后台核对，五次未知后保留记录供人工查询。 */
     int tick();
+    /** 运营读取和核对必须独立验证管理员与订单租户。 */
+    View adminRead(Actor actor,String orderId);
+    View adminReconcile(Actor actor,String orderId);
 }

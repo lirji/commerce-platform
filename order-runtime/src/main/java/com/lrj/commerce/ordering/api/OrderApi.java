@@ -29,4 +29,7 @@ public interface OrderApi {
     int expire(Actor actor,String key);
     /** 履约可信事实推进生命周期，必须加入调用者本地事务。 */
     View fulfillmentFact(String tenant,String id,boolean delivered);
+    /** 管理查询仅同租户投影，不暴露收货地址。 */
+    List<View> adminList(Actor actor,String after,int limit);
+    View adminRead(Actor actor,String id);
 }

@@ -1,0 +1,12 @@
+
+> commerce-console@0.1.0 e2e
+> playwright test --grep 旅程可视
+
+
+Running 1 test using 1 worker
+
+(node:45038) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/commerce.spec.ts:211:1 › 旅程可视编排、手工入组与会员站内触达 (4.6s)
+
+  1 passed (5.0s)

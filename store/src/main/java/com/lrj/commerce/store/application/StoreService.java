@@ -29,4 +29,6 @@ public class StoreService implements StoreApi {
  /** 查询同时校验管理权限和分页上限。 */
  public List<View> list(Actor actor,String after,int limit) {actor.requireAdmin();Inputs.page(after,limit);return mapper.list(actor.tenantId(),after,limit);}
  
+ /** 目录不泄露内部配置，认证租户始终参与SQL过滤。 */
+ public List<View> browse(Actor actor,String after,int limit){Inputs.page(after,limit);return mapper.list(actor.tenantId(),after,limit);}
 }

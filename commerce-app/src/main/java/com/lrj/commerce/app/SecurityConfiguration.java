@@ -20,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class SecurityConfiguration {
     @Bean SecurityFilterChain security(HttpSecurity http,CredentialMapper credentials) throws Exception {
         return http.csrf(c->c.disable()).sessionManagement(c->c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(c->c.requestMatchers("/actuator/health","/","/index.html","/assets/**").permitAll().anyRequest().authenticated())
+            .authorizeHttpRequests(c->c.requestMatchers("/actuator/health","/","/index.html","/assets/**").permitAll().requestMatchers("/v1/admin/**").hasAuthority("ADMIN").anyRequest().authenticated())
             .exceptionHandling(c->c.authenticationEntryPoint((req,res,error)->error(res,401,"UNAUTHENTICATED","需要有效访问凭据",trace(req)))
                 .accessDeniedHandler((req,res,error)->error(res,403,"FORBIDDEN","没有操作权限",trace(req))))
             .addFilterBefore(new TokenFilter(credentials),AnonymousAuthenticationFilter.class).build();

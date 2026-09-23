@@ -74,4 +74,8 @@ public class PaymentService implements PaymentApi,EventHandler {
             try{reconcileInternal(tenant,check.orderId());count++;}catch(RuntimeException failure){org.slf4j.LoggerFactory.getLogger(getClass()).warn("payment check id={} errorType={}",check.paymentId(),failure.getClass().getSimpleName());}
         }checkCursor=tenants.getLast();return count;
     }
+    /** 复用订单权限边界，不凭客户端支付ID越权。 */
+    public View adminRead(Actor actor,String orderId){orders.adminRead(actor,orderId);return Inputs.found(mapper.byOrder(actor.tenantId(),orderId));}
+    /** 渠道核对仍在数据库事务外，管理权限不允许直接写成功状态。 */
+    public View adminReconcile(Actor actor,String orderId){orders.adminRead(actor,orderId);return reconcileInternal(actor.tenantId(),orderId);}
 }

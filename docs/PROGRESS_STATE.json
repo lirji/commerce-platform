@@ -21,16 +21,17 @@
     "S8",
     "S9a",
     "S9b",
-    "S9"
+    "S9",
+    "S10a"
   ],
-  "next": "S10a",
+  "next": "S10b",
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
-  "verification": "docs/evidence/s9b/verification.json",
+  "verification": "docs/evidence/s10a/verification.json",
   "git": {
-    "status": "S9B_VALIDATED_DELIVERY_PENDING",
-    "sourceCommit": "fa17885",
-    "branch": "feat/lowcode-operations"
+    "status": "S10A_VALIDATED_DELIVERY_PENDING",
+    "sourceCommit": "7714c91",
+    "branch": "feat/commerce-console"
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {

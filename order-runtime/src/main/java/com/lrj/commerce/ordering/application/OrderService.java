@@ -114,4 +114,8 @@ public class OrderService implements OrderApi {
         transition(tenant,row,delivered?OrderEvent.CONFIRM_DELIVERY:OrderEvent.START_FULFILLMENT);
         var result=view(mapper.internalRead(tenant,id));outbox.append(tenant,delivered?"order.completed.v1":"order.fulfilling.v1",id,result.version(),result);return result;
     }
+    /** 与本人列表分开，不能通过可选参数放大会员查询范围。 */
+    public List<View> adminList(Actor actor,String after,int limit){actor.requireAdmin();Inputs.page(after,limit);return mapper.list(actor.tenantId(),null,after,limit).stream().map(this::view).toList();}
+    /** 管理员只读取本租户商业快照，不返回加密地址。 */
+    public View adminRead(Actor actor,String id){actor.requireAdmin();Identifiers.require(id);return internalRead(actor.tenantId(),id);}
 }

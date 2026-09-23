@@ -1,0 +1,72 @@
+
+> commerce-console@0.1.0 e2e
+> playwright test
+
+
+Running 3 tests using 1 worker
+
+(node:44026) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/commerce.spec.ts:8:1 › 真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正 (1.5m)
+(node:44426) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/commerce.spec.ts:22:1 › 可视规则与低代码页面预览、审批、发布及窄屏 (36.3s)
+
+
+  1) tests/commerce.spec.ts:8:1 › 真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正 ─────────────────────────────────────
+
+    Test timeout of 90000ms exceeded.
+
+    Error: locator.click: Test ended.
+    Call log:
+      - waiting for getByRole('button', { name: 'Close', exact: true })
+
+
+      15 |  await member.getByRole('button',{name:'查看详情',exact:true}).first().click();await member.getByRole('button',{name:'发起支付',exact:true}).click();await expect(member.getByText('结果待确认',{exact:true})).toBeVisible();const order=(await api('/orders','member'))[0];
+      16 |  await login(admin,'admin');await admin.getByRole('button',{name:'查看详情',exact:true}).first().click();await admin.getByRole('button',{name:'查询支付',exact:true}).click();await admin.getByRole('button',{name:'沙箱：模拟收款',exact:true}).click();await admin.getByRole('button',{name:'核对渠道结果',exact:true}).click();await expect.poll(async()=> (await api('/admin/orders/'+order.orderId)).status,{timeout:15000}).toBe('PAID');
+    > 17 |  await admin.getByRole('button',{name:'Close',exact:true}).click();await nav(admin,'履约队列');await expect(admin.getByRole('button',{name:'沙箱发货'})).toBeVisible();await admin.getByRole('button',{name:'沙箱发货'}).click();await admin.getByLabel('物流单号').fill('BROWSER-TRACK-001');await admin.getByRole('button',{name:'确认提交'}).click();await expect(admin.getByRole('button',{name:'沙箱签收'})).toBeVisible();await admin.getByRole('button',{name:'沙箱签收'}).click();await expect.poll(async()=> (await api('/admin/orders/'+order.orderId)).status).toBe('COMPLETED');
+         |                                                            ^
+      18 |  await member.getByRole('button',{name:'刷新状态',exact:true}).click();await member.getByRole('button',{name:'申请售后',exact:true}).click();await member.getByRole('spinbutton',{name:'精品咖啡礼盒退货数量'}).fill('1');await member.getByRole('button',{name:'提交售后申请'}).click();await member.getByLabel('申请原因').fill('全链路验收退货');await member.getByRole('button',{name:'确认提交'}).click();
+      19 |  await nav(admin,'售后审批');await admin.getByRole('button',{name:'批准',exact:true}).click();await admin.getByRole('button',{name:'确认退货入库',exact:true}).click();await nav(admin,'退款核对');await admin.getByRole('button',{name:'沙箱：模拟退款成功',exact:true}).click();await admin.getByRole('button',{name:'核对退款',exact:true}).click();await expect.poll(async()=> (await api('/admin/aftersales'))[0].status,{timeout:15000}).toBe('COMPLETED');await expect.poll(async()=> (await api('/entitlements','member'))[0].status).toBe('REVOKED');
+      20 |  await nav(admin,'订单工作台');await admin.screenshot({path:'../docs/evidence/s10a/admin-orders.png',fullPage:true});expect(errors).toEqual([]);await admin.close();await member.close();
+        at /Users/liruijun/personal/LLM/commerce-platform/frontend/tests/commerce.spec.ts:17:60
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../.local/browser-results/commerce-真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../.local/browser-results/commerce-真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../.local/browser-results/commerce-真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正/error-context.md
+
+  2) tests/commerce.spec.ts:22:1 › 可视规则与低代码页面预览、审批、发布及窄屏 ───────────────────────────────────────────
+
+    Test was interrupted.
+
+    Error: locator.click: Test ended.
+    Call log:
+      - waiting for getByRole('button', { name: '批准', exact: true })
+
+
+      23 |  await login(page,'admin');await nav(page,'动态规则');await page.getByRole('button',{name:'新建规则',exact:true}).click();await page.getByLabel('规则标识',{exact:true}).fill('browser-rule');await page.getByLabel('规则名称',{exact:true}).fill('浏览器创建VIP规则');await page.getByLabel('比较值',{exact:true}).fill('VIP');await page.getByRole('button',{name:'保存规则',exact:true}).click();await page.getByRole('button',{name:'发布规则',exact:true}).click();await expect(page.getByText('已发布',{exact:true})).toBeVisible();
+      24 |  await nav(page,'低代码页面');await page.getByRole('button',{name:'创建运营页面',exact:true}).click();await page.getByLabel('页面标识',{exact:true}).fill('browser-page');await page.getByLabel('页面标题',{exact:true}).fill('会员营销运营台');await page.getByRole('button',{name:'预览真实数据',exact:true}).click();await expect(page.locator('.readonly-preview').getByText('会员满100减20',{exact:true})).toBeVisible();await page.screenshot({path:'../docs/evidence/s10a/lowcode-preview.png',fullPage:true});await page.getByRole('button',{name:'保存页面草稿',exact:true}).click();
+    > 25 |  for(const action of ['提交审批','批准','发布'])await page.getByRole('button',{name:action,exact:true}).click();await page.getByRole('button',{name:'打开 / 版本',exact:true}).click();await expect(page.getByRole('heading',{name:'会员营销运营台',exact:true})).toBeVisible();
+         |                                                                                                 ^
+      26 |  const mobile=await browser.newPage({viewport:{width:390,height:844}});await login(mobile,'member');await expect(mobile.getByText('精品咖啡礼盒',{exact:true})).toBeVisible();await mobile.screenshot({path:'../docs/evidence/s10a/member-mobile.png',fullPage:true});expect(await mobile.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await mobile.close();
+      27 | });
+      28 | test('无效凭据不会进入应用，退出后清除会话',async({page})=>{await page.goto('/');await page.getByLabel('访问凭据',{exact:true}).fill('invalid-token');await page.getByRole('button',{name:'进入平台',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await login(page,'member');await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page.getByRole('button',{name:'进入平台',exact:true})).toBeVisible();expect(await page.evaluate(()=>Object.keys(localStorage).length)).toBe(0);});
+        at /Users/liruijun/personal/LLM/commerce-platform/frontend/tests/commerce.spec.ts:25:97
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../.local/browser-results/commerce-可视规则与低代码页面预览、审批、发布及窄屏/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../.local/browser-results/commerce-可视规则与低代码页面预览、审批、发布及窄屏/error-context.md
+
+  1 failed
+    tests/commerce.spec.ts:8:1 › 真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正 ──────────────────────────────────────
+  1 interrupted
+    tests/commerce.spec.ts:22:1 › 可视规则与低代码页面预览、审批、发布及窄屏 ────────────────────────────────────────────
+  1 did not run
