@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 /** 商品发布价格是服务端事实，报价请求不能携带任意价格。 */
 @Service
 public class CatalogService implements CatalogApi {
-    private final CatalogMapper mapper; private final StoreApi stores; private final Commands commands;
-    public CatalogService(CatalogMapper mapper,StoreApi stores,Commands commands) {this.mapper=mapper;this.stores=stores;this.commands=commands;}
+    private final java.time.Clock clock;private final CatalogMapper mapper; private final StoreApi stores; private final Commands commands;
+    public CatalogService(CatalogMapper mapper,StoreApi stores,Commands commands,java.time.Clock clock) {this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
     /** 初始发布快照不可变，重复命令返回原创建结果。 */
     public View create(Actor actor,String key,Create input) {
         actor.requireAdmin(); Inputs.require(input!=null,"请求不能为空");
@@ -30,7 +30,13 @@ public class CatalogService implements CatalogApi {
     }
     /** 目录是同租户可见数据，冻结店铺不能继续销售。 */
     public List<View> list(Actor actor,String storeId,String after,int limit) {
-        stores.requireActive(actor,storeId); Inputs.page(after,limit); return mapper.list(actor.tenantId(),storeId,after,limit);
+        stores.requireActive(actor,storeId); Inputs.page(after,limit); var rows=mapper.list(actor.tenantId(),storeId,after,limit);if(rows.isEmpty())return rows;return priced(actor,storeId,rows.stream().map(View::skuId).toList(),clock.instant()).stream().map(p->new View(p.skuId(),p.storeId(),p.title(),p.unitPrice(),p.revision(),"ACTIVE")).toList();
+    }
+    /** 一次批量查询同时选价，避免逐SKU访问渠道价。 */
+    public List<Price> priced(Actor actor,String store,List<String> ids,java.time.Instant now){
+        stores.requireActive(actor,store);Inputs.require(ids!=null&&!ids.isEmpty()&&ids.size()<=100,"SKU数量无效");ids.forEach(Identifiers::require);
+        var values=mapper.priced(actor.tenantId(),store,ids,actor.channel().name(),now);
+        if(values.size()!=new java.util.HashSet<>(ids).size())throw new DomainException(DomainException.Code.NOT_FOUND,"商品不存在或未发布");return values;
     }
     /** 批次有界，缺失与非当前店铺SKU统一拒绝。 */
     public List<View> published(Actor actor,String storeId,List<String> ids) {

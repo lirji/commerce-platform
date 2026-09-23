@@ -33,12 +33,12 @@ public class QuoteService implements QuoteApi {
             int count=quantities.getOrDefault(item.skuId(),0)+item.quantity();Inputs.require(count<=10000,"合并购买数量超限");quantities.put(item.skuId(),count);
         }
         var normalized=new Request(input.storeId(),quantities.entrySet().stream().map(e->new Selection(e.getKey(),e.getValue())).toList(),input.couponId(),input.redeemPoints());
-        return commands.run(actor,"quote.create",key,normalized,View.class,()->{
+        return commands.run(actor,"quote.create",key,actor.channel()==Actor.Channel.WEB?normalized:new Object[]{normalized,actor.channel()},View.class,()->{
             var member=members.current(actor);members.requireActive(actor,member.memberId());
             var store=stores.requireActive(actor,input.storeId());
-            var skus=catalog.published(actor,input.storeId(),new ArrayList<>(quantities.keySet()));
-            var lines=skus.stream().map(s->new DecisionModels.Line(s.skuId(),s.skuId(),new Money(new BigDecimal(s.unitPrice())),quantities.get(s.skuId()))).toList();
             var now=clock.instant().truncatedTo(ChronoUnit.MILLIS);
+            var skus=catalog.priced(actor,input.storeId(),new ArrayList<>(quantities.keySet()),now);
+            var lines=skus.stream().map(s->new DecisionModels.Line(s.skuId(),s.skuId(),new Money(new BigDecimal(s.unitPrice())),quantities.get(s.skuId()))).toList();
             var candidates=campaigns.candidates(actor,store.storeId(),member.memberId(),now);
             var gross=lines.stream().map(l->l.unitPrice().multiply(l.quantity())).reduce(Money.ZERO,Money::add);
             var priced=decisions.decide(new DecisionModels.Request(new DecisionModels.Scope(actor.tenantId(),store.merchantId(),store.storeId()),member.memberId(),now,lines,
@@ -46,6 +46,7 @@ public class QuoteService implements QuoteApi {
             var selectedCampaign=priced.selected();Money campaignDiscount=priced.discount();Money couponDiscount=Money.ZERO;
             com.lrj.commerce.benefit.api.CouponApi.Application couponApplication=null;String couponStatus="NOT_REQUESTED";
             var expires=now.plusSeconds(300);
+            for(var sku:skus)if(sku.validTo()!=null&&sku.validTo().isBefore(expires))expires=sku.validTo();
             if(input.couponId()!=null){
                 var coupon=coupons.eligible(actor,input.couponId(),store.storeId(),gross.amount().toPlainString());Money couponValue=new Money(new BigDecimal(coupon.discountAmount()));
                 if(coupon.stackable()){Money remaining=gross.subtract(campaignDiscount);couponDiscount=couponValue.compareTo(remaining)>0?remaining:couponValue;}
@@ -66,7 +67,7 @@ public class QuoteService implements QuoteApi {
             var pointLines=decisions.allocate(couponLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.payable(),1)).toList(),pointDiscount);
             var campaignFunded=decisions.allocate(campaignLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.discount(),1)).toList(),campaignPlatform);
             var couponFunded=decisions.allocate(couponLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.discount(),1)).toList(),couponPlatform);
-            var skuById=new HashMap<String,CatalogApi.View>();skus.forEach(sku->skuById.put(sku.skuId(),sku));
+            var skuById=new HashMap<String,CatalogApi.Price>();skus.forEach(sku->skuById.put(sku.skuId(),sku));
             List<Line> resultLines=new ArrayList<>();List<FundingLine> fundingLines=new ArrayList<>();
             long cumulativePointCents=0,allocatedPoints=0;
             for(int index=0;index<campaignLines.size();index++){
@@ -76,11 +77,11 @@ public class QuoteService implements QuoteApi {
                 cumulativePointCents+=pointLine.discount().minorUnits();
                 long cumulativePoints=pointApplication==null?0:java.math.BigInteger.valueOf(pointApplication.points()).multiply(java.math.BigInteger.valueOf(cumulativePointCents)).divide(java.math.BigInteger.valueOf(pointDiscount.minorUnits())).longValueExact();
                 long linePoints=cumulativePoints-allocatedPoints;allocatedPoints=cumulativePoints;
-                resultLines.add(new Line(sku.skuId(),sku.revision(),sku.title(),quantities.get(sku.skuId()),sku.unitPrice(),campaignLine.gross().amount().toPlainString(),lineDiscount.amount().toPlainString(),pointLine.payable().amount().toPlainString(),linePoints,pointLine.discount().amount().toPlainString()));
+                resultLines.add(new Line(sku.skuId(),sku.revision(),sku.title(),quantities.get(sku.skuId()),sku.unitPrice(),campaignLine.gross().amount().toPlainString(),lineDiscount.amount().toPlainString(),pointLine.payable().amount().toPlainString(),linePoints,pointLine.discount().amount().toPlainString(),sku.channelPriceVersion()));
                 fundingLines.add(new FundingLine(sku.skuId(),campaignLine.discount().amount().toPlainString(),couponLine.discount().amount().toPlainString(),linePlatform.amount().toPlainString(),lineDiscount.subtract(linePlatform).amount().toPlainString(),pointLine.discount().amount().toPlainString()));
             }
             Money platform=campaignPlatform.add(couponPlatform).add(pointDiscount);var fundingSnapshot=new Funding(platform.amount().toPlainString(),totalDiscount.subtract(platform).amount().toPlainString(),fundingLines);
-            var result=new View(UUID.randomUUID().toString(),member.memberId(),store.merchantId(),store.storeId(),"CNY",gross.amount().toPlainString(),totalDiscount.amount().toPlainString(),gross.subtract(totalDiscount).amount().toPlainString(),now,expires,resultLines,selectedCampaign,priced.trace(),candidates.sources(),couponApplication,campaignDiscount.amount().toPlainString(),couponStatus,promotion,fundingSnapshot,pointApplication);
+            var result=new View(UUID.randomUUID().toString(),member.memberId(),store.merchantId(),store.storeId(),"CNY",gross.amount().toPlainString(),totalDiscount.amount().toPlainString(),gross.subtract(totalDiscount).amount().toPlainString(),now,expires,resultLines,selectedCampaign,priced.trace(),candidates.sources(),couponApplication,campaignDiscount.amount().toPlainString(),couponStatus,promotion,fundingSnapshot,pointApplication,actor.channel());
             mapper.insert(actor.tenantId(),result,JsonCodec.write(result));return result;
         });
     }
@@ -95,8 +96,10 @@ public class QuoteService implements QuoteApi {
         Identifiers.require(id);Identifiers.require(orderId);var member=members.current(actor);
         var locked=Inputs.found(mapper.lock(actor.tenantId(),member.memberId(),id));
         if(locked.consumedOrderId()!=null||!clock.instant().isBefore(locked.expiresAt())) throw new DomainException(DomainException.Code.CONFLICT,"报价已消费或过期");
+        var snapshot=JsonCodec.read(locked.snapshotJson(),View.class);
+        if(snapshot.channel()!=actor.channel())throw new DomainException(DomainException.Code.FORBIDDEN,"报价渠道与当前身份不一致");
         if(mapper.consume(actor.tenantId(),id,orderId)!=1) throw new DomainException(DomainException.Code.CONFLICT,"报价消费冲突");
-        return JsonCodec.read(locked.snapshotJson(),View.class);
+        return snapshot;
     }
     /** 批量读取历史快照避免重建效果投影时逐单查询报价。 */
     public List<View> internalBatch(String tenant,List<String> ids){Identifiers.require(tenant);Inputs.require(ids!=null&&!ids.isEmpty()&&ids.size()<=100,"报价批次无效");ids.forEach(Identifiers::require);var values=mapper.batch(tenant,ids).stream().map(json->JsonCodec.read(json,View.class)).toList();if(values.size()!=new HashSet<>(ids).size())throw new DomainException(DomainException.Code.NOT_FOUND,"报价快照缺失");return values;}

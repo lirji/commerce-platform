@@ -24,6 +24,6 @@ public interface MerchandisingMapper {
  Barcode barcodeCurrent(String tenant,String store,String sku);
  void barcodeInsert(String tenant,String sku,BarcodeChange input);
  int barcodeChange(String tenant,String sku,BarcodeChange input);
- List<ItemRow> search(String tenant,Search input);
- ItemRow item(String tenant,String store,String sku);
+ List<ItemRow> search(String tenant,Search input,String channel,java.time.Instant now);
+ ItemRow item(String tenant,String store,String sku,String channel,java.time.Instant now);
 }

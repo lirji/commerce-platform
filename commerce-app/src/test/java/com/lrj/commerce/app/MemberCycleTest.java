@@ -104,7 +104,7 @@ class MemberCycleTest {
         fact("earned","first",120,start.plusSeconds(1),null,null);
         assertEquals("GOLD",cycle().path("memberLevel").asString());
         assertEquals(120,cycle().path("currentGrowth").asLong());
-        testClock.at=start.plusSeconds(86400);cycles.tick();
+        testClock.at=start.plusSeconds(86400);tickUntilCurrent();
         assertEquals(0,cycle().path("currentGrowth").asLong());assertEquals(120,cycle().path("retentionGrowth").asLong());
         assertEquals("GOLD",cycle().path("memberLevel").asString());
         fact("refund","first",120,start.plusSeconds(1),"r1","100.00");
@@ -112,7 +112,7 @@ class MemberCycleTest {
         assertEquals("BASIC",cycle().path("memberLevel").asString());
         fact("current-earned","second",130,start.plusSeconds(86401),null,null);
         assertEquals("GOLD",cycle().path("memberLevel").asString());
-        testClock.at=start.plusSeconds(4*86400L);cycles.tick();
+        testClock.at=start.plusSeconds(4*86400L);tickUntilCurrent();
         assertEquals("BASIC",cycle().path("memberLevel").asString());
         assertEquals(0,cycle().path("currentGrowth").asLong());assertEquals(0,cycle().path("retentionGrowth").asLong());
         assertEquals(150,wallet().path("growth").asLong(),"累计成长仍保留，不再覆盖周期等级");
@@ -135,12 +135,17 @@ class MemberCycleTest {
         post("/v1/admin/member-growth/m1/adjust",admin,"manual",payload);
         assertEquals(20,cycle().path("currentGrowth").asLong());assertEquals("BASIC",cycle().path("memberLevel").asString());
     }
+    /** 隔离库保留其他测试租户，单轮20人的全局预算不保证当前夹具在第一轮。 */
+    private void tickUntilCurrent() throws Exception {
+        for(int i=0;i<200;i++){cycles.tick();var current=cycle();if(current.path("enabled").asBoolean()&&Instant.parse(current.path("cycleEnd").asString()).isAfter(testClock.at))return;}
+        fail("有界推进后仍未考核当前会员");
+    }
     @Test void dormantPolicyIsCompatibleAndBoundariesRejectUnauthorizedChanges() throws Exception {
         seed();Instant start=testClock.instant();policy(1,"1.00",start);
         fact("legacy","old",25,start,null,null);
         assertFalse(cycle().path("enabled").asBoolean());assertEquals("GOLD",wallet().path("memberLevel").asString());
         cyclePolicy(1,1,start.plusSeconds(60));evaluate("before");assertFalse(cycle().path("enabled").asBoolean());
-        testClock.at=start.plusSeconds(60);cycles.tick();assertEquals("BASIC",cycle().path("memberLevel").asString());
+        testClock.at=start.plusSeconds(60);tickUntilCurrent();assertEquals("BASIC",cycle().path("memberLevel").asString());
         assertEquals(0,cycle().path("currentGrowth").asLong(),"启用前订单不得追溯参与");
         assertEquals(403,call("POST","/v1/admin/member-cycles/m1/evaluate",member,"forbidden",null).status());
         String foreign=token("foreign-"+UUID.randomUUID(),"admin","ADMIN");

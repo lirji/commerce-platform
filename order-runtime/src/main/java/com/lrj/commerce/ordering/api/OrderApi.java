@@ -8,8 +8,8 @@ import java.util.List;
 public interface OrderApi {
     record Address(String recipient,String phone,String detail) { }
     record Create(String quoteId,Address address) { }
-    record View(String orderId,String memberId,String storeId,String merchantId,String quoteId,String payable,String status,String paymentKind,long version,Instant createdAt,Instant expiresAt,List<QuoteApi.Line> items) {
-        public View { items=List.copyOf(items); }
+    record View(String orderId,String memberId,String storeId,String merchantId,String quoteId,String payable,String status,String paymentKind,long version,Instant createdAt,Instant expiresAt,List<QuoteApi.Line> items,Actor.Channel channel) {
+        public View { channel=channel==null?Actor.Channel.WEB:channel;items=List.copyOf(items); }
     }
     /** 报价消费、库存、订单及事件必须原子提交。 */
     View create(Actor actor,String key,Create input);

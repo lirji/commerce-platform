@@ -1,3 +1,4 @@
+import { BatchCatalogAction, CatalogJobs, ChannelPrices } from "./CatalogScheduling";
 import { Alert, Button, Card, Drawer, Space, Table, Tabs } from "antd";
 import { BarcodeEditor, CatalogFilters, CatalogStructure, ProductPresentation, VariantCreator, type Category } from "./CatalogMerchandising";
 import { useState } from "react";
@@ -12,6 +13,7 @@ const skuFields:Field[]=[{name:"title",label:"销售名称"},{name:"unitPrice",l
 
 /** 操作入口相同，但每次请求由服务端重新判断实际门店授权。 */
 export function ProductOperations({store}:{store:string}) {
+ const [batch,setBatch]=useState<Sku[]>([]);const [channelSku,setChannelSku]=useState<Sku>();
  const [productAfter,setProductAfter]=useState("");const [skuAfter,setSkuAfter]=useState("");
  const [filters,setFilters]=useState("");const [presentation,setPresentation]=useState<Product>();const [barcode,setBarcode]=useState<Sku>();
  const categories=useResource<Category[]>(store?`/operations/catalog-categories?storeId=${encode(store)}`:null);
@@ -28,10 +30,11 @@ export function ProductOperations({store}:{store:string}) {
    {key:"sku",label:"销售规格与上下架",children:<Card>
     <Space wrap>
      <VariantCreator store={store} onDone={refresh}/>
+     <BatchCatalogAction store={store} rows={batch} onDone={()=>{setBatch([]);refresh();}}/>
      <Button onClick={refresh}>刷新</Button>
     </Space>
     <CatalogFilters categories={categories.data??[]} operations onSearch={query=>{setFilters(query);setSkuAfter("");}}/>
-    <Table<Sku> rowKey="skuId" dataSource={skus.data} loading={skus.loading} pagination={false} scroll={{x:900}} columns={[
+    <Table<Sku> rowSelection={{selectedRowKeys:batch.map(r=>r.skuId),onChange:(_,rows)=>setBatch(rows)}} rowKey="skuId" dataSource={skus.data} loading={skus.loading} pagination={false} scroll={{x:900}} columns={[
      {title:"商品",dataIndex:"title"},{title:"SKU / SPU",render:(_,r)=><>{r.skuId}<br/>{r.productId??"历史商品"}</>},
      {title:"规格",render:(_,r)=>r.specifications.map(s=>`${s.name}：${s.value}`).join(" / ")||"—"},
      {title:"售价",dataIndex:"unitPrice",render:money},{title:"状态",dataIndex:"status",render:v=><Status value={v}/>},{title:"版本",dataIndex:"revision"},
@@ -39,6 +42,7 @@ export function ProductOperations({store}:{store:string}) {
       <CommandModal title="调价 / 上下架" path={"/operations/skus/"+encode(r.skuId)} buttonType="link"
        fields={[...skuFields,{name:"status",label:"销售状态",type:"select",options:[{label:"上架",value:"ACTIVE"},{label:"下架",value:"FROZEN"}]},{name:"reason",label:"修订原因"}]}
        initialValues={{title:r.title,unitPrice:r.unitPrice,status:r.status}} build={v=>({...v,storeId:store,expectedVersion:r.revision})} onDone={refresh}/>
+      <Button type="link" onClick={()=>setChannelSku(r)}>渠道价</Button>
       <Button type="link" onClick={()=>setBarcode(r)}>条码资料</Button>
       <Button type="link" onClick={()=>{setHistoryAfter(0);setSelected(r);}}>修订记录</Button>
      </Space>}
@@ -53,9 +57,11 @@ export function ProductOperations({store}:{store:string}) {
     ]}/>
     <Space><Button disabled={!productAfter} onClick={()=>setProductAfter("")}>回到首页</Button><Button disabled={products.data?.length!==50} onClick={()=>setProductAfter(products.data!.at(-1)!.productId)}>下一页</Button></Space>
    </Card>},
+   {key:"jobs",label:"批量定时计划",children:<CatalogJobs store={store}/>},
    {key:"structure",label:"类目与模板",children:<CatalogStructure store={store}/>}
   ]}/>
   <ProductPresentation store={store} product={presentation} onClose={()=>setPresentation(undefined)}/>
+  <ChannelPrices store={store} sku={channelSku} onClose={()=>setChannelSku(undefined)}/>
   <BarcodeEditor store={store} sku={barcode} onClose={()=>setBarcode(undefined)} onDone={refresh}/>
   <Drawer title={`${selected?.title??"商品"} · 修订记录`} open={!!selected} onClose={()=>setSelected(undefined)} size="large">
    <ErrorNotice error={history.error}/>

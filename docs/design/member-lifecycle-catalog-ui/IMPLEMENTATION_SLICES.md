@@ -13,7 +13,7 @@
 |LP07|定向发券与相对有效期|LP06|benefit/automation/frontend|任务恢复、频控、配额、撤销|DONE|
 |LP08|生命周期旅程与效果比较|LP06,LP07|automation/app/frontend|生日/沉睡/复购/加购、等待、退款成本|DONE|
 |LP09|商品类目、规格模板、条码图片、检索|—|catalog/app/frontend|权限、唯一、筛选、非法模板|DONE|
-|LP10|批量及定时经营、渠道价格|LP09|catalog/trade/frontend|版本冲突、恢复、渠道报价|TODO|
+|LP10|批量及定时经营、渠道价格|LP09|catalog/trade/frontend|版本冲突、恢复、渠道报价|DONE|
 |LP11|深色经营工作台和整体验收|LP02–LP10|frontend/tests/scripts/docs|真实数据、空错状态、桌面窄屏、CI|TODO|
 
-当前下一片 LP10（批量/定时商品经营与渠道价），待细化笔记已落盘。LP10–LP11 尚须正式细化对应契约，非环境阻塞。前端深色基础随 LP02 页面同步引入，LP11 最终收口。每片必要窄测试通过后继续，不反复请求继续。
+当前下一片 LP11（深色经营工作台、导航与最终验收交付）。LP10正式契约与验收已完成。继续串行执行，不反复请求继续。

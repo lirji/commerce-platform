@@ -73,6 +73,7 @@ post('/operations/catalog-categories',{'categoryId':'coffee','storeId':'brand-st
 post('/operations/specification-templates',{'templateId':'coffee-pack','version':1,'storeId':'brand-store','name':'咖啡包装模板','fields':[{'name':'包装','values':['小盒','大盒']}]})
 post('/operations/products/points-coffee/merchandising',{'storeId':'brand-store','expectedVersion':0,'categoryId':'coffee','description':'日常品牌精品咖啡，适合早餐与午后时光。图片为经营演示示意图，正式经营可替换商品图片。','images':[{'url':'/media/coffee.svg','alt':'日常品牌咖啡包装示意图'}],'reason':'补齐商品经营演示资料'})
 post('/operations/skus/points-coffee/barcode',{'storeId':'brand-store','expectedVersion':0,'barcode':'DAILY-COFFEE-01','reason':'演示门店条码检索'})
+post('/admin/skus',{'skuId':'schedule-coffee','storeId':'brand-store','title':'渠道经营咖啡','unitPrice':'35.00'})
 # 演示仅受理后不假称到账；正式消费者读取持久事件完成发放。
 for _ in range(6):
     req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})

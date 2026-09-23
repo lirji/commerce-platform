@@ -2,36 +2,35 @@
 
 ## 任务目标
 
-补齐会员周期权益、积分兑换/抵扣、行为人群、定向券、生命周期旅程与效果、商品经营，改为深色数据工作台。11片连续完成，最后必要验证、CI与正常Git主线发布。
+会员周期权益、积分兑换/抵扣、行为人群、定向券、生命周期旅程与效果、商品经营、深色工作台，连续11片完成后CI/Git主线与本地Docker交付。
 
 ## 已完成
 
-- LP01–LP08提交dc0fa52、186c261、f73a277、11ddcc4、588ebc1、5a09e92、cc7ec10、4da1f73。
-- LP09类目/固定规格模板/条码/图片说明/经营会员检索完成，准备提交。
-- 完整后端213项PASS；最终商品专项7项、商品+会员浏览器9条及原门店运营1条PASS；种子重放和最终条码HTTP边界PASS。
+- LP01–LP10完成；LP09 7e87684，LP10准备提交。
+- 后端218项PASS，商品专项12项PASS，新商品经营浏览器2条PASS。
 
 ## 已修改文件
 
-- commerce-platform-member-suite内LP09 catalog/app/frontend/scripts、V33及设计/交付文档。
-- LP10_DESIGN_NOTES.md是待细化草案，尚未实现，不纳入LP09提交。
+- commerce-platform-member-suite内catalog/runtime/trade/order/app/frontend/scripts与V34及LP10文档。
+- LP11_CONTRACT.md与未接入的Dashboard.tsx为下一片草案，不纳入LP10。
 
 ## 未完成
 
-- LP10批量/定时商品经营与可信渠道价；LP11最终UI/种子/文档/CI/Git主线交付。
+- LP11真实经营总览、折叠搜索导航、手机布局、动态加载、全部UI验收、文档、CI/Git与本地Docker。
 
 ## 当前问题
 
-- 无环境阻塞；原commerce-platform用户改动禁止动，8602 Docker fa97292保持。
-- 隔离库commerce_test_20260923已V33，下个迁移V34；私密env禁止打印/修改。
-- 8604运行.local/member-suite-lp09-verified.jar，workers=false。Maven with-ui只复制dist，先npm build。运行独立jar副本，避免构建覆盖运行包。
-- 图片管理为URL/静态公开示意图，无上传新基础设施；模板功能须所有写入器升级后启用。效果为关联分析而非因果ROI。
+- 无环境阻塞；原commerce-platform用户改动禁止动，8602 Docker仍fa97292。
+- 隔离库commerce_test_20260923已V34，下个迁移V35；私密env禁止打印/修改。
+- 8604运行.local/member-suite-lp10.jar，workers=false；Maven只复制dist，先npm build；运行独立jar副本。
+- 周期考核全局每轮20人，测试库旧租户积累需有界多轮推进，已修测试假设。
 
 ## 下一步建议
 
-1. 完成LP09本地提交，细化LP10批任务/渠道价格契约再实施，已有设计笔记可用。
-2. 持续到LP11，不重复询问积分或深色风格；最终跑完整浏览器与CI。
-3. 保护原工作区用户改动，验证通过后正常合并/推送main，不生产部署。
+1. 提交LP10（排除LP11草案），按LP11_CONTRACT落实域聚合总览及UI。
+2. 全套后端/浏览器、正常Git推送CI，保护原工作区后正常更新远程main。
+3. 复用dev_infra更新已授权本地Docker，不生产部署。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS.md及commerce-platform-member-suite交付STATUS，从LP10继续实现剩余切片；无需等待继续，除非真实阻塞。
+读取CODEX_PROGRESS.md及交付STATUS，从LP11继续全部剩余工作；不重复询问业务选择或等待继续。

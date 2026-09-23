@@ -38,7 +38,7 @@ public class OrderService implements OrderApi {
             var lifecycle=OrderLifecycle.start();boolean free=new BigDecimal(quote.payable()).signum()==0;
             if(free) {lifecycle=lifecycle.apply(OrderEvent.PAYMENT_CONFIRMED);points.confirm(actor.tenantId(),id,member.memberId());inventory.confirm(actor.tenantId(),id);coupons.confirm(actor.tenantId(),id);funding.confirm(actor.tenantId(),id);entitlements.confirmOrder(actor.tenantId(),id);}
             var now=clock.instant().truncatedTo(ChronoUnit.MILLIS);
-            var view=new View(id,member.memberId(),quote.storeId(),quote.merchantId(),quote.quoteId(),quote.payable(),lifecycle.state().name(),free?"NO_PAYMENT_REQUIRED":"CHANNEL_REQUIRED",lifecycle.version(),now,now.plusSeconds(900),quote.items());
+            var view=new View(id,member.memberId(),quote.storeId(),quote.merchantId(),quote.quoteId(),quote.payable(),lifecycle.state().name(),free?"NO_PAYMENT_REQUIRED":"CHANNEL_REQUIRED",lifecycle.version(),now,now.plusSeconds(900),quote.items(),quote.channel());
             mapper.insert(actor.tenantId(),view,JsonCodec.write(view.items()),addresses.encrypt(actor.tenantId(),id,input.address()));
             outbox.append(actor.tenantId(),"order.created.v1",id,view.version(),view);
             // 零元单可以履约，但不能伪造OrderPaid渠道收款事实。
@@ -67,7 +67,7 @@ public class OrderService implements OrderApi {
     }
     private View view(OrderMapper.Row r) {
         List<QuoteApi.Line> items=r.itemsJson()==null?List.of():Arrays.asList(JsonCodec.read(r.itemsJson(),QuoteApi.Line[].class));
-        return new View(r.orderId(),r.memberId(),r.storeId(),r.merchantId(),r.quoteId(),r.payable(),r.status(),r.paymentKind(),r.version(),r.createdAt(),r.expiresAt(),items);
+        return new View(r.orderId(),r.memberId(),r.storeId(),r.merchantId(),r.quoteId(),r.payable(),r.status(),r.paymentKind(),r.version(),r.createdAt(),r.expiresAt(),items,r.channel());
     }
     /** 同事务锁住订单，取消/启动支付只能有一个先发生。 */
     @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
