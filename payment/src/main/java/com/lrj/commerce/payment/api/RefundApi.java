@@ -10,4 +10,7 @@ public interface RefundApi {
     View reconcile(Actor actor,String refundId);
     View sandboxSuccess(Actor actor,String key,String refundId);
     int tick();
+    record Total(String orderId,String amount) { }
+    /** 内部有界退款汇总，仅SUCCEEDED终态金额可进入分析投影。 */
+    List<Total> totals(String tenant,List<String> orderIds);
 }

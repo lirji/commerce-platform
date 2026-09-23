@@ -90,4 +90,7 @@ public class QuoteService implements QuoteApi {
         if(mapper.consume(actor.tenantId(),id,orderId)!=1) throw new DomainException(DomainException.Code.CONFLICT,"报价消费冲突");
         return JsonCodec.read(locked.snapshotJson(),View.class);
     }
+    /** 批量读取历史快照避免重建效果投影时逐单查询报价。 */
+    public List<View> internalBatch(String tenant,List<String> ids){Identifiers.require(tenant);Inputs.require(ids!=null&&!ids.isEmpty()&&ids.size()<=100,"报价批次无效");ids.forEach(Identifiers::require);var values=mapper.batch(tenant,ids).stream().map(json->JsonCodec.read(json,View.class)).toList();if(values.size()!=new HashSet<>(ids).size())throw new DomainException(DomainException.Code.NOT_FOUND,"报价快照缺失");return values;}
+
 }

@@ -156,7 +156,7 @@ class PersistedCommerceTest {
         assertEquals("CANCELLED",post("/v1/orders/"+id+"/cancel",member,"cancel",null).path("status").asString());
         post("/v1/orders/"+id+"/cancel",member,"cancel-again",null);
         assertEquals(3,stockValue("available"));assertEquals(0,stockValue("held"));
-        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM platform_event WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type LIKE 'order.%'",Integer.class,tenant));
         assertEquals(404,call("GET","/v1/orders/"+id,other,null,null).status());
         assertEquals(404,call("POST","/v1/orders/"+id+"/cancel",other,"foreign-cancel",null).status());
     }
@@ -186,7 +186,8 @@ class PersistedCommerceTest {
         var q=post("/v1/quotes",member,"q",Map.of("storeId","store1","items",List.of(Map.of("skuId","sku1","quantity",1),Map.of("skuId","sku2","quantity",1))));
         assertEquals(409,call("POST","/v1/orders",member,"o",orderInput(q)).status());
         assertEquals(2,stockValue("available"));assertEquals(0,stockValue("held"));
-        for(String table:List.of("order_record","inventory_hold","platform_event")) assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM "+table+" WHERE tenant_id=?",Integer.class,tenant));
+        for(String table:List.of("order_record","inventory_hold")) assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM "+table+" WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type LIKE 'order.%'",Integer.class,tenant));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM trade_quote WHERE tenant_id=? AND consumed_order_id IS NOT NULL",Integer.class,tenant));
         stock("sku2",1);assertEquals("PENDING_PAYMENT",post("/v1/orders",member,"o",orderInput(q)).path("status").asString());
     }

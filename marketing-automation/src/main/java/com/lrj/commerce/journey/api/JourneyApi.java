@@ -7,10 +7,14 @@ import java.util.List;
 /** 旅程只执行已批准的有限节点，版本和持久检查点决定恢复行为。 */
 public interface JourneyApi {
     enum Kind { WAIT, DECIDE, GRANT, NOTIFY, END }
-    enum Trigger { MANUAL, ORDER_PAID }
+    enum Trigger { MANUAL, ORDER_PAID, MEMBER_REGISTERED, LEVEL_CHANGED, SEGMENT_ENTERED }
     enum State { RUNNING, WAITING, ISOLATED, COMPLETED, CANCELLED, TIMED_OUT }
     record Node(String id,Kind kind,Integer seconds,String next,RuleNode rule,String yesNext,String noNext,EntitlementApi.Ref benefit,String title,String body) { }
-    record Definition(String journeyId,long version,String storeId,String name,Trigger trigger,Instant validFrom,Instant validTo,int maxDurationSeconds,String entry,List<Node> nodes) { }
+    record Controls(String segmentId,RuleNode entryRule,int maxEntries,int entryWindowSeconds,int notificationLimit,int notificationWindowSeconds) { }
+    record Definition(String journeyId,long version,String storeId,String name,Trigger trigger,Instant validFrom,Instant validTo,int maxDurationSeconds,String entry,List<Node> nodes,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) Controls controls) {
+        public Definition(String journeyId,long version,String storeId,String name,Trigger trigger,Instant validFrom,Instant validTo,int maxDurationSeconds,String entry,List<Node> nodes){this(journeyId,version,storeId,name,trigger,validFrom,validTo,maxDurationSeconds,entry,nodes,null);}
+    }
+    record EffectSummary(String journeyId,long enrolled,long completed,long notified,long entrySuppressed,long notificationSuppressed) { }
     record View(Definition content,String status,long lockVersion) { }
     record Start(String journeyId,long version,String memberId,String eventKey) { }
     record Instance(String instanceId,String journeyId,long journeyVersion,String memberId,String orderId,String currentNode,State status,Instant dueAt,Instant deadline,int steps,int attempts,String result,long version) { }
@@ -33,4 +37,6 @@ public interface JourneyApi {
     int tick();
     /** 全额退货先取消后续节点，再由权益模块冲正已产生效果。 */
     void cancelForOrder(String tenant,String order);
+    /** 执行指标按事件发生时间聚合，不推断销售归因。 */
+    List<EffectSummary> effects(Actor actor,String store,Instant from,Instant to,String after,int limit);
 }

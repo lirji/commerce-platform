@@ -177,12 +177,13 @@ export type Journey = {
   version: number;
   storeId: string;
   name: string;
-  trigger: "MANUAL" | "ORDER_PAID";
+  trigger: "MANUAL" | "ORDER_PAID" | "MEMBER_REGISTERED" | "LEVEL_CHANGED" | "SEGMENT_ENTERED";
   validFrom: string;
   validTo: string;
   maxDurationSeconds: number;
   entry: string;
   nodes: JourneyNode[];
+  controls?: {segmentId?:string;entryRule?:Rule;maxEntries:number;entryWindowSeconds:number;notificationLimit:number;notificationWindowSeconds:number};
 };
 export type JourneyInstance = {
   instanceId: string;

@@ -221,7 +221,7 @@ export function Journeys({ store }: { store: string }) {
     <>
       <PageHead
         title="营销旅程"
-        description="以支付事实或手工入组启动，逐节点可靠执行。"
+        description="以会员、动态人群、支付事实或手工入组启动，带频控逐节点执行。"
         extra={
           <>
             <Button onClick={resource.refresh}>刷新</Button>
@@ -250,7 +250,7 @@ export function Journeys({ store }: { store: string }) {
             {
               title: "触发方式",
               render: (_, r) =>
-                r.content.trigger === "ORDER_PAID" ? "支付后" : "手工入组",
+                ({MANUAL:"手工入组",ORDER_PAID:"支付后",MEMBER_REGISTERED:"会员注册",LEVEL_CHANGED:"等级变化",SEGMENT_ENTERED:"人群入组"})[r.content.trigger],
             },
             { title: "节点数", render: (_, r) => r.content.nodes.length },
             { title: "版本", render: (_, r) => r.content.version },
@@ -323,19 +323,25 @@ export function Journeys({ store }: { store: string }) {
         <ErrorNotice error={command.error} />
         <Form
           layout="vertical"
-          initialValues={
-            draft ?? {
+          initialValues={{
+            ...(draft ?? {
               version: 1,
               trigger: "MANUAL",
               validFrom: initialDate(-60),
               validTo: initialDate(3600),
               maxDurationSeconds: 3600,
               nodes: [{ id: "end", kind: "END" }],
-            }
-          }
+            }),
+            frequency: draft ? !!draft.controls : true,
+            segmentId:draft?.controls?.segmentId??"",entryRule:draft?.controls?.entryRule,
+            maxEntries:draft?.controls?.maxEntries??1,entryWindowSeconds:draft?.controls?.entryWindowSeconds??86400,
+            notificationLimit:draft?.controls?.notificationLimit??3,notificationWindowSeconds:draft?.controls?.notificationWindowSeconds??86400,
+          }}
           onFinish={async (v) => {
+            const {frequency,segmentId,entryRule,maxEntries,entryWindowSeconds,notificationLimit,notificationWindowSeconds,...definition}=v;
             const input = {
-              ...v,
+              ...definition,
+              controls:frequency||!["MANUAL","ORDER_PAID"].includes(v.trigger)?{segmentId:v.trigger==="SEGMENT_ENTERED"?segmentId:undefined,entryRule,maxEntries,entryWindowSeconds,notificationLimit,notificationWindowSeconds}:null,
               storeId: store,
               validFrom: instant(v.validFrom),
               validTo: instant(v.validTo),
@@ -360,6 +366,9 @@ export function Journeys({ store }: { store: string }) {
                   options: [
                     { value: "MANUAL", label: "手工入组" },
                     { value: "ORDER_PAID", label: "支付事实" },
+                    { value: "MEMBER_REGISTERED", label: "会员注册" },
+                    { value: "LEVEL_CHANGED", label: "会员等级变化" },
+                    { value: "SEGMENT_ENTERED", label: "动态人群新入组" },
                   ],
                 },
                 { name: "validFrom", label: "入组开始时间", type: "datetime" },
@@ -374,6 +383,16 @@ export function Journeys({ store }: { store: string }) {
               ]}
             />
           </div>
+          <div className="form-section-title">入组资格与频控</div>
+          <Fields fields={[
+            {name:"frequency",label:"启用频控（会员事件触发必须启用）",type:"switch",required:false},
+            {name:"segmentId",label:"绑定动态人群标识（仅人群入组触发填写）",required:false},
+            {name:"maxEntries",label:"窗口内最大入组次数",type:"number",min:1,max:100},
+            {name:"entryWindowSeconds",label:"入组窗口秒数（UTC固定时间桶）",type:"number",min:60,max:2592000},
+            {name:"notificationLimit",label:"窗口内最多通知次数",type:"number",min:1,max:100},
+            {name:"notificationWindowSeconds",label:"通知窗口秒数",type:"number",min:60,max:2592000}
+          ]}/>
+          <Form.Item name="entryRule" label="入组会员规则（可选）"><RuleEditor memberOnly/></Form.Item>
           <p className="muted">
             首个节点为入口。所有节点必须可达，分支最终到达结束节点；权益有效期需覆盖整个执行期限。
           </p>

@@ -5,6 +5,7 @@ import java.util.List;
 /** 退款权威记录与渠道账本分开保存；金额上限由支付聚合行锁保护。 */
 @Mapper
 public interface RefundMapper {
+    List<RefundApi.Total> totals(@Param("tenant") String tenant,@Param("ids") List<String> ids);
     RefundApi.View byCase(@Param("tenant") String tenant,@Param("caseId") String caseId);
     RefundApi.View find(@Param("tenant") String tenant,@Param("id") String id);
     RefundApi.View lock(@Param("tenant") String tenant,@Param("id") String id);

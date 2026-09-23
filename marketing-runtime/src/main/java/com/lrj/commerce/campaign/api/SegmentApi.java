@@ -8,7 +8,8 @@ public interface SegmentApi {
  record Definition(String segmentId,long version,String name,RuleNode rule,int ttlSeconds,int refreshSeconds,int maxMembers) { }
  record View(Definition content,String audienceId,boolean enabled,long lockVersion) { }
  record Schedule(long expectedVersion,boolean enabled) { }
- record Run(String runId,String segmentId,long definitionVersion,String audienceId,long snapshotVersion,String cursorMember,int processed,int matched,String status,int attempts,String errorCode,Instant startedAt,Instant validUntil,Instant availableAt) { }
+ record Entered(String memberId,String segmentId,String audienceId,long snapshotVersion,long definitionVersion) { }
+ record Run(String runId,String segmentId,long definitionVersion,String audienceId,long snapshotVersion,String cursorMember,int processed,int matched,String status,int attempts,String errorCode,Instant startedAt,Instant validUntil,Instant availableAt,boolean entriesAnnounced,int entryAttempts) { }
  View create(Actor actor,String key,Definition input);
  List<View> definitions(Actor actor,String after,int limit);
  View schedule(Actor actor,String key,String id,Schedule input);

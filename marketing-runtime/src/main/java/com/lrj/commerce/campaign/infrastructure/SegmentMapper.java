@@ -7,6 +7,11 @@ import java.util.List;
 /** 分群仅写营销投影，不跨域访问会员表；输入来自会员API。 */
 @Mapper
 public interface SegmentMapper {
+ List<String> announcements(@Param("tenant") String tenant,@Param("now") Instant now);
+ void announcementFailed(@Param("tenant") String tenant,@Param("id") String id,@Param("due") Instant due);
+ int retryAnnouncement(@Param("tenant") String tenant,@Param("id") String id,@Param("now") Instant now);
+ List<String> entered(@Param("tenant") String tenant,@Param("run") SegmentApi.Run run);
+ void announced(@Param("tenant") String tenant,@Param("id") String id,@Param("cursor") String cursor,@Param("done") boolean done);
  record Root(String segmentId,String audienceId,long currentVersion,long snapshotSequence,boolean enabled,Instant nextDue,long lockVersion) { }
  record Row(String definitionJson,String audienceId,boolean enabled,long lockVersion) { }
  Root lockRoot(@Param("tenant") String tenant,@Param("id") String id);

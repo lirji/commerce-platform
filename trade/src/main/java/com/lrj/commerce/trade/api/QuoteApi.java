@@ -19,4 +19,6 @@ public interface QuoteApi {
     View read(Actor actor,String id);
     /** 订单本地事务内消费一次报价，不能直接暴露为HTTP端点。 */
     View consume(Actor actor,String id,String orderId);
+    /** 内部只读批次供对账投影使用，不开放HTTP任意会员查询。 */
+    List<View> internalBatch(String tenant,List<String> quoteIds);
 }

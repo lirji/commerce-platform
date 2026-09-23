@@ -12,6 +12,7 @@ public interface MemberGrowthApi {
  record Entry(long sequenceId,String sourceId,long delta,long balance,long policyVersion,String reason,Instant createdAt) { }
  record OrderFact(String orderId,String memberId,String paid,Instant orderedAt,boolean completed,String refundId,String refundAmount) { }
  record LevelChanged(String memberId,String beforeLevel,String afterLevel,long growth,long policyVersion) { }
+ record Registered(String memberId) { }
  record Facts(String memberId,String memberLevel,String status,long growth,String netSpend,List<String> tags) { }
  Policy publish(Actor actor,String key,Policy input);
  List<Policy> policies(Actor actor,long after,int limit);

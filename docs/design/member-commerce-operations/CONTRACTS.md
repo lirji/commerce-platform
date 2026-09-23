@@ -4,7 +4,7 @@
 
 |能力|路由族|业务契约|
 |---|---|---|
-|会员生命周期|POST /admin/members/{id}/profile、/status|资料含 displayName、expectedVersion、reason；状态 ACTIVE→FROZEN→ACTIVE，ACTIVE/FROZEN→CLOSED；CLOSED终态；绑定actor不变|
+|会员生命周期|POST /admin/members/{id}/profile、/status|资料含 value（显示名称）、expectedVersion、reason；状态 ACTIVE→FROZEN→ACTIVE，ACTIVE/FROZEN→CLOSED；CLOSED终态；绑定actor不变|
 |经营授权|/admin/store-grants；/operations/stores|资源商家或店铺，主体来自本租户已存在运营凭据，动作限定商品经营；撤销必须生效；平台权限不下放|
 |商品管理|/operations/products、/operations/skus/{id}|同店商品SPU与规格组合，标题/售价/状态更新需revision；下架不允许新报价，旧快照不被调价覆写|
 |成长等级|/admin/member-growth/*、/members/me/growth|版本化门槛/净消费成长率、账本游标、人工调整原因；规则未启用保留旧等级|
@@ -46,3 +46,13 @@ POST /admin/segments `{segmentId,version,name,rule,ttlSeconds,refreshSeconds,max
 Campaign.Policy.Terms增加可选pricing `{includedSkuIds:[],excludedSkuIds:[],tiers:[{minimumSpend,discountAmount,percentageBps}]}`。每个SKU集合最多100项；包含集为空表示全部，排除优先；最多8档门槛严格递增。全局minimumSpend及阶梯门槛按参与商品金额判断，选满足的最高档；percentageBps=0为固定减免，否则为优惠比例（1000表示减10%），discountAmount为该档上限，活动顶层discountAmount仍为总上限。优惠只分摊参与SKU；券继续按既有可叠加规则分摊剩余应付。仍单活动择优，平局按活动ID，避免未批准多活动叠加语义。带pricing的活动必须审批发布。
 
 POST /admin/campaigns/{id}/{version}/preview `{memberId,at?,items:[{skuId,quantity}]}`：平台管理员选择真实会员和在售商品，服务端读取成长/标签/等级/人群及价格；at只改变活动有效期观察，不伪造会员历史事实。可预览草稿/暂停版本，返回整单gross/discount/payable、逐行优惠和资格原因、受众来源。预览不保存报价、不占预算、不发券/权益，不代表实际下单成功；实际下单仍校验库存和预算。前端复制配置生成新草稿版本，通过原POST创建流程；版本内容不原位覆盖。
+
+## OP07 会员旅程与效果 DTO
+
+Journey.Definition.trigger扩展MEMBER_REGISTERED、LEVEL_CHANGED、SEGMENT_ENTERED，新增可选controls `{segmentId?,entryRule?,maxEntries,entryWindowSeconds,notificationLimit,notificationWindowSeconds}`；新会员触发必须填写controls，旧MANUAL/ORDER_PAID省略时保持旧行为。窗口为UTC固定时间桶，每会员每旅程跨版本共享计数；入组上限1–100/窗口，通知上限1–100/窗口，窗口60–2592000秒。调整窗口长度重新确定桶，不承诺滑动窗口。SEGMENT_ENTERED必须指定segmentId；精确绑定已完整发布且未过期的受众快照。事件发生时尚未发布的旅程不追溯入组。冻结/注销会员不自动入组，执行时发现不可服务则停止后续节点。
+
+新增member.registered.v1 `{memberId}`；member.level.changed.v1已由成长事务发出；segment.member.entered.v1 `{memberId,segmentId,audienceId,snapshotVersion,definitionVersion}`在完整快照提交后逐批比较前一完整快照并发出，每批最多100条，检查点与Outbox同事务。注册不外发个人资料。重复事件不重复入组/计数；频控抑制的自动入组记录计数，通知抑制不写会员收件箱。
+
+GET /admin/marketing-effects?storeId&from&to&after&limit：from含、to不含，按下单UTC时间选订单队列，单次窗口最多93天。按活动版本（无活动为单独组）统计订单数、成交订单、成交实付、截至投影更新时间的成功退款、净收入及成交优惠的总/平台/商家承担；退款可以发生在下单窗口之外。承担金额不随退款自动恢复，与既有预算消耗口径一致；不含商品成本、支付费和渠道费，不宣称利润、因果ROI或旅程带来的增量成交。
+
+效果投影消费真实订单/退款事实，tenant+order唯一投影，读取权威成功退款合计，成交与退款累计值单调更新防止重复或旧读覆盖；只跨公开API取订单/报价/退款，不直接写交易表。历史已投递事件不会自动重放；初始只统计新消费事实，界面明确覆盖范围，可通过有界订单游标重建命令POST /admin/marketing-effects/rebuild `{after,limit}`逐批补齐，返回下一游标。GET /admin/journey-effects?storeId&from&to展示入组、完成、通知与抑制次数，作为执行指标而非销售归因。

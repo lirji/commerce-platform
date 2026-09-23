@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.insight.infrastructure.EffectsMapper">
+ <insert id="observe">INSERT INTO marketing_effect_order(tenant_id,order_id,store_id,series_id,campaign_id,campaign_version,ordered_at,paid,paid_amount,refunded,discount_amount,platform_funding,merchant_funding)
+ VALUES(#{tenant},#{input.orderId},#{input.storeId},#{input.seriesId},#{input.campaignId},#{input.campaignVersion},#{input.orderedAt},#{input.paid},#{input.paidAmount},#{input.refunded},#{input.discountAmount},#{input.platformFunding},#{input.merchantFunding})
+ ON DUPLICATE KEY UPDATE paid=GREATEST(paid,#{input.paid}),refunded=GREATEST(refunded,#{input.refunded}),updated_at=UTC_TIMESTAMP(3)
+ </insert>
+ <select id="report" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$Series">
+  SELECT series_id,campaign_id,campaign_version,COUNT(*) orders,SUM(paid) paid_orders,
+  CAST(SUM(IF(paid,paid_amount,0)) AS CHAR) received,CAST(SUM(IF(paid,refunded,0)) AS CHAR) refunded,
+  CAST(SUM(IF(paid,paid_amount-refunded,0)) AS CHAR) net_receipts,CAST(SUM(IF(paid,discount_amount,0)) AS CHAR) discount_granted,
+  CAST(SUM(IF(paid,platform_funding,0)) AS CHAR) platform_funding,CAST(SUM(IF(paid,merchant_funding,0)) AS CHAR) merchant_funding,MAX(updated_at) updated_at
+  FROM marketing_effect_order WHERE tenant_id=#{tenant} AND store_id=#{store} AND ordered_at&gt;=#{from} AND ordered_at&lt;#{to} AND series_id&gt;#{after}
+  GROUP BY series_id,campaign_id,campaign_version ORDER BY series_id LIMIT #{limit}
+ </select>
+</mapper>

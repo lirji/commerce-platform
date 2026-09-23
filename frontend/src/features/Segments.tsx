@@ -6,7 +6,7 @@ import { ActionButton, ErrorNotice, Fields, PageHead, Status, time } from "../sh
 import { RuleEditor } from "../shared/marketing";
 type Definition={segmentId:string;version:number;name:string;rule:Rule;ttlSeconds:number;refreshSeconds:number;maxMembers:number};
 type Segment={content:Definition;audienceId:string;enabled:boolean;lockVersion:number};
-type Run={runId:string;snapshotVersion:number;definitionVersion:number;processed:number;matched:number;status:string;attempts:number;errorCode?:string;startedAt:string;validUntil:string};
+type Run={runId:string;snapshotVersion:number;definitionVersion:number;processed:number;matched:number;status:string;attempts:number;errorCode?:string;startedAt:string;validUntil:string;entriesAnnounced:boolean;entryAttempts:number};
 
 /** 运营看到真实检查点；刷新任务与已发布受众版本在界面上明确区分。 */
 export function Segments(){
@@ -34,10 +34,11 @@ export function Segments(){
    <ErrorNotice error={runs.error}/><Space><Button onClick={runs.refresh}>刷新进度</Button><ActionButton label="执行一批" path="/admin/segments/pump" onDone={refresh}/></Space>
    <Table<Run> rowKey="runId" dataSource={runs.data} loading={runs.loading} pagination={false} scroll={{x:850}} columns={[
     {title:"受众版本",dataIndex:"snapshotVersion"},{title:"规则版本",dataIndex:"definitionVersion"},{title:"扫描 / 命中",render:(_,r)=>`${r.processed} / ${r.matched}`},
-    {title:"状态",dataIndex:"status",render:v=><Status value={v}/>},{title:"重试次数",dataIndex:"attempts"},{title:"失败分类",dataIndex:"errorCode"},
+    {title:"状态",dataIndex:"status",render:v=><Status value={v}/>},{title:"重试次数",dataIndex:"attempts"},{title:"入组事件",render:(_,r)=>r.status!=="COMPLETED"?"未发布":r.entriesAnnounced?"已完成":r.entryAttempts>=5?"已隔离":"发送中"},{title:"失败分类",dataIndex:"errorCode"},
     {title:"扫描起点",dataIndex:"startedAt",render:time},{title:"有效期至",dataIndex:"validUntil",render:time},
     {title:"操作",render:(_,r)=><Space>
      {["RUNNING","ISOLATED"].includes(r.status)&&<ActionButton label="取消" path={`/admin/segment-runs/${encode(r.runId)}/cancel`} onDone={refresh}/>}
+     {r.status==="COMPLETED"&&r.entryAttempts>=5&&<ActionButton label="重试入组事件" path={`/admin/segment-runs/${encode(r.runId)}/retry-announcement`} onDone={refresh}/>}
      {r.status==="ISOLATED"&&<ActionButton label="从检查点重试" path={`/admin/segment-runs/${encode(r.runId)}/retry`} onDone={refresh}/>}
     </Space>}
    ]}/><Space><Button onClick={()=>setRunAfter("")}>回到首页</Button><Button disabled={runs.data?.length!==50} onClick={()=>setRunAfter(runs.data!.at(-1)!.runId)}>下一页</Button></Space>

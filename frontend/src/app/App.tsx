@@ -25,6 +25,7 @@ import { OpsPages } from "../features/OpsPages";
 import { ProductOperations } from "../features/ProductOperations";
 import { MemberGrowth } from "../features/MemberGrowth";
 import { Segments } from "../features/Segments";
+import { MarketingEffects } from "../features/MarketingEffects";
 const groups = [
   {
     label: "交易与交付",
@@ -39,6 +40,7 @@ const groups = [
     label: "营销运营",
     children: [
       ["campaigns", "活动管理"],
+      ["effects", "营销效果"],
       ["audiences", "人群快照"],
       ["segments", "动态人群"],
       ["rules", "动态规则"],
@@ -216,6 +218,7 @@ export function App() {
   else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
   else if (page === "growth") content = <MemberGrowth admin={admin}/>;
   else if (admin && page === "segments") content = <Segments/>;
+  else if (admin && page === "effects") content = <MarketingEffects key={store} store={store}/>;
   else if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;
   else if (!admin) {
     if (page === "shop")

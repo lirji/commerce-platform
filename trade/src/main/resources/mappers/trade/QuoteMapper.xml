@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.trade.infrastructure.QuoteMapper">
+ <select id="batch" resultType="string">SELECT snapshot_json FROM trade_quote WHERE tenant_id=#{tenant} AND quote_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach> ORDER BY quote_id</select>
  <insert id="insert">INSERT INTO trade_quote(tenant_id,quote_id,member_id,store_id,merchant_id,gross_amount,discount_amount,payable_amount,snapshot_json,expires_at,created_at) VALUES(#{tenant},#{view.quoteId},#{view.memberId},#{view.storeId},#{view.merchantId},#{view.gross},#{view.discount},#{view.payable},#{json},#{view.expiresAt},#{view.createdAt})</insert>
  <select id="read" resultType="string">SELECT snapshot_json FROM trade_quote WHERE tenant_id=#{tenant} AND member_id=#{member} AND quote_id=#{id}</select>
  <select id="lock" resultType="com.lrj.commerce.trade.infrastructure.QuoteMapper$Consumption">SELECT snapshot_json,consumed_order_id,expires_at FROM trade_quote WHERE tenant_id=#{tenant} AND member_id=#{member} AND quote_id=#{id} FOR UPDATE</select>

@@ -48,4 +48,7 @@ public class RefundService implements RefundApi {
         try{reconcileInternal(tenant,check.refundId());count++;}catch(RuntimeException ex){org.slf4j.LoggerFactory.getLogger(getClass()).warn("refund check id={} errorType={}",check.refundId(),ex.getClass().getSimpleName());}
     }cursor=tenants.getLast();return count;}
     private DomainException conflict(){return new DomainException(DomainException.Code.CONFLICT,"退款额度或渠道证据冲突");}
+    /** 成功退款是单调终态事实；一次最多核对100订单，不读取其他租户。 */
+    public java.util.List<RefundApi.Total> totals(String tenant,java.util.List<String> ids){com.lrj.commerce.kernel.Identifiers.require(tenant);Inputs.require(ids!=null&&!ids.isEmpty()&&ids.size()<=100,"退款汇总批次无效");ids.forEach(com.lrj.commerce.kernel.Identifiers::require);return mapper.totals(tenant,ids);}
+
 }

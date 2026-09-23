@@ -10,8 +10,8 @@ import java.util.List;
 /** Member用例负责权限与状态，SQL仅在本域Mapper。 */
 @Service
 public class MemberService implements MemberApi {
- private final MemberMapper mapper; private final Commands commands; 
- public MemberService(MemberMapper mapper,Commands commands) {this.mapper=mapper;this.commands=commands;}
+ private final MemberMapper mapper; private final Commands commands; private final com.lrj.commerce.runtime.Outbox outbox;
+ public MemberService(MemberMapper mapper,Commands commands,com.lrj.commerce.runtime.Outbox outbox) {this.mapper=mapper;this.commands=commands;this.outbox=outbox;}
  /** 变更与审计共用事务；乐观锁避免不同运营覆盖彼此决定。 */
  public View change(Actor actor,String key,String id,String action,Change input) {
   actor.requireAdmin(); Identifiers.require(id);
@@ -43,7 +43,9 @@ public class MemberService implements MemberApi {
   actor.requireAdmin(); Inputs.require(input!=null,"请求不能为空"); Identifiers.require(input.memberId()); Inputs.text(input.displayName(),128);
   return commands.run(actor,"member.create",key,input,View.class,()->{
    Identifiers.require(input.actorId()); Inputs.text(input.memberLevel(),64);
-   mapper.insert(actor.tenantId(),input); return requireActive(actor,input.memberId());
+   mapper.insert(actor.tenantId(),input);
+   outbox.append(actor.tenantId(),"member.registered.v1",input.memberId(),0,new com.lrj.commerce.member.api.MemberGrowthApi.Registered(input.memberId()));
+   return requireActive(actor,input.memberId());
   });
  }
  /** 缺失与非本租户统一拒绝，冻结资源不允许参与新交易。 */

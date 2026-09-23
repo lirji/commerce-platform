@@ -16,8 +16,8 @@ import java.util.*;
 /** 单批数据与检查点同事务，最终仅插入快照头即可让完整成员集原子可见。 */
 @Service
 public class SegmentService implements SegmentApi {
- private final SegmentMapper mapper;private final MemberGrowthApi members;private final RuleDecisionPort rules;private final Commands commands;private final Clock clock;private final TransactionTemplate tx;private String tenantCursor="";
- public SegmentService(SegmentMapper mapper,MemberGrowthApi members,RuleDecisionPort rules,Commands commands,Clock clock,PlatformTransactionManager manager){this.mapper=mapper;this.members=members;this.rules=rules;this.commands=commands;this.clock=clock;tx=new TransactionTemplate(manager);tx.setTimeout(10);}
+ private final Outbox outbox;private final SegmentMapper mapper;private final MemberGrowthApi members;private final RuleDecisionPort rules;private final Commands commands;private final Clock clock;private final TransactionTemplate tx;private String tenantCursor="";
+ public SegmentService(SegmentMapper mapper,MemberGrowthApi members,RuleDecisionPort rules,Commands commands,Clock clock,PlatformTransactionManager manager,Outbox outbox){this.outbox=outbox;this.mapper=mapper;this.members=members;this.rules=rules;this.commands=commands;this.clock=clock;tx=new TransactionTemplate(manager);tx.setTimeout(10);}
  /** 发布新定义会关闭周期刷新，运营确认新规则后再显式启用。 */
  public View create(Actor actor,String key,Definition input){
   actor.requireAdmin();Inputs.require(input!=null&&input.version()>0&&input.rule()!=null,"人群定义无效");Identifiers.require(input.segmentId());Inputs.text(input.name(),128);input.rule().requireTrustedFields();memberOnly(input.rule());
@@ -45,10 +45,11 @@ public class SegmentService implements SegmentApi {
  public List<Run> runs(Actor actor,String id,String after,int limit){actor.requireAdmin();Identifiers.require(id);Inputs.page(after,limit);Inputs.found(mapper.find(actor.tenantId(),id));return mapper.runs(actor.tenantId(),id,after,limit);}
  /** 取消保留已扫描但不可见的投影；重试从最后提交检查点继续。 */
  public Run control(Actor actor,String key,String id,String action){
-  actor.requireAdmin();Identifiers.require(id);Inputs.require(Set.of("cancel","retry").contains(action),"任务操作无效");
+  actor.requireAdmin();Identifiers.require(id);Inputs.require(Set.of("cancel","retry","retry-announcement").contains(action),"任务操作无效");
   return commands.run(actor,"segment."+action,key,id,Run.class,()->{
    var run=Inputs.found(mapper.lockRun(actor.tenantId(),id));
-   if(action.equals("cancel")){if(!Set.of("RUNNING","ISOLATED").contains(run.status()))throw new DomainException(DomainException.Code.CONFLICT,"任务已终结");mapper.status(actor.tenantId(),id,"CANCELLED",null);}
+   if(action.equals("retry-announcement")){if(mapper.retryAnnouncement(actor.tenantId(),id,now())!=1)throw new DomainException(DomainException.Code.CONFLICT,"入组事件未处于隔离状态");}
+   else if(action.equals("cancel")){if(!Set.of("RUNNING","ISOLATED").contains(run.status()))throw new DomainException(DomainException.Code.CONFLICT,"任务已终结");mapper.status(actor.tenantId(),id,"CANCELLED",null);}
    else {if(!run.status().equals("ISOLATED")||!clock.instant().isBefore(run.validUntil()))throw new DomainException(DomainException.Code.CONFLICT,"仅可重试未过期隔离任务，过期请取消后重新刷新");mapper.status(actor.tenantId(),id,"RUNNING",null);}
    return mapper.runFind(actor.tenantId(),id);
   });
@@ -63,12 +64,19 @@ public class SegmentService implements SegmentApi {
   for(var id:mapper.pending(tenant,now())){
    try {Boolean done=tx.execute(s->{var run=mapper.lockRun(tenant,id);if(run==null||!run.status().equals("RUNNING")||run.availableAt().isAfter(now()))return false;batch(tenant,run);return true;});if(Boolean.TRUE.equals(done))count++;}
    catch(RuntimeException failure){tx.executeWithoutResult(s->{var run=mapper.lockRun(tenant,id);if(run!=null)mapper.failed(tenant,id,now().plusSeconds((1L<<Math.min(run.attempts()+1,5))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2)));});org.slf4j.LoggerFactory.getLogger(getClass()).warn("segment batch retry run={} type={}",id,failure.getClass().getSimpleName());}
+  }
+  for(var id:mapper.announcements(tenant,now())){
+   try{tx.executeWithoutResult(s->{var run=mapper.lockRun(tenant,id);if(run==null||run.entriesAnnounced()||run.entryAttempts()>=5)return;
+    if(!clock.instant().isBefore(run.validUntil())){mapper.announced(tenant,id,null,true);return;}
+    var entered=mapper.entered(tenant,run);for(var member:entered)outbox.append(tenant,"segment.member.entered.v1",JsonCodec.hash(run.runId()+"/"+member),1,new Entered(member,run.segmentId(),run.audienceId(),run.snapshotVersion(),run.definitionVersion()));
+    mapper.announced(tenant,id,entered.isEmpty()?null:entered.getLast(),entered.size()<100);
+   });}catch(RuntimeException failure){tx.executeWithoutResult(s->mapper.announcementFailed(tenant,id,now().plusSeconds(30)));org.slf4j.LoggerFactory.getLogger(getClass()).warn("segment announcement retry run={} type={}",id,failure.getClass().getSimpleName());}
   }return count;
  }
  private Run start(String tenant,SegmentMapper.Root root){
   var active=mapper.active(tenant,root.segmentId());if(active!=null)return active;
   var definition=definition(tenant,root.segmentId(),root.currentVersion());Instant started=now();
-  var run=new Run(UUID.randomUUID().toString(),root.segmentId(),root.currentVersion(),root.audienceId(),root.snapshotSequence()+1,"",0,0,"RUNNING",0,null,started,started.plusSeconds(definition.ttlSeconds()),started);
+  var run=new Run(UUID.randomUUID().toString(),root.segmentId(),root.currentVersion(),root.audienceId(),root.snapshotSequence()+1,"",0,0,"RUNNING",0,null,started,started.plusSeconds(definition.ttlSeconds()),started,false,0);
   mapper.allocate(tenant,root.segmentId(),started.plusSeconds(Math.max(60,definition.refreshSeconds())));mapper.run(tenant,run);return run;
  }
  private void batch(String tenant,Run run){
