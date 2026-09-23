@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.ops.infrastructure.OpsPageMapper">
+ <sql id="columns">page_id,version,definition_json,status,lock_version</sql>
+ <insert id="insert">INSERT INTO ops_page(tenant_id,page_id,version,definition_json) VALUES(#{tenant},#{input.pageId},#{input.version},#{json})</insert>
+ <select id="find" resultType="com.lrj.commerce.ops.infrastructure.OpsPageMapper$Row">SELECT <include refid="columns"/> FROM ops_page WHERE tenant_id=#{tenant} AND page_id=#{id} AND version=#{version}</select>
+ <select id="published" resultType="com.lrj.commerce.ops.infrastructure.OpsPageMapper$Row">SELECT <include refid="columns"/> FROM ops_page WHERE tenant_id=#{tenant} AND page_id=#{id} AND status='PUBLISHED'</select>
+ <select id="list" resultType="com.lrj.commerce.ops.infrastructure.OpsPageMapper$Row">SELECT <include refid="columns"/> FROM ops_page p WHERE tenant_id=#{tenant} AND page_id &gt; #{after} AND version=(SELECT MAX(v.version) FROM ops_page v WHERE v.tenant_id=p.tenant_id AND v.page_id=p.page_id) ORDER BY page_id LIMIT #{limit}</select>
+ <select id="versions" resultType="com.lrj.commerce.ops.infrastructure.OpsPageMapper$Row">SELECT <include refid="columns"/> FROM ops_page WHERE tenant_id=#{tenant} AND page_id=#{id} ORDER BY version DESC LIMIT 50</select>
+ <select id="lockGroup" resultType="com.lrj.commerce.ops.infrastructure.OpsPageMapper$Row">SELECT <include refid="columns"/> FROM ops_page WHERE tenant_id=#{tenant} AND page_id=#{id} ORDER BY version LIMIT 51 FOR UPDATE</select>
+ <update id="pauseOthers">UPDATE ops_page SET status='PAUSED',lock_version=lock_version+1 WHERE tenant_id=#{tenant} AND page_id=#{id} AND status='PUBLISHED'</update>
+ <update id="change">UPDATE ops_page SET status=#{status},lock_version=lock_version+1 WHERE tenant_id=#{tenant} AND page_id=#{id} AND version=#{version} AND lock_version=#{expected}</update>
+</mapper>

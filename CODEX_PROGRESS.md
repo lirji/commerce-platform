@@ -36,3 +36,11 @@
 ## 恢复 Prompt
 
 读取本文件、docs/PROGRESS_STATE.json与实施计划，从S9b继续。用户已授权做完整计划，不重新规划前八阶段，不等待继续。外部联调后置；保护旧仓dirty和旧规则迁移门禁。逐片实现、真实验证、同步文档、正常Git交付，直到S10完成。
+
+## S9b最新检查点（覆盖上方下一步）
+
+- S9b已完成：低代码页面白名单DSL、真实数据只读预览、版本审批发布/回退、类型化业务动作及权限/幂等/审计。
+- 当前143项测试通过，证据docs/evidence/s9b/；S9整体DONE。S9a提交fa17885已推送main；S9b分支feat/lowcode-operations验证通过待交付。
+- 下一步S10a前端：采用frontend-architecture-design和frontend-implementation技能，形成单应用管理台/消费端设计。随后S10b数据/运行/CI/整体验收。
+- 已核对Node24.12.0/npm11.6.2及官方兼容资料；拟选React19.3.0、AntDesign6.6.5、Vite8.3.0、TypeScript7.0.2，最终以锁文件、类型检查和安全审计为证据。前端尚未开始写代码。
+- 后台app仍是S9a session92918；V15只在隔离测试库生效，前端测试前重启最新jar。

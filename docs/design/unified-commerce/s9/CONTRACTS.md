@@ -18,3 +18,12 @@
 ## S9b 低代码运营（随后实施）
 
 运营页面DSL只允许固定组件、字段和数据源/动作白名单；必须支持预览、版本审批、发布与回退至旧版本。通过真实领域API读取/执行，禁止任意脚本/URL/SQL。具体schema在该子片实现前冻结。
+
+### S9b 已冻结契约
+
+- PageDefinition={pageId,version,title,storeId,sections,actions}；1..8个Section={id,title,source}，0..4个Action={id,label,kind}，两组标识全局唯一。
+- source白名单：CAMPAIGNS、JOURNEYS、BUDGETS读取租户级最新前20项；COUPONS、ENTITLEMENTS读取页面storeId的定义前20项。均通过领域API，响应明确bounded=true，分页详情进入对应业务页。component固定为只读数据表与类型化动作表单，不接受脚本、SQL、HTML、URL或自定义字段路径。
+- kind白名单CREATE_CAMPAIGN、CREATE_COUPON、ENROLL_JOURNEY。动作入参ActionInput={campaign?,coupon?,enrollment?}，恰好一种与kind匹配。优惠定义/活动必须属于页面storeId；入组沿用旅程API权限、版本与有效期检查。调用原领域命令，不复制业务逻辑。
+- ADMIN POST/GET /v1/admin/ops-pages创建/列出最新定义；GET /{id}/versions（最多50版本）、POST /{id}/{version}/{submit|approve|reject|publish|pause|rollback}带Idempotency-Key与expectedVersion。只允许DRAFT→IN_REVIEW→APPROVED→PUBLISHED；rollback仅重新发布曾发布的PAUSED版本。同pageId只有一个发布版本，版本内容不可修改。
+- POST /v1/admin/ops-pages/preview接收完整定义，验证DSL并读取真实数据，零命令/业务写入；GET /v1/admin/ops-pages/{id}/render仅渲染当前已发布版本；POST /{id}/{version}/actions/{action}只能执行当前发布版本已声明的动作，必须幂等/审计并复用服务端管理员校验。
+- 旧页面回退不撤销已经提交的业务操作。预览也不能执行动作；前端预览明确禁用提交控件。客户端隐藏入口不作为权限证据。

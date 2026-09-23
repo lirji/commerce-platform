@@ -19,17 +19,18 @@
     "S5",
     "S7",
     "S8",
-    "S9a"
+    "S9a",
+    "S9b",
+    "S9"
   ],
-  "next": "S9b",
+  "next": "S10a",
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
-  "verification": "docs/evidence/s9a/verification.json",
+  "verification": "docs/evidence/s9b/verification.json",
   "git": {
-    "status": "S9A_VALIDATED_DELIVERY_PENDING",
-    "sourceCommit": "46d9ffc",
-    "checkpointCommit": "e53f53f",
-    "branch": "feat/persistent-marketing-journeys"
+    "status": "S9B_VALIDATED_DELIVERY_PENDING",
+    "sourceCommit": "fa17885",
+    "branch": "feat/lowcode-operations"
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {

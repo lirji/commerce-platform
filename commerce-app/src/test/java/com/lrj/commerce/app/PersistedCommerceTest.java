@@ -680,6 +680,47 @@ class PersistedCommerceTest {
         jdbc.update("UPDATE platform_event SET available_at=CURRENT_TIMESTAMP(6) WHERE tenant_id=? AND event_type='order.paid.v1'",tenant);pump();
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM journey_instance WHERE tenant_id=?",Integer.class,tenant));
     }
+    private Map<String,Object> opsPage(long version){return Map.of("pageId","marketing-desk","version",version,"title","营销工作台","storeId","store1","sections",List.of(Map.of("id","coupons","title","优惠券","source","COUPONS")),"actions",List.of(Map.of("id","create-coupon","label","新建券","kind","CREATE_COUPON")));}
+    private void publishPage(long version) throws Exception {post("/v1/admin/ops-pages",admin,"page-"+version,opsPage(version));int expected=0;for(String action:List.of("submit","approve","publish"))post("/v1/admin/ops-pages/marketing-desk/"+version+"/"+action,admin,action+"-page-"+version,Map.of("expectedVersion",expected++));}
+    private Map<String,Object> pageCoupon(){return Map.of("definitionId","ops-coupon","version",1,"storeId","store1","name","页面创建优惠","minimumSpend","10.00","discountAmount","2.00","validFrom",Instant.now().minusSeconds(30).toString(),"validTo",Instant.now().plusSeconds(3600).toString(),"quota",10,"stackable",true);}
+    @Test void lowcodePreviewReadsDatabaseWithoutSavingPageOrCommands() throws Exception {
+        seed();couponDefinition("2.00",true,10);int before=jdbc.queryForObject("SELECT COUNT(*) FROM platform_command WHERE tenant_id=?",Integer.class,tenant);
+        var preview=post("/v1/admin/ops-pages/preview",admin,null,opsPage(1));assertTrue(preview.path("preview").asBoolean());assertTrue(preview.path("bounded").asBoolean());assertEquals(1,preview.path("data").get(0).path("rows").size());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM ops_page WHERE tenant_id=?",Integer.class,tenant));assertEquals(before,jdbc.queryForObject("SELECT COUNT(*) FROM platform_command WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(403,call("POST","/v1/admin/ops-pages/preview",member,null,opsPage(1)).status());
+    }
+    @Test void lowcodeRejectsUnknownDataSourceAndDuplicateComponentIds() throws Exception {
+        seed();var bad=new HashMap<>(opsPage(1));bad.put("sections",List.of(Map.of("id","bad","title","不受控源","source","https://example.com/private")));
+        assertEquals(400,call("POST","/v1/admin/ops-pages",admin,"bad-source",bad).status());
+        bad.put("sections",List.of(Map.of("id","create-coupon","title","冲突标识","source","COUPONS")));
+        assertEquals(400,call("POST","/v1/admin/ops-pages",admin,"bad-id",bad).status());
+        var action=new HashMap<>(opsPage(1));action.put("actions",List.of(Map.of("id","run","label","脚本","kind","RUN_SCRIPT")));
+        assertEquals(400,call("POST","/v1/admin/ops-pages",admin,"bad-action",action).status());
+    }
+    @Test void lowcodeActionRequiresPublishedDeclaredVersionAndIsIdempotent() throws Exception {
+        seed();post("/v1/admin/ops-pages",admin,"draft",opsPage(1));var input=Map.of("coupon",pageCoupon());String path="/v1/admin/ops-pages/marketing-desk/1/actions/create-coupon";
+        assertEquals(409,call("POST",path,admin,"execute",input).status());assertEquals(409,call("POST","/v1/admin/ops-pages/marketing-desk/1/publish",admin,"skip-review",Map.of("expectedVersion",0)).status());
+        int expected=0;for(String action:List.of("submit","approve","publish"))post("/v1/admin/ops-pages/marketing-desk/1/"+action,admin,action,Map.of("expectedVersion",expected++));
+        var result=post(path,admin,"execute",input);assertEquals(result,post(path,admin,"execute",input));assertEquals("ops-coupon",result.path("resourceId").asString());
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon_definition WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(404,call("POST","/v1/admin/ops-pages/marketing-desk/1/actions/undeclared",admin,"no-action",input).status());
+        assertEquals(403,call("POST",path,member,"forbidden",input).status());
+    }
+    @Test void lowcodeVersionRollbackRestoresPageWithoutUndoingBusinessData() throws Exception {
+        seed();publishPage(1);post("/v1/admin/ops-pages/marketing-desk/1/actions/create-coupon",admin,"execute",Map.of("coupon",pageCoupon()));publishPage(2);
+        assertEquals(2,call("GET","/v1/admin/ops-pages/marketing-desk/render",admin,null,null).body().path("page").path("content").path("version").asInt());
+        assertEquals(409,call("POST","/v1/admin/ops-pages/marketing-desk/1/actions/create-coupon",admin,"old-page",Map.of("coupon",pageCoupon())).status());
+        post("/v1/admin/ops-pages/marketing-desk/1/rollback",admin,"rollback",Map.of("expectedVersion",4));
+        var render=call("GET","/v1/admin/ops-pages/marketing-desk/render",admin,null,null).body();assertEquals(1,render.path("page").path("content").path("version").asInt());assertEquals(1,render.path("data").get(0).path("rows").size());
+        assertEquals(2,call("GET","/v1/admin/ops-pages/marketing-desk/versions",admin,null,null).body().size());
+        assertEquals(404,call("GET","/v1/admin/ops-pages/marketing-desk/render",token("other-"+UUID.randomUUID(),"admin","ADMIN"),null,null).status());
+    }
+    @Test void lowcodeActionCannotChangeStoreOrSmuggleAnotherCommandType() throws Exception {
+        seed();publishPage(1);var coupon=new HashMap<>(pageCoupon());coupon.put("storeId","other-store");String path="/v1/admin/ops-pages/marketing-desk/1/actions/create-coupon";
+        assertEquals(400,call("POST",path,admin,"other-store",Map.of("coupon",coupon)).status());
+        assertEquals(400,call("POST",path,admin,"mixed",Map.of("coupon",pageCoupon(),"enrollment",Map.of("journeyId","j","version",1,"memberId","m1","eventKey","e"))).status());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon_definition WHERE tenant_id=?",Integer.class,tenant));
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));
