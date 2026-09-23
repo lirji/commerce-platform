@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.member.infrastructure.GrowthMapper">
+ <select id="scan" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$FactRow">
+  SELECT m.member_id,m.member_level,m.status,COALESCE(a.growth,0) growth,CAST(COALESCE(a.net_spend,0.00) AS CHAR) net_spend,t.tag_id
+  FROM (SELECT member_id,member_level,status FROM member_record WHERE tenant_id=#{tenant} AND member_id&gt;#{after} AND created_at&lt;=#{before} ORDER BY member_id LIMIT #{limit}) m
+  LEFT JOIN member_growth_account a ON a.tenant_id=#{tenant} AND a.member_id=m.member_id
+  LEFT JOIN member_tag_assignment t ON t.tenant_id=#{tenant} AND t.member_id=m.member_id AND t.active=TRUE
+  ORDER BY m.member_id,t.tag_id
+ </select>
  <insert id="policy">INSERT INTO member_growth_policy(tenant_id,version,effective_from,policy_json) VALUES(#{tenant},#{input.version},#{input.effectiveFrom},#{json})</insert>
  <select id="effective" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$PolicyRow">SELECT version,effective_from,CAST(policy_json AS CHAR) policy_json FROM member_growth_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
  <select id="policies" resultType="com.lrj.commerce.member.infrastructure.GrowthMapper$PolicyRow">SELECT version,effective_from,CAST(policy_json AS CHAR) policy_json FROM member_growth_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>

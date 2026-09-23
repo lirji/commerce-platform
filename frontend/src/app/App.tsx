@@ -24,6 +24,7 @@ import { Journeys } from "../features/Journeys";
 import { OpsPages } from "../features/OpsPages";
 import { ProductOperations } from "../features/ProductOperations";
 import { MemberGrowth } from "../features/MemberGrowth";
+import { Segments } from "../features/Segments";
 const groups = [
   {
     label: "交易与交付",
@@ -39,6 +40,7 @@ const groups = [
     children: [
       ["campaigns", "活动管理"],
       ["audiences", "人群快照"],
+      ["segments", "动态人群"],
       ["rules", "动态规则"],
       ["budgets", "营销预算"],
       ["coupons", "优惠券"],
@@ -213,6 +215,7 @@ export function App() {
   if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
   else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
   else if (page === "growth") content = <MemberGrowth admin={admin}/>;
+  else if (admin && page === "segments") content = <Segments/>;
   else if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;
   else if (!admin) {
     if (page === "shop")

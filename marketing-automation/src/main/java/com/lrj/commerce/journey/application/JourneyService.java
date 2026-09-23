@@ -24,6 +24,7 @@ public class JourneyService implements JourneyApi, EventHandler {
     private final JourneyMapper mapper;
     private final Commands commands;
     private final MemberApi members;
+    private final com.lrj.commerce.member.api.MemberGrowthApi memberGrowth;
     private final StoreApi stores;
     private final EntitlementApi benefits;
     private final OrderApi orders;
@@ -32,7 +33,8 @@ public class JourneyService implements JourneyApi, EventHandler {
     private final Clock clock;
     private final TransactionTemplate tx;
     private String cursor="";
-    public JourneyService(JourneyMapper mapper,Commands commands,MemberApi members,StoreApi stores,EntitlementApi benefits,OrderApi orders,AftersaleApi aftersales,RuleDecisionPort rules,Clock clock,PlatformTransactionManager manager) {
+    public JourneyService(JourneyMapper mapper,Commands commands,MemberApi members,StoreApi stores,EntitlementApi benefits,OrderApi orders,AftersaleApi aftersales,RuleDecisionPort rules,Clock clock,PlatformTransactionManager manager,com.lrj.commerce.member.api.MemberGrowthApi memberGrowth) {
+        this.memberGrowth=memberGrowth;
         this.mapper=mapper;this.commands=commands;this.members=members;this.stores=stores;this.benefits=benefits;this.orders=orders;this.aftersales=aftersales;this.rules=rules;this.clock=clock;
         tx=new TransactionTemplate(manager);tx.setTimeout(10);
     }
@@ -157,8 +159,7 @@ public class JourneyService implements JourneyApi, EventHandler {
             case END -> {next=node.id();state=State.COMPLETED;result="FINISHED";}
             case WAIT -> {state=State.WAITING;due=now.plusSeconds(node.seconds());}
             case DECIDE -> {
-                Map<String,Fact> facts=new HashMap<>();facts.put("memberLevel",new Fact.Text(member.memberLevel()));
-                if(row.orderId()!=null)facts.put("orderAmount",new Fact.Decimal(new java.math.BigDecimal(orders.internalRead(tenant,row.orderId()).payable())));
+                Map<String,Fact> facts=com.lrj.commerce.campaign.api.MemberRuleFacts.from(memberGrowth.facts(tenant,member.memberId()),row.orderId()==null?null:orders.internalRead(tenant,row.orderId()).payable());
                 var truth=rules.evaluate(node.rule().toCondition(),facts);
                 if(truth==Condition.Truth.UNKNOWN){next=node.id();state=State.COMPLETED;result="RULE_UNKNOWN";}else next=truth==Condition.Truth.MATCH?node.yesNext():node.noNext();
             }

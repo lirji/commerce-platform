@@ -11,6 +11,8 @@ public interface GrowthMapper {
  record Account(long growth,String netSpend,long policyVersion,long version) { }
  record Source(String orderId,String memberId,String paid,boolean completed,long policyVersion,String growthRate,long contribution,String netSpend) { }
  record Refund(String orderId,String amount) { }
+ record FactRow(String memberId,String memberLevel,String status,long growth,String netSpend,String tagId) { }
+ List<FactRow> scan(@Param("tenant") String tenant,@Param("after") String after,@Param("limit") int limit,@Param("before") Instant before);
  void policy(@Param("tenant") String tenant,@Param("input") MemberGrowthApi.Policy input,@Param("json") String json);
  PolicyRow effective(@Param("tenant") String tenant,@Param("at") Instant at);
  List<PolicyRow> policies(@Param("tenant") String tenant,@Param("after") long after,@Param("limit") int limit);

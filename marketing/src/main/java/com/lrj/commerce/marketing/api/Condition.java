@@ -11,12 +11,14 @@ public sealed interface Condition permits Condition.Compare, Condition.All, Cond
     record Literal(Truth value) implements Condition {
         public Literal { if(value==null)throw new DomainException(DomainException.Code.INVALID_INPUT,"资格结果不能为空"); }
     }
-    enum Operator { EQ, GT, GTE, LT, LTE }
+    enum Operator { EQ, GT, GTE, LT, LTE, CONTAINS }
 
     record Compare(String field, Operator operator, Fact expected) implements Condition {
         public Compare {
             Identifiers.require(field);
-            if (operator == null || expected == null || (expected instanceof Fact.Text && operator != Operator.EQ)) {
+            if (operator == null || expected == null || expected instanceof Fact.Tags
+                || (expected instanceof Fact.Text && operator != Operator.EQ && operator != Operator.CONTAINS)
+                || (expected instanceof Fact.Decimal && operator == Operator.CONTAINS)) {
                 throw new DomainException(DomainException.Code.INVALID_INPUT, "比较类型或操作符无效");
             }
         }

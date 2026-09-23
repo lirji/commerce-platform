@@ -29,10 +29,12 @@ export function RuleEditor({
   value,
   onChange,
   depth = 0,
+  memberOnly = false,
 }: {
   value?: Rule;
   onChange?: (value: Rule) => void;
   depth?: number;
+  memberOnly?: boolean;
 }) {
   const rule = value ?? {
     kind: "COMPARE",
@@ -94,12 +96,16 @@ export function RuleEditor({
               options={[
                 { value: "memberLevel", label: "会员等级" },
                 { value: "orderAmount", label: "订单金额" },
-              ]}
+                { value: "memberGrowth", label: "会员成长" },
+                { value: "memberNetSpend", label: "完成净消费" },
+                { value: "memberTags", label: "会员标签" },
+                { value: "memberStatus", label: "会员状态" },
+              ].filter(f=>!memberOnly||f.value!=="orderAmount")}
               onChange={(field) =>
                 change({
                   field,
-                  valueType: field === "orderAmount" ? "DECIMAL" : "TEXT",
-                  operator: field === "orderAmount" ? "GTE" : "EQ",
+                  valueType: ["orderAmount","memberGrowth","memberNetSpend"].includes(field) ? "DECIMAL" : "TEXT",
+                  operator: field === "memberTags" ? "CONTAINS" : ["orderAmount","memberGrowth","memberNetSpend"].includes(field) ? "GTE" : "EQ",
                 })
               }
             />
@@ -107,12 +113,13 @@ export function RuleEditor({
               aria-label="比较方式"
               value={rule.operator}
               style={{ width: 110 }}
-              options={(rule.field === "memberLevel"
+              options={(rule.field === "memberTags" ? ["CONTAINS"] : ["memberLevel","memberStatus"].includes(rule.field??"")
                 ? ["EQ"]
                 : ["EQ", "GT", "GTE", "LT", "LTE"]
               ).map((x) => ({
                 value: x,
                 label: {
+                  CONTAINS: "包含标签",
                   EQ: "等于",
                   GT: "大于",
                   GTE: "大于等于",
@@ -139,6 +146,7 @@ export function RuleEditor({
               <RuleEditor
                 value={child}
                 depth={depth + 1}
+                memberOnly={memberOnly}
                 onChange={(next) =>
                   change({
                     children: rule.children!.map((r, j) =>

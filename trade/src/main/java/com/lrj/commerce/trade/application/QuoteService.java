@@ -19,8 +19,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class QuoteService implements QuoteApi {
     private final com.lrj.commerce.campaign.api.CampaignFundingApi funding;private final com.lrj.commerce.benefit.api.CouponApi coupons;private final QuoteMapper mapper;private final Commands commands;private final MemberApi members;private final StoreApi stores;
-    private final CatalogApi catalog;private final CampaignApi campaigns;private final DecisionPort decisions;private final Clock clock;
-    public QuoteService(QuoteMapper mapper,Commands commands,MemberApi members,StoreApi stores,CatalogApi catalog,CampaignApi campaigns,DecisionPort decisions,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding) {this.funding=funding;this.coupons=coupons;
+    private final com.lrj.commerce.member.api.MemberGrowthApi memberGrowth;private final CatalogApi catalog;private final CampaignApi campaigns;private final DecisionPort decisions;private final Clock clock;
+    public QuoteService(QuoteMapper mapper,Commands commands,MemberApi members,StoreApi stores,CatalogApi catalog,CampaignApi campaigns,DecisionPort decisions,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding,com.lrj.commerce.member.api.MemberGrowthApi memberGrowth) {this.memberGrowth=memberGrowth;this.funding=funding;this.coupons=coupons;
         this.mapper=mapper;this.commands=commands;this.members=members;this.stores=stores;this.catalog=catalog;this.campaigns=campaigns;this.decisions=decisions;this.clock=clock;
     }
     /** 先规范化购物清单；同键换序或拆分同一SKU数量不产生第二张报价。 */
@@ -42,7 +42,7 @@ public class QuoteService implements QuoteApi {
             var candidates=campaigns.candidates(actor,store.storeId(),member.memberId(),now);
             var gross=lines.stream().map(l->l.unitPrice().multiply(l.quantity())).reduce(Money.ZERO,Money::add);
             var priced=decisions.decide(new DecisionModels.Request(new DecisionModels.Scope(actor.tenantId(),store.merchantId(),store.storeId()),member.memberId(),now,lines,
-                Map.of("memberLevel",new Fact.Text(member.memberLevel()),"orderAmount",new Fact.Decimal(gross.amount())),candidates.offers()));
+                com.lrj.commerce.campaign.api.MemberRuleFacts.from(memberGrowth.facts(actor.tenantId(),member.memberId()),gross.amount().toPlainString()),candidates.offers()));
             var selectedCampaign=priced.selected();Money campaignDiscount=priced.discount();Money couponDiscount=Money.ZERO;
             com.lrj.commerce.benefit.api.CouponApi.Application couponApplication=null;String couponStatus="NOT_REQUESTED";
             var expires=now.plusSeconds(300);

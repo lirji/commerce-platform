@@ -303,12 +303,14 @@ export function ActionButton({
   label,
   onDone,
   danger = false,
+  disabled = false,
 }: {
   path: string;
   body?: unknown;
   label: string;
   onDone: () => void;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   const c = useCommand();
   return (
@@ -316,6 +318,7 @@ export function ActionButton({
       <Button
         size="small"
         danger={danger}
+        disabled={disabled}
         loading={c.busy}
         onClick={async () => {
           if ((await c.run(path, body)) !== undefined) onDone();

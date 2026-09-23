@@ -37,7 +37,7 @@ class RuleEvaluatorTest {
     }
 
     @Test void exactNumericComparisonAndAllOperators() {
-        for (var op : Condition.Operator.values()) {
+        for (var op : List.of(Condition.Operator.EQ,Condition.Operator.GT,Condition.Operator.GTE,Condition.Operator.LT,Condition.Operator.LTE)) {
             var c = new Condition.Compare("n", op, new Fact.Decimal(new BigDecimal("10.0")));
             var result = evaluator.evaluate(c, Map.of("n", new Fact.Decimal(new BigDecimal("10.00"))));
             assertEquals(op == Condition.Operator.GT || op == Condition.Operator.LT ? NO_MATCH : MATCH, result);
@@ -78,4 +78,13 @@ class RuleEvaluatorTest {
         org.junit.jupiter.api.Assertions.assertEquals(com.lrj.commerce.marketing.domain.RuleEvaluator.Outcome.UNKNOWN,
             evaluator.evaluate(new com.lrj.commerce.marketing.api.Condition.Not(new com.lrj.commerce.marketing.api.Condition.Literal(com.lrj.commerce.marketing.api.Condition.Truth.UNKNOWN)),java.util.Map.of()));
     }
+    @Test void tagsUseExactSetMembershipAndMissingTagsStayUnknown() {
+        var contains=new Condition.Compare("memberTags",Condition.Operator.CONTAINS,new Fact.Text("vip"));
+        assertEquals(MATCH,evaluator.evaluate(contains,Map.of("memberTags",new Fact.Tags(java.util.Set.of("vip","loyal")))));
+        assertEquals(NO_MATCH,evaluator.evaluate(contains,Map.of("memberTags",new Fact.Tags(java.util.Set.of("super-vip")))));
+        assertEquals(UNKNOWN,evaluator.evaluate(new Condition.Not(contains),Map.of()));
+        assertEquals(UNKNOWN,evaluator.evaluate(contains,Map.of("memberTags",new Fact.Text("vip"))));
+        assertThrows(DomainException.class,()->new Condition.Compare("growth",Condition.Operator.CONTAINS,new Fact.Decimal(BigDecimal.TEN)));
+    }
+
 }

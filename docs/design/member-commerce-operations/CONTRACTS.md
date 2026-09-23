@@ -32,3 +32,11 @@ POST /admin/member-growth/policies `{version,effectiveFrom,growthPerYuan,levels:
 GET /admin/member-growth/policies分页；GET /admin/member-growth/{memberId}、/ledger；POST /admin/member-growth/{memberId}/adjust `{expectedVersion,delta,reason}`，人工校准必须入账，不是可提现余额。余额允许因人工扣减后的退款形成负成长，等级按max(0,余额)判断，不丢失冲回债务。等级在成长变更或显式重算时按当前生效门槛刷新，策略发布不隐含全会员同步升级。POST /admin/member-growth/{memberId}/recalculate显式重算等级。会员本人GET /members/me/growth与/ledger，不可指定其他会员。
 
 POST /admin/member-tags `{tagId,name}`；GET同路由分页；POST /admin/member-tags/{memberId}/assign `{tagId,active,expectedVersion,reason}`，初次expectedVersion0，记录版本、来源MANUAL和原因；GET /admin/member-tags/{memberId}/assignments分页。单会员最多64个活跃标签，字典与关联均绑定租户。内部facts端口返回可信成长/净消费/等级/状态和标签，不开放客户端事实覆盖。
+
+## OP05 动态人群与可信规则 DTO
+
+规则新增memberGrowth、memberNetSpend（DECIMAL）、memberStatus（TEXT EQ）、memberTags（TEXT CONTAINS，精确标签标识，非子串匹配）。订单金额只在实际订单/模拟场景提供；人群规则不得依赖orderAmount。UNKNOWN经NOT仍为UNKNOWN，不作为命中。
+
+POST /admin/segments `{segmentId,version,name,rule,ttlSeconds,refreshSeconds,maxMembers}` 发布不可变定义；TTL 300–86400秒，refreshSeconds=0手工或60–TTL秒，单任务上限100–100000会员。GET /admin/segments最新定义列表。POST /admin/segments/{id}/refresh创建持久任务，同人群只允许一个运行任务；后台与POST /admin/segments/pump每次最多处理100会员。GET /admin/segments/{id}/runs查看进度，POST /admin/segment-runs/{id}/cancel终止未发布任务，/retry恢复ISOLATED任务。失败最多5次后隔离，保留游标，重试不重复添加成员。POST /admin/segments/{id}/schedule `{expectedVersion,enabled}`启停周期刷新。
+
+扫描仅纳入任务开始前创建的会员，按memberId稳定游标；不同批次读取时刻不同，明确是刷新区间视图而非数据库同一时刻快照。仅ACTIVE会员可入组。未完成任务只写不可见成员投影，全部扫描成功才插入快照头，使版本原子可见；过期/超额/取消不发布。旧完整快照按原TTL可继续使用。动态快照ID使用保留前缀dyn-，手工导入不能使用。每次完整快照不可变，已有活动继续绑定原快照；运营发布新活动版本才切换受众，避免活动执行中隐式改圈选。

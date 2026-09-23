@@ -49,10 +49,15 @@ public final class RuleEvaluator {
     }
 
     private Outcome compare(Condition.Compare comparison, Fact actual) {
+        if(comparison.operator()==Condition.Operator.CONTAINS){
+            if(!(actual instanceof Fact.Tags tags)||!(comparison.expected() instanceof Fact.Text text))return Outcome.UNKNOWN;
+            return tags.values().contains(text.value())?Outcome.MATCH:Outcome.NO_MATCH;
+        }
         if (actual == null || actual.getClass() != comparison.expected().getClass()) return Outcome.UNKNOWN;
         int order = switch (actual) {
             case Fact.Decimal decimal -> decimal.value().compareTo(((Fact.Decimal) comparison.expected()).value());
             case Fact.Text text -> text.value().compareTo(((Fact.Text) comparison.expected()).value());
+            case Fact.Tags ignored -> throw new IllegalStateException("标签只允许集合包含比较");
         };
         boolean matches = switch (comparison.operator()) {
             case EQ -> order == 0;
@@ -60,6 +65,7 @@ public final class RuleEvaluator {
             case GTE -> order >= 0;
             case LT -> order < 0;
             case LTE -> order <= 0;
+            case CONTAINS -> false; // 集合比较已经在上方处理。
         };
         return matches ? Outcome.MATCH : Outcome.NO_MATCH;
     }

@@ -23,4 +23,6 @@ public interface MemberGrowthApi {
  /** 内部可信事实入口，强制加入调用者事务，不开放HTTP。 */
  void observe(String tenant,OrderFact fact);
  Facts facts(String tenant,String memberId);
+ /** 截止创建时间的有界批次，不把整个会员库加载进内存。 */
+ List<Facts> scan(String tenant,String after,int limit,Instant createdBefore);
 }

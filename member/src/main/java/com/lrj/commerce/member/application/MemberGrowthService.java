@@ -71,6 +71,13 @@ public class MemberGrowthService implements MemberGrowthApi {
  }
  /** 规则所需数据从权威会员投影读取，不接收客户端自报标签。 */
  public Facts facts(String tenant,String id){Identifiers.require(tenant);Identifiers.require(id);var member=Inputs.found(members.find(tenant,id));var account=mapper.account(tenant,id);return new Facts(id,member.memberLevel(),member.status(),account==null?0:account.growth(),account==null?"0.00":account.netSpend(),mapper.tags(tenant,id));}
+ /** 单SQL批量投影，最多100会员及其64标签，避免分群时逐会员N+1。 */
+ public List<Facts> scan(String tenant,String after,int limit,java.time.Instant before){
+  Identifiers.require(tenant);Inputs.page(after,limit);Inputs.require(before!=null,"扫描截止时间缺失");
+  var rows=mapper.scan(tenant,after,limit,before);var grouped=new LinkedHashMap<String,List<GrowthMapper.FactRow>>();
+  for(var row:rows)grouped.computeIfAbsent(row.memberId(),ignored->new ArrayList<>()).add(row);
+  return grouped.values().stream().map(group->{var row=group.getFirst();return new Facts(row.memberId(),row.memberLevel(),row.status(),row.growth(),row.netSpend(),group.stream().map(GrowthMapper.FactRow::tagId).filter(Objects::nonNull).toList());}).toList();
+ }
  private MemberApi.View lock(String tenant,String id){var member=Inputs.found(mapper.lockMember(tenant,id));mapper.ensureAccount(tenant,id);return member;}
  private void apply(String tenant,MemberApi.View member,GrowthMapper.Account account,long delta,BigDecimal net,String source,long sourcePolicy,String reason,boolean ledger){
   long balance=Math.addExact(account.growth(),delta);Inputs.require(balance>=-9000000000000000L&&balance<=9000000000000000L,"成长余额超限");
