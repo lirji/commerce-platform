@@ -29,6 +29,8 @@ export function Shop({
   );
   const coupons = useResource<Coupon[]>("/coupons");
   const [basket, setBasket] = useState<Record<string, number>>({});
+  const pointWallet = useResource<{ available: number }>("/members/me/points");
+  const [redeemPoints, setRedeemPoints] = useState(0);
   const [coupon, setCoupon] = useState<string>();
   const [quote, setQuote] = useState<Quote>();
   const [bag, setBag] = useState(false);
@@ -47,6 +49,7 @@ export function Shop({
         .filter(([, q]) => q > 0)
         .map(([skuId, quantity]) => ({ skuId, quantity })),
       ...(coupon ? { couponId: coupon } : {}),
+      ...(redeemPoints > 0 ? { redeemPoints } : {}),
     });
     if (result) setQuote(result);
   };
@@ -166,6 +169,10 @@ export function Shop({
                     }))}
                 />
               </Form.Item>
+              <Form.Item label="使用积分上限" htmlFor="checkout-points" help={`可用积分 ${pointWallet.data?.available ?? "—"}，实际抵扣以服务端报价为准。`}>
+                <InputNumber id="checkout-points" min={0} max={Math.min(1000000000, pointWallet.data?.available ?? 0)} precision={0} value={redeemPoints} onChange={v => { setRedeemPoints(v ?? 0); setQuote(undefined); }} disabled={pointWallet.loading || !!pointWallet.error} style={{ width: "100%" }} />
+              </Form.Item>
+              <ErrorNotice error={pointWallet.error} />
             </Form>
             <Button
               type="primary"
@@ -195,6 +202,11 @@ export function Shop({
                   children: money(quote.discount),
                 },
                 {
+                  key: "points",
+                  label: "积分抵扣",
+                  children: quote.points ? `${quote.points.points} 积分 / ${money(quote.points.discount)}` : "本次未使用积分",
+                },
+                {
                   key: "payable",
                   label: "应付金额",
                   children: (
@@ -222,6 +234,8 @@ export function Shop({
                 if (result) {
                   form.resetFields();
                   setBasket({});
+                  setRedeemPoints(0);
+                  pointWallet.refresh();
                   setQuote(undefined);
                   setBag(false);
                   onOrder();

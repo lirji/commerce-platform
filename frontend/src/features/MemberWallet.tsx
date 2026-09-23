@@ -192,6 +192,7 @@ export function MemberWallet({
               { title: "申请编号", dataIndex: "caseId", ellipsis: true },
               { title: "订单编号", dataIndex: "orderId", ellipsis: true },
               { title: "退款金额", dataIndex: "refundAmount", render: money },
+              { title: "名义返还积分", render: (_, r) => r.items.reduce((sum, line) => sum + (line.points ?? 0), 0) },
               {
                 title: "处理状态",
                 dataIndex: "status",

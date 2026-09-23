@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.member.infrastructure.PointsSpendMapper">
+ <select id="hold" resultType="com.lrj.commerce.member.infrastructure.PointsSpendMapper$Hold">SELECT member_id,policy_version,points,CAST(discount AS CHAR) discount,status,returned_points FROM member_point_hold WHERE tenant_id=#{tenant} AND order_id=#{order} FOR UPDATE</select>
+ <insert id="insert">INSERT INTO member_point_hold(tenant_id,order_id,member_id,policy_version,points,discount,status,returned_points) VALUES(#{tenant},#{order},#{member},#{application.policyVersion},#{application.points},#{application.discount},'RESERVED',0)</insert>
+ <update id="transition">UPDATE member_point_hold SET status=#{after} WHERE tenant_id=#{tenant} AND order_id=#{order} AND status=#{before}</update>
+ <insert id="allocate">INSERT INTO member_point_allocation(tenant_id,order_id,lot_id,points,sequence_no,returned_points) VALUES(#{tenant},#{order},#{lot},#{points},#{sequence},0)</insert>
+ <select id="allocations" resultType="com.lrj.commerce.member.infrastructure.PointsSpendMapper$Allocation">SELECT lot_id,points,returned_points FROM member_point_allocation WHERE tenant_id=#{tenant} AND order_id=#{order} ORDER BY sequence_no LIMIT 200 FOR UPDATE</select>
+ <update id="allocationReturn">UPDATE member_point_allocation SET returned_points=returned_points+#{points} WHERE tenant_id=#{tenant} AND order_id=#{order} AND lot_id=#{lot} AND returned_points+#{points}&lt;=points</update>
+ <update id="returned">UPDATE member_point_hold SET returned_points=returned_points+#{points} WHERE tenant_id=#{tenant} AND order_id=#{order} AND status='CONSUMED' AND returned_points+#{points}&lt;=points</update>
+ <select id="refund" resultType="com.lrj.commerce.member.infrastructure.PointsSpendMapper$Returned">SELECT order_id,points FROM member_point_return WHERE tenant_id=#{tenant} AND case_id=#{id} FOR UPDATE</select>
+ <insert id="refundInsert">INSERT INTO member_point_return(tenant_id,case_id,order_id,points) VALUES(#{tenant},#{id},#{order},#{points})</insert>
+</mapper>

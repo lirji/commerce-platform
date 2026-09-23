@@ -101,6 +101,8 @@ export type QuoteLine = {
   gross: string;
   discount: string;
   payable: string;
+  points?: number;
+  pointDiscount?: string;
 };
 export type Quote = {
   quoteId: string;
@@ -112,6 +114,7 @@ export type Quote = {
   items: QuoteLine[];
   campaign?: { campaignId: string };
   couponStatus?: string;
+  points?: { policyVersion: number; points: number; discount: string } | null;
   trace: unknown;
 };
 export type Order = {
@@ -142,7 +145,7 @@ export type Aftersale = {
   refundAmount: string;
   returnRequired: boolean;
   refundId: string | null;
-  items: { skuId: string; quantity: number; refundAmount: string }[];
+  items: { skuId: string; quantity: number; refundAmount: string; points?: number }[];
 };
 export type Fulfillment = {
   orderId: string;

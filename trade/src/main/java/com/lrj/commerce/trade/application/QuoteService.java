@@ -18,9 +18,9 @@ import org.springframework.stereotype.Service;
 /** 报价编排只消费各领域API，服务端快照与命令结果同事务提交。 */
 @Service
 public class QuoteService implements QuoteApi {
-    private final com.lrj.commerce.campaign.api.CampaignFundingApi funding;private final com.lrj.commerce.benefit.api.CouponApi coupons;private final QuoteMapper mapper;private final Commands commands;private final MemberApi members;private final StoreApi stores;
+    private final com.lrj.commerce.member.api.PointsSpendApi points;private final com.lrj.commerce.campaign.api.CampaignFundingApi funding;private final com.lrj.commerce.benefit.api.CouponApi coupons;private final QuoteMapper mapper;private final Commands commands;private final MemberApi members;private final StoreApi stores;
     private final com.lrj.commerce.member.api.MemberGrowthApi memberGrowth;private final CatalogApi catalog;private final CampaignApi campaigns;private final DecisionPort decisions;private final Clock clock;
-    public QuoteService(QuoteMapper mapper,Commands commands,MemberApi members,StoreApi stores,CatalogApi catalog,CampaignApi campaigns,DecisionPort decisions,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding,com.lrj.commerce.member.api.MemberGrowthApi memberGrowth) {this.memberGrowth=memberGrowth;this.funding=funding;this.coupons=coupons;
+    public QuoteService(QuoteMapper mapper,Commands commands,MemberApi members,StoreApi stores,CatalogApi catalog,CampaignApi campaigns,DecisionPort decisions,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding,com.lrj.commerce.member.api.MemberGrowthApi memberGrowth,com.lrj.commerce.member.api.PointsSpendApi points) {this.points=points;this.memberGrowth=memberGrowth;this.funding=funding;this.coupons=coupons;
         this.mapper=mapper;this.commands=commands;this.members=members;this.stores=stores;this.catalog=catalog;this.campaigns=campaigns;this.decisions=decisions;this.clock=clock;
     }
     /** 先规范化购物清单；同键换序或拆分同一SKU数量不产生第二张报价。 */
@@ -32,7 +32,7 @@ public class QuoteService implements QuoteApi {
             Inputs.require(item!=null&&item.quantity()>=1&&item.quantity()<=10000,"购买数量无效");Identifiers.require(item.skuId());
             int count=quantities.getOrDefault(item.skuId(),0)+item.quantity();Inputs.require(count<=10000,"合并购买数量超限");quantities.put(item.skuId(),count);
         }
-        var normalized=new Request(input.storeId(),quantities.entrySet().stream().map(e->new Selection(e.getKey(),e.getValue())).toList(),input.couponId());
+        var normalized=new Request(input.storeId(),quantities.entrySet().stream().map(e->new Selection(e.getKey(),e.getValue())).toList(),input.couponId(),input.redeemPoints());
         return commands.run(actor,"quote.create",key,normalized,View.class,()->{
             var member=members.current(actor);members.requireActive(actor,member.memberId());
             var store=stores.requireActive(actor,input.storeId());
@@ -53,7 +53,9 @@ public class QuoteService implements QuoteApi {
                 couponStatus=couponDiscount.compareTo(Money.ZERO)>0?"APPLIED":"NOT_SELECTED";
                 if(couponDiscount.compareTo(Money.ZERO)>0){couponApplication=new com.lrj.commerce.benefit.api.CouponApi.Application(coupon.couponId(),coupon.definitionId(),coupon.version(),couponDiscount.amount().toPlainString(),coupon.platformFundingBps());if(coupon.validTo().isBefore(expires))expires=coupon.validTo();}
             }
-            Money totalDiscount=campaignDiscount.add(couponDiscount);
+            var pointApplication=points.preview(actor,member.memberId(),input.redeemPoints()==null?0:input.redeemPoints(),gross.subtract(campaignDiscount).subtract(couponDiscount).amount().toPlainString());
+            Money pointDiscount=pointApplication==null?Money.ZERO:new Money(new BigDecimal(pointApplication.discount()));
+            Money totalDiscount=campaignDiscount.add(couponDiscount).add(pointDiscount);
             var promotion=funding.commitment(actor,selectedCampaign,campaignDiscount.amount().toPlainString());
             Money campaignPlatform=promotion==null?Money.ZERO:new Money(new BigDecimal(promotion.platformFunding()));
             int couponBps=couponApplication==null?0:couponApplication.platformFundingBps();
@@ -61,18 +63,24 @@ public class QuoteService implements QuoteApi {
             var campaignLines=selectedCampaign==null?decisions.allocate(lines,Money.ZERO):priced.lines();
             var couponBase=campaignLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.payable(),1)).toList();
             var couponLines=decisions.allocate(couponBase,couponDiscount);
+            var pointLines=decisions.allocate(couponLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.payable(),1)).toList(),pointDiscount);
             var campaignFunded=decisions.allocate(campaignLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.discount(),1)).toList(),campaignPlatform);
             var couponFunded=decisions.allocate(couponLines.stream().map(l->new DecisionModels.Line(l.lineId(),l.skuId(),l.discount(),1)).toList(),couponPlatform);
             var skuById=new HashMap<String,CatalogApi.View>();skus.forEach(sku->skuById.put(sku.skuId(),sku));
             List<Line> resultLines=new ArrayList<>();List<FundingLine> fundingLines=new ArrayList<>();
+            long cumulativePointCents=0,allocatedPoints=0;
             for(int index=0;index<campaignLines.size();index++){
-                var campaignLine=campaignLines.get(index);var couponLine=couponLines.get(index);var sku=skuById.get(campaignLine.skuId());Money lineDiscount=campaignLine.discount().add(couponLine.discount());
-                Money linePlatform=campaignFunded.get(index).discount().add(couponFunded.get(index).discount());
-                resultLines.add(new Line(sku.skuId(),sku.revision(),sku.title(),quantities.get(sku.skuId()),sku.unitPrice(),campaignLine.gross().amount().toPlainString(),lineDiscount.amount().toPlainString(),couponLine.payable().amount().toPlainString()));
-                fundingLines.add(new FundingLine(sku.skuId(),campaignLine.discount().amount().toPlainString(),couponLine.discount().amount().toPlainString(),linePlatform.amount().toPlainString(),lineDiscount.subtract(linePlatform).amount().toPlainString()));
+                var campaignLine=campaignLines.get(index);var couponLine=couponLines.get(index);var sku=skuById.get(campaignLine.skuId());var pointLine=pointLines.get(index);Money lineDiscount=campaignLine.discount().add(couponLine.discount()).add(pointLine.discount());
+                Money linePlatform=campaignFunded.get(index).discount().add(couponFunded.get(index).discount()).add(pointLine.discount());
+                // 积分整数按抵扣分累计分配，尾差留给确定顺序的后续行，保证部分退款总和守恒。
+                cumulativePointCents+=pointLine.discount().minorUnits();
+                long cumulativePoints=pointApplication==null?0:java.math.BigInteger.valueOf(pointApplication.points()).multiply(java.math.BigInteger.valueOf(cumulativePointCents)).divide(java.math.BigInteger.valueOf(pointDiscount.minorUnits())).longValueExact();
+                long linePoints=cumulativePoints-allocatedPoints;allocatedPoints=cumulativePoints;
+                resultLines.add(new Line(sku.skuId(),sku.revision(),sku.title(),quantities.get(sku.skuId()),sku.unitPrice(),campaignLine.gross().amount().toPlainString(),lineDiscount.amount().toPlainString(),pointLine.payable().amount().toPlainString(),linePoints,pointLine.discount().amount().toPlainString()));
+                fundingLines.add(new FundingLine(sku.skuId(),campaignLine.discount().amount().toPlainString(),couponLine.discount().amount().toPlainString(),linePlatform.amount().toPlainString(),lineDiscount.subtract(linePlatform).amount().toPlainString(),pointLine.discount().amount().toPlainString()));
             }
-            Money platform=campaignPlatform.add(couponPlatform);var fundingSnapshot=new Funding(platform.amount().toPlainString(),totalDiscount.subtract(platform).amount().toPlainString(),fundingLines);
-            var result=new View(UUID.randomUUID().toString(),member.memberId(),store.merchantId(),store.storeId(),"CNY",gross.amount().toPlainString(),totalDiscount.amount().toPlainString(),gross.subtract(totalDiscount).amount().toPlainString(),now,expires,resultLines,selectedCampaign,priced.trace(),candidates.sources(),couponApplication,campaignDiscount.amount().toPlainString(),couponStatus,promotion,fundingSnapshot);
+            Money platform=campaignPlatform.add(couponPlatform).add(pointDiscount);var fundingSnapshot=new Funding(platform.amount().toPlainString(),totalDiscount.subtract(platform).amount().toPlainString(),fundingLines);
+            var result=new View(UUID.randomUUID().toString(),member.memberId(),store.merchantId(),store.storeId(),"CNY",gross.amount().toPlainString(),totalDiscount.amount().toPlainString(),gross.subtract(totalDiscount).amount().toPlainString(),now,expires,resultLines,selectedCampaign,priced.trace(),candidates.sources(),couponApplication,campaignDiscount.amount().toPlainString(),couponStatus,promotion,fundingSnapshot,pointApplication);
             mapper.insert(actor.tenantId(),result,JsonCodec.write(result));return result;
         });
     }

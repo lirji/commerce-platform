@@ -20,6 +20,7 @@ public interface PointsMapper {
     void ensure(@Param("tenant") String tenant,@Param("member") String member);
     Account account(@Param("tenant") String tenant,@Param("member") String member);
     int accountChange(@Param("tenant") String tenant,@Param("member") String member,@Param("debt") long debt,@Param("expected") long expected);
+    MemberPointsApi.Wallet walletRead(@Param("tenant") String tenant,@Param("member") String member,@Param("at") Instant at);
     Totals totals(@Param("tenant") String tenant,@Param("member") String member,@Param("at") Instant at);
     Source source(@Param("tenant") String tenant,@Param("order") String order);
     void sourceInsert(@Param("tenant") String tenant,@Param("f") MemberGrowthApi.OrderFact fact,@Param("version") long version,@Param("rate") String rate,@Param("days") int days);

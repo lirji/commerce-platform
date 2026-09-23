@@ -3,7 +3,7 @@
 <mapper namespace="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper">
  <sql id="view">case_id,order_id,member_id,status,return_required,CAST(refund_amount AS CHAR) refund_amount,refund_id,version,items_json</sql>
  <insert id="insert">INSERT INTO aftersales_case(tenant_id,case_id,order_id,member_id,status,return_required,refund_amount,version,reason,items_json) VALUES(#{tenant},#{view.caseId},#{view.orderId},#{view.memberId},#{view.status},#{view.returnRequired},#{view.refundAmount},#{view.version},#{reason},#{items})</insert>
- <insert id="line">INSERT INTO aftersales_line(tenant_id,case_id,sku_id,quantity,refund_amount) VALUES(#{tenant},#{caseId},#{line.skuId},#{line.quantity},#{line.refundAmount})</insert>
+ <insert id="line">INSERT INTO aftersales_line(tenant_id,case_id,sku_id,quantity,refund_amount,points) VALUES(#{tenant},#{caseId},#{line.skuId},#{line.quantity},#{line.refundAmount},#{line.points})</insert>
  <select id="find" resultType="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper$Row">SELECT <include refid="view"/> FROM aftersales_case WHERE tenant_id=#{tenant} AND case_id=#{id}</select>
  <select id="lock" resultType="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper$Row">SELECT <include refid="view"/> FROM aftersales_case WHERE tenant_id=#{tenant} AND case_id=#{id} FOR UPDATE</select>
  <select id="list" resultType="com.lrj.commerce.aftersales.infrastructure.AftersaleMapper$Row">SELECT <include refid="view"/> FROM aftersales_case WHERE tenant_id=#{tenant} <if test="member != null">AND member_id=#{member}</if> AND case_id&gt;#{after} ORDER BY case_id LIMIT #{limit}</select>

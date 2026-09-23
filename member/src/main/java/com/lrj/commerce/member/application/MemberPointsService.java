@@ -54,12 +54,12 @@ public class MemberPointsService implements MemberPointsApi {
     }
 
     /** 只读钱包按实际时间过滤到期批次，后台延迟不会扩大可用额。 */
-    public Wallet wallet(Actor actor,String memberId) {authorize(actor,memberId);return wallet(actor.tenantId(),memberId);}
+    public Wallet wallet(Actor actor,String memberId) {authorize(actor,memberId);return mapper.walletRead(actor.tenantId(),memberId,clock.instant());}
 
     /** 本人主体来自认证绑定，不接受客户端会员标识。 */
     public Wallet current(Actor actor) {
         if(actor.role()!=Actor.Role.MEMBER)throw new DomainException(DomainException.Code.FORBIDDEN,"仅会员可读取本人积分");
-        return wallet(actor.tenantId(),Inputs.found(members.byActor(actor.tenantId(),actor.actorId())).memberId());
+        return mapper.walletRead(actor.tenantId(),Inputs.found(members.byActor(actor.tenantId(),actor.actorId())).memberId(),clock.instant());
     }
 
     /** 账本永不原地改写，运营校准产生新记录。 */
@@ -147,7 +147,7 @@ public class MemberPointsService implements MemberPointsApi {
 
     private void credit(String tenant,String member,String lotId,long policyVersion,long amount,Instant expiresAt) {
         var account=mapper.account(tenant,member);var totals=mapper.totals(tenant,member,clock.instant());
-        Inputs.require(amount>0 && amount<=SOURCE_LIMIT && Math.addExact(totals.credit(),amount)<=ACCOUNT_LIMIT,"积分入账或账户总额超限");
+        Inputs.require(amount>0 && amount<=SOURCE_LIMIT && Math.addExact(Math.addExact(totals.credit(),totals.held()),amount)<=ACCOUNT_LIMIT,"积分入账或账户总额超限");
         long offset=Math.min(account.debt(),amount);
         mapper.insertLot(tenant,new PointsMapper.Lot(lotId,member,policyVersion,amount,amount-offset,0,0,expiresAt.truncatedTo(ChronoUnit.MILLIS)));
         changeAccount(tenant,member,account,account.debt()-offset);
@@ -171,20 +171,20 @@ public class MemberPointsService implements MemberPointsApi {
         var account=mapper.account(tenant,lot.memberId());changeAccount(tenant,lot.memberId(),account,account.debt());
         entry(tenant,lot.memberId(),Action.EXPIRE,lot.lotId(),-lot.remaining(),lot.policyVersion(),"积分原有效期届满，冻结部分保留供订单终态处理");
     }
-    private void changeLot(String tenant,PointsMapper.Lot lot,long remaining,long held,long expired) {
+    void changeLot(String tenant,PointsMapper.Lot lot,long remaining,long held,long expired) {
         if(mapper.changeLot(tenant,lot.lotId(),remaining,held,expired)!=1)throw conflict("积分批次更新冲突");
     }
-    private void changeAccount(String tenant,String member,PointsMapper.Account account,long debt) {
+    void changeAccount(String tenant,String member,PointsMapper.Account account,long debt) {
         Inputs.require(debt>=0 && debt<=ACCOUNT_LIMIT,"待偿扣回积分超限");
         if(mapper.accountChange(tenant,member,debt,account.version())!=1)throw conflict("积分账户更新冲突");
     }
-    private void entry(String tenant,String member,Action action,String source,long delta,long policy,String reason) {
+    void entry(String tenant,String member,Action action,String source,long delta,long policy,String reason) {
         mapper.entry(tenant,member,action.getCode(),source,delta,wallet(tenant,member),policy,reason,clock.instant());
     }
-    private MemberApi.View lock(String tenant,String member) {
+    MemberApi.View lock(String tenant,String member) {
         var value=Inputs.found(memberLocks.lockMember(tenant,member));mapper.ensure(tenant,member);return value;
     }
-    private Wallet wallet(String tenant,String member) {
+    Wallet wallet(String tenant,String member) {
         var account=mapper.account(tenant,member);var totals=mapper.totals(tenant,member,clock.instant());long debt=account==null?0:account.debt();
         return new Wallet(member,Math.max(0,totals.credit()-debt),totals.held(),debt,totals.credit(),account==null?0:account.version());
     }

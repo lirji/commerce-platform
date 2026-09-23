@@ -1,7 +1,7 @@
 # 进度
 
-2026-09-24：LP01、LP02、LP03 DONE，分别见证据文件。LP01本地提交dc0fa52；LP02含周期权益与深色主题基础，完整Maven verify 170项、全套Playwright 12场景通过，最终截图窄回归2场景通过。
+2026-09-24：LP01–LP04 DONE，见各片EVIDENCE。LP01 dc0fa52、LP02 186c261、LP03 f73a277。LP04最终完整Maven verify 183项PASS，积分结算浏览器及会员周期/积分共4场景PASS。整体尚未完成。
 
-LP03积分账本已完成：174项完整后端测试、积分/周期3个浏览器场景通过，见LP03_EVIDENCE。下一片LP04抵扣，先补细契约，再继续LP05兑换。LP04–LP11 TODO，整体交付未完成。技术/架构/影响Gate PASS；无新增依赖。
+下一片LP05积分兑换券/权益，细契约LP05_CONTRACT.md；LP05–LP11待实现。技术/架构/影响Gate PASS，无新增依赖。
 
-本地验收实例8604使用.local/member-suite-lp03.jar（复制件，避免后续构建覆盖正在运行的jar），隔离测试库V26、workers=false。原Docker8602未变。全套浏览器验收使用本次夹具租户事件pump，避免历史测试积压影响；未清旧数据。
+本地8604积分验收实例，隔离库V28，workers=false；原Docker8602 fa97292未变。无用户信息或环境阻塞。原工作区用户两处改动保持原样。后续继续浏览器/种子/CI及正常Git主线交付。

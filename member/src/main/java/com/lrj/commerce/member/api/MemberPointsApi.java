@@ -7,7 +7,7 @@ import java.util.List;
 public interface MemberPointsApi {
     /** 稳定持久化代码，新增动作不依赖枚举序号。 */
     enum Action {
-        EARN("EARN"), ADJUST("ADJUST"), REVOKE("REVOKE"), EXPIRE("EXPIRE");
+        EARN("EARN"), ADJUST("ADJUST"), REVOKE("REVOKE"), EXPIRE("EXPIRE"), HOLD("HOLD"), SPEND("SPEND"), RELEASE("RELEASE"), REFUND("REFUND");
         private final String code;
         Action(String code){this.code=code;}
         @com.fasterxml.jackson.annotation.JsonValue public String getCode(){return code;}
@@ -15,7 +15,7 @@ public interface MemberPointsApi {
     record Policy(long version,Instant effectiveFrom,String earnPerYuan,int expiryDays,boolean spendEnabled,int pointsPerYuan,int maxDeductionBps) { }
     record Wallet(String memberId,long available,long held,long debt,long credit,long version) { }
     record Adjustment(long expectedVersion,long delta,String reason) { }
-    record Entry(long sequenceId,Action action,String sourceId,long delta,long available,long debt,long policyVersion,String reason,Instant createdAt) { }
+    record Entry(long sequenceId,Action action,String sourceId,long delta,long available,long debt,long policyVersion,String reason,Instant createdAt,long held) { }
     /** 规则只追加，退款读取原订单所选版本。 */
     Policy publish(Actor actor,String key,Policy input);
     /** 策略历史分页。 */

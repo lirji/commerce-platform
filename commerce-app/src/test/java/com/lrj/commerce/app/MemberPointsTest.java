@@ -155,4 +155,24 @@ class MemberPointsTest {
         assertEquals(2,call("GET","/v1/members/me/points/ledger",member,null,null).body().size());
     }
     private void pumpAll() throws Exception {for(int i=0;i<6;i++)post("/v1/admin/events/pump",admin,null,null);}
+    @Test void distinctConcurrentRefundsUseCurrentRowsAfterWaitingForMemberLock() throws Exception {
+        seed();Instant at=testClock.instant();policy(1,"1.00",at);fact("earned","order1","100.00",at,true,null,null);
+        var barrier=new java.util.concurrent.CyclicBarrier(2);
+        try(var pool=Executors.newFixedThreadPool(2)) {
+            var tasks=new ArrayList<Future<?>>();
+            for(int i=0;i<2;i++) {
+                int index=i;
+                tasks.add(pool.submit(()->commands.run(new Actor(tenant,"admin",Actor.Role.ADMIN),"test.points.concurrent","refund-"+index,index,String.class,()->{
+                    // 先建立旧RR快照，强制覆盖真实在途事务等待会员锁的失败窗口。
+                    jdbc.queryForObject("SELECT COUNT(*) FROM member_point_ledger WHERE tenant_id=?",Integer.class,tenant);
+                    try { barrier.await(5,TimeUnit.SECONDS); } catch(Exception e){throw new IllegalStateException(e);}
+                    points.observe(tenant,new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("order1","m1","100.00",at,true,"refund-"+index,index==0?"20.00":"30.00"));return "ok";
+                })));
+            }
+            for(var task:tasks)task.get(10,TimeUnit.SECONDS);
+        }
+        assertEquals(50,wallet().path("available").asLong());
+        assertEquals(50,jdbc.queryForObject("SELECT contribution FROM member_point_order WHERE tenant_id=? AND order_id='order1'",Long.class,tenant));
+    }
+
 }

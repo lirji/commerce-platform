@@ -188,6 +188,8 @@ function OrderDetails({
               { title: "商品", dataIndex: "title" },
               { title: "数量", dataIndex: "quantity" },
               { title: "行实付", dataIndex: "payable", render: money },
+              { title: "抵扣积分", dataIndex: "points", render: v => v ?? 0 },
+              { title: "积分抵扣额", dataIndex: "pointDiscount", render: v => money(v ?? "0.00") },
             ]}
           />
           <Space wrap className="section-actions">

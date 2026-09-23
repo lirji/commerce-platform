@@ -5,7 +5,7 @@ import java.util.List;
 public interface AftersaleApi {
     record Item(String skuId,int quantity) { }
     record Request(String orderId,String reason,List<Item> items) { }
-    record Line(String skuId,int quantity,String refundAmount) { }
+    record Line(String skuId,int quantity,String refundAmount,Long points) { public Line { points=points==null?0L:points; } public Line(String skuId,int quantity,String refundAmount){this(skuId,quantity,refundAmount,0L);} }
     record View(String caseId,String orderId,String memberId,String status,boolean returnRequired,String refundAmount,String refundId,long version,List<Line> items) { }
     record Completion(String caseId,String orderId,String refundId,boolean fullReturn) { }
     View request(Actor actor,String key,Request input);

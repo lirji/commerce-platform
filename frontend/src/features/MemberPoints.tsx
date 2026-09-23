@@ -4,9 +4,9 @@ import { encode, useResource } from "../shared/api";
 import { ActionButton, CommandModal, ErrorNotice, instant, time } from "../shared/ui";
 
 type Wallet = { memberId: string; available: number; held: number; debt: number; credit: number; version: number };
-type Entry = { sequenceId: number; action: string; sourceId: string; delta: number; available: number; debt: number; policyVersion: number; reason: string; createdAt: string };
+type Entry = { sequenceId: number; action: string; sourceId: string; delta: number; available: number; debt: number; policyVersion: number; reason: string; createdAt: string; held: number };
 type Policy = { version: number; effectiveFrom: string; earnPerYuan: string; expiryDays: number; spendEnabled: boolean; pointsPerYuan: number; maxDeductionBps: number };
-const actions: Record<string, string> = { EARN: "消费奖励", ADJUST: "运营校准", REVOKE: "退款扣回", EXPIRE: "积分到期" };
+const actions: Record<string, string> = { EARN: "消费奖励", ADJUST: "运营校准", REVOKE: "退款扣回", EXPIRE: "积分到期", HOLD: "订单冻结", SPEND: "支付核销", RELEASE: "取消释放", REFUND: "售后返还" };
 
 /** 积分资产从独立账本读取，不能用页面累计成交或成长值自行估算。 */
 export function MemberPoints({ admin }: { admin: boolean }) {
@@ -43,6 +43,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
           { title: "时间", dataIndex: "createdAt", render: time, width: 180 }, { title: "类型", dataIndex: "action", render: v => actions[v] ?? v, width: 100 },
           { title: "变动积分", dataIndex: "delta", align: "right", width: 110, render: v => v > 0 ? `+${v}` : v },
           { title: "可用快照", dataIndex: "available", align: "right", width: 100 }, { title: "待偿快照", dataIndex: "debt", align: "right", width: 100 },
+          { title: "冻结快照", dataIndex: "held", align: "right", width: 100 },
           { title: "原因", dataIndex: "reason" }, { title: "来源", dataIndex: "sourceId", ellipsis: true, width: 200 },
         ]} />
         <Space className="section-actions"><Button disabled={!after} onClick={() => setAfter(0)}>最早积分记录</Button><Button disabled={ledger.data?.length !== 50} onClick={() => setAfter(ledger.data!.at(-1)!.sequenceId)}>下一页积分</Button></Space>

@@ -18,12 +18,12 @@ if path.exists() and '--fresh' not in sys.argv:
     access=json.loads(path.read_text())
     if access['schema']!=schema or access['baseUrl']!=base:raise SystemExit('Existing fixture targets another environment; use --fresh explicitly.')
 else:
-    access={'tenant':'member-suite-'+str(uuid.uuid4()),'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'operatorToken':secrets.token_hex(32),'baseUrl':base,'schema':schema,'storeId':'brand-store','seedAt':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+    access={'tenant':'member-suite-'+str(uuid.uuid4()),'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'operatorToken':secrets.token_hex(32),'checkoutToken':secrets.token_hex(32),'baseUrl':base,'schema':schema,'storeId':'brand-store','seedAt':datetime.datetime.now(datetime.timezone.utc).isoformat()}
     fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
     with os.fdopen(fd,'w') as f:json.dump(access,f,indent=2)
 # 仅身份夹具直写凭据表，业务数据一律通过API持久化；不将明文凭据写入SQL或日志。
 sql=''
-for field,actor,role in [('adminToken','ops-admin','ADMIN'),('memberToken','ops-buyer','MEMBER'),('operatorToken','ops-clerk','OPERATOR')]:
+for field,actor,role in [('adminToken','ops-admin','ADMIN'),('memberToken','ops-buyer','MEMBER'),('operatorToken','ops-clerk','OPERATOR'),('checkoutToken','points-buyer','MEMBER')]:
     digest=hashlib.sha256(access[field].encode()).hexdigest()
     sql+=f"INSERT INTO platform_credential(token_hash,tenant_id,actor_id,role,expires_at) VALUES('{digest}','{access['tenant']}','{actor}','{role}',DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY)) ON DUPLICATE KEY UPDATE expires_at=DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY);\n"
 p=subprocess.run(['docker','exec','-i','-e','MYSQL_PWD',os.getenv('COMMERCE_MYSQL_CONTAINER','dev-infra-mysql84-1'),'mysql','-ucommerce_app',schema],input=sql,text=True,capture_output=True,env=dict(os.environ,MYSQL_PWD=env['COMMERCE_DB_PASSWORD']),timeout=15)
@@ -51,6 +51,12 @@ post('/admin/member-growth/suite-member/adjust',{'expectedVersion':0,'delta':120
 post('/admin/member-cycle-benefits/suite-member/grant')
 post('/admin/member-points/policies',{'version':1,'effectiveFrom':at(0),'earnPerYuan':'1.00','expiryDays':30,'spendEnabled':True,'pointsPerYuan':100,'maxDeductionBps':5000})
 post('/admin/member-points/suite-member/adjust',{'expectedVersion':0,'delta':1200,'reason':'隔离演示积分入账'})
+post('/admin/members',{'memberId':'checkout-member','actorId':'points-buyer','displayName':'积分购物会员','memberLevel':'BASIC'})
+post('/admin/member-points/checkout-member/adjust',{'expectedVersion':0,'delta':2000,'reason':'隔离积分结算验收'})
+post('/operations/products',{'productId':'points-coffee','storeId':'brand-store','title':'积分精品咖啡','category':'咖啡','brand':'日常品牌'})
+post('/operations/skus',{'skuId':'points-coffee','productId':'points-coffee','storeId':'brand-store','title':'积分精品咖啡','unitPrice':'25.00','specifications':[{'name':'包装','value':'小盒'}]})
+post('/operations/skus/points-coffee',{'storeId':'brand-store','expectedVersion':1,'title':'积分精品咖啡','unitPrice':'25.00','status':'ACTIVE','reason':'积分结算演示上架'})
+post('/admin/inventory/receipts',{'storeId':'brand-store','skuId':'points-coffee','quantity':100})
 # 演示仅受理后不假称到账；正式消费者读取持久事件完成发放。
 for _ in range(6):
     req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})

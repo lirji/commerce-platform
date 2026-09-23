@@ -2,40 +2,34 @@
 
 ## 任务目标
 
-补齐周期等级权益、积分（兑换券/权益+订单抵扣）、行为人群、定向券、生命周期旅程与效果比较、商品经营，前端改为深色数据工作台。
+会员周期权益、积分兑换与抵扣、行为人群、定向券、旅程效果、商品经营，深色数据工作台；按11片连续交付。
 
 ## 已完成
 
-- 已确认积分两种消费方式及深色风格。
-- 建立独立工作区 commerce-platform-member-suite，分支 feat/member-lifecycle-catalog-ui，基线 fa97292。
-- 完成需求/技术未知/架构与 LP01/LP02 契约，落盘11片连续交付计划。
-- LP01周期等级策略/考核/到期调度完成，本地提交dc0fa52。
-- LP02等级礼包/幂等发放/会员页面/深色主题基础完成，170项后端测试与12个浏览器场景通过，本地提交186c261。
-- LP03独立积分获取/退款/到期/校准/待偿扣回账本及页面完成，174项完整后端与3个相关浏览器场景通过。
+- LP01周期等级 dc0fa52、LP02周期权益与深色基础 186c261、LP03积分账本 f73a277。
+- LP04积分抵扣/冻结/取消/退款、真实结算页面完成。完整后端183项、相关浏览器4场景通过。
 
 ## 已修改文件
 
-- commerce-platform-member-suite/docs/design/member-lifecycle-catalog-ui/*.md
-- commerce-platform-member-suite/docs/delivery/member-lifecycle-catalog-ui/*.md
-- CODEX_PROGRESS.md
+- commerce-platform-member-suite内LP04 member/trade/order-runtime/aftersales/payment/app/frontend/scripts与对应docs。
+- LP05_CONTRACT.md已建立，尚未实现。
 
 ## 未完成
 
-- LP04–LP11 产品实现、验证、种子、CI 和 Git 交付。
+- LP05–LP11：兑换券/权益、行为人群、定向券、旅程效果、商品经营、整体验收、CI与Git主线交付。
 
 ## 当前问题
 
-- LP01–LP03已完成，无环境阻塞；LP04尚未实现。
-- 8604隔离验收实例运行.local/member-suite-lp03.jar，workers=false；8602现有Docker未变。
-- 原 commerce-platform 两处用户未提交改动禁止动；8602 Docker fa97292 保持运行。
-- V1–V22 已执行，V23–V26已在隔离测试库应用，下一迁移V27。新工作区 .local/runtime.env 指向原私密配置，禁止打印或修改。
+- 无环境阻塞，原commerce-platform两处用户改动禁止动；8602 Docker fa97292保持。
+- 隔离库commerce_test_20260923已V28，下个迁移V29。8604验收应用workers=false，私密env禁止打印。
+- LP04已通过，正在记录/提交；LP05细契约已建立。
 
 ## 下一步建议
 
-1. 按新工作区 docs/design/member-lifecycle-catalog-ui/IMPLEMENTATION_SLICES.md 开始 LP04。
-2. 先实现周期等级真实 API 和数据库验证，再继续其余片；细契约在对应实现前补齐。
-3. 读取 docs/delivery/member-lifecycle-catalog-ui/STATUS.md 跟踪实测结果。
+1. 读取新工作区docs/delivery/member-lifecycle-catalog-ui/STATUS.md及LP05_CONTRACT.md。
+2. 完成LP05，逐片继续LP06–LP11，不需重新确认范围和积分/深色偏好。
+3. 通过必要验收后按任务逻辑提交、正常合并推送main，保护原工作区。
 
 ## 恢复 Prompt
 
-读取 CODEX_PROGRESS.md 和 commerce-platform-member-suite/docs/delivery/member-lifecycle-catalog-ui/STATUS.md，按 IMPLEMENTATION_SLICES 连续完成；无需重新确认已选积分和深色方向，不碰原工作区用户改动或泄露机密。
+读取CODEX_PROGRESS.md及commerce-platform-member-suite交付STATUS，按LP05–LP11未完成项持续执行，除真实阻塞无需等待继续。
