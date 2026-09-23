@@ -13,6 +13,7 @@ import {
   Tag,
   Typography,
 } from "antd";
+import { palette } from "../theme";
 import { useState, type ReactNode } from "react";
 import { ApiError, useCommand } from "./api";
 export const time = (v: unknown) =>
@@ -71,11 +72,11 @@ export function Status({ value }: { value?: string }) {
     "ACTIVE",
     "DELIVERED",
   ].includes(v)
-    ? "#047857"
+    ? palette.ok
     : ["ISOLATED", "COMPENSATION_REQUIRED", "REJECTED", "TIMED_OUT"].includes(v)
-      ? "#B91C1C"
+      ? palette.error
       : ["UNKNOWN", "CLOSING", "WAIT_RETURN", "EXPIRED"].includes(v)
-        ? "#B45309"
+        ? palette.warn
         : [
               "RUNNING",
               "WAITING",
@@ -86,8 +87,8 @@ export function Status({ value }: { value?: string }) {
               "REQUESTED",
               "PENDING",
             ].includes(v)
-          ? "#4338CA"
-          : "#374151";
+          ? palette.pending
+          : palette.idle;
   return (
     <Tag
       color={color}

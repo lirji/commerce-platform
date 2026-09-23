@@ -56,6 +56,9 @@ public class MemberCycleService implements MemberCycleApi {
         return mapper.policies(actor.tenantId(),after,limit).stream().map(this::policy).toList();
     }
 
+    /** 绑定只接受已发布版本，不能依赖当前有效版本猜测历史配置。 */
+    public Policy policy(Actor actor,long version) { actor.requireAdmin();return policy(Inputs.found(mapper.byVersion(actor.tenantId(),version))); }
+
     /** 运营手动考核与定时考核走相同规则。 */
     public View evaluate(Actor actor,String key,String id) {
         actor.requireAdmin();Identifiers.require(id);

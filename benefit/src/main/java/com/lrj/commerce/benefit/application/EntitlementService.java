@@ -52,10 +52,19 @@ public class EntitlementService implements EntitlementApi,EventHandler {
     /** 原节点键去重；与旅程检查点同事务提交受理，随后仍走独立发放消费者。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public View grantFromJourney(String tenant,String member,String store,String effectId,String order,Ref ref){
-        Identifiers.require(effectId);validateRef(ref);var existing=mapper.bySource(tenant,"JOURNEY",effectId);if(existing!=null)return existing;
+        return grantFromSource(tenant,member,store,effectId,order,ref,"JOURNEY");
+    }
+    /** 等级来源独立幂等；来源复用为不同会员/权益时拒绝，不返回其他人的权益。 */
+    @Transactional(propagation=Propagation.MANDATORY)
+    public View grantFromLevel(String tenant,String member,String store,String sourceId,Ref ref) {
+        return grantFromSource(tenant,member,store,sourceId,null,ref,"LEVEL");
+    }
+    private View grantFromSource(String tenant,String member,String store,String effectId,String order,Ref ref,String sourceType) {
+        Identifiers.require(effectId);validateRef(ref);var existing=mapper.bySource(tenant,sourceType,effectId);
+        if(existing!=null){if(!existing.memberId().equals(member)||!existing.benefitId().equals(ref.benefitId())||existing.benefitVersion()!=ref.version())throw conflict();return existing;}
         members.requireActive(new Actor(tenant,"journey-worker",Actor.Role.ADMIN),member);var d=Inputs.found(mapper.definitionFind(tenant,ref.benefitId(),ref.version()));
         if(!d.storeId().equals(store)||clock.instant().isBefore(d.validFrom())||!clock.instant().isBefore(d.validTo())||mapper.reserveQuota(tenant,ref.benefitId(),ref.version())!=1)throw conflict();
-        String id=UUID.randomUUID().toString();mapper.grant(tenant,id,order,member,d,"JOURNEY",effectId);var grant=mapper.find(tenant,id);
+        String id=UUID.randomUUID().toString();mapper.grant(tenant,id,order,member,d,sourceType,effectId);var grant=mapper.find(tenant,id);
         if(mapper.finishQuota(tenant,grant,true)!=1)throw conflict();change(tenant,grant,State.REQUESTED,0,0,clock.instant().plus(Duration.ofDays(d.validityDays())));
         var requested=mapper.find(tenant,id);outbox.append(tenant,"benefit.grant.requested.v1",id,requested.version(),Map.of("grantId",id));return requested;
     }

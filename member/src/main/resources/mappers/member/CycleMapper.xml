@@ -2,6 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.member.infrastructure.CycleMapper">
   <insert id="policy">INSERT INTO member_cycle_policy(tenant_id,version,effective_from,policy_json) VALUES(#{tenant},#{p.version},#{p.effectiveFrom},#{json})</insert>
+  <select id="byVersion" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND version=#{version}</select>
   <select id="effective" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
   <select id="policies" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
   <select id="contribution" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Contribution">SELECT member_id,occurred_at,contribution FROM member_cycle_contribution WHERE tenant_id=#{tenant} AND source_id=#{source}</select>

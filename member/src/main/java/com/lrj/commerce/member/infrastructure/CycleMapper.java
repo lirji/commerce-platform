@@ -12,6 +12,7 @@ public interface CycleMapper {
     record Due(String tenantId, String memberId) { }
     record Contribution(String memberId, Instant occurredAt, long contribution) { }
     void policy(@Param("tenant") String tenant, @Param("p") MemberCycleApi.Policy p, @Param("json") String json);
+    PolicyRow byVersion(@Param("tenant") String tenant, @Param("version") long version);
     PolicyRow effective(@Param("tenant") String tenant, @Param("at") Instant at);
     List<PolicyRow> policies(@Param("tenant") String tenant, @Param("after") long after, @Param("limit") int limit);
     Contribution contribution(@Param("tenant") String tenant, @Param("source") String source);

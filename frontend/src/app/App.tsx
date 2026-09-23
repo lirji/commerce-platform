@@ -289,7 +289,7 @@ export function App() {
             )}
           </Space>
           <Space>
-            <Avatar size="small" style={{ background: "#1D4ED8" }}>
+            <Avatar size="small" style={{ background: "var(--accent)" }}>
               {actor.actorId.slice(0, 1).toUpperCase()}
             </Avatar>
             <span className="actor-name">{actor.actorId}</span>

@@ -148,4 +148,43 @@ class MemberCycleTest {
         assertEquals(400,call("POST","/v1/admin/member-cycles/policies",admin,"invalid",Map.of("version",2,"effectiveFrom",testClock.instant().toString(),"periodDays",0,"levels",List.of(Map.of("code","BASIC","minimumGrowth",0)))).status());
         var replay=evaluate("same-key");assertEquals(replay,evaluate("same-key"));
     }
+    private void benefit(String id,int quota,Instant start) throws Exception {
+        post("/v1/admin/entitlement-definitions",admin,"benefit-"+id,Map.of("benefitId",id,"version",1,"storeId","store1","name","周期礼遇","units",2,"quota",quota,"validFrom",start.minusSeconds(60).toString(),"validTo",start.plusSeconds(10*86400L).toString(),"validityDays",5));
+    }
+    private void bundle(String level,List<Object> refs,Instant start) throws Exception {
+        post("/v1/admin/member-cycle-benefits",admin,"bundle-"+level,Map.of("bindingId","b-"+level,"policyVersion",1,"level",level,"storeId","store1","validUntil",start.plusSeconds(8*86400L).toString(),"benefits",refs));
+    }
+    private JsonNode grant(String key) throws Exception { return post("/v1/admin/member-cycle-benefits/m1/grant",admin,key,null); }
+    @Test void levelBenefitsAreIdempotentAcrossEventsRetriesAndRenewal() throws Exception {
+        seed();Instant start=testClock.instant();policy(1,"1.00",start);cyclePolicy(1,1,start);benefit("tea",5,start);
+        bundle("GOLD",List.of(Map.of("benefitId","tea","version",1)),start);
+        fact("earned","order1",120,start,null,null);
+        try(var pool=Executors.newFixedThreadPool(2)) {
+            var a=pool.submit(()->grant("grant-a"));var b=pool.submit(()->grant("grant-b"));
+            assertEquals(a.get().path("grants").get(0).path("grantId"),b.get().path("grants").get(0).path("grantId"));
+        }
+        for(int i=0;i<4;i++)post("/v1/admin/events/pump",admin,null,null);
+        var wallet=call("GET","/v1/entitlements",member,null,null).body();
+        assertEquals(1,wallet.size());assertEquals("LEVEL",wallet.get(0).path("sourceType").asString());assertEquals("AVAILABLE",wallet.get(0).path("status").asString());
+        post("/v1/entitlements/"+wallet.get(0).path("grantId").asString()+"/consume",member,"consume",Map.of("units",1));
+        fact("refund","order1",120,start,"refund1","120.00");
+        assertEquals("BASIC",cycle().path("memberLevel").asString());assertTrue(grant("lower").path("grants").isEmpty());
+        assertEquals(1,call("GET","/v1/entitlements",member,null,null).body().get(0).path("remainingUnits").asInt(),"已发权益不追溯撤销");
+        fact("new","order2",130,start.plusSeconds(1),null,null);
+        assertEquals(wallet.get(0).path("grantId"),grant("upgrade-again").path("grants").get(0).path("grantId"));
+        testClock.at=start.plusSeconds(86400);evaluate("renew");
+        assertNotEquals(wallet.get(0).path("grantId"),grant("renew-grant").path("grants").get(0).path("grantId"));
+        assertEquals(2,jdbc.queryForObject("SELECT issued FROM benefit_definition WHERE tenant_id=? AND benefit_id='tea'",Integer.class,tenant));
+        assertEquals(403,call("POST","/v1/admin/member-cycle-benefits/m1/grant",member,"forbidden",null).status());
+    }
+    @Test void exhaustedBundleRollsBackEveryGrantAndQuota() throws Exception {
+        seed();Instant start=testClock.instant();cyclePolicy(1,1,start);benefit("available",2,start);benefit("exhausted",1,start);
+        jdbc.update("UPDATE benefit_definition SET issued=1 WHERE tenant_id=? AND benefit_id='exhausted'",tenant);
+        bundle("BASIC",List.of(Map.of("benefitId","available","version",1),Map.of("benefitId","exhausted","version",1)),start);
+        assertEquals(409,call("POST","/v1/admin/member-cycle-benefits/m1/grant",admin,"quota",null).status());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(0,jdbc.queryForObject("SELECT issued+reserved FROM benefit_definition WHERE tenant_id=? AND benefit_id='available'",Integer.class,tenant));
+        assertEquals(400,call("POST","/v1/admin/member-cycle-benefits",admin,"bad-level",Map.of("bindingId","unknown","policyVersion",1,"level","UNKNOWN","storeId","store1","validUntil",start.plusSeconds(86400).toString(),"benefits",List.of(Map.of("benefitId","available","version",1)))).status());
+    }
+
 }

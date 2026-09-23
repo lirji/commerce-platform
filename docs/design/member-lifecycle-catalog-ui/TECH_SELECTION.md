@@ -9,3 +9,5 @@
 | T5 | React/AntD 已稳定且用户要深色 | REUSE_EXISTING AntD darkAlgorithm、统一 token/CSS、真实接口数据 | 不升级依赖、不增加组件体系；对比度/键盘/窄屏需浏览器验证 |
 
 不存在新增第三方主要组件，无需虚构兼容矩阵或技术性能。以上来自本仓库源码；既有运行时版本复用 pom/package-lock。获取方式 BUILD 仅限业务差异化，通用鉴权、迁移、运行环境继续复用。
+
+前端主题依据：Ant Design 官方 [Customize Theme](https://ant.design/docs/react/customize-theme/)（2026-09-24查阅）支持 ConfigProvider 的 theme.darkAlgorithm 与 token；沿用项目 App 上下文使弹窗/消息主题一致，无新增依赖。

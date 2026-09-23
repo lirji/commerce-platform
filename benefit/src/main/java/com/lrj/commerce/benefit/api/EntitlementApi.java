@@ -30,6 +30,8 @@ public interface EntitlementApi {
     List<Ledger> ledger(Actor actor,String grant,String after,int limit);
     View consume(Actor actor,String key,String grant,Consume input);
     View resolve(Actor actor,String key,String grant,Resolution input);
+    /** 等级礼包具有独立来源，不伪装为订单或旅程。 */
+    View grantFromLevel(String tenant,String member,String store,String sourceId,Ref ref);
     /** 旅程节点本地事务中受理权益；来源标识和订单关联各自独立。 */
     View grantFromJourney(String tenant,String member,String store,String effectId,String order,Ref ref);
 }

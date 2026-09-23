@@ -16,6 +16,8 @@ public interface MemberCycleApi {
     Policy publish(Actor actor, String key, Policy input);
     /** 查询历史策略。 */
     List<Policy> policies(Actor actor, long after, int limit);
+    /** 权益绑定读取确切不可变版本，避免遍历历史策略。 */
+    Policy policy(Actor actor, long version);
     /** 显式考核，允许对同一周期重复执行。 */
     View evaluate(Actor actor, String key, String memberId);
     /** 不隐含写入的管理/本人查询。 */
