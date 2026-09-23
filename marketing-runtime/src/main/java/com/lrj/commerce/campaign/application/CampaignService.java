@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 /** 发布切换与审计同事务；旧版本不会在切换中和新版本同时生效。 */
 @Service
 public class CampaignService implements CampaignApi {
-    private final com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets;private final MarketingAssets assets;private final java.time.Clock clock;private final CampaignMapper mapper; private final StoreApi stores; private final Commands commands;
-    public CampaignService(CampaignMapper mapper,StoreApi stores,Commands commands,MarketingAssets assets,java.time.Clock clock,com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets) {this.budgets=budgets;this.assets=assets;this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
+    private final com.lrj.commerce.benefit.api.EntitlementApi entitlements;private final com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets;private final MarketingAssets assets;private final java.time.Clock clock;private final CampaignMapper mapper; private final StoreApi stores; private final Commands commands;
+    public CampaignService(CampaignMapper mapper,StoreApi stores,Commands commands,MarketingAssets assets,java.time.Clock clock,com.lrj.commerce.campaign.infrastructure.BudgetMapper budgets,com.lrj.commerce.benefit.api.EntitlementApi entitlements) {this.entitlements=entitlements;this.budgets=budgets;this.assets=assets;this.clock=clock;this.mapper=mapper;this.stores=stores;this.commands=commands;}
     /** 草稿内容不可变，修改必须创建新版本。 */
     public View create(Actor actor,String key,Draft input) {
         actor.requireAdmin();Inputs.require(input!=null,"请求不能为空");Identifiers.require(input.campaignId());Inputs.text(input.name(),128);
@@ -28,6 +28,7 @@ public class CampaignService implements CampaignApi {
             RuleNode rule=input.rule();
             if(input.policy()!=null){
                 if(input.policy().rule()!=null)rule=assets.publishedRule(actor.tenantId(),input.policy().rule());
+                if(input.policy().terms()!=null&&input.policy().terms().grant()!=null)entitlements.validateBinding(actor.tenantId(),input.storeId(),input.policy().terms().grant(),input.validFrom(),input.validTo());
                 if(input.policy().audience()!=null)assets.requireFresh(actor.tenantId(),input.policy().audience(),clock.instant());
             }
             mapper.insert(actor.tenantId(),store.merchantId(),input,JsonCodec.write(rule),input.policy()==null?null:JsonCodec.write(input.policy()));
@@ -50,6 +51,7 @@ public class CampaignService implements CampaignApi {
                 if(!java.util.Set.of("APPROVED","PAUSED").contains(row.status()))throw new DomainException(DomainException.Code.CONFLICT,"受治理活动必须审批后发布");
                 var policy=JsonCodec.read(row.policyJson(),Policy.class);if(policy.audience()!=null)assets.requireFresh(actor.tenantId(),policy.audience(),clock.instant());
                 if(policy.rule()!=null)assets.publishedRule(actor.tenantId(),policy.rule());
+                if(policy.terms()!=null&&policy.terms().grant()!=null)entitlements.validateBinding(actor.tenantId(),row.storeId(),policy.terms().grant(),row.validFrom(),row.validTo());
             }
             stores.requireActive(actor,row.storeId());
             if(publish) mapper.pauseOthers(actor.tenantId(),id);

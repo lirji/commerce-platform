@@ -44,3 +44,15 @@
 内部CREDIT权益定义/额度、订单预留、支付后异步发放、会员核销和账本；全退时未消费权益撤回，已消费部分转明确待补偿，管理员恢复/核销损失均需审计。真实外部权益Port保留未配置，不以内部账本声称三方发奖。详尽DTO随该子片冻结。
 
 预算迁移为已有活动补建无上限余额行，消耗统计从预算能力接入后的订单开始；不伪造旧订单历史预算消耗。原报价和订单金额始终保留。
+
+## S8b2b 权益定义、发放和补偿
+
+- ADMIN POST /v1/admin/entitlement-definitions：{benefitId,version,storeId,name,units,quota,validFrom,validTo,validityDays}。内部CREDIT单位为次/积分等整数权益单位，非人民币余额；units1..10000、quota1..1000000、有效天数1..365。定义版本不可变；发放额度reserved+issued≤quota。
+- Campaign.Policy.terms新增grant:{benefitId,version}。引用定义必须同店且定义发放窗口覆盖活动有效期；报价固化引用，订单事务内预留一份额度。活动没有实际优惠被选中则不自动赠送该活动权益。
+- 支付未知保持RESERVED；未付取消释放额度并CANCELLED。确认付款时RESERVED→REQUESTED，额度reserved→issued，持久事件benefit.grant.requested.v1；异步消费者在同一Inbox事务中建授予账本并变AVAILABLE，有效期按付款确认时刻+validityDays。
+- GET /v1/entitlements：本人钱包；POST /v1/entitlements/{id}/consume {units} +幂等键，状态/期限/余额数据库条件更新，不能负余额、不能跨会员。全部消费后CONSUMED，部分消费保留AVAILABLE。GET /v1/entitlements/{id}/ledger可追溯授予/消费/冲正。
+- 售后累计全退消费aftersales.completed.v1：REQUESTED但尚未发放直接REVOKED且迟到发放事件无效果；AVAILABLE未消费则撤回并REVOKED；存在已消费部分则撤回剩余并COMPENSATION_REQUIRED，记录debtUnits，不能伪造已回收权益或扣负余额。部分退款不冲正赠送权益，与券政策一致。
+- ADMIN GET /v1/admin/entitlements；POST /v1/admin/entitlements/{id}/resolve {resolution:RECOVERED|WRITTEN_OFF,reference}：明确记录人工恢复凭据或损失核销，审计后COMPENSATED；不调用真实渠道、不自动扣款。此处是内部权益核算，不声称外部权益已追回。
+- 定义配额中已发放份数不因退款冲正减少，防止退款重复薅额度。额度预占失败与订单、券、预算、库存、报价全部回滚。
+- ExternalEntitlementPort仅保留稳定grant/query/revoke适配契约，当前正式外部渠道未配置；用户已明确联调后置。内部CREDIT没有外部网络IO。
+- 账本每条含grantId、动作、正整数或零的单位变动、余额、操作引用和UTC时间；敏感地址/令牌不进入权益事件和账本。

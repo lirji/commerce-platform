@@ -19,9 +19,9 @@ import java.util.*;
 /** 订单用例编排同库端口，远程支付/物流不进入这段事务。 */
 @Service
 public class OrderService implements OrderApi {
-    private final com.lrj.commerce.campaign.api.CampaignFundingApi funding;private final com.lrj.commerce.benefit.api.CouponApi coupons;private final OrderMapper mapper;private final Commands commands;private final QuoteApi quotes;private final InventoryApi inventory;
+    private final com.lrj.commerce.benefit.api.EntitlementApi entitlements;private final com.lrj.commerce.campaign.api.CampaignFundingApi funding;private final com.lrj.commerce.benefit.api.CouponApi coupons;private final OrderMapper mapper;private final Commands commands;private final QuoteApi quotes;private final InventoryApi inventory;
     private final MemberApi members;private final StoreApi stores;private final Outbox outbox;private final AddressCipher addresses;private final Clock clock;
-    public OrderService(OrderMapper mapper,Commands commands,QuoteApi quotes,InventoryApi inventory,MemberApi members,StoreApi stores,Outbox outbox,AddressCipher addresses,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding) {this.funding=funding;this.coupons=coupons;
+    public OrderService(OrderMapper mapper,Commands commands,QuoteApi quotes,InventoryApi inventory,MemberApi members,StoreApi stores,Outbox outbox,AddressCipher addresses,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding,com.lrj.commerce.benefit.api.EntitlementApi entitlements) {this.entitlements=entitlements;this.funding=funding;this.coupons=coupons;
         this.mapper=mapper;this.commands=commands;this.quotes=quotes;this.inventory=inventory;this.members=members;this.stores=stores;this.outbox=outbox;this.addresses=addresses;this.clock=clock;
     }
     /** 订单编号由服务端生成，失败预占会回滚报价消费，允许重试原命令。 */
@@ -32,9 +32,10 @@ public class OrderService implements OrderApi {
             var member=members.current(actor);members.requireActive(actor,member.memberId());
             String id=UUID.randomUUID().toString();var quote=quotes.consume(actor,input.quoteId(),id);stores.requireActive(actor,quote.storeId());
             coupons.reserve(actor,id,quote.storeId(),quote.coupon());funding.reserve(actor,id,quote.storeId(),quote.promotion());
+            entitlements.reserveOrder(actor,id,member.memberId(),quote.storeId(),quote.promotion()==null?null:quote.promotion().grant());
             for(var line:quote.items().stream().sorted(Comparator.comparing(QuoteApi.Line::skuId)).toList()) inventory.reserve(actor,id,quote.storeId(),line.skuId(),line.quantity());
             var lifecycle=OrderLifecycle.start();boolean free=new BigDecimal(quote.payable()).signum()==0;
-            if(free) {lifecycle=lifecycle.apply(OrderEvent.PAYMENT_CONFIRMED);inventory.confirm(actor.tenantId(),id);coupons.confirm(actor.tenantId(),id);funding.confirm(actor.tenantId(),id);}
+            if(free) {lifecycle=lifecycle.apply(OrderEvent.PAYMENT_CONFIRMED);inventory.confirm(actor.tenantId(),id);coupons.confirm(actor.tenantId(),id);funding.confirm(actor.tenantId(),id);entitlements.confirmOrder(actor.tenantId(),id);}
             var now=clock.instant().truncatedTo(ChronoUnit.MILLIS);
             var view=new View(id,member.memberId(),quote.storeId(),quote.merchantId(),quote.quoteId(),quote.payable(),lifecycle.state().name(),free?"NO_PAYMENT_REQUIRED":"CHANNEL_REQUIRED",lifecycle.version(),now,now.plusSeconds(900),quote.items());
             mapper.insert(actor.tenantId(),view,JsonCodec.write(view.items()),addresses.encrypt(actor.tenantId(),id,input.address()));
@@ -57,7 +58,7 @@ public class OrderService implements OrderApi {
             if(state==OrderState.CANCELLED||state==OrderState.CLOSING) return view(row);
             var next=new OrderLifecycle(state,row.version()).apply(OrderEvent.REQUEST_CANCEL);
             if(mapper.change(actor.tenantId(),id,row.version(),next.state().name())!=1) throw new DomainException(DomainException.Code.CONFLICT,"订单并发版本冲突");
-            if(next.state()==OrderState.CANCELLED){inventory.release(actor.tenantId(),id);coupons.release(actor.tenantId(),id);funding.release(actor.tenantId(),id);}
+            if(next.state()==OrderState.CANCELLED){inventory.release(actor.tenantId(),id);coupons.release(actor.tenantId(),id);funding.release(actor.tenantId(),id);entitlements.releaseOrder(actor.tenantId(),id);}
             var result=view(mapper.read(actor.tenantId(),row.memberId(),id));
             outbox.append(actor.tenantId(),next.state()==OrderState.CANCELLED?"order.cancelled.v1":"order.closing.v1",id,result.version(),result);
             return result;
@@ -83,7 +84,7 @@ public class OrderService implements OrderApi {
         if(new BigDecimal(row.payable()).compareTo(new BigDecimal(amount))!=0) throw new DomainException(DomainException.Code.CONFLICT,"支付金额不匹配");
         if((paid&&Set.of("PAID","FULFILLING","COMPLETED").contains(row.status()))||(!paid&&row.status().equals("CANCELLED"))) return view(row);
         transition(tenant,row,paid?OrderEvent.PAYMENT_CONFIRMED:OrderEvent.PAYMENT_ABSENCE_CONFIRMED);
-        if(paid){inventory.confirm(tenant,id);coupons.confirm(tenant,id);funding.confirm(tenant,id);}else{inventory.release(tenant,id);coupons.release(tenant,id);funding.release(tenant,id);}
+        if(paid){inventory.confirm(tenant,id);coupons.confirm(tenant,id);funding.confirm(tenant,id);entitlements.confirmOrder(tenant,id);}else{inventory.release(tenant,id);coupons.release(tenant,id);funding.release(tenant,id);entitlements.releaseOrder(tenant,id);}
         var result=view(mapper.internalRead(tenant,id));outbox.append(tenant,paid?"order.paid.v1":"order.cancelled.v1",id,result.version(),result);return result;
     }
     /** 跨域只返回API投影，其他模块不读订单Mapper。 */
@@ -94,7 +95,7 @@ public class OrderService implements OrderApi {
             var rows=mapper.expired(actor.tenantId(),clock.instant());
             for(var row:rows) {
                 var next=transition(actor.tenantId(),row,OrderEvent.REQUEST_CANCEL);
-                if(next.state()==OrderState.CANCELLED){inventory.release(actor.tenantId(),row.orderId());coupons.release(actor.tenantId(),row.orderId());funding.release(actor.tenantId(),row.orderId());}
+                if(next.state()==OrderState.CANCELLED){inventory.release(actor.tenantId(),row.orderId());coupons.release(actor.tenantId(),row.orderId());funding.release(actor.tenantId(),row.orderId());entitlements.releaseOrder(actor.tenantId(),row.orderId());}
                 var result=view(mapper.internalRead(actor.tenantId(),row.orderId()));
                 outbox.append(actor.tenantId(),next.state()==OrderState.CANCELLED?"order.cancelled.v1":"order.closing.v1",row.orderId(),result.version(),result);
             }

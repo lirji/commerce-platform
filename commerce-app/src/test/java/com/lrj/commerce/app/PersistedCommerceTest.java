@@ -544,6 +544,63 @@ class PersistedCommerceTest {
         for(var line:quote.path("items")){discount=discount.add(new java.math.BigDecimal(line.path("discount").asString()));var p1=new java.math.BigDecimal(line.path("payable").asString());assertTrue(p1.signum()>=0);payable=payable.add(p1);}
         assertEquals(new java.math.BigDecimal("0.99"),platform);assertEquals(new java.math.BigDecimal("4.01"),merchant);assertEquals(new java.math.BigDecimal("5.00"),discount);assertEquals(new java.math.BigDecimal("21.00"),payable);
     }
+    private void entitlementCampaign(int quota) throws Exception {
+        post("/v1/admin/entitlement-definitions",admin,"benefit-definition",Map.of("benefitId","credit","version",1,"storeId","store1","name","体验权益","units",3,"quota",quota,"validFrom",Instant.now().minusSeconds(120).toString(),"validTo",Instant.now().plusSeconds(7200).toString(),"validityDays",1));
+        audience("benefit-audience",1,List.of("m1"));var campaign=new HashMap<>(draft("benefit-campaign",1,"1.00"));campaign.put("policy",Map.of("audience",Map.of("id","benefit-audience","version",1),"terms",Map.of("percentageBps",0,"platformFundingBps",0,"budget","20.00","grant",Map.of("benefitId","credit","version",1))));
+        post("/v1/admin/campaigns",admin,"benefit-campaign",campaign);approveAndPublish("benefit-campaign");
+    }
+    private JsonNode entitlementOrder() throws Exception {
+        seed();stock("sku1",3);entitlementCampaign(1);return post("/v1/orders",member,"o",orderInput(post("/v1/quotes",member,"q",basket(1))));
+    }
+    private JsonNode granted(JsonNode order) throws Exception {payOrder(order);pump();return call("GET","/v1/entitlements",member,null,null).body().get(0);}
+    @Test void entitlementIsReservedThenGrantedOnceAfterTrustedPayment() throws Exception {
+        var order=entitlementOrder();assertEquals("RESERVED",jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?",String.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT reserved FROM benefit_definition WHERE tenant_id=?",Integer.class,tenant));
+        payOrder(order);assertEquals("REQUESTED",jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?",String.class,tenant));pump();
+        assertEquals("AVAILABLE",jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?",String.class,tenant));
+        assertEquals(3,jdbc.queryForObject("SELECT remaining_units FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));
+        jdbc.update("UPDATE platform_event SET status='PENDING',available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='benefit.grant.requested.v1'",tenant);pump();
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'",Integer.class,tenant));assertEquals(1,jdbc.queryForObject("SELECT issued FROM benefit_definition WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void entitlementQuotaFailureRollsBackOrderBudgetAndInventory() throws Exception {
+        var first=entitlementOrder();var secondQuote=post("/v1/quotes",member,"q2",basket(1));
+        assertEquals(409,call("POST","/v1/orders",member,"o2",orderInput(secondQuote)).status());
+        assertEquals(1,stockValue("held"));assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM order_record WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(new java.math.BigDecimal("1.00"),jdbc.queryForObject("SELECT held FROM marketing_budget WHERE tenant_id=?",java.math.BigDecimal.class,tenant));
+        post("/v1/orders/"+first.path("orderId").asString()+"/cancel",member,"cancel",null);
+        assertEquals(0,jdbc.queryForObject("SELECT reserved FROM benefit_definition WHERE tenant_id=?",Integer.class,tenant));
+        post("/v1/orders",member,"o2",orderInput(secondQuote));assertEquals(1,jdbc.queryForObject("SELECT reserved FROM benefit_definition WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void concurrentEntitlementConsumptionCannotProduceNegativeBalance() throws Exception {
+        var grant=granted(entitlementOrder());String id=grant.path("grantId").asString();
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var latch=new CountDownLatch(1);var a=pool.submit(()->{latch.await();return call("POST","/v1/entitlements/"+id+"/consume",member,"consume1",Map.of("units",2));});var b=pool.submit(()->{latch.await();return call("POST","/v1/entitlements/"+id+"/consume",member,"consume2",Map.of("units",2));});latch.countDown();
+            assertEquals(List.of(200,409),java.util.stream.Stream.of(a.get(),b.get()).map(Reply::status).sorted().toList());
+        }
+        assertEquals(1,jdbc.queryForObject("SELECT remaining_units FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='CONSUME'",Integer.class,tenant));
+        var consumed=post("/v1/entitlements/"+id+"/consume",member,"last",Map.of("units",1));assertEquals("CONSUMED",consumed.path("status").asString());assertEquals(consumed,post("/v1/entitlements/"+id+"/consume",member,"last",Map.of("units",1)));
+    }
+    @Test void consumedEntitlementRefundCreatesExplicitCompensationDebt() throws Exception {
+        var order=entitlementOrder();var grant=granted(order);String id=grant.path("grantId").asString();post("/v1/entitlements/"+id+"/consume",member,"consume",Map.of("units",2));
+        var refund=approve(requestReturn(order,1,"r"),"a");finishRefund(refund,"refund");pump();
+        assertEquals("COMPENSATION_REQUIRED",jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?",String.class,tenant));assertEquals(2,jdbc.queryForObject("SELECT debt_units FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));assertEquals(0,jdbc.queryForObject("SELECT remaining_units FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(403,call("POST","/v1/admin/entitlements/"+id+"/resolve",member,"unauthorized",Map.of("resolution","WRITTEN_OFF","reference","test-decision")).status());
+        var resolved=post("/v1/admin/entitlements/"+id+"/resolve",admin,"resolve",Map.of("resolution","WRITTEN_OFF","reference","approved-test-loss"));assertEquals("COMPENSATED",resolved.path("status").asString());
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='WRITTEN_OFF'",Integer.class,tenant));assertEquals(1,jdbc.queryForObject("SELECT issued FROM benefit_definition WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void refundBeforeDelayedGrantCannotResurrectRevokedEntitlement() throws Exception {
+        var order=entitlementOrder();payOrder(order);
+        jdbc.update("UPDATE platform_event SET available_at=? WHERE tenant_id=? AND event_type='benefit.grant.requested.v1'",java.sql.Timestamp.from(Instant.now().plusSeconds(3600)),tenant);
+        var refund=approve(requestReturn(order,1,"r"),"a");finishRefund(refund,"refund");pump();assertEquals("REVOKED",jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?",String.class,tenant));
+        jdbc.update("UPDATE platform_event SET available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='benefit.grant.requested.v1'",tenant);pump();
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'",Integer.class,tenant));assertEquals(0,jdbc.queryForObject("SELECT remaining_units FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));
+    }
+    @Test void expiredOrForeignEntitlementCannotBeConsumed() throws Exception {
+        var grant=granted(entitlementOrder());String id=grant.path("grantId").asString();
+        assertEquals(404,call("POST","/v1/entitlements/"+id+"/consume",other,"foreign",Map.of("units",1)).status());assertEquals(404,call("GET","/v1/entitlements/"+id+"/ledger",other,null,null).status());
+        jdbc.update("UPDATE benefit_grant SET expires_at=? WHERE tenant_id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(1)),tenant);
+        assertEquals(409,call("POST","/v1/entitlements/"+id+"/consume",member,"expired",Map.of("units",1)).status());assertEquals(3,jdbc.queryForObject("SELECT remaining_units FROM benefit_grant WHERE tenant_id=?",Integer.class,tenant));
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));
