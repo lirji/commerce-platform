@@ -51,7 +51,7 @@
     "maven": "3.9.12",
     "build": "PASS",
     "productionDependencies": [],
-    "git": "INITIAL_REPOSITORY_DELIVERY_PENDING"
+    "git": "SOURCE_COMMITTED_AND_PUSHED_MAIN"
   },
   "projectStructure": [
     "shared-kernel",

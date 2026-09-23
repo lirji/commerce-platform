@@ -30,7 +30,7 @@
 ## 当前问题
 
 - 所有后续领域仍需逐切片冻结契约，不能直接复制旧仓；单店/CNY/单活动是首批范围。
-- 收尾发现新Git仓库及origin=git@github.com:lirji/commerce-platform.git，远程头待核验；按持续授权从feat/unified-commerce-kernel交付。
+- 初始代码提交5e5d3bd已从feat/unified-commerce-kernel进入main并推送origin，远程main SHA核验一致。交付记录见docs/evidence/DELIVERY_RESULT.md；未执行部署，远程CI未核验。
 - 当前无失败测试、无后台构建进程。参考仓dirty保留。
 - 旧EVOLUTION-rules v3仍BLOCKED；其限制只继续作用于旧迁移，不代表新建设内核未完成。
 

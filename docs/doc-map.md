@@ -1,6 +1,6 @@
 # 文档地图
 
-同步基线：2026-09-23 新项目完整工作树；源码/构建摘要见evidence/verification.json。初始仓库尚无历史提交；交付分支feat/unified-commerce-kernel，首次提交绑定此基线。
+同步基线：2026-09-23 新项目完整工作树；源码/构建摘要见evidence/verification.json。代码基线5e5d3bd；任务分支feat/unified-commerce-kernel，已进入远程main。
 
 | 代码/配置 | 权威文档 |
 |---|---|

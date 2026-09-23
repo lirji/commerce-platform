@@ -11,5 +11,11 @@
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
   "verification": "docs/evidence/verification.json",
-  "git": "DELIVERY_IN_PROGRESS"
+  "git": {
+    "status": "SOURCE_PUSHED_MAIN",
+    "sourceCommit": "5e5d3bd65da5809d86baa19a043ac0b27d1b7501",
+    "remote": "origin",
+    "target": "main",
+    "deliveryRecord": "docs/evidence/DELIVERY_RESULT.md"
+  }
 }
