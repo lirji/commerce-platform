@@ -2,53 +2,41 @@
 
 ## 任务目标
 
-持续完成DDD模块化单体统一电商平台S0–S10。用户授权连续实施和正常Git提交/合并/推送。真实外部IdP、支付、权益、WMS联调明确后置。
+按用户授权完成DDD模块化单体统一电商S0–S10及正常Git提交/合并/推送。真实外部IdP、支付、权益和WMS联调明确后置；生产部署未授权。
 
 ## 已完成
 
-- S0–S8：主数据、营销规则与人群、券/预算/权益、报价订单库存、支付、履约售后退款及权益补偿。
-- S9a：旅程DAG审批发布、持久实例、等待/可信规则/权益/站内信节点、有限重试/隔离/取消/超时；全退先取消旅程再冲正权益。
-- 138项测试通过，0失败/错误/跳过；真实MySQL8.4.11和HTTP。旅程WAITING时停止并重启本项目进程，成功继续到COMPLETED；证据docs/evidence/s9a/。
-- 旧参考仓源码与用户改动未碰；旧规则迁移仍BLOCKED。
+- S0–S9：主数据、可信营销规则/人群、券预算权益、报价订单库存、支付、履约售后补偿、持久旅程和受治理低代码。
+- S10a管理台/会员端已提交48e3fcf并推送main。
+- S10b本地完成：同源jar、完整幂等演示数据、应用Docker/Compose复用dev-infra、GitHub Actions、审查整改及最终运行/设计文档。
+- 最终145后端测试、4个浏览器场景通过；同日seed重复与应用容器重启后6类业务快照不变；npm audit 0漏洞、actionlint通过。证据docs/evidence/s10b/。
+- 共享dev_infra未重启/清理；参考仓用户修改未碰；旧规则迁移保持独立BLOCKED。
 
 ## 已修改文件
 
-- marketing-automation、旅程Controller/Worker装配、权益来源扩展、规则可信字段目录、V13/V14、集成与边界测试、设计及验证文档。
-- .local运行凭据与测试标识忽略，不进入Git。
+- S10b：Dockerfile、compose.yaml、deploy/、scripts/、.github/workflows/verify.yml、UI打包profile。
+- ApiErrors协议错误分类、JourneyService实际节点失败计数、对应真实DB验证。
+- 前端浏览器证据目录可配置；README、设计/运行/审查、验证与进度记录。
+- .local含私密配置/凭据和工具，忽略且不提交。
 
 ## 未完成
 
-- S9b：固定DSL低代码运营页面、预览、版本审批发布与回退、白名单业务动作。
-- S10：管理台/消费端真实前端、完整数据库演示数据、运行部署文件、CI、代码审查及全链路验收。
-- 外部联调由用户要求后置，生产部署未授权。
+- S10b提交任务分支、推送并获取真实远程CI结果；通过后正常合并/推送main，最终交付文档与状态收口。
+- 外部联调按用户要求后置，不阻塞本地建设完成；生产容量、备份恢复等属于真实上线前验证。
 
 ## 当前问题
 
-- 无测试阻塞。只使用commerce_local/commerce_test_20260923；不清理/重启共享dev_infra。
-- 当前本地后台app为S9a，tool session92918，端口8600，日志.local/app-s9a-restarted.log。
-- V1–V14已应用，禁止改历史迁移。已有S9a任务分支feat/persistent-marketing-journeys，验证通过待正常Git交付。
+- 无本地阻塞。分支feat/runtime-delivery，main=48e3fcf。远程origin=git@github.com:lirji/commerce-platform.git。
+- 最终应用为commerce-platform-app-1，健康，http://127.0.0.1:8602；不再运行宿主Java/Vite。
+- MySQL8.4.11，宿主43306/容器mysql84:3306，独立commerce_local与commerce_test_20260923，V1–V15不可改历史。
+- 私密配置.local/runtime.env、.local/compose.env；登录令牌.local/demo-access.json。
 
 ## 下一步建议
 
-1. 完成S9a受控Git交付后马上开始S9b低代码运营，不等待用户继续。
-2. 冻结S9b类型化DSL契约并实现验证，随后连续推进S10。
+1. 检查当前任务diff/机密/验证指纹，按完整S10b提交并推送feat/runtime-delivery。
+2. ci-cd-gate读取真实CI，必要时修复失败；不把静态lint当CI通过。
+3. 分支CI通过后文档记录、main快进合并推送，核对main CI和干净工作树，最终汇报。
 
 ## 恢复 Prompt
 
-读取本文件、docs/PROGRESS_STATE.json与实施计划，从S9b继续。用户已授权做完整计划，不重新规划前八阶段，不等待继续。外部联调后置；保护旧仓dirty和旧规则迁移门禁。逐片实现、真实验证、同步文档、正常Git交付，直到S10完成。
-
-## S9b最新检查点（覆盖上方下一步）
-
-- S9b已完成：低代码页面白名单DSL、真实数据只读预览、版本审批发布/回退、类型化业务动作及权限/幂等/审计。
-- 当前143项测试通过，证据docs/evidence/s9b/；S9整体DONE。S9a提交fa17885已推送main；S9b分支feat/lowcode-operations验证通过待交付。
-- 下一步S10a前端：采用frontend-architecture-design和frontend-implementation技能，形成单应用管理台/消费端设计。随后S10b数据/运行/CI/整体验收。
-- 已核对Node24.12.0/npm11.6.2及官方兼容资料；拟选React19.3.0、AntDesign6.6.5、Vite8.3.0、TypeScript7.0.2，最终以锁文件、类型检查和安全审计为证据。前端尚未开始写代码。
-- 后台app仍是S9a session92918；V15只在隔离测试库生效，前端测试前重启最新jar。
-
-## S10a最新检查点（覆盖上方下一步）
-
-- S10a已实现管理台和消费端，规则/旅程/低代码可视编辑；真实前端API与必要运营读取接口、全局admin角色门禁。
-- 后端144项测试通过；前端严格类型/构建通过；npm audit 0漏洞；4个真实浏览器全链路场景通过。见docs/evidence/s10a/TEST_RESULT.md及截图。
-- S9b提交7714c91已推送main；当前分支feat/commerce-console，待验证证据收尾和Git交付。前端dev端口8601，session20109；后端8600已重启最终S10a jar（见本轮tool输出，日志.local/app-s10a-final.log）。
-- 下一步立即S10b：打包静态资源、幂等完整演示seed、Dockerfile/Compose复用dev-infra网络、CI、架构/代码审查与最终文档同步。当前S10整体未完成。
-- dev-infra网络名dev-infra；缓存镜像eclipse-temurin:21.0.12_8-jre-ubi9-minimal，官方镜像digest已查得fa6a3cd1e88402446002f86e0d06f5202d7d6ec02d525888f9c0ea2eeb5b07ad。禁止清理共享容器。
+读取本文件和docs/PROGRESS_STATE.json，从远程CI/Git交付继续，不重做S0–S10，不等待“继续”。外部联调保持后置，不碰共享基础设施和旧仓。全部必要验证通过并正常推送main后才宣告整体本地计划完成。

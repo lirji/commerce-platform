@@ -1,0 +1,43 @@
+name: commerce-platform
+services:
+  app:
+    image: commerce-platform:${COMMERCE_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:${COMMERCE_HTTP_PORT:-8602}:8600"
+    environment:
+      COMMERCE_BIND_ADDRESS: 0.0.0.0
+      COMMERCE_PORT: 8600
+      COMMERCE_DB_URL: ${COMMERCE_DOCKER_DB_URL:?Configure the dedicated project database URL}
+      COMMERCE_DB_USER: ${COMMERCE_DB_USER:?Configure the dedicated project database user}
+      COMMERCE_DB_PASSWORD: ${COMMERCE_DB_PASSWORD:?Configure the project database credential}
+      COMMERCE_ADDRESS_KEY: ${COMMERCE_ADDRESS_KEY:?Retain the existing address encryption key}
+      COMMERCE_SANDBOX_ENABLED: ${COMMERCE_SANDBOX_ENABLED:-false}
+      COMMERCE_WORKERS_ENABLED: ${COMMERCE_WORKERS_ENABLED:-true}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -Djava.io.tmpdir=/tmp
+    networks:
+      - infra
+    read_only: true
+    tmpfs:
+      - /tmp:size=67108864,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 768m
+    cpus: 1.5
+    pids_limit: 128
+    stop_grace_period: 30s
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8600/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+networks:
+  infra:
+    external: true
+    name: ${COMMERCE_INFRA_NETWORK:-dev-infra}

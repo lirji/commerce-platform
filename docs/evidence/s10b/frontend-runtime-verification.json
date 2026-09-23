@@ -1,0 +1,47 @@
+{
+  "result": "PASS",
+  "browser": {
+    "startTime": "2026-09-23T11:30:25.831Z",
+    "duration": 15089.057999999999,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "sourceSha256": {
+    "Dockerfile": "d39cb55f816be1e5cb54b489fb9288bfae34797150c9d0c2c06928de5380aef5",
+    ".dockerignore": "abf071ca1773543e7c5fb76d37d611cc3578579a605417fcd76887f369f3569e",
+    "compose.yaml": "d5f675c933dee812fc193d70340cb1c42ac9cea365531195db226d6951ffa194",
+    "frontend/package-lock.json": "8b1b783c6e2e3123f5833da370393c0d19c26bfef9021cd669d4c9f87fcf1ae1",
+    "frontend/package.json": "71ab64e9f99a231ae4c9257530c9752f7f1ab338ca161fa060b1a98bf82d70c5",
+    "frontend/tsconfig.json": "d36178a2a9e2942bcaeba71ca8b29f57d4f7207c76e5c6b4c8d7d818a331a46f",
+    "frontend/playwright.config.ts": "fed6685f4a8e67a4a74717960f4971b858e3a29b53832060af037d9a8eda1795",
+    "frontend/vite.config.ts": "5b6df7197557e0c3203533aeec372884e7b039d1ca6ae977f509e85c813431bb",
+    "frontend/tests/commerce.spec.ts": "3576af11b861acaa06887585da33303f2aa83a155e8127b42e9e382d0661d084",
+    "frontend/src/main.tsx": "9fbf72621b44752477e312bc4c791e2ee33d557ed1e51be84d311ae9c100c904",
+    "frontend/src/style.css": "3df900134f97623618d138603e176969288242c8f27da5cc4661666a6717fd05",
+    "frontend/src/app/App.tsx": "9e23cb4d45884cc75acb58376c04c6ccd4d1941746955fdc014cbf953e5b4d14",
+    "frontend/src/features/Shop.tsx": "8105912ecf67bc69ae968f3412d8c168d0bab7a2b3e4cc293bc5def26d27a3a3",
+    "frontend/src/features/AdminData.tsx": "4403d2c8a472c47b4746554b80249b6dd016ebc65abe411ee593f8248a3315a1",
+    "frontend/src/features/Marketing.tsx": "3763c24bcf7e8b1aaa1d67bd0a0557483a67fc22ec3884706aa6bf7a6c2ecac9",
+    "frontend/src/features/Journeys.tsx": "af6227f2d6402e8119897957911d61a3008742a36019580495fe16b8ab0729a6",
+    "frontend/src/features/OpsPages.tsx": "a78c8423e5c8393ea3112e4f834c5efcd8955558f4583e638aea3a8ec72c7997",
+    "frontend/src/features/Orders.tsx": "f0086e14f48a68c236f94e55cf686111fca1cd36e249cee0e521bc5179ee0166",
+    "frontend/src/features/MemberWallet.tsx": "67af91d6e35b4f3227bd33501c34069bf41715779030daa4ddd3f6cd6a2f66e3",
+    "frontend/src/shared/contracts.ts": "8222e944358df4e858c633fc790fa87aae5110e8e2080704bb0a98c97f2bac87",
+    "frontend/src/shared/api.ts": "b96afee197208fd1a72240857ae8f90736d273d2ce8651cb32df2a3f95040390",
+    "frontend/src/shared/marketing.tsx": "3f7f506c8dbffaea42357e2370f305db6255170a4b51bf4c1fa9f13bb259c271",
+    "frontend/src/shared/formSchemas.ts": "208f71acc5b84775942b7c36cb909df4081be1d1b9c02b5c73735d71396f71c6",
+    "frontend/src/shared/ui.tsx": "3f59acbc21716986adfea0aaed7bc139d5f69ecfb6c1b130c3a6b540623014a6",
+    ".engineering/bootstrap/PROJECT_BOOTSTRAP_REPORT.json": "219b5db5a28fd127afd547e373c415273e5dbb822b6875c1b54a354afd9fc45d"
+  },
+  "commands": [
+    "npm run build --prefix frontend",
+    "COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../docs/evidence/s10b npm run e2e --prefix frontend",
+    "./deploy/up.sh",
+    "python3 deploy/smoke.py"
+  ],
+  "runtimeEvidence": "runtime-verification.json",
+  "npmAuditVulnerabilities": 0,
+  "workflowActionlint": "PASS"
+}

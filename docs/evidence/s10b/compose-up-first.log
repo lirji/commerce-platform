@@ -1,0 +1,53 @@
+Private Compose configuration written; no credential values printed.
+ Image commerce-platform:local Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 554B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 434B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:21.0.12_8-jre-ubi9-minimal@sha256:fa6a3cd1e88402446002f86e0d06f5202d7d6ec02d525888f9c0ea2eeb5b07ad
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 144B done
+#4 DONE 0.0s
+
+#5 [1/3] FROM docker.io/library/eclipse-temurin:21.0.12_8-jre-ubi9-minimal@sha256:fa6a3cd1e88402446002f86e0d06f5202d7d6ec02d525888f9c0ea2eeb5b07ad
+#5 resolve docker.io/library/eclipse-temurin:21.0.12_8-jre-ubi9-minimal@sha256:fa6a3cd1e88402446002f86e0d06f5202d7d6ec02d525888f9c0ea2eeb5b07ad 0.0s done
+#5 DONE 0.0s
+
+#6 [2/3] WORKDIR /app
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 35.02MB 0.3s done
+#7 DONE 0.3s
+
+#8 [3/3] COPY --chown=10001:10001 commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar /app/commerce.jar
+#8 DONE 0.1s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 1.0s done
+#9 exporting manifest sha256:47dbbdddf1e8000c032d33e237f96de95643cc33cb23fd9cc53f663a15da2b2d done
+#9 exporting config sha256:a7f6b991596ad75051b28648eb3c0098b5ca853829c0a0d030f9e4a5fc0372ab
+#9 exporting config sha256:a7f6b991596ad75051b28648eb3c0098b5ca853829c0a0d030f9e4a5fc0372ab 0.0s done
+#9 exporting attestation manifest sha256:ff360e578d6d346bad36deba2353c10b1db77c611b4ce455bf583b874a2debde done
+#9 exporting manifest list sha256:2ce0f59bc624306017ffd73e20f07a881d580294e12b0864054d76c5b3db5f08 done
+#9 naming to docker.io/library/commerce-platform:local done
+#9 unpacking to docker.io/library/commerce-platform:local
+#9 unpacking to docker.io/library/commerce-platform:local 0.2s done
+#9 DONE 1.4s
+
+#10 resolving provenance for metadata file
+#10 DONE 0.0s
+ Image commerce-platform:local Built 
+ Container commerce-platform-app-1 Creating 
+ Container commerce-platform-app-1 Created 
+ Container commerce-platform-app-1 Starting 
+ Container commerce-platform-app-1 Started 
+ Container commerce-platform-app-1 Waiting 
+ Container commerce-platform-app-1 Healthy 

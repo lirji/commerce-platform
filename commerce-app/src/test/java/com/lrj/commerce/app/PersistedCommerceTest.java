@@ -733,6 +733,11 @@ class PersistedCommerceTest {
         assertTrue(call("GET","/v1/runtime-capabilities",member,null,null).body().path("sandboxEnabled").asBoolean());
         assertEquals(401,call("GET","/v1/runtime-capabilities",null,null,null).status());
     }
+    @Test void protocolErrorsDoNotBecomeInternalServerFailures() throws Exception {
+        assertEquals(400,call("GET","/v1/catalog",member,null,null).status());
+        assertEquals(404,call("GET","/v1/no-such-endpoint",member,null,null).status());
+        assertEquals(405,call("POST","/v1/me",member,null,null).status());
+    }
     @Test void everyBusinessTableAndColumnHasComments() {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND TABLE_COMMENT=''",Integer.class));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME<>'flyway_schema_history' AND COLUMN_COMMENT=''",Integer.class));

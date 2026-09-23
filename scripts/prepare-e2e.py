@@ -7,11 +7,11 @@ env={}
 for line in (root/'.local/runtime.env').read_text().splitlines():
     key,value=line.removeprefix('export ').split('=',1);env[key]=shlex.split(value)[0]
 if '/commerce_local?' not in env['COMMERCE_DB_URL']:raise SystemExit('Only the project local schema is allowed.')
-tenant='browser-'+str(uuid.uuid4());access={'tenant':tenant,'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'baseUrl':'http://127.0.0.1:8600','storeId':'browser-store'}
+tenant='browser-'+str(uuid.uuid4());access={'tenant':tenant,'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'baseUrl':os.getenv('COMMERCE_E2E_BASE_URL','http://127.0.0.1:8600'),'storeId':'browser-store'}
 sql=''
 for field,actor,role in [('adminToken','browser-admin','ADMIN'),('memberToken','browser-buyer','MEMBER')]:
     digest=hashlib.sha256(access[field].encode()).hexdigest();sql+=f"INSERT INTO platform_credential(token_hash,tenant_id,actor_id,role,expires_at) VALUES('{digest}','{tenant}','{actor}','{role}',DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 DAY));\n"
-p=subprocess.run(['docker','exec','-i','-e','MYSQL_PWD','dev-infra-mysql84-1','mysql','-ucommerce_app','commerce_local'],input=sql,text=True,capture_output=True,env=dict(os.environ,MYSQL_PWD=env['COMMERCE_DB_PASSWORD']),timeout=15)
+p=subprocess.run(['docker','exec','-i','-e','MYSQL_PWD',os.getenv('COMMERCE_MYSQL_CONTAINER','dev-infra-mysql84-1'),'mysql','-ucommerce_app','commerce_local'],input=sql,text=True,capture_output=True,env=dict(os.environ,MYSQL_PWD=env['COMMERCE_DB_PASSWORD']),timeout=15)
 if p.returncode:raise SystemExit('Browser credentials could not be provisioned; details suppressed.')
 path=root/'.local/e2e-access.json';fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
 with os.fdopen(fd,'w') as f:json.dump(access,f,indent=2)

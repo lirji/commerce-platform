@@ -6,6 +6,7 @@ const access = JSON.parse(
     "utf8",
   ),
 );
+const evidence = process.env.COMMERCE_EVIDENCE_DIR ?? "../docs/evidence/s10a";
 async function login(page: Page, role: "admin" | "member") {
   await page.goto("/");
   await page
@@ -41,7 +42,7 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
   await login(member, "member");
   await expect(member.getByText("精品咖啡礼盒", { exact: true })).toBeVisible();
   await member.screenshot({
-    path: "../docs/evidence/s10a/member-shop.png",
+    path: `${evidence}/member-shop.png`,
     fullPage: true,
   });
   await nav(member, "优惠券");
@@ -139,7 +140,7 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
     .toBe("REVOKED");
   await nav(admin, "订单工作台");
   await admin.screenshot({
-    path: "../docs/evidence/s10a/admin-orders.png",
+    path: `${evidence}/admin-orders.png`,
     fullPage: true,
   });
   expect(errors).toEqual([]);
@@ -170,7 +171,7 @@ test("可视规则与低代码页面预览、审批、发布及窄屏", async ({
       .getByText("会员满100减20", { exact: true }),
   ).toBeVisible();
   await page.screenshot({
-    path: "../docs/evidence/s10a/lowcode-preview.png",
+    path: `${evidence}/lowcode-preview.png`,
     fullPage: true,
   });
   await page.getByRole("button", { name: "保存页面草稿", exact: true }).click();
@@ -186,7 +187,7 @@ test("可视规则与低代码页面预览、审批、发布及窄屏", async ({
   await login(mobile, "member");
   await expect(mobile.getByText("精品咖啡礼盒", { exact: true })).toBeVisible();
   await mobile.screenshot({
-    path: "../docs/evidence/s10a/member-mobile.png",
+    path: `${evidence}/member-mobile.png`,
     fullPage: true,
   });
   expect(

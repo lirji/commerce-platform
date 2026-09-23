@@ -15,7 +15,7 @@ export default defineConfig({
   },
   reporter: [
     ["list"],
-    ["json", { outputFile: "../docs/evidence/s10a/browser-results.json" }],
+    ["json", { outputFile: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../docs/evidence/s10a"}/browser-results.json` }],
   ],
   outputDir: "../.local/browser-results",
 });

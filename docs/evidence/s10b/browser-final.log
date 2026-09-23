@@ -1,0 +1,15 @@
+
+> commerce-console@0.1.0 e2e
+> playwright test
+
+
+Running 4 tests using 1 worker
+
+(node:51156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/commerce.spec.ts:34:1 › 真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正 (9.8s)
+  ✓  2 tests/commerce.spec.ts:150:1 › 可视规则与低代码页面预览、审批、发布及窄屏 (1.7s)
+  ✓  3 tests/commerce.spec.ts:200:1 › 无效凭据不会进入应用，退出后清除会话 (663ms)
+  ✓  4 tests/commerce.spec.ts:212:1 › 旅程可视编排、手工入组与会员站内触达 (2.4s)
+
+  4 passed (15.1s)

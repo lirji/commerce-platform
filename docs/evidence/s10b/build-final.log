@@ -1,0 +1,728 @@
+
+added 97 packages, and audited 98 packages in 4s
+
+10 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> commerce-console@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 1498 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.41 kB │ gzip:   0.31 kB
+dist/assets/index-CL3iTUYW.css      6.49 kB │ gzip:   2.04 kB
+dist/assets/index-DDNxZXTs.js   1,122.67 kB │ gzip: 356.20 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 900 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 475ms
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] commerce-platform                                                  [pom]
+[INFO] shared-kernel                                                      [jar]
+[INFO] platform-runtime                                                   [jar]
+[INFO] member                                                             [jar]
+[INFO] merchant                                                           [jar]
+[INFO] store                                                              [jar]
+[INFO] catalog                                                            [jar]
+[INFO] marketing                                                          [jar]
+[INFO] benefit                                                            [jar]
+[INFO] marketing-runtime                                                  [jar]
+[INFO] trade                                                              [jar]
+[INFO] inventory                                                          [jar]
+[INFO] order                                                              [jar]
+[INFO] order-runtime                                                      [jar]
+[INFO] payment                                                            [jar]
+[INFO] fulfillment                                                        [jar]
+[INFO] aftersales                                                         [jar]
+[INFO] marketing-automation                                               [jar]
+[INFO] commerce-app                                                       [jar]
+[INFO] architecture-tests                                                 [jar]
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:commerce-platform >-----------------
+[INFO] Building commerce-platform 0.1.0-SNAPSHOT                         [1/20]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ commerce-platform ---
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:shared-kernel >-------------------
+[INFO] Building shared-kernel 0.1.0-SNAPSHOT                             [2/20]
+[INFO]   from shared-kernel/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ shared-kernel ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared-kernel ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ shared-kernel ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared-kernel ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ shared-kernel ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.kernel.MoneyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.lrj.commerce.kernel.MoneyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ shared-kernel ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/shared-kernel/target/shared-kernel-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:platform-runtime >------------------
+[INFO] Building platform-runtime 0.1.0-SNAPSHOT                          [3/20]
+[INFO]   from platform-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ platform-runtime ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/platform-runtime/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-runtime ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ platform-runtime ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 10 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-runtime ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/platform-runtime/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ platform-runtime ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ platform-runtime ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ platform-runtime ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/platform-runtime/target/platform-runtime-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:member >-----------------------
+[INFO] Building member 0.1.0-SNAPSHOT                                    [4/20]
+[INFO]   from member/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ member ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/member/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ member ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ member ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ member ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/member/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ member ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ member ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ member ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/member/target/member-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------------< com.lrj.commerce:merchant >----------------------
+[INFO] Building merchant 0.1.0-SNAPSHOT                                  [5/20]
+[INFO]   from merchant/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ merchant ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/merchant/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ merchant ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ merchant ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ merchant ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/merchant/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ merchant ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ merchant ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ merchant ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/merchant/target/merchant-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:store >-----------------------
+[INFO] Building store 0.1.0-SNAPSHOT                                     [6/20]
+[INFO]   from store/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ store ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/store/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ store ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ store ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ store ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/store/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ store ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ store ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ store ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/store/target/store-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:catalog >----------------------
+[INFO] Building catalog 0.1.0-SNAPSHOT                                   [7/20]
+[INFO]   from catalog/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ catalog ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/catalog/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ catalog ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ catalog ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ catalog ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/catalog/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ catalog ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ catalog ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ catalog ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/catalog/target/catalog-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------------< com.lrj.commerce:marketing >---------------------
+[INFO] Building marketing 0.1.0-SNAPSHOT                                 [8/20]
+[INFO]   from marketing/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ marketing ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/marketing/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketing ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketing ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ marketing ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ marketing ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ marketing ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.marketing.MarketingDecisionTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.169 s -- in com.lrj.commerce.marketing.MarketingDecisionTest
+[INFO] Running com.lrj.commerce.marketing.RuleEvaluatorTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in com.lrj.commerce.marketing.RuleEvaluatorTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ marketing ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/marketing/target/marketing-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:benefit >----------------------
+[INFO] Building benefit 0.1.0-SNAPSHOT                                   [9/20]
+[INFO]   from benefit/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ benefit ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/benefit/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ benefit ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ benefit ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ benefit ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/benefit/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ benefit ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ benefit ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ benefit ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/benefit/target/benefit-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------< com.lrj.commerce:marketing-runtime >-----------------
+[INFO] Building marketing-runtime 0.1.0-SNAPSHOT                        [10/20]
+[INFO]   from marketing-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ marketing-runtime ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/marketing-runtime/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketing-runtime ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketing-runtime ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 10 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ marketing-runtime ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing-runtime/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ marketing-runtime ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ marketing-runtime ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ marketing-runtime ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/marketing-runtime/target/marketing-runtime-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:trade >-----------------------
+[INFO] Building trade 0.1.0-SNAPSHOT                                    [11/20]
+[INFO]   from trade/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ trade ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/trade/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ trade ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ trade ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ trade ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/trade/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ trade ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ trade ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ trade ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/trade/target/trade-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------------< com.lrj.commerce:inventory >---------------------
+[INFO] Building inventory 0.1.0-SNAPSHOT                                [12/20]
+[INFO]   from inventory/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ inventory ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/inventory/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ inventory ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ inventory ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ inventory ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/inventory/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ inventory ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ inventory ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ inventory ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/inventory/target/inventory-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------------< com.lrj.commerce:order >-----------------------
+[INFO] Building order 0.1.0-SNAPSHOT                                    [13/20]
+[INFO]   from order/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ order ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/order/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ order ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/order/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ order ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ order ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/order/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ order ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ order ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.order.OrderLifecycleTest
+[INFO] Tests run: 45, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.096 s -- in com.lrj.commerce.order.OrderLifecycleTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 45, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ order ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/order/target/order-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:order-runtime >-------------------
+[INFO] Building order-runtime 0.1.0-SNAPSHOT                            [14/20]
+[INFO]   from order-runtime/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ order-runtime ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/order-runtime/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ order-runtime ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ order-runtime ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ order-runtime ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/order-runtime/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ order-runtime ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ order-runtime ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ order-runtime ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/order-runtime/target/order-runtime-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< com.lrj.commerce:payment >----------------------
+[INFO] Building payment 0.1.0-SNAPSHOT                                  [15/20]
+[INFO]   from payment/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ payment ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/payment/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ payment ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ payment ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 10 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ payment ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/payment/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ payment ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ payment ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ payment ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/payment/target/payment-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------------< com.lrj.commerce:fulfillment >--------------------
+[INFO] Building fulfillment 0.1.0-SNAPSHOT                              [16/20]
+[INFO]   from fulfillment/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ fulfillment ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/fulfillment/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ fulfillment ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ fulfillment ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ fulfillment ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/fulfillment/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ fulfillment ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ fulfillment ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ fulfillment ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/fulfillment/target/fulfillment-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------------< com.lrj.commerce:aftersales >---------------------
+[INFO] Building aftersales 0.1.0-SNAPSHOT                               [17/20]
+[INFO]   from aftersales/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ aftersales ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/aftersales/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ aftersales ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ aftersales ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ aftersales ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/aftersales/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ aftersales ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ aftersales ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ aftersales ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/aftersales/target/aftersales-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------< com.lrj.commerce:marketing-automation >----------------
+[INFO] Building marketing-automation 0.1.0-SNAPSHOT                     [18/20]
+[INFO]   from marketing-automation/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ marketing-automation ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/marketing-automation/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketing-automation ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketing-automation ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 6 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ marketing-automation ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/marketing-automation/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ marketing-automation ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ marketing-automation ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ marketing-automation ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/marketing-automation/target/marketing-automation-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------< com.lrj.commerce:commerce-app >--------------------
+[INFO] Building commerce-app 0.1.0-SNAPSHOT                             [19/20]
+[INFO]   from commerce-app/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ commerce-app ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ commerce-app ---
+[INFO] Copying 16 resources from src/main/resources to target/classes
+[INFO] Copying 3 resources from ../frontend/dist to target/classes/static
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ commerce-app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 15 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ commerce-app ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/commerce-app/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ commerce-app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ commerce-app ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.app.PersistedCommerceTest
+19:27:58.826 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.lrj.commerce.app.PersistedCommerceTest]: PersistedCommerceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:27:58.888 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.lrj.commerce.app.CommerceApplication for test class com.lrj.commerce.app.PersistedCommerceTest
+19:27:58.929 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.lrj.commerce.app.PersistedCommerceTest]: PersistedCommerceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:27:58.930 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.lrj.commerce.app.CommerceApplication for test class com.lrj.commerce.app.PersistedCommerceTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-09-23T19:27:59.267+08:00  INFO 50341 --- [commerce-platform] [           main] c.l.commerce.app.PersistedCommerceTest   : Starting PersistedCommerceTest using Java 21.0.11 with PID 50341 (started by liruijun in /Users/liruijun/personal/LLM/commerce-platform/commerce-app)
+2026-09-23T19:27:59.268+08:00  INFO 50341 --- [commerce-platform] [           main] c.l.commerce.app.PersistedCommerceTest   : No active profile set, falling back to 1 default profile: "default"
+2026-09-23T19:27:59.976+08:00  INFO 50341 --- [commerce-platform] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-09-23T19:27:59.986+08:00  INFO 50341 --- [commerce-platform] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-23T19:27:59.986+08:00  INFO 50341 --- [commerce-platform] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-09-23T19:28:00.007+08:00  INFO 50341 --- [commerce-platform] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 726 ms
+2026-09-23T19:28:00.346+08:00  INFO 50341 --- [commerce-platform] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-23T19:28:00.507+08:00  INFO 50341 --- [commerce-platform] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1f2497d9
+2026-09-23T19:28:00.507+08:00  INFO 50341 --- [commerce-platform] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-23T19:28:00.522+08:00  INFO 50341 --- [commerce-platform] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:43306/commerce_test_20260923?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true (MySQL 8.4)
+2026-09-23T19:28:00.635+08:00  INFO 50341 --- [commerce-platform] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 15 migrations (execution time 00:00.023s)
+2026-09-23T19:28:00.648+08:00  INFO 50341 --- [commerce-platform] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `commerce_test_20260923`: 15
+2026-09-23T19:28:00.651+08:00  INFO 50341 --- [commerce-platform] [           main] o.f.core.internal.command.DbMigrate      : Schema `commerce_test_20260923` is up to date. No migration necessary.
+2026-09-23T19:28:00.834+08:00  WARN 50341 --- [commerce-platform] [           main] .s.a.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 6ec0ad1a-fc9c-465d-9b5a-90279d11c9bd
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-09-23T19:28:00.838+08:00  INFO 50341 --- [commerce-platform] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-09-23T19:28:00.924+08:00  INFO 50341 --- [commerce-platform] [           main] o.s.b.w.a.WelcomePageHandlerMapping      : Adding welcome page: class path resource [static/index.html]
+2026-09-23T19:28:01.101+08:00  INFO 50341 --- [commerce-platform] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-09-23T19:28:01.131+08:00  INFO 50341 --- [commerce-platform] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 61725 (http) with context path '/'
+2026-09-23T19:28:01.136+08:00  INFO 50341 --- [commerce-platform] [           main] c.l.commerce.app.PersistedCommerceTest   : Started PersistedCommerceTest in 2.01 seconds (process running for 2.735)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/Users/liruijun/personal/repository/net/bytebuddy/byte-buddy-agent/1.18.11/byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-09-23T19:28:01.609+08:00  INFO 50341 --- [commerce-platform] [1-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-23T19:28:01.609+08:00  INFO 50341 --- [commerce-platform] [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-23T19:28:01.610+08:00  INFO 50341 --- [commerce-platform] [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-09-23T19:28:03.347+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-3] c.lrj.commerce.runtime.EventDispatcher   : event retry id=25eb7501-2c25-4cad-b4ac-d01c57f1a86b errorType=MismatchedInputException
+2026-09-23T19:28:03.360+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-1] c.lrj.commerce.runtime.EventDispatcher   : event retry id=25eb7501-2c25-4cad-b4ac-d01c57f1a86b errorType=MismatchedInputException
+2026-09-23T19:28:03.372+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-4] c.lrj.commerce.runtime.EventDispatcher   : event retry id=25eb7501-2c25-4cad-b4ac-d01c57f1a86b errorType=MismatchedInputException
+2026-09-23T19:28:03.383+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-2] c.lrj.commerce.runtime.EventDispatcher   : event retry id=25eb7501-2c25-4cad-b4ac-d01c57f1a86b errorType=MismatchedInputException
+2026-09-23T19:28:03.402+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-3] c.lrj.commerce.runtime.EventDispatcher   : event retry id=25eb7501-2c25-4cad-b4ac-d01c57f1a86b errorType=MismatchedInputException
+2026-09-23T19:28:11.516+08:00  WARN 50341 --- [commerce-platform] [           main] c.l.c.p.application.PaymentService       : payment check id=9f6dde75-6f47-4e6b-9d61-3c764acfc207 errorType=DomainException
+2026-09-23T19:28:11.536+08:00  WARN 50341 --- [commerce-platform] [           main] c.l.c.p.application.PaymentService       : payment check id=1545a13b-ed92-4b7b-8042-73e22ab68b42 errorType=DomainException
+2026-09-23T19:28:11.554+08:00  WARN 50341 --- [commerce-platform] [           main] c.l.c.p.application.PaymentService       : payment check id=261fbc3c-99bf-45a9-96aa-3f1b5053fa5f errorType=DomainException
+2026-09-23T19:28:11.565+08:00  WARN 50341 --- [commerce-platform] [           main] c.l.c.p.application.PaymentService       : payment check id=f99bb47d-457e-4237-a402-dd35a15e3d9f errorType=DomainException
+2026-09-23T19:28:11.587+08:00  WARN 50341 --- [commerce-platform] [           main] c.l.c.p.application.PaymentService       : payment check id=ba73fbf1-847e-46a4-8090-f9266f70e76f errorType=DomainException
+2026-09-23T19:28:16.239+08:00  WARN 50341 --- [commerce-platform] [-auto-1-exec-10] c.l.c.j.application.JourneyService       : journey retry id=f1c9abb3-4435-4c49-a074-454f53612c47 errorType=DomainException
+2026-09-23T19:28:16.251+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-1] c.l.c.j.application.JourneyService       : journey retry id=f1c9abb3-4435-4c49-a074-454f53612c47 errorType=DomainException
+2026-09-23T19:28:16.261+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-9] c.l.c.j.application.JourneyService       : journey retry id=f1c9abb3-4435-4c49-a074-454f53612c47 errorType=DomainException
+2026-09-23T19:28:16.272+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-5] c.l.c.j.application.JourneyService       : journey retry id=f1c9abb3-4435-4c49-a074-454f53612c47 errorType=DomainException
+2026-09-23T19:28:16.284+08:00  WARN 50341 --- [commerce-platform] [1-auto-1-exec-6] c.l.c.j.application.JourneyService       : journey retry id=f1c9abb3-4435-4c49-a074-454f53612c47 errorType=DomainException
+[INFO] Tests run: 70, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.75 s -- in com.lrj.commerce.app.PersistedCommerceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 70, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ commerce-app ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:4.1.1:repackage (default) @ commerce-app ---
+[INFO] Replacing main artifact /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /Users/liruijun/personal/LLM/commerce-platform/commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar.original
+[INFO] 
+[INFO] ----------------< com.lrj.commerce:architecture-tests >-----------------
+[INFO] Building architecture-tests 0.1.0-SNAPSHOT                       [20/20]
+[INFO]   from architecture-tests/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ architecture-tests ---
+[INFO] Deleting /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ architecture-tests ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ architecture-tests ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ architecture-tests ---
+[INFO] skip non existing resourceDirectory /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ architecture-tests ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ architecture-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.lrj.commerce.architecture.ModuleBoundaryTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.272 s -- in com.lrj.commerce.architecture.ModuleBoundaryTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ architecture-tests ---
+[INFO] Building jar: /Users/liruijun/personal/LLM/commerce-platform/architecture-tests/target/architecture-tests-0.1.0-SNAPSHOT.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for commerce-platform 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] commerce-platform .................................. SUCCESS [  0.061 s]
+[INFO] shared-kernel ...................................... SUCCESS [  1.135 s]
+[INFO] platform-runtime ................................... SUCCESS [  0.315 s]
+[INFO] member ............................................. SUCCESS [  0.078 s]
+[INFO] merchant ........................................... SUCCESS [  0.072 s]
+[INFO] store .............................................. SUCCESS [  0.073 s]
+[INFO] catalog ............................................ SUCCESS [  0.081 s]
+[INFO] marketing .......................................... SUCCESS [  0.755 s]
+[INFO] benefit ............................................ SUCCESS [  0.129 s]
+[INFO] marketing-runtime .................................. SUCCESS [  0.136 s]
+[INFO] trade .............................................. SUCCESS [  0.096 s]
+[INFO] inventory .......................................... SUCCESS [  0.071 s]
+[INFO] order .............................................. SUCCESS [  0.495 s]
+[INFO] order-runtime ...................................... SUCCESS [  0.095 s]
+[INFO] payment ............................................ SUCCESS [  0.114 s]
+[INFO] fulfillment ........................................ SUCCESS [  0.075 s]
+[INFO] aftersales ......................................... SUCCESS [  0.084 s]
+[INFO] marketing-automation ............................... SUCCESS [  0.129 s]
+[INFO] commerce-app ....................................... SUCCESS [ 19.447 s]
+[INFO] architecture-tests ................................. SUCCESS [  0.642 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  24.271 s
+[INFO] Finished at: 2026-09-23T19:28:17+08:00
+[INFO] ------------------------------------------------------------------------
+Verified application jar contains both UI and APIs.

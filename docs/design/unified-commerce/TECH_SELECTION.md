@@ -1,22 +1,8 @@
 # 技术选择与工程基线
 
-Owner：backend-architecture-design。本次只固定已安装且可离线验证的 Java 21 + Maven 3.9.12，领域内核无生产三方依赖；JUnit 5.10.5 用于测试，Maven compiler 3.13.0 / surefire 3.2.5 使用本地缓存。版本是可复现基线，不宣称最新或生产漏洞扫描通过。不新增线上框架依赖。
+当前有效基线：Java 21、Maven 3.9.12、Spring Boot 4.1.1 BOM、MyBatis starter 4.0.1、MySQL 8.4.11、Flyway（BOM管理）、JUnit 6（BOM管理）、Surefire 3.5.4。纯 shared-kernel/marketing/order 无运行框架依赖；SQL 集中在所属模块 Mapper XML。具体依赖锁定以 pom.xml 和 frontend/package-lock.json 为准。
 
-| 问题 | 候选 | 决定/阶段 | 代价与约束 |
-|---|---|---|---|
-| 模块组织 | 单模块分包 / Maven 多模块 / 微服务 | Maven 多模块、一个未来装配应用 | 多模块维护成本换编译边界；用户明确模块化单体 |
-| 领域计算 | 框架托管 / 纯 Java | 首批纯 Java | 可独立测试、无框架升级耦合；不是内存正式数据库 |
-| HTTP 应用 | 现有 Spring Boot 主线 / 其他 JVM 框架 | 后续复用 Spring Boot，精确版本暂未冻结 | 现有仓有 3.3.5 与 4.1.1，不直接混用；引入前查官方兼容与漏洞 |
-| 持久化 | MySQL / PostgreSQL | 候选 MySQL 8.4 + Flyway + MyBatis XML | 复用 dev-infra 声明，须先核验实际实例、隔离 schema 和兼容版本 |
-| 动态规则 | 受限条件树 / Drools / 任意脚本 | 本里程碑受限类型化条件树 | 表达力受限；无任意代码、可解释、计算有界。旧 Drools 迁移独立 |
-| 可靠异步 | 数据库任务 / Kafka / RabbitMQ | 首个异步切片先评估本地 Outbox 任务 | 对接原平台时复用现有组件；不同时默认引入两种 MQ |
-| 缓存/搜索 | SQL / Redis / ES | 先主库查询，性能证据触发新增 | 不用缓存承担库存、权限、资金最终判断 |
-| 登录/权限 | 复用 auth-platform / 自建 | 外部适配现有平台 | 主体映射、租户授权必须有可信来源，暂不伪造登录 |
-| UI | 复用已有 React 管理台经验 / 重选 | 后续运营台架构切片 | 使用真实 API，不硬编码业务 Mock |
-
-首批质量基线：Money 不接受负数/超精度，类型化 ID 与不可变集合；规则缺失/类型不符为 UNKNOWN，NOT UNKNOWN 仍 UNKNOWN；每请求规则数、事实数、树深/节点、行数有上限；优惠择优与分摊可复现；订单状态事件集中且非法迁移拒绝。架构检查确保订单与营销不直接依赖彼此、领域不导入框架/持久化实现。
-
-本次纯计算没有正式业务存储，未使用纯内存库替代数据库。新增数据库切片必须含表/列中文注释、约束、并发/回滚实测与种子脚本；正式数据不得存 JSON 文件。工作区根不是 Git 仓库；新项目在收尾时已出现 Git 与 origin 配置，交付复用该远程，不重新创建仓库。
+选择 Maven 多模块、单个 Spring 应用和同库本地事务，避免在没有独立扩容/发布证据时引入微服务。可靠异步采用数据库 Outbox/Inbox 与持久旅程，不引入 Kafka/RabbitMQ；规则采用受限 AST，不迁移旧 Drools。查询先使用 MySQL，不引入 Redis/ES。所有新增迁移含表/列中文注释，由真实 MySQL 测试验证。
 
 ## S4运行时选型（2026-09-23）
 
@@ -31,3 +17,9 @@ Owner：backend-architecture-design。本次只固定已安装且可离线验证
 ## S10a前端基线
 
 单React SPA，React/ReactDOM19.3.0、AntDesign6.6.5、Vite8.3.0、TypeScript7.0.2、Playwright1.63.0、Prettier3.9.9，精确解析见frontend/package-lock.json。Node24.12.0/npm11.6.2实测。参考仓已有React/Ant经验，不引入第二组件库或SSR。官方依据及界面/状态设计见FRONTEND_ARCHITECTURE.md；npm registry元数据确认React/Ant/Vite MIT、TypeScript/Playwright Apache2.0，npm audit未发现已知漏洞（证据s10a/npm-audit.json）。这不替代生产供应链持续扫描。
+
+## S10b交付基线
+
+构建顺序为 npm ci → 前端类型检查/构建 → Maven clean verify（with-ui profile）→ 同源可执行 jar。Docker 只封装已验证 jar，Temurin 21.0.12+8 UBI9 minimal 固定 digest，MySQL 复用 dev-infra 外部网络，镜像与参数见 Dockerfile/compose.yaml。前端静态资源不需独立 Node 运行进程。
+
+GitHub Actions 使用临时 MySQL 8.4.11、Java21、Node24.12.0，官方 action 固定提交 SHA；构建、npm audit、真实浏览器验收均为实际执行步骤。actionlint1.7.12 在本地验证工作流语法；这不替代远程执行结果。没有生产自动部署。版本兼容与许可证核查记录不等同于完整后端 CVE/SBOM 审计，生产发布前需独立持续扫描。

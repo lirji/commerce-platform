@@ -1,6 +1,6 @@
 {
   "task": "unified-commerce-new-build",
-  "status": "IN_PROGRESS",
+  "status": "LOCAL_PLAN_VALIDATED_CI_PENDING",
   "completed": [
     "S0",
     "S1",
@@ -22,16 +22,18 @@
     "S9a",
     "S9b",
     "S9",
-    "S10a"
+    "S10a",
+    "S10b",
+    "S10"
   ],
-  "next": "S10b",
+  "next": "REMOTE_CI_AND_GIT_DELIVERY",
   "fullPlatformComplete": false,
   "previousMigration": "UNCHANGED_BLOCKED",
-  "verification": "docs/evidence/s10a/verification.json",
+  "verification": "docs/evidence/s10b/verification.json",
   "git": {
-    "status": "S10A_VALIDATED_DELIVERY_PENDING",
-    "sourceCommit": "7714c91",
-    "branch": "feat/commerce-console"
+    "status": "S10B_VALIDATED_BRANCH_DELIVERY_PENDING",
+    "sourceCommit": "48e3fcf",
+    "branch": "feat/runtime-delivery"
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {
@@ -42,5 +44,6 @@
     "S7b": "entitlement compensation after S8 policy; retained scope",
     "S8a": "immutable audience/rule assets and governed campaign release",
     "S8b": "benefit/coupon/budget/stacking/order holds/refund compensation"
-  }
+  },
+  "localBuildComplete": true
 }

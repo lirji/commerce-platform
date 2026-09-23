@@ -134,11 +134,13 @@ public class JourneyService implements JourneyApi, EventHandler {
     private int pumpTenant(String tenant) {
         int count=0;
         for(var candidate:mapper.due(tenant,clock.instant())) {
-            try {if(Boolean.TRUE.equals(tx.execute(s->{var row=mapper.dueLock(tenant,candidate.instanceId(),clock.instant());if(row==null)return false;execute(tenant,row);return true;})))count++;}
+            // 领取前的候选可能已被另一执行器推进，失败计数必须绑定真正执行的节点版本。
+            var attempted=new java.util.concurrent.atomic.AtomicReference<>(candidate);
+            try {if(Boolean.TRUE.equals(tx.execute(s->{var row=mapper.dueLock(tenant,candidate.instanceId(),clock.instant());if(row==null)return false;attempted.set(row);execute(tenant,row);return true;})))count++;}
             catch(RuntimeException failure){
                 // 节点事务已回滚，独立事务仅记录有界重试，不保留可能包含敏感数据的异常文本。
-                var retryAt=clock.instant().plusSeconds((1<<Math.min(candidate.attempts()+1,5))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2));
-                tx.executeWithoutResult(s->mapper.failed(tenant,candidate.instanceId(),candidate.version(),retryAt));
+                var retryAt=clock.instant().plusSeconds((1<<Math.min(attempted.get().attempts()+1,5))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2));
+                tx.executeWithoutResult(s->mapper.failed(tenant,candidate.instanceId(),attempted.get().version(),retryAt));
                 org.slf4j.LoggerFactory.getLogger(getClass()).warn("journey retry id={} errorType={}",candidate.instanceId(),failure.getClass().getSimpleName());
             }
         }return count;

@@ -1,15 +1,20 @@
 # 文档地图
 
-同步基线：2026-09-23 新项目完整工作树；源码/构建摘要见evidence/verification.json。代码基线5e5d3bd；任务分支feat/unified-commerce-kernel，已进入远程main。
+同步范围：S0–S10 当前实现。历史切片证据保留当时计数和失败排查记录；最新验证入口为 `evidence/s10b/TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
 
-| 代码/配置 | 权威文档 |
+| 实现所有者 | 权威设计/契约 |
 |---|---|
-| shared-kernel | design/unified-commerce/CONTRACTS.md C1 |
-| marketing | design/unified-commerce/CONTRACTS.md C2–C3 |
-| order | design/unified-commerce/CONTRACTS.md C4 |
-| pom.xml / 架构测试 | design/unified-commerce/TECH_SELECTION.md、BACKEND_ARCHITECTURE.md |
-| 未来领域范围 | design/unified-commerce/CAPABILITY_MAP.md、MARKETING_DESIGN.md |
-| 测试与验证 | evidence/TEST_RESULT.md、verification.json |
-| 阶段与恢复 | design/unified-commerce/IMPLEMENTATION_SLICES.md、PROGRESS_STATE.json、../CODEX_PROGRESS.md |
+| shared-kernel、marketing、order 纯领域 | design/unified-commerce/CONTRACTS.md |
+| member、merchant、store、catalog、trade 报价 | design/unified-commerce/s4/CONTRACTS.md |
+| inventory、order-runtime（包 ordering）、订单/地址 | design/unified-commerce/s5/CONTRACTS.md |
+| payment、platform-runtime、Outbox/Inbox | design/unified-commerce/s6/CONTRACTS.md |
+| fulfillment、aftersales、退款/退货 | design/unified-commerce/s7/CONTRACTS.md |
+| marketing-runtime（包 campaign）、benefit | design/unified-commerce/s8/CONTRACTS.md |
+| marketing-automation（包 journey、ops） | design/unified-commerce/s9/CONTRACTS.md |
+| commerce-app、frontend、控制台读取接口 | design/unified-commerce/s10/CONTRACTS.md、FRONTEND_ARCHITECTURE.md |
+| 构建/镜像/Compose/CI/私密配置位置 | ../deploy/README.md、design/unified-commerce/TECH_SELECTION.md |
+| 数据所有权/事务及静态边界 | design/unified-commerce/BACKEND_ARCHITECTURE.md、architecture-tests |
+| 风险/外部后置项 | design/unified-commerce/RISKS.md、../.cursor/project-analysis/architecture-risks.md |
+| 计划/状态/恢复/Git | design/unified-commerce/IMPLEMENTATION_SLICES.md、PROGRESS_STATE.json、../CODEX_PROGRESS.md、evidence/DELIVERY_RESULT.md |
 
-无数据库连接、密码、外部API地址及部署端口；这些尚未引入，不写虚构连接手册。完整平台仍未实现，范围和差距见RISKS与进度。
+`CAPABILITY_MAP.md` 保留最初源仓扫描证据，不能把其中“待建设”当作当前完成状态。`previous-workspace-progress.md` 保留旧规则迁移门禁，不随本项目交付改变。当前连接/账号权限见 deploy/README.md；机密值只在忽略的本地文件中。

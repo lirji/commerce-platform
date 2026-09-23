@@ -1,41 +1,43 @@
 # 统一电商业务平台
 
-目标：DDD + 模块化单体，覆盖会员、商家、店铺、商品、营销、交易、订单、支付、履约及售后。营销包含活动、人群、动态规则、权益、优惠、旅程和低代码运营。
+基于 DDD 的 Java 模块化单体，单个 Spring Boot 进程提供 API、后台任务及 React 管理台/会员端，MySQL 持久化业务数据。S0–S10 的本地建设范围和验证结果见 [交付进度](docs/PROGRESS_STATE.json) 与 [最终验收](docs/evidence/s10b/TEST_RESULT.md)。
 
-当前已完成领域内核和S4持久化闭环：主数据、活动版本发布、可信事实优惠报价、MySQL存储、幂等与审计、本地Bearer认证、真实HTTP。订单状态机已有领域实现，实际下单/支付/履约、权益与旅程仍在建设。真实外部联调按用户要求后置。
+已实现会员、商家、店铺、SKU、库存、营销活动、人群快照、动态规则、优惠券、预算和权益、报价下单、支付、履约、退货退款及补偿。营销旅程支持持久化等待、条件决策、发权益和站内通知；低代码运营支持白名单组件、真实数据预览、审批发布和版本回退。
 
-本地运行与访问凭据位置见 [S4运行说明](docs/design/unified-commerce/s4/RUNTIME.md)。演示数据通过API写入数据库；没有页面硬编码数据。
+金额采用 CNY 精确分摊；支付未知结果不能释放库存或伪装成功；本地事务、条件更新、Outbox/Inbox、幂等命令及显式状态机保护业务不变量。真实 IdP、支付、外部权益及 WMS 联调按用户要求后置，当前支付/退款使用显式开启的持久化沙箱，权益为内部体验额度。
 
-## 构建
+## 本地使用
 
-需要 JDK 21、Maven。本机已有依赖缓存，可离线构建：
+当前已配置环境的入口为 **http://127.0.0.1:8602**。管理和会员访问凭据分别在 `.local/demo-access.json` 的 `adminToken`、`memberToken`，使用界面登录输入；文件不入库，令牌不写聊天或文档。
+
+需要 Java 21、Maven 3.9、Node 24、Docker Compose，以及已授权的独立 MySQL schema。当前复用 `dev-infra`，不启动第二套公共组件。新机器需先按 [运行手册](deploy/README.md) 配置数据库和私密环境文件。
 
 ```sh
-cd commerce-platform
-bash scripts/verify.sh -o
+./scripts/build.sh               # 前端构建 + 真实数据库测试 + 同源 jar
+./deploy/up.sh                   # 只构建/启动本项目应用
+COMMERCE_BASE_URL=http://127.0.0.1:8602 python3 scripts/seed-local.py
+python3 deploy/smoke.py
 ```
 
-首次在无缓存机器上需允许 Maven 下载依赖，再运行 `mvn -B verify`。纯领域内核没有生产三方依赖；应用模块使用Spring/MyBatis/Flyway。测试数据仅为 JUnit fixture，不是页面 Mock 或正式业务数据。
+演示数据通过 API 写入数据库，同一 UTC 日期重复执行不会重复创建示例订单。停止本项目使用 `./deploy/down.sh`；不删除数据，也不管理共享 MySQL。
 
-| 当前模块 | 职责 |
-|---|---|
-| shared-kernel | CNY 精确金额、稳定标识、业务错误 |
-| marketing | api 契约、三值条件树求值、单活动固定优惠择优、行分摊 |
-| order | 订单状态与事件、合法迁移和版本推进 |
-| architecture-tests | 对真实编译产物执行 jdeps 模块/技术依赖检查 |
+## 验证
 
-架构检查只覆盖当前编译类的静态依赖，不能证明未来数据库访问、反射和运行时隔离。
+```sh
+./scripts/verify.sh              # 后端与架构约束测试
+COMMERCE_E2E_BASE_URL=http://127.0.0.1:8602 python3 scripts/prepare-e2e.py
+COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../docs/evidence/s10b npm run e2e --prefix frontend
+```
 
-## 方案与进度
+浏览器测试使用独立租户和真实 API，覆盖下单、支付、履约、退款、权益冲正、规则发布、低代码、旅程和移动端。CI 配置在 `.github/workflows/verify.yml`，使用独立临时 MySQL，执行构建、数据库测试、依赖审计及 Chromium 验收。
 
-- [现有项目资产与缺口](docs/design/unified-commerce/CAPABILITY_MAP.md)
-- [总体架构与数据所有权](docs/design/unified-commerce/BACKEND_ARCHITECTURE.md)
-- [营销领域方案](docs/design/unified-commerce/MARKETING_DESIGN.md)
-- [技术选择与基线](docs/design/unified-commerce/TECH_SELECTION.md)
-- [首批精确契约](docs/design/unified-commerce/CONTRACTS.md)
-- [分阶段实施路线](docs/design/unified-commerce/IMPLEMENTATION_SLICES.md)
-- [风险与待决事项](docs/design/unified-commerce/RISKS.md)
-- [验证结果](docs/evidence/s4/TEST_RESULT.md)
-- [恢复入口](CODEX_PROGRESS.md)
+## 文档
 
-S4已完成；下一里程碑S5预占下单，然后支付与事件、履约售后、营销旅程及运营台。旧规则迁移计划独立保留，未被本项目建设解除。
+- [文档地图与契约入口](docs/doc-map.md)
+- [后端架构与数据所有权](docs/design/unified-commerce/BACKEND_ARCHITECTURE.md)
+- [营销设计](docs/design/unified-commerce/MARKETING_DESIGN.md)、[前端设计](docs/design/unified-commerce/FRONTEND_ARCHITECTURE.md)
+- [技术基线](docs/design/unified-commerce/TECH_SELECTION.md)、[实施切片](docs/design/unified-commerce/IMPLEMENTATION_SLICES.md)
+- [架构审查与生产前缺口](.cursor/project-analysis/architecture-risks.md)
+- [恢复记录](CODEX_PROGRESS.md)
+
+本地验收不代表生产容量、容灾或真实渠道认证通过。跨店合并支付、分账、多币种、真实仓储和外部身份平台没有冒充已实现；旧规则迁移仍是独立 BLOCKED 任务。

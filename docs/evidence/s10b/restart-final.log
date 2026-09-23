@@ -1,0 +1,36 @@
+ Container commerce-platform-app-1 Restarting 
+ Container commerce-platform-app-1 Started 
+{
+  "result": "PASS",
+  "baseUrl": "http://127.0.0.1:8602",
+  "sameDaySeedRepeat": "UNCHANGED",
+  "applicationRestart": "UNCHANGED",
+  "sharedInfrastructureRestarted": false,
+  "imageId": "sha256:251b8f33f6acb518f9be8ab0e483bce13063c41a99db8c136ca81801ebcdd50c",
+  "snapshots": {
+    "/v1/admin/orders": {
+      "rows": 5,
+      "sha256": "cebbddfde1428144e1b1f78ce14dea203a90be7d657f6e1dbf6c3a636b84f62a"
+    },
+    "/v1/admin/inventory?storeId=store-demo": {
+      "rows": 3,
+      "sha256": "dc69073dd0d8c6f381128101af1f1ea504b0e8ca444c1976ce16fa34a1ebfdb2"
+    },
+    "/v1/admin/entitlements": {
+      "rows": 2,
+      "sha256": "1fa8ba81627d15a4a3d66cd38a656150e2d827dfd949948efbcda09229accf6d"
+    },
+    "/v1/admin/aftersales": {
+      "rows": 2,
+      "sha256": "5e5f653a47d0232b5ba91a27387444a14eec1d68855268081432e7d5120351f4"
+    },
+    "/v1/admin/refunds": {
+      "rows": 2,
+      "sha256": "415092b6674695af7a9de619d45954aa357f2caaeda64dc833d2ba5ff8f9d5a2"
+    },
+    "/v1/admin/journey-instances": {
+      "rows": 3,
+      "sha256": "ec68b61758d6bb8b6a29e854f865214d01db452c58a4b7f97e70f34568724ef1"
+    }
+  }
+}

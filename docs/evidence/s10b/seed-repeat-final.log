@@ -1,0 +1,2 @@
+Demo data persisted through APIs; quote=84e6984b-5c1a-4e92-915e-cb99d258f2db payable=168.00. Access tokens are in .local/demo-access.json (not printed).
+Extended demo persisted: governed assets, coupons, benefits, journey, ops page, completed order and refunded order. Same-day rerun is idempotent.
