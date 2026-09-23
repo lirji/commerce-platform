@@ -1,6 +1,6 @@
 {
   "task": "unified-commerce-new-build",
-  "status": "LOCAL_PLAN_VALIDATED_CI_PENDING",
+  "status": "COMPLETE",
   "completed": [
     "S0",
     "S1",
@@ -26,14 +26,16 @@
     "S10b",
     "S10"
   ],
-  "next": "REMOTE_CI_AND_GIT_DELIVERY",
-  "fullPlatformComplete": false,
+  "next": "EXTERNAL_INTEGRATION_DEFERRED_BY_USER",
+  "fullPlatformComplete": true,
   "previousMigration": "UNCHANGED_BLOCKED",
   "verification": "docs/evidence/s10b/verification.json",
   "git": {
-    "status": "S10B_VALIDATED_BRANCH_DELIVERY_PENDING",
-    "sourceCommit": "48e3fcf",
-    "branch": "feat/runtime-delivery"
+    "status": "IMPLEMENTATION_MERGED_AND_PUSHED_MAIN",
+    "sourceCommit": "44f1823ec606ef8c14447b1fdf5974c6517020b6",
+    "branch": "main",
+    "remote": "origin",
+    "documentationCheckpoint": "Subsequent documentation-only commit records this verified implementation; main HEAD workflow is checked again at final handoff."
   },
   "externalIntegration": "DEFERRED_BY_USER_UNTIL_PROJECT_COMPLETION",
   "refinement": {
@@ -45,5 +47,7 @@
     "S8a": "immutable audience/rule assets and governed campaign release",
     "S8b": "benefit/coupon/budget/stacking/order holds/refund compensation"
   },
-  "localBuildComplete": true
+  "localBuildComplete": true,
+  "completionScope": "Approved S0-S10 local unified commerce build, including persisted sandbox; not real-provider or production readiness",
+  "ci": "docs/evidence/s10b/CI_RESULT.json"
 }

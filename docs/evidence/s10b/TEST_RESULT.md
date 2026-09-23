@@ -18,3 +18,5 @@
 不是本次验证：外部IdP/支付/权益/WMS联调（用户后置）、生产部署、负载容量、MySQL主切/备份恢复、真实多容器同时故障、完整后端CVE/SBOM扫描。前端npm audit不代表全平台安全认证。
 
 源指纹见 verification.json 与 frontend-runtime-verification.json；测试后没有修改业务产品代码。原始首次日志保留，最终通过日志名称含final。
+
+远程最终CI：实现提交 `44f1823ec606ef8c14447b1fdf5974c6517020b6` 的 [GitHub Actions](https://github.com/lirji/commerce-platform/actions/runs/35855767648) 全部通过。下载验收产物后独立汇总Surefire XML为145/0/0/0，Playwright为4通过/0失败/0跳过/0不稳定。见CI_RESULT.json；前两次CI环境/脚本问题已修复，未掩盖历史失败。

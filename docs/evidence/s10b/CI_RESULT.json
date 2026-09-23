@@ -1,0 +1,105 @@
+{
+  "gate": "PASS",
+  "ref": "44f1823ec606ef8c14447b1fdf5974c6517020b6",
+  "branch": "feat/runtime-delivery",
+  "url": "https://github.com/lirji/commerce-platform/actions/runs/35855767648",
+  "runId": 35855767648,
+  "checks": [
+    {
+      "name": "Set up job",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Run actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Create isolated CI resources",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Build and verify real MySQL semantics",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Audit frontend dependencies",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Start packaged application",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Browser fixtures and Chromium",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Real browser commerce acceptance",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Preserve verification evidence",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Stop only the ephemeral CI database",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Post Run actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "result": "SUCCESS"
+    },
+    {
+      "name": "Complete job",
+      "result": "SUCCESS"
+    }
+  ],
+  "backend": {
+    "tests": 145,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "browser": {
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0
+  },
+  "artifact": "commerce-verification",
+  "artifactDownloadedAndReportsParsed": true,
+  "workflowSha256": "7053d30906dcb511d8a04126eafce20bd2faec00f7c066684b387a2976f91ec8",
+  "ciBootstrapSha256": "8a966149bc5121edf3b87457ba049ddb84059af87faee724a1f9fe833f407578",
+  "priorFailures": [
+    {
+      "runId": 35855207933,
+      "stage": "MySQL entrypoint ALTER USER",
+      "resolution": "Use independent generated root credential in uniquely owned ephemeral CI container"
+    },
+    {
+      "runId": 35855436009,
+      "stage": "Jar packaging check required unavailable rg after all Maven tests passed",
+      "resolution": "Use Python stdlib ZipFile"
+    }
+  ],
+  "limitations": [
+    "External provider integration deferred by user",
+    "No production deployment or capacity/DR certification"
+  ]
+}
