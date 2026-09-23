@@ -16,21 +16,7 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    services:
-      mysql:
-        image: mysql:8.4.11
-        env:
-          # 临时CI令牌由GitHub提供并自动遮蔽；不在仓库保存数据库口令。
-          MYSQL_ROOT_PASSWORD: ${{ github.token }}
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --host=127.0.0.1 --silent"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=30
     env:
-      MYSQL_ROOT_PASSWORD: ${{ github.token }}
       COMMERCE_EVIDENCE_DIR: ../docs/evidence/s10b
       COMMERCE_UI_URL: http://127.0.0.1:8600
       COMMERCE_E2E_BASE_URL: http://127.0.0.1:8600
@@ -48,8 +34,6 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Create isolated CI resources
-        env:
-          COMMERCE_MYSQL_CONTAINER: ${{ job.services.mysql.id }}
         run: python3 scripts/ci-configure.py
       - name: Build and verify real MySQL semantics
         run: scripts/build.sh 2>&1 | tee docs/evidence/s10b/ci-build.log
@@ -66,8 +50,6 @@ jobs:
           done
           python3 deploy/smoke.py
       - name: Browser fixtures and Chromium
-        env:
-          COMMERCE_MYSQL_CONTAINER: ${{ job.services.mysql.id }}
         run: |
           python3 scripts/prepare-e2e.py
           cd frontend
@@ -85,3 +67,9 @@ jobs:
             docs/evidence/s10b/browser-results.json
             docs/evidence/s10b/*.png
             **/target/surefire-reports/*.xml
+      - name: Stop only the ephemeral CI database
+        if: always()
+        run: |
+          if [[ -n "${COMMERCE_MYSQL_CONTAINER:-}" && "$COMMERCE_MYSQL_CONTAINER" == commerce-ci-mysql-* ]]; then
+            docker rm -f "$COMMERCE_MYSQL_CONTAINER"
+          fi

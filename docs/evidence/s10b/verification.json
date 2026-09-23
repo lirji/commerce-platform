@@ -157,11 +157,9 @@
     "scripts/prepare-e2e.py": "5b2f91ab501cdfaad45ee93d295b57d4c450fd13e82d529afb5347fd19aae94d",
     "scripts/provision-local.py": "765197921ce725c92c54a761451b3c88f4da5c0c61c025a196c9806bd1919a6d",
     "scripts/verify.sh": "7a39a3e7c933a63dcccc87da794a825a66062f0580ab8083984814b42bc20b3a",
-    "scripts/ci-configure.py": "9c3f0c990fdd3f1b25e983c8249b43609303583ccc1859a22c05c70061f0d2e8",
     "scripts/build.sh": "b082c974be8c3182a2242f66b2f1f12bdf60a46019f9182a0eb61cee31ad4f2a",
     "scripts/seed-local.py": "03f989b2e6f300f807a0c67627b2d48868f6da8091febbdc4bbf7b16752dae39",
     "scripts/run-local.sh": "92cb7b5b4a4cf7bd415c4f6278aedfd32321bc01c54fdfb604f9a539273e5804",
-    ".github/workflows/verify.yml": "2e7b9b172812ced0988e2e810cd372b402de4c05357e326607e9bb78ef0ee19b",
     "aftersales/pom.xml": "63b3a984d6f81d6a5d59024aa8dc634c7d7fb511b51871b49b26b9e603479332",
     "aftersales/src/main/resources/mappers/aftersales/AftersaleMapper.xml": "0d0a9335e43a4687452cdfa0765394ff3bf93739642be7ebe1513fc67428ee71",
     "aftersales/src/main/java/com/lrj/commerce/aftersales/api/AftersaleApi.java": "2d50a89534660ce29e31bb3abd62ccd50e9c6950c0e4b73b98787b16d9e6e729",
@@ -202,5 +200,6 @@
   "limitations": [
     "External providers deferred by user",
     "No production deployment"
-  ]
+  ],
+  "ciInfrastructureValidation": "CI bootstrap/workflow changed after local backend validation; validated separately by actionlint, Python syntax and remote CI_RESULT.json."
 }
