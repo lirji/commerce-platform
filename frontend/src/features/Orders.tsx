@@ -46,14 +46,14 @@ export function Orders({
   return (
     <Workbench>
       <PageHead
-        eyebrow={admin ? "交易与交付" : "会员服务"}
+        eyebrow={admin ? "交易与交付" : undefined}
         title={admin ? "订单工作台" : "我的订单"}
         description={
           admin
             ? "查看真实交易状态，跟进支付与履约。"
             : "报价在下单时锁定，支付结果以渠道核对为准。"
         }
-        extra={<Button onClick={resource.refresh}>刷新队列</Button>}
+        extra={<Button onClick={resource.refresh}>{admin ? "刷新队列" : "刷新订单"}</Button>}
       />
       <ErrorNotice error={resource.error} />
       <ListPanel
