@@ -37,3 +37,7 @@
 | 最终CI/Git/本地Docker事实 | delivery/member-lifecycle-catalog-ui/CI_RESULT.json、DELIVERY_RESULT.md、DEPLOYMENT_RESULT.md |
 
 本轮总览由MemberApi/CatalogApi的Stats及MarketingEffectsApi.daily聚合组成；App只装配域API。可信渠道来自Actor.channel及CredentialMapper，不来自请求参数；Quote/Order保存渠道。V34为本轮最新迁移。源代码修改与实际Docker部署仍分别记录，旧证据不倒填。
+
+2026-09-25 架构整改（异步消费者/后台任务隔离、自动到期、默认拒绝授权、锁顺序、应用壳边界）见 evidence/remediation-r1/REMEDIATION_REPORT.md，发现来源为 ../.project-analysis/project-architecture-business-gap-evolution-report.md。
+2026-09-26 事件运行时第二阶段（租户公平调度、积压索引、隔离证据、历史报价兼容、积压诊断与告警契约、403/404契约）见 evidence/phase2-event-runtime/PHASE2_REPORT.md；调度契约写在 design/unified-commerce/BACKEND_ARCHITECTURE.md“一致性和恢复”。
+2026-09-26 后台运行时第三阶段（车道拓扑与跨车道公平、共享租户轮转、失败分类与重试预算、依赖熔断、无消费者事件SKIPPED、平台运维跨租户指标授权、车道告警、保留策略提案、运维手册）见 evidence/phase3-background-runtime/PHASE3_REPORT.md 与 evidence/phase3-background-runtime/13-runbook.md；契约写在 design/unified-commerce/BACKEND_ARCHITECTURE.md“一致性和恢复”“积压诊断”。
