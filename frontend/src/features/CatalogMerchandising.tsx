@@ -57,12 +57,12 @@ function VariantForm({store,onDone}:{store:string;onDone:()=>void}){
  </Form>;
 }
 export function VariantCreator({store,onDone}:{store:string;onDone:()=>void}){const [open,setOpen]=useState(false);return <><Button type="primary" onClick={()=>setOpen(true)}>创建销售规格</Button><Drawer title="创建销售规格" open={open} onClose={()=>setOpen(false)} destroyOnHidden size="large"><VariantForm store={store} onDone={()=>{setOpen(false);onDone();}}/></Drawer></>;}
-export function CatalogFilters({categories,onSearch,operations=false}:{categories:Category[];onSearch:(query:string)=>void;operations?:boolean}){
- return <Form layout="inline" onFinish={v=>{const params=new URLSearchParams();for(const [key,value] of Object.entries(v))if(value!==undefined&&value!==null&&value!=="")params.set(key,String(value));onSearch(params.toString());}} className="catalog-filters">
-  <Form.Item name="q"><Input aria-label="商品名称或条码" placeholder="商品名称 / 条码" allowClear maxLength={64}/></Form.Item>
-  <Form.Item name="categoryId"><Select aria-label="筛选商品类目" placeholder="全部类目" allowClear style={{width:180}} options={categories.map(c=>({value:c.categoryId,label:c.name}))}/></Form.Item>
+export function CatalogFilters({categories,onSearch,operations=false,className,shopMode=false}:{categories:Category[];onSearch:(query:string)=>void;operations?:boolean;className?:string;shopMode?:boolean}){
+ return <Form layout="inline" onFinish={v=>{const params=new URLSearchParams();for(const [key,value] of Object.entries(v))if(value!==undefined&&value!==null&&value!=="")params.set(key,String(value));onSearch(params.toString());}} className={"catalog-filters"+(className?" "+className:"")}>
+  <Form.Item name="q"><Input aria-label="商品名称或条码" placeholder={shopMode?"搜索商品名称 / 条码":"按名称或条码筛选"} allowClear maxLength={64}/></Form.Item>
+  {!shopMode&&<Form.Item name="categoryId"><Select aria-label="筛选商品类目" placeholder="全部类目" allowClear style={{width:180}} options={categories.map(c=>({value:c.categoryId,label:c.name}))}/></Form.Item>}
   <Form.Item name="minimumPrice"><InputNumber aria-label="最低售价" placeholder="最低价" min={0} precision={2}/></Form.Item><Form.Item name="maximumPrice"><InputNumber aria-label="最高售价" placeholder="最高价" min={0} precision={2}/></Form.Item>
   {operations&&<Form.Item name="status"><Select aria-label="筛选销售状态" placeholder="全部状态" allowClear style={{width:120}} options={[{value:"ACTIVE",label:"上架"},{value:"FROZEN",label:"下架"}]}/></Form.Item>}
-  <Button htmlType="submit">筛选商品</Button>
+  <Button htmlType="submit">{shopMode?"搜索":"筛选商品"}</Button>
  </Form>;
 }

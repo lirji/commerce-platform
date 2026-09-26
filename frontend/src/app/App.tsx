@@ -2,7 +2,7 @@ import {
   Alert,
   Avatar,
   Button,
-  Card,
+  ConfigProvider,
   Form,
   Input,
   Layout,
@@ -12,12 +12,12 @@ import {
   Menu,
   Select,
   Space,
-  Typography,
 } from "antd";
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { Actor, Capabilities, Store } from "../shared/contracts";
 import { request, setAccessToken, useResource } from "../shared/api";
 import { ErrorNotice } from "../shared/ui";
+import { memberTheme } from "../theme";
 // 按业务页面加载，登录和总览不下载所有经营表单。
 const Orders=lazy(()=>import("../features/Orders").then(m=>({default:m.Orders})));
 const Shop=lazy(()=>import("../features/Shop").then(m=>({default:m.Shop})));
@@ -83,6 +83,7 @@ export function App() {
   };
   if (!actor)
     return (
+      <ConfigProvider theme={memberTheme}>
       <div className="login-page">
         <div className="login-story">
           <div className="brand brand-light">
@@ -107,15 +108,17 @@ export function App() {
           <small>统一业务 · 清晰边界 · 可靠履约</small>
         </div>
         <main className="login-main">
-          <Card variant="borderless" className="login-card">
-            <div className="eyebrow">WELCOME BACK</div>
-            <Typography.Title level={2}>进入业务空间</Typography.Title>
-            <p className="muted">
-              使用已签发的访问凭据，平台将识别您的角色与租户。
-            </p>
+          <div className="login-panel">
+            <header className="login-panel-head">
+              <p className="login-kicker">安全进入</p>
+              <h2>进入业务空间</h2>
+              <p className="login-lead">粘贴已签发的访问凭据，系统按角色与租户打开对应工作台。</p>
+            </header>
             <ErrorNotice error={loginError} />
             <Form
+              className="login-form"
               layout="vertical"
+              requiredMark={false}
               onFinish={async (v) => {
                 setLogging(true);
                 setLoginError(undefined);
@@ -140,10 +143,12 @@ export function App() {
                 <Input.Password
                   autoComplete="off"
                   size="large"
-                  placeholder="输入您的访问凭据"
+                  placeholder="粘贴访问凭据"
+                  visibilityToggle
                 />
               </Form.Item>
               <Button
+                className="login-submit"
                 htmlType="submit"
                 type="primary"
                 size="large"
@@ -153,12 +158,14 @@ export function App() {
                 进入平台
               </Button>
             </Form>
-            <p className="login-footnote">
-              凭据仅保留在本次页面会话，关闭或刷新后需重新输入。
-            </p>
-          </Card>
+            <ul className="login-meta">
+              <li>凭据仅保存在本次会话</li>
+              <li>关闭或刷新页面后需重新输入</li>
+            </ul>
+          </div>
         </main>
       </div>
+      </ConfigProvider>
     );
   const operator = actor.role === "OPERATOR";
   const admin = actor.role !== "MEMBER";
@@ -216,7 +223,7 @@ export function App() {
     content = (
       <Alert type="warning" title="页面不存在，请从导航选择业务功能。" />
     );
-  return (
+  const shell = (
     <Layout className={admin ? "app admin-app" : "app member-app"}>
       {admin&&!compact&&<Layout.Sider width={224} theme="light" className="sidebar">
         <div className="brand"><span className="brand-mark">商</span><span>日常经营<span className="brand-sub">COMMERCE WORKSPACE</span></span></div>
@@ -237,12 +244,12 @@ export function App() {
             </div>
           )}
           <Space>
-            <span className="context-label">店铺</span>
+            {admin && <span className="context-label">店铺</span>}
             <Select
               aria-label="当前店铺"
               value={store || undefined}
-              placeholder="选择店铺"
-              style={{ width: compact ? 170 : 210 }}
+              placeholder={admin ? "选择店铺" : "切换店铺"}
+              style={{ width: compact ? 170 : admin ? 210 : 200 }}
               options={stores.data?.map((s) => ({
                 value: s.storeId,
                 label: s.name,
@@ -281,12 +288,42 @@ export function App() {
           </div>
         </Layout.Content>
         <Layout.Footer className="footer">
-          统一电商业务平台{" "}
-          <span>
-            {admin ? `${actor.tenantId} · 运营管理` : "会员服务 · 交易与权益"}
-          </span>
+          {!admin ? (
+            <div className="member-footer">
+              <div className="member-footer-grid">
+                <section>
+                  <strong>购物指南</strong>
+                  <p>浏览店铺目录、查看商品详情、加入购物袋后计算报价。</p>
+                </section>
+                <section>
+                  <strong>支付与配送</strong>
+                  <p>应付金额以服务端报价为准；支付结果以渠道核对后展示。</p>
+                </section>
+                <section>
+                  <strong>售后服务</strong>
+                  <p>订单完成后可申请售后，审批与退款进度在售后页查看。</p>
+                </section>
+                <section>
+                  <strong>账户与权益</strong>
+                  <p>优惠券、积分和内部权益均来自真实账户记录。</p>
+                </section>
+              </div>
+              <div className="member-footer-legal">
+                <span>统一电商业务平台</span>
+                <span>会员服务 · 用户协议 · 隐私政策</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              统一电商业务平台{" "}
+              <span>
+                {actor.tenantId} · 运营管理
+              </span>
+            </>
+          )}
         </Layout.Footer>
       </Layout>
     </Layout>
   );
+  return admin ? shell : <ConfigProvider theme={memberTheme}>{shell}</ConfigProvider>;
 }

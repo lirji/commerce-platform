@@ -63,7 +63,6 @@ export function MemberWallet({
         }
         description="账户资产与处理进度来自真实业务记录。"
         extra={<Button onClick={refresh}>刷新</Button>}
-        eyebrow="会员服务"
       />
       {[available, wallet, benefits, notices, cases].map((r, i) => (
         <ErrorNotice key={i} error={r.error} />
@@ -74,12 +73,14 @@ export function MemberWallet({
             {
               key: "claim",
               label: "领取优惠",
-              children: (
+              children: available.loading && !available.data ? (
+                <div className="page-loading">正在加载可领优惠</div>
+              ) : (
                 <Row gutter={[16, 16]}>
                   {available.data?.length === 0 && <Col span={24}><Blank text="暂无可公开领取的优惠券，已发放的券请查看「我的优惠券」" /></Col>}
                   {available.data?.map(({ content: c, issued }) => (
                     <Col xs={24} md={12} lg={8} key={c.definitionId}>
-                      <Card title={c.name}>
+                      <Card className="coupon-card" title={c.name}>
                         <p className="coupon-value">
                           {money(c.discountAmount)}
                         </p>
@@ -114,6 +115,8 @@ export function MemberWallet({
                 <Table<Coupon>
                   rowKey="couponId"
                   dataSource={wallet.data}
+                  loading={wallet.loading}
+                  locale={{ emptyText: <Blank text="还没有优惠券，可先到领取优惠页领取" /> }}
                   columns={[
                     { title: "优惠券", dataIndex: "name" },
                     {
@@ -135,7 +138,9 @@ export function MemberWallet({
           ]}
         />
       )}
-      {section === "benefits" && (
+      {section === "benefits" && (benefits.loading && !benefits.data ? (
+        <div className="page-loading">正在加载权益</div>
+      ) : (
         <Row gutter={[16, 16]}>
           {benefits.data?.map((b) => (
             <Col xs={24} md={12} lg={8} key={b.grantId}>
@@ -169,8 +174,10 @@ export function MemberWallet({
             <Blank text="暂无权益，参与活动后可在这里查看" />
           )}
         </Row>
-      )}
-      {section === "notifications" && (
+      ))}
+      {section === "notifications" && (notices.loading && !notices.data ? (
+        <div className="page-loading">正在加载消息</div>
+      ) : (
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
           {notices.data?.map((n) => (
             <Card
@@ -183,12 +190,14 @@ export function MemberWallet({
           ))}
           {notices.data?.length === 0 && <Blank text="暂时没有新消息" />}
         </Space>
-      )}
+      ))}
       {section === "aftersales" && (
         <Card className="list-panel">
           <Table<Aftersale>
             rowKey="caseId"
             dataSource={cases.data}
+            loading={cases.loading}
+            locale={{ emptyText: <Blank text="还没有售后记录" /> }}
             pagination={false}
             columns={[
               { title: "申请编号", dataIndex: "caseId", ellipsis: true },
