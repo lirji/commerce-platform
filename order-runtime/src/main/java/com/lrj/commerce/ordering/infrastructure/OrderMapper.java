@@ -16,5 +16,13 @@ public interface OrderMapper {
     boolean hasPaidSince(String tenant,String member,String store,java.time.Instant since);
     Row internalRead(@Param("tenant") String tenant,@Param("id") String id);
     Row internalLock(@Param("tenant") String tenant,@Param("id") String id);
-    List<Row> expired(@Param("tenant") String tenant,@Param("now") Instant now);
+    /** 到期候选只排除退避中与已停止自动处理的订单；max与transientMax是两类失败的次数上限。 */
+    record ExpiryCheck(String orderId,int expiryAttempts,int expiryTransientAttempts) { }
+    List<Row> expired(@Param("tenant") String tenant,@Param("now") Instant now,@Param("max") int max,@Param("transientMax") int transientMax);
+    List<String> expiryTenants(@Param("after") String after,@Param("now") Instant now,@Param("limit") int limit,@Param("max") int max,@Param("transientMax") int transientMax);
+    List<ExpiryCheck> expiryDue(@Param("tenant") String tenant,@Param("now") Instant now,@Param("limit") int limit,@Param("max") int max,@Param("transientMax") int transientMax);
+    Row expiredLock(@Param("tenant") String tenant,@Param("id") String id,@Param("now") Instant now,@Param("max") int max,@Param("transientMax") int transientMax);
+    int expiryFailed(@Param("tenant") String tenant,@Param("id") String id,@Param("transient") boolean transientFailure,@Param("retryAt") Instant retryAt,@Param("error") String error);
+    int expiryRetry(@Param("tenant") String tenant,@Param("id") String id,@Param("max") int max,@Param("transientMax") int transientMax);
+    com.lrj.commerce.runtime.WorkLanes.Backlog expiryBacklog(@Param("now") Instant now,@Param("max") int max,@Param("transientMax") int transientMax);
 }

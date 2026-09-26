@@ -26,10 +26,13 @@ public class MemberPointsService implements MemberPointsApi {
     private final Commands commands;
     private final Clock clock;
     private final TransactionTemplate tx;
+    private final TenantRotation expiry;
+    /** 积分过期车道：每次访问一个租户最多20个批次，每轮最多200个或500毫秒，租户轮转，不再按全局到期时间FIFO。 */
+    public static final TenantRotation.Policy EXPIRY=new TenantRotation.Policy(20,50,Duration.ofMillis(500),200);
 
-    public MemberPointsService(PointsMapper mapper,GrowthMapper memberLocks,MemberMapper members,Commands commands,Clock clock,PlatformTransactionManager manager) {
+    public MemberPointsService(PointsMapper mapper,GrowthMapper memberLocks,MemberMapper members,Commands commands,Clock clock,PlatformTransactionManager manager,WorkLanes lanes) {
         this.mapper=mapper;this.memberLocks=memberLocks;this.members=members;this.commands=commands;this.clock=clock;
-        tx=new TransactionTemplate(manager);tx.setTimeout(10);
+        tx=new TransactionTemplate(manager);tx.setTimeout(10);expiry=lanes.rotation("points",EXPIRY,null);
     }
 
     /** 策略发布不赠送积分，未来规则也不会改变历史订单奖励。 */
@@ -156,10 +159,19 @@ public class MemberPointsService implements MemberPointsApi {
         entry(actor.tenantId(),member.memberId(),Action.EXCHANGE,redemptionId,-points,selected.version(),"兑换券或权益扣除积分");
     }
 
-    /** 单轮20个批次，每个批次独立提交；实例竞争在会员行锁后再次检查。 */
+    /** 每个批次独立提交；实例竞争在会员行锁后再次检查；单批失败不阻塞其余批次，一个租户的大量过期不推迟其他租户。 */
     public void tick() {
-        for(var due:mapper.due(clock.instant(),20))tx.executeWithoutResult(status->{
-            lock(due.tenantId(),due.memberId());expireLot(due.tenantId(),Inputs.found(mapper.lot(due.tenantId(),due.lotId())));
+        expiry.run((after,limit)->mapper.dueTenants(after,clock.instant(),limit),(tenant,run)->{
+            int count=0;
+            for(var due:mapper.due(tenant,clock.instant(),run.limit())) {
+                if(run.exhausted())break;run.attempted();
+                try{tx.executeWithoutResult(status->{lock(due.tenantId(),due.memberId());expireLot(due.tenantId(),Inputs.found(mapper.lot(due.tenantId(),due.lotId())));});count++;run.succeeded();}
+                catch(RuntimeException failure){
+                    var type=FailureClass.of(failure);org.slf4j.LoggerFactory.getLogger(getClass()).warn("point expiry retry tenant={} lot={} failureClass={} errorType={}",due.tenantId(),due.lotId(),type,failure.getClass().getSimpleName());
+                    if(run.failed(type))break;
+                }
+            }
+            return count;
         });
     }
 

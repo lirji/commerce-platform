@@ -13,9 +13,15 @@ public interface PaymentMapper {
     PaymentChannel.Evidence channel(@Param("tenant") String tenant,@Param("id") String id);
     int channelFact(@Param("tenant") String tenant,@Param("id") String id,@Param("status") String status,@Param("transaction") String transaction);
     int channelClose(@Param("tenant") String tenant,@Param("id") String id);
-    record Check(String tenantId,String paymentId,String orderId,int checkAttempts) { }
-    java.util.List<Check> due(@Param("tenant") String tenant);
-    java.util.List<String> dueTenants(@Param("after") String after);
+    /** checkAttempts是消耗型自动核对次数（上限5），checkTransientFailures是渠道不可用等不消耗核对次数的失败。 */
+    record Check(String tenantId,String paymentId,String orderId,int checkAttempts,int checkTransientFailures) { }
+    java.util.List<Check> due(@Param("tenant") String tenant,@Param("limit") int limit,@Param("transientMax") int transientMax);
+    java.util.List<String> dueTenants(@Param("after") String after,@Param("limit") int limit,@Param("transientMax") int transientMax);
+    /** 瞬时失败退回本次领取的核对次数，按瞬时退避重新安排；claimed为领取后的次数，防止覆盖并发领取。 */
+    int checkTransient(@Param("tenant") String tenant,@Param("id") String id,@Param("claimed") int claimed,@Param("delayMillis") long delayMillis,@Param("error") String error);
+    int checkError(@Param("tenant") String tenant,@Param("id") String id,@Param("error") String error);
+    com.lrj.commerce.runtime.WorkLanes.Backlog checkBacklog(@Param("transientMax") int transientMax);
     int claimCheck(@Param("tenant") String tenant,@Param("id") String id,@Param("attempts") int attempts,@Param("delay") int delay);
+    int rearmCheck(@Param("tenant") String tenant,@Param("order") String order);
     int reserveRefund(@Param("tenant") String tenant,@Param("id") String id,@Param("amount") String amount);
 }

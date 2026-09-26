@@ -20,8 +20,14 @@ import java.util.*;
 @Service
 public class OrderService implements OrderApi {
     private final com.lrj.commerce.member.api.PointsSpendApi points;private final com.lrj.commerce.benefit.api.EntitlementApi entitlements;private final com.lrj.commerce.campaign.api.CampaignFundingApi funding;private final com.lrj.commerce.benefit.api.CouponApi coupons;private final OrderMapper mapper;private final Commands commands;private final QuoteApi quotes;private final InventoryApi inventory;
-    private final MemberApi members;private final StoreApi stores;private final Outbox outbox;private final AddressCipher addresses;private final Clock clock;
-    public OrderService(OrderMapper mapper,Commands commands,QuoteApi quotes,InventoryApi inventory,MemberApi members,StoreApi stores,Outbox outbox,AddressCipher addresses,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding,com.lrj.commerce.benefit.api.EntitlementApi entitlements,com.lrj.commerce.member.api.PointsSpendApi points) {this.points=points;this.entitlements=entitlements;this.funding=funding;this.coupons=coupons;
+    private final MemberApi members;private final StoreApi stores;private final Outbox outbox;private final AddressCipher addresses;private final Clock clock;private final org.springframework.transaction.support.TransactionTemplate tx;private final TenantRotation expiry;
+    /**
+     * 到期车道公平契约：每次访问一个租户最多10单（逐单事务约数十毫秒），每轮最多200单或500毫秒，
+     * 租户按游标轮转，任一有到期订单的租户最迟一整圈内被处理；单个坏订单退避重试，5次非瞬时失败后停止自动取消。
+     */
+    public static final TenantRotation.Policy EXPIRY=new TenantRotation.Policy(10,50,java.time.Duration.ofMillis(500),200);
+    public OrderService(OrderMapper mapper,Commands commands,QuoteApi quotes,InventoryApi inventory,MemberApi members,StoreApi stores,Outbox outbox,AddressCipher addresses,Clock clock,com.lrj.commerce.benefit.api.CouponApi coupons,com.lrj.commerce.campaign.api.CampaignFundingApi funding,com.lrj.commerce.benefit.api.EntitlementApi entitlements,com.lrj.commerce.member.api.PointsSpendApi points,org.springframework.transaction.PlatformTransactionManager manager,WorkLanes lanes) {this.points=points;this.entitlements=entitlements;this.funding=funding;this.coupons=coupons;this.tx=new org.springframework.transaction.support.TransactionTemplate(manager);this.tx.setTimeout(10);
+        expiry=lanes.rotation("orders",EXPIRY,()->mapper.expiryBacklog(clock.instant(),RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget()));
         this.mapper=mapper;this.commands=commands;this.quotes=quotes;this.inventory=inventory;this.members=members;this.stores=stores;this.outbox=outbox;this.addresses=addresses;this.clock=clock;
     }
     /** 订单编号由服务端生成，失败预占会回滚报价消费，允许重试原命令。 */
@@ -36,7 +42,7 @@ public class OrderService implements OrderApi {
             entitlements.reserveOrder(actor,id,member.memberId(),quote.storeId(),quote.promotion()==null?null:quote.promotion().grant());
             for(var line:quote.items().stream().sorted(Comparator.comparing(QuoteApi.Line::skuId)).toList()) inventory.reserve(actor,id,quote.storeId(),line.skuId(),line.quantity());
             var lifecycle=OrderLifecycle.start();boolean free=new BigDecimal(quote.payable()).signum()==0;
-            if(free) {lifecycle=lifecycle.apply(OrderEvent.PAYMENT_CONFIRMED);points.confirm(actor.tenantId(),id,member.memberId());inventory.confirm(actor.tenantId(),id);coupons.confirm(actor.tenantId(),id);funding.confirm(actor.tenantId(),id);entitlements.confirmOrder(actor.tenantId(),id);}
+            if(free) {lifecycle=lifecycle.apply(OrderEvent.PAYMENT_CONFIRMED);settle(actor.tenantId(),id,member.memberId(),true);}
             var now=clock.instant().truncatedTo(ChronoUnit.MILLIS);
             var view=new View(id,member.memberId(),quote.storeId(),quote.merchantId(),quote.quoteId(),quote.payable(),lifecycle.state().name(),free?"NO_PAYMENT_REQUIRED":"CHANNEL_REQUIRED",lifecycle.version(),now,now.plusSeconds(900),quote.items(),quote.channel());
             mapper.insert(actor.tenantId(),view,JsonCodec.write(view.items()),addresses.encrypt(actor.tenantId(),id,input.address()));
@@ -59,7 +65,7 @@ public class OrderService implements OrderApi {
             if(state==OrderState.CANCELLED||state==OrderState.CLOSING) return view(row);
             var next=new OrderLifecycle(state,row.version()).apply(OrderEvent.REQUEST_CANCEL);
             if(mapper.change(actor.tenantId(),id,row.version(),next.state().name())!=1) throw new DomainException(DomainException.Code.CONFLICT,"订单并发版本冲突");
-            if(next.state()==OrderState.CANCELLED){points.release(actor.tenantId(),id,row.memberId());inventory.release(actor.tenantId(),id);coupons.release(actor.tenantId(),id);funding.release(actor.tenantId(),id);entitlements.releaseOrder(actor.tenantId(),id);}
+            if(next.state()==OrderState.CANCELLED)settle(actor.tenantId(),id,row.memberId(),false);
             var result=view(mapper.read(actor.tenantId(),row.memberId(),id));
             outbox.append(actor.tenantId(),next.state()==OrderState.CANCELLED?"order.cancelled.v1":"order.closing.v1",id,result.version(),result);
             return result;
@@ -85,25 +91,62 @@ public class OrderService implements OrderApi {
         if(new BigDecimal(row.payable()).compareTo(new BigDecimal(amount))!=0) throw new DomainException(DomainException.Code.CONFLICT,"支付金额不匹配");
         if((paid&&Set.of("PAID","FULFILLING","COMPLETED").contains(row.status()))||(!paid&&row.status().equals("CANCELLED"))) return view(row);
         transition(tenant,row,paid?OrderEvent.PAYMENT_CONFIRMED:OrderEvent.PAYMENT_ABSENCE_CONFIRMED);
-        if(paid){points.confirm(tenant,id,row.memberId());inventory.confirm(tenant,id);coupons.confirm(tenant,id);funding.confirm(tenant,id);entitlements.confirmOrder(tenant,id);}else{points.release(tenant,id,row.memberId());inventory.release(tenant,id);coupons.release(tenant,id);funding.release(tenant,id);entitlements.releaseOrder(tenant,id);}
+        settle(tenant,id,row.memberId(),paid);
         var result=view(mapper.internalRead(tenant,id));outbox.append(tenant,paid?"order.paid.v1":"order.cancelled.v1",id,result.version(),result);return result;
     }
     /** 跨域只返回API投影，其他模块不读订单Mapper。 */
     /** 只读交易权威状态，不依赖营销投影消费延迟。 */
     public boolean hasPaidSince(String tenant,String member,String store,java.time.Instant since){Identifiers.require(tenant);Identifiers.require(member);Identifiers.require(store);Inputs.require(since!=null,"订单检查起点缺失");return mapper.hasPaidSince(tenant,member,store,since);}
     public View internalRead(String tenant,String id) {return view(Inputs.found(mapper.internalRead(tenant,id)));}
-    /** 批量任务每次最多20单，超时不是未支付证明。 */
+    /** 管理员批量到期仍是一个幂等命令事务，最多20单；退避中与已停止自动处理的订单不在其中，超时不是未支付证明。 */
     public int expire(Actor actor,String key) {
         actor.requireAdmin();return commands.run(actor,"order.expire",key,"expire",Integer.class,()->{
-            var rows=mapper.expired(actor.tenantId(),clock.instant());
-            for(var row:rows) {
-                var next=transition(actor.tenantId(),row,OrderEvent.REQUEST_CANCEL);
-                if(next.state()==OrderState.CANCELLED){points.release(actor.tenantId(),row.orderId(),row.memberId());inventory.release(actor.tenantId(),row.orderId());coupons.release(actor.tenantId(),row.orderId());funding.release(actor.tenantId(),row.orderId());entitlements.releaseOrder(actor.tenantId(),row.orderId());}
-                var result=view(mapper.internalRead(actor.tenantId(),row.orderId()));
-                outbox.append(actor.tenantId(),next.state()==OrderState.CANCELLED?"order.cancelled.v1":"order.closing.v1",row.orderId(),result.version(),result);
-            }
-            return rows.size();
+            var rows=mapper.expired(actor.tenantId(),clock.instant(),RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget());rows.forEach(row->expireRow(actor.tenantId(),row));return rows.size();
         });
+    }
+    /** 后台到期：租户公平轮转，逐单事务，一个坏订单只影响它自己。 */
+    public int tick() {return expiry.run((after,limit)->mapper.expiryTenants(after,clock.instant(),limit,RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget()),this::expireTenant);}
+    private int expireTenant(String tenant,TenantRotation.Run run) {
+        int count=0;
+        for(var check:mapper.expiryDue(tenant,clock.instant(),run.limit(),RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget())) {
+            if(run.exhausted())break;run.attempted();
+            try {
+                // 事务内以SKIP LOCKED重新领取并复核到期条件，并发支付或取消已改变状态时跳过。
+                var row=tx.execute(s->{var locked=mapper.expiredLock(tenant,check.orderId(),clock.instant(),RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget());if(locked!=null)expireRow(tenant,locked);return locked;});
+                if(row!=null)count++;run.succeeded();
+            } catch(RuntimeException failure) {
+                var type=FailureClass.of(failure);expiryFailed(tenant,check,type,failure);
+                if(run.failed(type))break;
+            }
+        }
+        return count;
+    }
+    /** 失败在独立事务记录：瞬时失败走长退避且不计入5次上限；证据只含分类与异常类型。 */
+    private void expiryFailed(String tenant,OrderMapper.ExpiryCheck check,FailureClass type,RuntimeException failure) {
+        boolean transientFailure=type.transientFailure();var policy=transientFailure?RetryPolicy.TRANSIENT:RetryPolicy.POISON;
+        int failures=(transientFailure?check.expiryTransientAttempts():check.expiryAttempts())+1;
+        var retryAt=clock.instant().plusMillis(policy.delayMillis(failures,java.util.concurrent.ThreadLocalRandom.current().nextDouble()));
+        String error=type+":"+(failure instanceof DomainException d?"DomainException/"+d.code():failure.getClass().getSimpleName());
+        try{tx.executeWithoutResult(s->mapper.expiryFailed(tenant,check.orderId(),transientFailure,retryAt,error));}
+        catch(RuntimeException unrecorded){org.slf4j.LoggerFactory.getLogger(getClass()).warn("order expiry failure not recorded order={} errorType={}",check.orderId(),unrecorded.getClass().getSimpleName());}
+        if(policy.exhausted(failures))org.slf4j.LoggerFactory.getLogger(getClass()).warn("order expiry quarantined tenant={} order={} lastError={}",tenant,check.orderId(),error);
+        else org.slf4j.LoggerFactory.getLogger(getClass()).warn("order expiry retry tenant={} order={} failureClass={} errorType={}",tenant,check.orderId(),type,failure.getClass().getSimpleName());
+    }
+    /** 停止自动取消的订单修复数据后由管理员审计重试，只清计数与退避，保留最近失败证据。 */
+    public int retryExpiry(Actor actor,String key,String id) {
+        actor.requireAdmin();Identifiers.require(id);
+        return commands.run(actor,"order.expiry.retry",key,id,Integer.class,()->{if(mapper.expiryRetry(actor.tenantId(),id,RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget())!=1)throw new DomainException(DomainException.Code.CONFLICT,"订单不在停止自动到期状态");return 1;});
+    }
+    private void expireRow(String tenant,OrderMapper.Row row) {
+        var next=transition(tenant,row,OrderEvent.REQUEST_CANCEL);
+        if(next.state()==OrderState.CANCELLED)settle(tenant,row.orderId(),row.memberId(),false);
+        var result=view(mapper.internalRead(tenant,row.orderId()));
+        outbox.append(tenant,next.state()==OrderState.CANCELLED?"order.cancelled.v1":"order.closing.v1",row.orderId(),result.version(),result);
+    }
+    /** 确认或释放与下单预占使用同一加锁顺序（积分→券→预算→权益→库存），避免与并发下单互相等待形成死锁。 */
+    private void settle(String tenant,String order,String member,boolean confirm) {
+        if(confirm){points.confirm(tenant,order,member);coupons.confirm(tenant,order);funding.confirm(tenant,order);entitlements.confirmOrder(tenant,order);inventory.confirm(tenant,order);}
+        else{points.release(tenant,order,member);coupons.release(tenant,order);funding.release(tenant,order);entitlements.releaseOrder(tenant,order);inventory.release(tenant,order);}
     }
     private OrderLifecycle transition(String tenant,OrderMapper.Row row,OrderEvent event) {
         var next=new OrderLifecycle(OrderState.valueOf(row.status()),row.version()).apply(event);

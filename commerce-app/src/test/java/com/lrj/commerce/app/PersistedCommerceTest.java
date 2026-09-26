@@ -35,6 +35,7 @@ class PersistedCommerceTest {
     @Autowired Commands commands;
     @Autowired com.lrj.commerce.payment.api.PaymentApi payments;
     @Autowired com.lrj.commerce.payment.api.RefundApi refunds;
+    @Autowired org.springframework.transaction.PlatformTransactionManager transactions;
     private final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
     private final JsonMapper json=JsonMapper.builder().findAndAddModules().build();
     private String tenant,admin,member,other;
@@ -534,6 +535,21 @@ class PersistedCommerceTest {
         assertEquals(new java.math.BigDecimal("3.00"),budgetValue("held"));assertEquals(new java.math.BigDecimal("1.50"),jdbc.queryForObject("SELECT platform_funding FROM marketing_budget_hold WHERE tenant_id=?",java.math.BigDecimal.class,tenant));
         assertEquals(q,call("GET","/v1/quotes/"+q.path("quoteId").asString(),member,null,null).body());
     }
+    @Test void releaseLocksSharedResourcesInCheckoutOrderSoConcurrentCheckoutCannotDeadlock() throws Exception {
+        seed();stock("sku1",3);budgetCampaign("100.00",0,5000,"3.00");
+        var order=post("/v1/orders",member,"o",orderInput(post("/v1/quotes",member,"q",basket(1))));String id=order.path("orderId").asString();
+        assertEquals(new java.math.BigDecimal("3.00"),budgetValue("held"));
+        var cancel=new CompletableFuture<Reply>();
+        // 模拟另一笔下单：已按下单顺序锁住活动预算，随后请求同一SKU库存。
+        new org.springframework.transaction.support.TransactionTemplate(transactions).executeWithoutResult(s->{
+            jdbc.queryForObject("SELECT held FROM marketing_budget WHERE tenant_id=? AND campaign_id='budget' FOR UPDATE",java.math.BigDecimal.class,tenant);
+            Thread.ofVirtual().start(()->{try{cancel.complete(call("POST","/v1/orders/"+id+"/cancel",member,"cancel",null));}catch(Exception e){cancel.completeExceptionally(e);}});
+            try{Thread.sleep(1000);}catch(InterruptedException e){Thread.currentThread().interrupt();throw new IllegalStateException(e);}
+            jdbc.queryForObject("SELECT available FROM inventory_stock WHERE tenant_id=? AND sku_id='sku1' FOR UPDATE",Long.class,tenant);
+        });
+        var reply=cancel.get(15,TimeUnit.SECONDS);assertEquals(200,reply.status(),reply.body().toString());
+        assertEquals("CANCELLED",readOrder(order).path("status").asString());assertEquals(3,stockValue("available"));assertEquals(0,budgetValue("held").signum());
+    }
     @Test void fundingAcrossMultipleSkusHasNoNegativeLineOrLostCent() throws Exception {
         seed();post("/v1/admin/skus",admin,"sku2",Map.of("skuId","sku2","storeId","store1","title","小额商品","unitPrice","1.00"));budgetCampaign("10.00",0,3333,"3.00");couponDefinition("2.00",true,10);var coupon=claimCoupon(member,"claim");
         var quote=post("/v1/quotes",member,"q",Map.of("storeId","store1","couponId",coupon.path("couponId").asString(),"items",List.of(Map.of("skuId","sku1","quantity",1),Map.of("skuId","sku2","quantity",1))));
@@ -736,7 +752,9 @@ class PersistedCommerceTest {
     }
     @Test void protocolErrorsDoNotBecomeInternalServerFailures() throws Exception {
         assertEquals(400,call("GET","/v1/catalog",member,null,null).status());
-        assertEquals(404,call("GET","/v1/no-such-endpoint",member,null,null).status());
+        // 未登记路径由安全层默认拒绝；管理命名空间内不存在的资源仍是404。
+        assertEquals(403,call("GET","/v1/no-such-endpoint",member,null,null).status());
+        assertEquals(404,call("GET","/v1/admin/no-such-endpoint",admin,null,null).status());
         assertEquals(405,call("POST","/v1/me",member,null,null).status());
     }
     @Test void everyBusinessTableAndColumnHasComments() {

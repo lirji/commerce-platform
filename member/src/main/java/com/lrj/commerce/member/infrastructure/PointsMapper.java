@@ -36,7 +36,8 @@ public interface PointsMapper {
     int changeLot(@Param("tenant") String tenant,@Param("id") String id,@Param("remaining") long remaining,@Param("held") long held,@Param("expired") long expired);
     List<Lot> availableLots(@Param("tenant") String tenant,@Param("member") String member,@Param("at") Instant at,@Param("limit") int limit);
     List<Lot> expiredLots(@Param("tenant") String tenant,@Param("member") String member,@Param("at") Instant at,@Param("limit") int limit);
-    List<Due> due(@Param("at") Instant at,@Param("limit") int limit);
+    List<Due> due(@Param("tenant") String tenant,@Param("at") Instant at,@Param("limit") int limit);
+    List<String> dueTenants(@Param("after") String after,@Param("at") Instant at,@Param("limit") int limit);
     void entry(@Param("tenant") String tenant,@Param("member") String member,@Param("action") String action,@Param("source") String source,@Param("delta") long delta,@Param("wallet") MemberPointsApi.Wallet wallet,@Param("policy") long policy,@Param("reason") String reason,@Param("at") Instant at);
     List<MemberPointsApi.Entry> ledger(@Param("tenant") String tenant,@Param("member") String member,@Param("after") long after,@Param("limit") int limit);
 }

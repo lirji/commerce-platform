@@ -29,6 +29,10 @@ public interface OrderApi {
     boolean hasPaidSince(String tenant,String member,String store,Instant since);
     /** 到期只请求取消，支付未知必须保留库存。 */
     int expire(Actor actor,String key);
+    /** 后台到期任务，与管理员到期使用相同状态转换；租户公平轮转、逐单事务。 */
+    int tick();
+    /** 停止自动到期的订单由管理员审计重试。 */
+    int retryExpiry(Actor actor,String key,String id);
     /** 履约可信事实推进生命周期，必须加入调用者本地事务。 */
     View fulfillmentFact(String tenant,String id,boolean delivered);
     /** 管理查询仅同租户投影，不暴露收货地址。 */

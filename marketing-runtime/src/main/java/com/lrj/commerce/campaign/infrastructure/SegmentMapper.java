@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface SegmentMapper {
  List<String> announcements(@Param("tenant") String tenant,@Param("now") Instant now);
- void announcementFailed(@Param("tenant") String tenant,@Param("id") String id,@Param("due") Instant due);
+ void announcementFailed(@Param("tenant") String tenant,@Param("id") String id,@Param("counted") boolean counted,@Param("due") Instant due);
  int retryAnnouncement(@Param("tenant") String tenant,@Param("id") String id,@Param("now") Instant now);
  List<String> entered(@Param("tenant") String tenant,@Param("run") SegmentApi.Run run);
  void announced(@Param("tenant") String tenant,@Param("id") String id,@Param("cursor") String cursor,@Param("done") boolean done);
@@ -30,10 +30,11 @@ public interface SegmentMapper {
  List<SegmentApi.Run> runs(@Param("tenant") String tenant,@Param("id") String id,@Param("after") String after,@Param("limit") int limit);
  List<String> due(@Param("tenant") String tenant,@Param("now") Instant now);
  List<String> pending(@Param("tenant") String tenant,@Param("now") Instant now);
- List<String> tenants(@Param("after") String after,@Param("now") Instant now);
+ List<String> tenants(@Param("after") String after,@Param("now") Instant now,@Param("limit") int limit);
  void matched(@Param("tenant") String tenant,@Param("run") SegmentApi.Run run,@Param("members") List<String> members);
  void checkpoint(@Param("tenant") String tenant,@Param("id") String id,@Param("cursor") String cursor,@Param("processed") int processed,@Param("matched") int matched);
  void publish(@Param("tenant") String tenant,@Param("run") SegmentApi.Run run,@Param("name") String name,@Param("matched") int matched);
  void status(@Param("tenant") String tenant,@Param("id") String id,@Param("status") String status,@Param("error") String error);
- void failed(@Param("tenant") String tenant,@Param("id") String id,@Param("due") Instant due);
+ /** counted为false表示瞬时失败：只延后并记录分类，不累加尝试次数。 */
+ void failed(@Param("tenant") String tenant,@Param("id") String id,@Param("counted") boolean counted,@Param("code") String code,@Param("due") Instant due);
 }

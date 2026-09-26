@@ -12,13 +12,20 @@
   <select id="view" resultType="com.lrj.commerce.member.api.MemberCycleApi$View">SELECT member_id,TRUE enabled,policy_version,cycle_start,cycle_end,current_growth,retention_growth,member_level,version FROM member_cycle_account WHERE tenant_id=#{tenant} AND member_id=#{member}</select>
   <insert id="insertView">INSERT INTO member_cycle_account(tenant_id,member_id,policy_version,cycle_start,cycle_end,current_growth,retention_growth,member_level,version) VALUES(#{tenant},#{v.memberId},#{v.policyVersion},#{v.cycleStart},#{v.cycleEnd},#{v.currentGrowth},#{v.retentionGrowth},#{v.memberLevel},#{v.version})</insert>
   <update id="updateView">UPDATE member_cycle_account SET policy_version=#{v.policyVersion},cycle_start=#{v.cycleStart},cycle_end=#{v.cycleEnd},current_growth=#{v.currentGrowth},retention_growth=#{v.retentionGrowth},member_level=#{v.memberLevel},version=#{v.version} WHERE tenant_id=#{tenant} AND member_id=#{v.memberId} AND version=#{expected}</update>
-  <select id="due" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Due">
-    SELECT m.tenant_id,m.member_id FROM member_record m
+  <!-- 到期会员：有生效策略的租户中未考核、周期已结束或策略版本已变的会员。 -->
+  <sql id="due">
+    FROM member_record m
     JOIN member_cycle_policy p ON p.tenant_id=m.tenant_id AND p.effective_from&lt;=#{at}
     LEFT JOIN member_cycle_account a ON a.tenant_id=m.tenant_id AND a.member_id=m.member_id
     WHERE m.status&lt;&gt;'CLOSED'
       AND NOT EXISTS(SELECT 1 FROM member_cycle_policy newer WHERE newer.tenant_id=p.tenant_id AND newer.effective_from&lt;=#{at} AND (newer.effective_from&gt;p.effective_from OR (newer.effective_from=p.effective_from AND newer.version&gt;p.version)))
       AND (a.member_id IS NULL OR a.cycle_end&lt;=#{at} OR a.policy_version&lt;&gt;p.version)
-    ORDER BY COALESCE(a.cycle_end,p.effective_from),m.tenant_id,m.member_id LIMIT #{limit}
+  </sql>
+  <select id="due" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Due">
+    SELECT m.tenant_id,m.member_id <include refid="due"/> AND m.tenant_id=#{tenant}
+    ORDER BY COALESCE(a.cycle_end,p.effective_from),m.member_id LIMIT #{limit}
+  </select>
+  <select id="dueTenants" resultType="string">
+    SELECT DISTINCT m.tenant_id <include refid="due"/> AND m.tenant_id&gt;#{after} ORDER BY m.tenant_id LIMIT #{limit}
   </select>
 </mapper>
