@@ -35,13 +35,16 @@ public class JourneyService implements JourneyApi, EventHandler {
     private final RuleDecisionPort rules;
     private final Clock clock;
     private final TransactionTemplate tx;
-    private String cursor="";
-    public JourneyService(JourneyMapper mapper,Commands commands,MemberApi members,StoreApi stores,EntitlementApi benefits,OrderApi orders,AftersaleApi aftersales,RuleDecisionPort rules,Clock clock,PlatformTransactionManager manager,com.lrj.commerce.member.api.MemberGrowthApi memberGrowth,com.lrj.commerce.campaign.api.MarketingAssets assets,com.lrj.commerce.member.api.MemberBehaviorApi behavior,com.lrj.commerce.benefit.api.CouponApi coupons) {
+    private final TenantRotation journeys;
+    /** 旅程车道：每次访问一个租户最多推进20步生命周期扫描和5个实例节点（逐项事务），每轮最多200项或500毫秒，租户轮转。 */
+    public static final TenantRotation.Policy JOURNEYS=new TenantRotation.Policy(25,50,java.time.Duration.ofMillis(500),200);
+    public JourneyService(JourneyMapper mapper,Commands commands,MemberApi members,StoreApi stores,EntitlementApi benefits,OrderApi orders,AftersaleApi aftersales,RuleDecisionPort rules,Clock clock,PlatformTransactionManager manager,com.lrj.commerce.member.api.MemberGrowthApi memberGrowth,com.lrj.commerce.campaign.api.MarketingAssets assets,com.lrj.commerce.member.api.MemberBehaviorApi behavior,com.lrj.commerce.benefit.api.CouponApi coupons,WorkLanes lanes) {
         this.behavior=behavior;this.coupons=coupons;
         this.assets=assets;
         this.memberGrowth=memberGrowth;
         this.mapper=mapper;this.commands=commands;this.members=members;this.stores=stores;this.benefits=benefits;this.orders=orders;this.aftersales=aftersales;this.rules=rules;this.clock=clock;
         tx=new TransactionTemplate(manager);tx.setTimeout(10);tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        journeys=lanes.rotation("journeys",JOURNEYS,null);
     }
     /** 图必须有界、无环、可达且所有分支收敛到终止节点。 */
     public View create(Actor actor,String key,Definition input) {
@@ -171,21 +174,25 @@ public class JourneyService implements JourneyApi, EventHandler {
         for(var row:rows)if(active(row)&&mapper.control(tenant,row.instanceId(),row.version(),"CANCELLED",now())!=1)throw conflict("旅程取消并发冲突");
     }
     private boolean active(Instance i){return Set.of(State.RUNNING,State.WAITING,State.ISOLATED).contains(i.status());}
-    /** 每轮最多4租户、每租户5实例；下轮从游标后继续，避免大租户独占。 */
-    public synchronized int tick(){var tenants=mapper.tenants(cursor,now());if(tenants.isEmpty()){cursor="";return 0;}int count=0;for(var tenant:tenants)count+=pumpTenant(tenant);cursor=tenants.getLast();return count;}
+    /** 租户公平轮转，每租户每次最多20步扫描与5个实例，避免大租户独占。 */
+    public int tick(){return journeys.run((after,limit)->mapper.tenants(after,now(),limit),this::pumpTenant);}
     /** 管理台只能触发当前租户的有限批次。 */
-    public int pump(Actor actor){actor.requireAdmin();return pumpTenant(actor.tenantId());}
-    private int pumpTenant(String tenant) {
-        int count=scanTenant(tenant);
+    public int pump(Actor actor){actor.requireAdmin();return pumpTenant(actor.tenantId(),journeys.manual());}
+    /** 瞬时失败（依赖不可用、锁冲突、超时）只延后不计次数，实例截止时间终止重试；其他失败计次，5次隔离。 */
+    private int pumpTenant(String tenant,TenantRotation.Run run) {
+        int count=scanTenant(tenant,run);
         for(var candidate:mapper.due(tenant,now())) {
+            if(run.exhausted())break;run.attempted();
             // 领取前的候选可能已被另一执行器推进，失败计数必须绑定真正执行的节点版本。
             var attempted=new java.util.concurrent.atomic.AtomicReference<>(candidate);
-            try {if(Boolean.TRUE.equals(tx.execute(s->{behavior.journeyAllowed(tenant,candidate.memberId());var row=mapper.dueLock(tenant,candidate.instanceId(),now());if(row==null)return false;attempted.set(row);execute(tenant,row);return true;})))count++;}
+            try {if(Boolean.TRUE.equals(tx.execute(s->{behavior.journeyAllowed(tenant,candidate.memberId());var row=mapper.dueLock(tenant,candidate.instanceId(),now());if(row==null)return false;attempted.set(row);execute(tenant,row);return true;})))count++;run.succeeded();}
             catch(RuntimeException failure){
                 // 节点事务已回滚，独立事务仅记录有界重试，不保留可能包含敏感数据的异常文本。
-                var retryAt=now().plusSeconds((1<<Math.min(attempted.get().attempts()+1,5))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2));
-                tx.executeWithoutResult(s->mapper.failed(tenant,candidate.instanceId(),attempted.get().version(),retryAt));
-                org.slf4j.LoggerFactory.getLogger(getClass()).warn("journey retry id={} errorType={}",candidate.instanceId(),failure.getClass().getSimpleName());
+                var type=FailureClass.of(failure);boolean counted=!type.transientFailure();
+                var retryAt=now().plusMillis(counted?(1L<<Math.min(attempted.get().attempts()+1,5))*1000+java.util.concurrent.ThreadLocalRandom.current().nextInt(1000):RetryPolicy.deferralMillis(java.util.concurrent.ThreadLocalRandom.current().nextDouble()));
+                tx.executeWithoutResult(s->mapper.failed(tenant,candidate.instanceId(),attempted.get().version(),counted,retryAt));
+                org.slf4j.LoggerFactory.getLogger(getClass()).warn("journey retry id={} failureClass={} errorType={}",candidate.instanceId(),type,failure.getClass().getSimpleName());
+                if(run.failed(type))break;
             }
         }return count;
     }
@@ -222,16 +229,21 @@ public class JourneyService implements JourneyApi, EventHandler {
     private Instant now(){return clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);}
     private boolean lifecycle(Trigger trigger){return Set.of(Trigger.BIRTHDAY,Trigger.DORMANT,Trigger.REPURCHASE,Trigger.CART_ABANDONED).contains(trigger);}
     /** 扫描与单会员入组共享事务；每个租户最多20步，游标提交后才能继续。 */
-    private int scanTenant(String tenant){
+    private int scanTenant(String tenant,TenantRotation.Run run){
         int count=0;
         for(var candidate:mapper.dueScans(tenant,now())){
-            for(int i=0;i<4;i++){
-                var attempted=new java.util.concurrent.atomic.AtomicReference<>(candidate);
+            for(int i=0;i<4&&!run.exhausted();i++){
+                var attempted=new java.util.concurrent.atomic.AtomicReference<>(candidate);run.attempted();
                 try{if(!Boolean.TRUE.equals(tx.execute(status->{var scan=mapper.scanLock(tenant,candidate.journeyId(),candidate.journeyVersion());
                     if(scan==null||scan.status().equals("ISOLATED")||scan.nextDue().isAfter(now()))return false;
                     attempted.set(scan);return scanStep(tenant,scan);
-                })))break;count++;}
-                catch(RuntimeException failure){var old=attempted.get();tx.executeWithoutResult(status->mapper.scanFailed(tenant,old,now().plusSeconds((1<<Math.min(old.attempts()+1,5))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2))));break;}
+                })))break;count++;run.succeeded();}
+                catch(RuntimeException failure){
+                    var old=attempted.get();var type=FailureClass.of(failure);boolean counted=!type.transientFailure();
+                    tx.executeWithoutResult(status->mapper.scanFailed(tenant,old,counted,now().plusMillis(counted?(1L<<Math.min(old.attempts()+1,5))*1000+java.util.concurrent.ThreadLocalRandom.current().nextInt(1000):RetryPolicy.deferralMillis(java.util.concurrent.ThreadLocalRandom.current().nextDouble()))));
+                    org.slf4j.LoggerFactory.getLogger(getClass()).warn("journey scan retry journey={} failureClass={} errorType={}",old.journeyId(),type,failure.getClass().getSimpleName());
+                    if(run.failed(type))return count;break;
+                }
             }
         }return count;
     }

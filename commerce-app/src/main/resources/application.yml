@@ -11,6 +11,8 @@ server:
 commerce:
   sandbox-enabled: ${COMMERCE_SANDBOX_ENABLED:false}
   workers-enabled: ${COMMERCE_WORKERS_ENABLED:false}
+  # 后台车道共享调度线程数（1..6）；每线程同时最多占用一个数据库连接，需给请求线程保留连接池余量。
+  worker-threads: ${COMMERCE_WORKER_THREADS:3}
   address-key: ${COMMERCE_ADDRESS_KEY}
 spring:
   application:

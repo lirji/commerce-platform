@@ -20,10 +20,14 @@ public class PaymentController {
     @PostMapping("/admin/sandbox/payments/{id}/fact") public Object sandbox(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@PathVariable String id,@RequestBody PaymentApi.SandboxFact fact){return payments.sandboxFact(actor,key,id,fact);}
     /** 到期处理不能直接把支付中订单判为未付。 */
     @PostMapping("/admin/orders/expire") public Object expire(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key){return orders.expire(actor,key);}
+    /** 停止自动到期的订单在修复数据后审计重试，保留最近失败证据。 */
+    @PostMapping("/admin/orders/{id}/expiry/retry") public Object retryExpiry(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@PathVariable String id){return orders.retryExpiry(actor,key,id);}
     /** 手动运行一次有界当前租户事件批次。 */
     @PostMapping("/admin/events/pump") public Object pump(@AuthenticationPrincipal Actor actor){return events.pump(actor);}
     /** 仅查询租户内事件元信息。 */
     @GetMapping("/admin/events") public Object list(@AuthenticationPrincipal Actor actor,@RequestParam(defaultValue="") String after,@RequestParam(defaultValue="50") int limit){return events.list(actor,after,limit);}
-    /** 隔离事件需要审计的重放命令。 */
+    /** 本租户积压诊断：到期数、最老到期年龄、重试与隔离数、近期投递延迟，不含载荷。 */
+    @GetMapping("/admin/events/health") public Object health(@AuthenticationPrincipal Actor actor){return events.health(actor);}
+    /** 隔离或跳过的事件需要审计的重放命令，只执行未成功的消费者。 */
     @PostMapping("/admin/events/{id}/retry") public Object retry(@AuthenticationPrincipal Actor actor,@RequestHeader("Idempotency-Key") String key,@PathVariable String id){return events.retry(actor,key,id);}
 }

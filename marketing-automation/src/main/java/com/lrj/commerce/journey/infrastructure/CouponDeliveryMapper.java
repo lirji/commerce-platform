@@ -12,11 +12,12 @@ public interface CouponDeliveryMapper {
     Row lock(@Param("tenant") String tenant,@Param("id") String id);
     List<Row> list(@Param("tenant") String tenant,@Param("store") String store,@Param("after") String after,@Param("limit") int limit);
     String pending(@Param("tenant") String tenant,@Param("now") Instant now);
-    List<String> tenants(@Param("after") String after,@Param("now") Instant now);
+    List<String> tenants(@Param("after") String after,@Param("now") Instant now,@Param("limit") int limit);
     int status(@Param("tenant") String tenant,@Param("id") String id,@Param("expected") long expected,@Param("status") String status,@Param("mode") String mode,@Param("now") Instant now);
     int advance(@Param("tenant") String tenant,@Param("id") String id,@Param("member") String member,@Param("issued") boolean issued);
     int advanceRevoke(@Param("tenant") String tenant,@Param("id") String id,@Param("member") String member,@Param("revoked") boolean revoked);
-    void failed(@Param("tenant") String tenant,@Param("id") String id,@Param("code") String code,@Param("next") Instant next);
+    /** counted为false表示瞬时失败：只延后并记录分类，不累加尝试次数。 */
+    void failed(@Param("tenant") String tenant,@Param("id") String id,@Param("code") String code,@Param("counted") boolean counted,@Param("next") Instant next);
     Instant frequency(@Param("tenant") String tenant,@Param("member") String member);
     void frequencySet(@Param("tenant") String tenant,@Param("member") String member,@Param("next") Instant next);
     void recipient(@Param("tenant") String tenant,@Param("id") String id,@Param("input") Recipient input);

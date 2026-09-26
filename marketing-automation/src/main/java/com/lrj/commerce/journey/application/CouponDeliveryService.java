@@ -17,8 +17,11 @@ import java.util.*;
 /** 逐收件人提交并持久化恢复位置，不用内存队列代表发券成功。 */
 @Service
 public class CouponDeliveryService implements CouponDeliveryApi {
-    private final CouponDeliveryMapper mapper;private final MarketingAssets audiences;private final MemberApi members;private final CouponApi coupons;private final StoreApi stores;private final Commands commands;private final Clock clock;private final TransactionTemplate tx;private String tenantCursor="";
-    public CouponDeliveryService(CouponDeliveryMapper mapper,MarketingAssets audiences,MemberApi members,CouponApi coupons,StoreApi stores,Commands commands,Clock clock,PlatformTransactionManager manager){this.mapper=mapper;this.audiences=audiences;this.members=members;this.coupons=coupons;this.stores=stores;this.commands=commands;this.clock=clock;tx=new TransactionTemplate(manager);tx.setTimeout(10);}
+    private final CouponDeliveryMapper mapper;private final MarketingAssets audiences;private final MemberApi members;private final CouponApi coupons;private final StoreApi stores;private final Commands commands;private final Clock clock;private final TransactionTemplate tx;
+    /** 定向发券车道：每次访问一个租户推进一个批次最多20名会员（逐名事务），每轮最多200步或500毫秒，租户轮转。 */
+    public static final TenantRotation.Policy DELIVERY=new TenantRotation.Policy(20,50,Duration.ofMillis(500),200);
+    private final TenantRotation deliveries;
+    public CouponDeliveryService(CouponDeliveryMapper mapper,MarketingAssets audiences,MemberApi members,CouponApi coupons,StoreApi stores,Commands commands,Clock clock,PlatformTransactionManager manager,WorkLanes lanes){this.mapper=mapper;this.audiences=audiences;this.members=members;this.coupons=coupons;this.stores=stores;this.commands=commands;this.clock=clock;tx=new TransactionTemplate(manager);tx.setTimeout(10);deliveries=lanes.rotation("deliveries",DELIVERY,null);}
     /** 固定版本与截止时间，创建后不追随更新的人群。 */
     public View create(Actor actor,String key,Create input){
         actor.requireAdmin();Inputs.require(input!=null && input.definitionVersion()>0 && input.deadline()!=null && input.audience()!=null,"发券批次参数无效");Identifiers.require(input.batchId());Identifiers.require(input.definitionId());Inputs.text(input.name(),128);
@@ -49,14 +52,21 @@ public class CouponDeliveryService implements CouponDeliveryApi {
         });
     }
     /** 单轮上限20个收件人，正常推进与错误重试使用相同预算。 */
-    public int pump(Actor actor){actor.requireAdmin();return pumpTenant(actor.tenantId());}
-    /** 各租户有独立批次和频控，后台轮转4个租户。 */
-    public synchronized int tick(){var tenants=mapper.tenants(tenantCursor,now());if(tenants.isEmpty()){tenantCursor="";return 0;}int count=0;for(var tenant:tenants)count+=pumpTenant(tenant);tenantCursor=tenants.getLast();return count;}
-    private int pumpTenant(String tenant){
+    public int pump(Actor actor){actor.requireAdmin();return pumpTenant(actor.tenantId(),deliveries.manual());}
+    /** 各租户有独立批次和频控，后台按租户轮转。 */
+    public int tick(){return deliveries.run((after,limit)->mapper.tenants(after,now(),limit),this::pumpTenant);}
+    /** 瞬时失败只延后批次不计次数，批次截止时间终止重试；其他失败计次，5次隔离。 */
+    private int pumpTenant(String tenant,TenantRotation.Run run){
         String id=mapper.pending(tenant,now());if(id==null)return 0;int count=0;
-        for(int i=0;i<20;i++){
-            try{if(!Boolean.TRUE.equals(tx.execute(s->step(tenant,id))))break;count++;}
-            catch(RuntimeException failure){String code=failure instanceof DomainException d?d.code().name():"STORAGE_FAILURE";tx.executeWithoutResult(s->{var row=mapper.lock(tenant,id);if(row!=null && Set.of("RUNNING","REVOKING").contains(row.status()))mapper.failed(tenant,id,code,now().plusSeconds((1L<<Math.min(row.attempts()+1,5))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2)));});break;}
+        for(int i=0,limit=run.limit();i<limit&&!run.exhausted();i++){
+            run.attempted();
+            try{if(!Boolean.TRUE.equals(tx.execute(s->step(tenant,id))))break;count++;run.succeeded();}
+            catch(RuntimeException failure){
+                var type=FailureClass.of(failure);boolean counted=!type.transientFailure();String code=counted?failure instanceof DomainException d?d.code().name():"STORAGE_FAILURE":type.name();
+                tx.executeWithoutResult(s->{var row=mapper.lock(tenant,id);if(row!=null && Set.of("RUNNING","REVOKING").contains(row.status()))mapper.failed(tenant,id,code,counted,now().plusMillis(counted?((1L<<Math.min(row.attempts()+1,5))*1000+java.util.concurrent.ThreadLocalRandom.current().nextInt(1000)):RetryPolicy.deferralMillis(java.util.concurrent.ThreadLocalRandom.current().nextDouble())));});
+                org.slf4j.LoggerFactory.getLogger(getClass()).warn("coupon delivery retry batch={} failureClass={} errorType={}",id,type,failure.getClass().getSimpleName());
+                run.failed(type);break;
+            }
         }return count;
     }
     private boolean step(String tenant,String id){

@@ -88,7 +88,7 @@ public class QuoteService implements QuoteApi {
     /** 历史快照不依赖当前价格/活动，冻结会员仍可查本人的历史报价。 */
     public View read(Actor actor,String id) {
         Identifiers.require(id);var member=members.current(actor);
-        return JsonCodec.read(Inputs.found(mapper.read(actor.tenantId(),member.memberId(),id)),View.class);
+        return snapshot(Inputs.found(mapper.read(actor.tenantId(),member.memberId(),id)));
     }
     /** 锁后取当前时间验证TTL，不能在锁等待前通过一次检查就消费过期报价。 */
     @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
@@ -96,12 +96,14 @@ public class QuoteService implements QuoteApi {
         Identifiers.require(id);Identifiers.require(orderId);var member=members.current(actor);
         var locked=Inputs.found(mapper.lock(actor.tenantId(),member.memberId(),id));
         if(locked.consumedOrderId()!=null||!clock.instant().isBefore(locked.expiresAt())) throw new DomainException(DomainException.Code.CONFLICT,"报价已消费或过期");
-        var snapshot=JsonCodec.read(locked.snapshotJson(),View.class);
+        var snapshot=snapshot(locked.snapshotJson());
         if(snapshot.channel()!=actor.channel())throw new DomainException(DomainException.Code.FORBIDDEN,"报价渠道与当前身份不一致");
         if(mapper.consume(actor.tenantId(),id,orderId)!=1) throw new DomainException(DomainException.Code.CONFLICT,"报价消费冲突");
         return snapshot;
     }
     /** 批量读取历史快照避免重建效果投影时逐单查询报价。 */
-    public List<View> internalBatch(String tenant,List<String> ids){Identifiers.require(tenant);Inputs.require(ids!=null&&!ids.isEmpty()&&ids.size()<=100,"报价批次无效");ids.forEach(Identifiers::require);var values=mapper.batch(tenant,ids).stream().map(json->JsonCodec.read(json,View.class)).toList();if(values.size()!=new HashSet<>(ids).size())throw new DomainException(DomainException.Code.NOT_FOUND,"报价快照缺失");return values;}
+    public List<View> internalBatch(String tenant,List<String> ids){Identifiers.require(tenant);Inputs.require(ids!=null&&!ids.isEmpty()&&ids.size()<=100,"报价批次无效");ids.forEach(Identifiers::require);var values=mapper.batch(tenant,ids).stream().map(QuoteService::snapshot).toList();if(values.size()!=new HashSet<>(ids).size())throw new DomainException(DomainException.Code.NOT_FOUND,"报价快照缺失");return values;}
 
+    /** 8c20699生成的券报价快照没有platformFundingBps；V10迁移把既有券定义默认为0（商家全额承担），历史快照沿用同一默认值。 */
+    public static View snapshot(String json){return JsonCodec.readLegacy(json,View.class,"/coupon","platformFundingBps",0);}
 }

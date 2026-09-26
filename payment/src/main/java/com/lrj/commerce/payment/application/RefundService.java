@@ -14,8 +14,9 @@ import java.util.*;
 /** 退款先预留实收额度，再在事务外核对渠道；未知占用额度防止重试超退。 */
 @Service
 public class RefundService implements RefundApi {
-    private final RefundMapper mapper;private final PaymentMapper payments;private final OrderApi orders;private final RefundChannel channel;private final Commands commands;private final Outbox outbox;private final TransactionTemplate tx;private String cursor="";
-    public RefundService(RefundMapper mapper,PaymentMapper payments,OrderApi orders,RefundChannel channel,Commands commands,Outbox outbox,PlatformTransactionManager manager){this.mapper=mapper;this.payments=payments;this.orders=orders;this.channel=channel;this.commands=commands;this.outbox=outbox;tx=new TransactionTemplate(manager);tx.setTimeout(10);}
+    private final RefundMapper mapper;private final PaymentMapper payments;private final OrderApi orders;private final RefundChannel channel;private final Commands commands;private final Outbox outbox;private final TransactionTemplate tx;private final TenantRotation checks;
+    public RefundService(RefundMapper mapper,PaymentMapper payments,OrderApi orders,RefundChannel channel,Commands commands,Outbox outbox,PlatformTransactionManager manager,WorkLanes lanes){this.mapper=mapper;this.payments=payments;this.orders=orders;this.channel=channel;this.commands=commands;this.outbox=outbox;tx=new TransactionTemplate(manager);tx.setTimeout(10);
+        checks=lanes.rotation("refunds",PaymentService.CHECKS,()->mapper.checkBacklog(RetryPolicy.TRANSIENT.budget()));}
     /** 售后批准与退款意图同事务；一张售后单只对应一个退款号。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public View request(String tenant,String caseId,String orderId,String amount){
@@ -42,11 +43,24 @@ public class RefundService implements RefundApi {
     /** 只写沙箱账本，真实退款成功必须由后续服务端查询确认。 */
     public View sandboxSuccess(Actor actor,String key,String id){actor.requireAdmin();var attempt=internalRead(actor.tenantId(),id);Inputs.require(attempt.provider().equals("SANDBOX"),"不是沙箱退款");channel.ensure(actor.tenantId(),attempt);
         return commands.run(actor,"sandbox.refund.success",key,id,View.class,()->{var proof=Inputs.found(mapper.channel(actor.tenantId(),id));if(proof.status().equals("UNKNOWN"))mapper.channelSuccess(actor.tenantId(),id,UUID.randomUUID().toString());return mapper.find(actor.tenantId(),id);});}
-    /** 每次最多20条、单租户5条；未知最多自动查五次，人工仍可继续查同一退款号。 */
-    public synchronized int tick(){var tenants=mapper.tenants(cursor);if(tenants.isEmpty()){cursor="";return 0;}int count=0;for(String tenant:tenants)for(var check:mapper.due(tenant)){
-        if(mapper.claim(check,(1<<Math.min(check.checkAttempts()+2,6))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2))!=1)continue;
-        try{reconcileInternal(tenant,check.refundId());count++;}catch(RuntimeException ex){org.slf4j.LoggerFactory.getLogger(getClass()).warn("refund check id={} errorType={}",check.refundId(),ex.getClass().getSimpleName());}
-    }cursor=tenants.getLast();return count;}
+    /** 与支付核对相同的公平契约：单租户每次最多5条，租户轮转；未知最多消耗五次自动核对，渠道不可用不消耗，人工仍可继续查同一退款号。 */
+    public int tick(){return checks.run((after,limit)->mapper.tenants(after,limit,RetryPolicy.TRANSIENT.budget()),this::checkTenant);}
+    private int checkTenant(String tenant,TenantRotation.Run run){
+        int count=0;
+        for(var check:mapper.due(tenant,run.limit(),RetryPolicy.TRANSIENT.budget())){
+            if(run.exhausted())break;
+            if(mapper.claim(check,(1<<Math.min(check.checkAttempts()+2,6))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2))!=1)continue;
+            run.attempted();
+            try{reconcileInternal(tenant,check.refundId());count++;run.succeeded();}
+            catch(RuntimeException failure){
+                var type=FailureClass.of(failure);String error=type+":"+(failure instanceof DomainException d?"DomainException/"+d.code():failure.getClass().getSimpleName());
+                try{if(type.transientFailure())mapper.checkTransient(tenant,check.refundId(),check.checkAttempts()+1,RetryPolicy.TRANSIENT.delayMillis(check.checkTransientFailures()+1,java.util.concurrent.ThreadLocalRandom.current().nextDouble()),error);else mapper.checkError(tenant,check.refundId(),error);}
+                catch(RuntimeException unrecorded){org.slf4j.LoggerFactory.getLogger(getClass()).warn("refund check failure not recorded id={} errorType={}",check.refundId(),unrecorded.getClass().getSimpleName());}
+                org.slf4j.LoggerFactory.getLogger(getClass()).warn("refund check id={} failureClass={} errorType={}",check.refundId(),type,failure.getClass().getSimpleName());
+                if(run.failed(type))break;
+            }
+        }return count;
+    }
     private DomainException conflict(){return new DomainException(DomainException.Code.CONFLICT,"退款额度或渠道证据冲突");}
     /** 成功退款是单调终态事实；一次最多核对100订单，不读取其他租户。 */
     public java.util.List<RefundApi.Total> totals(String tenant,java.util.List<String> ids){com.lrj.commerce.kernel.Identifiers.require(tenant);Inputs.require(ids!=null&&!ids.isEmpty()&&ids.size()<=100,"退款汇总批次无效");ids.forEach(com.lrj.commerce.kernel.Identifiers::require);return mapper.totals(tenant,ids);}

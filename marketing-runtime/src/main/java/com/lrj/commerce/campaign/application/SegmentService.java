@@ -16,8 +16,10 @@ import java.util.*;
 /** 单批数据与检查点同事务，最终仅插入快照头即可让完整成员集原子可见。 */
 @Service
 public class SegmentService implements SegmentApi {
- private final Outbox outbox;private final SegmentMapper mapper;private final MemberGrowthApi members;private final RuleDecisionPort rules;private final Commands commands;private final Clock clock;private final TransactionTemplate tx;private String tenantCursor="";
- public SegmentService(SegmentMapper mapper,MemberGrowthApi members,RuleDecisionPort rules,Commands commands,Clock clock,PlatformTransactionManager manager,Outbox outbox){this.outbox=outbox;this.mapper=mapper;this.members=members;this.rules=rules;this.commands=commands;this.clock=clock;tx=new TransactionTemplate(manager);tx.setTimeout(10);}
+ private final Outbox outbox;private final SegmentMapper mapper;private final MemberGrowthApi members;private final RuleDecisionPort rules;private final Commands commands;private final Clock clock;private final TransactionTemplate tx;private final TenantRotation segments;
+ /** 人群车道：每次访问一个租户最多启动一个任务、处理一批100名会员、公告一批，每轮最多30步或500毫秒，租户轮转。 */
+ public static final TenantRotation.Policy SEGMENTS=new TenantRotation.Policy(3,50,Duration.ofMillis(500),30);
+ public SegmentService(SegmentMapper mapper,MemberGrowthApi members,RuleDecisionPort rules,Commands commands,Clock clock,PlatformTransactionManager manager,Outbox outbox,WorkLanes lanes){this.outbox=outbox;this.mapper=mapper;this.members=members;this.rules=rules;this.commands=commands;this.clock=clock;tx=new TransactionTemplate(manager);tx.setTimeout(10);segments=lanes.rotation("segments",SEGMENTS,null);}
  /** 发布新定义会关闭周期刷新，运营确认新规则后再显式启用。 */
  public View create(Actor actor,String key,Definition input){
   actor.requireAdmin();Inputs.require(input!=null&&input.version()>0&&input.rule()!=null,"人群定义无效");Identifiers.require(input.segmentId());Inputs.text(input.name(),128);input.rule().requireTrustedFields();memberOnly(input.rule());
@@ -55,22 +57,27 @@ public class SegmentService implements SegmentApi {
   });
  }
  /** 每租户一轮最多新建一个任务并处理一批，避免手工泵绕过资源预算。 */
- public int pump(Actor actor){actor.requireAdmin();return pumpTenant(actor.tenantId());}
- /** 小批租户轮转，后台开关由既有EventWorker统一控制。 */
- public synchronized int tick(){var tenants=mapper.tenants(tenantCursor,now());if(tenants.isEmpty()){tenantCursor="";return 0;}int result=0;for(var tenant:tenants)result+=pumpTenant(tenant);tenantCursor=tenants.getLast();return result;}
- private int pumpTenant(String tenant){
-  for(var id:mapper.due(tenant,now()))tx.executeWithoutResult(s->{var root=mapper.lockRoot(tenant,id);if(root!=null&&root.enabled()&&!root.nextDue().isAfter(now()))start(tenant,root);});
+ public int pump(Actor actor){actor.requireAdmin();return pumpTenant(actor.tenantId(),segments.manual());}
+ /** 租户公平轮转，后台开关由既有EventWorker统一控制。 */
+ public int tick(){return segments.run((after,limit)->mapper.tenants(after,now(),limit),this::pumpTenant);}
+ /** 瞬时失败（依赖不可用、锁冲突、超时）只延后不计次数，任务有效期终止重试；其他失败计次，5次隔离。 */
+ private int pumpTenant(String tenant,TenantRotation.Run run){
+  // 新建任务失败只影响该人群：依次尝试至多3个到期人群，首个成功即停止，一个坏人群不再挡住同租户其他人群。
+  for(var id:mapper.due(tenant,now())){run.attempted();try{boolean[] started={false};tx.executeWithoutResult(s->{var root=mapper.lockRoot(tenant,id);if(root!=null&&root.enabled()&&!root.nextDue().isAfter(now())){start(tenant,root);started[0]=true;}});run.succeeded();if(started[0])break;}
+   catch(RuntimeException failure){var type=FailureClass.of(failure);org.slf4j.LoggerFactory.getLogger(getClass()).warn("segment start retry segment={} failureClass={} type={}",id,type,failure.getClass().getSimpleName());if(run.failed(type))return 0;}}
   int count=0;
   for(var id:mapper.pending(tenant,now())){
-   try {Boolean done=tx.execute(s->{var run=mapper.lockRun(tenant,id);if(run==null||!run.status().equals("RUNNING")||run.availableAt().isAfter(now()))return false;batch(tenant,run);return true;});if(Boolean.TRUE.equals(done))count++;}
-   catch(RuntimeException failure){tx.executeWithoutResult(s->{var run=mapper.lockRun(tenant,id);if(run!=null)mapper.failed(tenant,id,now().plusSeconds((1L<<Math.min(run.attempts()+1,5))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2)));});org.slf4j.LoggerFactory.getLogger(getClass()).warn("segment batch retry run={} type={}",id,failure.getClass().getSimpleName());}
+   run.attempted();
+   try {Boolean done=tx.execute(s->{var run2=mapper.lockRun(tenant,id);if(run2==null||!run2.status().equals("RUNNING")||run2.availableAt().isAfter(now()))return false;batch(tenant,run2);return true;});if(Boolean.TRUE.equals(done))count++;run.succeeded();}
+   catch(RuntimeException failure){var type=FailureClass.of(failure);boolean counted=!type.transientFailure();tx.executeWithoutResult(s->{var row=mapper.lockRun(tenant,id);if(row!=null)mapper.failed(tenant,id,counted,counted?"RETRYABLE":type.name(),now().plusMillis(counted?(1L<<Math.min(row.attempts()+1,5))*1000+java.util.concurrent.ThreadLocalRandom.current().nextInt(1000):RetryPolicy.deferralMillis(java.util.concurrent.ThreadLocalRandom.current().nextDouble())));});org.slf4j.LoggerFactory.getLogger(getClass()).warn("segment batch retry run={} failureClass={} type={}",id,type,failure.getClass().getSimpleName());if(run.failed(type))return count;}
   }
   for(var id:mapper.announcements(tenant,now())){
-   try{tx.executeWithoutResult(s->{var run=mapper.lockRun(tenant,id);if(run==null||run.entriesAnnounced()||run.entryAttempts()>=5)return;
-    if(!clock.instant().isBefore(run.validUntil())){mapper.announced(tenant,id,null,true);return;}
-    var entered=mapper.entered(tenant,run);for(var member:entered)outbox.append(tenant,"segment.member.entered.v1",JsonCodec.hash(run.runId()+"/"+member),1,new Entered(member,run.segmentId(),run.audienceId(),run.snapshotVersion(),run.definitionVersion()));
+   run.attempted();
+   try{tx.executeWithoutResult(s->{var row=mapper.lockRun(tenant,id);if(row==null||row.entriesAnnounced()||row.entryAttempts()>=5)return;
+    if(!clock.instant().isBefore(row.validUntil())){mapper.announced(tenant,id,null,true);return;}
+    var entered=mapper.entered(tenant,row);for(var member:entered)outbox.append(tenant,"segment.member.entered.v1",JsonCodec.hash(row.runId()+"/"+member),1,new Entered(member,row.segmentId(),row.audienceId(),row.snapshotVersion(),row.definitionVersion()));
     mapper.announced(tenant,id,entered.isEmpty()?null:entered.getLast(),entered.size()<100);
-   });}catch(RuntimeException failure){tx.executeWithoutResult(s->mapper.announcementFailed(tenant,id,now().plusSeconds(30)));org.slf4j.LoggerFactory.getLogger(getClass()).warn("segment announcement retry run={} type={}",id,failure.getClass().getSimpleName());}
+   });run.succeeded();}catch(RuntimeException failure){var type=FailureClass.of(failure);boolean counted=!type.transientFailure();tx.executeWithoutResult(s->mapper.announcementFailed(tenant,id,counted,now().plusMillis(counted?30_000:RetryPolicy.deferralMillis(java.util.concurrent.ThreadLocalRandom.current().nextDouble()))));org.slf4j.LoggerFactory.getLogger(getClass()).warn("segment announcement retry run={} failureClass={} type={}",id,type,failure.getClass().getSimpleName());run.failed(type);}
   }return count;
  }
  private Run start(String tenant,SegmentMapper.Root root){

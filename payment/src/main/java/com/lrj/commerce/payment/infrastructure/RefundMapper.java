@@ -15,8 +15,12 @@ public interface RefundMapper {
     void ensureChannel(@Param("tenant") String tenant,@Param("view") RefundApi.View view);
     RefundChannel.Evidence channel(@Param("tenant") String tenant,@Param("id") String id);
     int channelSuccess(@Param("tenant") String tenant,@Param("id") String id,@Param("transaction") String transaction);
-    record Check(String tenantId,String refundId,int checkAttempts) { }
-    List<Check> due(@Param("tenant") String tenant);
-    List<String> tenants(@Param("after") String after);
+    /** checkAttempts是消耗型自动核对次数（上限5），checkTransientFailures是渠道不可用等不消耗核对次数的失败。 */
+    record Check(String tenantId,String refundId,int checkAttempts,int checkTransientFailures) { }
+    List<Check> due(@Param("tenant") String tenant,@Param("limit") int limit,@Param("transientMax") int transientMax);
+    List<String> tenants(@Param("after") String after,@Param("limit") int limit,@Param("transientMax") int transientMax);
+    int checkTransient(@Param("tenant") String tenant,@Param("id") String id,@Param("claimed") int claimed,@Param("delayMillis") long delayMillis,@Param("error") String error);
+    int checkError(@Param("tenant") String tenant,@Param("id") String id,@Param("error") String error);
+    com.lrj.commerce.runtime.WorkLanes.Backlog checkBacklog(@Param("transientMax") int transientMax);
     int claim(@Param("check") Check check,@Param("delay") int delay);
 }

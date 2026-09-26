@@ -33,6 +33,21 @@ class ModuleBoundaryTest {
         }
         assertTrue(edges>100,"必须真实检查全部持久化模块");
     }
+    /** 应用壳只装配和暴露HTTP，跨域调用仍须经过.api；仅组合根可实例化无Spring依赖的纯内核。 */
+    @Test void appShellReachesDomainsOnlyThroughApi() throws Exception {
+        var diagnostics=new StringWriter();
+        int code=ToolProvider.findFirst("jdeps").orElseThrow().run(new PrintWriter(diagnostics),new PrintWriter(diagnostics),"-verbose:class","-filter:none",Path.of("..","commerce-app","target","classes").toRealPath().toString());
+        assertEquals(0,code,diagnostics.toString());
+        int edges=0;
+        for(String line:diagnostics.toString().split("\\R")) {
+            String[] parts=line.trim().split("\\s+");
+            if(parts.length<3||!parts[1].equals("->")||!parts[0].startsWith("com.lrj.commerce.app.")||!parts[2].startsWith("com.lrj.commerce.")) continue;
+            edges++;String targetOwner=parts[2].split("\\.")[3];
+            boolean compositionRoot=parts[0].equals("com.lrj.commerce.app.CommerceApplication")&&List.of("marketing","order").contains(targetOwner);
+            assertTrue(targetOwner.equals("app")||targetOwner.equals("kernel")||targetOwner.equals("runtime")||parts[2].contains(".api.")||compositionRoot,line);
+        }
+        assertTrue(edges>100,"必须真实检查应用壳依赖");
+    }
     @Test void compiledDomainDependenciesRespectOwnershipAndApiDirection() throws Exception {
         var diagnostics = new StringWriter();
         var arguments = new java.util.ArrayList<>(List.of("-verbose:class", "-filter:none"));

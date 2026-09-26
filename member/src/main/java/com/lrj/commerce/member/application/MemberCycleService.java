@@ -23,11 +23,15 @@ public class MemberCycleService implements MemberCycleApi {
     private final Outbox outbox;
     private final Clock clock;
     private final TransactionTemplate tx;
+    private final TenantRotation assessments;
+    /** 周期考核车道：每次访问一个租户最多10名会员，每轮最多200名或500毫秒，租户轮转，不再按全局周期边界FIFO。 */
+    public static final TenantRotation.Policy ASSESSMENT=new TenantRotation.Policy(10,50,Duration.ofMillis(500),200);
 
     public MemberCycleService(CycleMapper mapper, GrowthMapper growth, MemberMapper members,
-                              Commands commands, Outbox outbox, Clock clock, PlatformTransactionManager manager) {
+                              Commands commands, Outbox outbox, Clock clock, PlatformTransactionManager manager, WorkLanes lanes) {
         this.mapper=mapper;this.growth=growth;this.members=members;this.commands=commands;
         this.outbox=outbox;this.clock=clock;this.tx=new TransactionTemplate(manager);this.tx.setTimeout(10);
+        assessments=lanes.rotation("cycles",ASSESSMENT,null);
     }
 
     /** 时间和版本不可修改，策略更换显式重新锚定周期，不重写历史快照。 */
@@ -96,10 +100,20 @@ public class MemberCycleService implements MemberCycleApi {
     @Transactional(propagation=Propagation.MANDATORY)
     public boolean assess(String tenant,String member) { return assessLocked(tenant,member); }
 
-    /** 每轮最多20名，成功推进边界即移出到期集合，多实例在会员锁后复核。 */
+    /** 成功推进边界即移出到期集合，多实例在会员锁后复核；单名会员失败不阻塞其余会员，一个租户的周期滚动不推迟其他租户。 */
     public void tick() {
-        for(var due:mapper.due(clock.instant(),20))
-            tx.executeWithoutResult(status->assessLocked(due.tenantId(),due.memberId()));
+        assessments.run((after,limit)->mapper.dueTenants(after,clock.instant(),limit),(tenant,run)->{
+            int count=0;
+            for(var due:mapper.due(tenant,clock.instant(),run.limit())) {
+                if(run.exhausted())break;run.attempted();
+                try{tx.executeWithoutResult(status->assessLocked(due.tenantId(),due.memberId()));count++;run.succeeded();}
+                catch(RuntimeException failure){
+                    var type=FailureClass.of(failure);org.slf4j.LoggerFactory.getLogger(getClass()).warn("cycle assess retry tenant={} member={} failureClass={} errorType={}",due.tenantId(),due.memberId(),type,failure.getClass().getSimpleName());
+                    if(run.failed(type))break;
+                }
+            }
+            return count;
+        });
     }
 
     private boolean assessLocked(String tenant,String id) {

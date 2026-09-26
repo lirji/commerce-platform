@@ -22,5 +22,6 @@ public interface CycleMapper {
     MemberCycleApi.View view(@Param("tenant") String tenant, @Param("member") String member);
     void insertView(@Param("tenant") String tenant, @Param("v") MemberCycleApi.View view);
     int updateView(@Param("tenant") String tenant, @Param("v") MemberCycleApi.View view, @Param("expected") long expected);
-    List<Due> due(@Param("at") Instant at, @Param("limit") int limit);
+    List<Due> due(@Param("tenant") String tenant, @Param("at") Instant at, @Param("limit") int limit);
+    List<String> dueTenants(@Param("after") String after, @Param("at") Instant at, @Param("limit") int limit);
 }

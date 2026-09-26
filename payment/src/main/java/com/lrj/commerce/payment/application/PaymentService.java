@@ -13,8 +13,14 @@ import java.util.*;
 /** 支付意图、渠道观察和资金事实分开提交；任何超时都保留可重查的尝试。 */
 @Service
 public class PaymentService implements PaymentApi,EventHandler {
-    private final PaymentMapper mapper;private final OrderApi orders;private final Commands commands;private final PaymentChannel channel;private final Outbox outbox;private final TransactionTemplate tx;
-    public PaymentService(PaymentMapper mapper,OrderApi orders,Commands commands,PaymentChannel channel,Outbox outbox,PlatformTransactionManager manager){this.mapper=mapper;this.orders=orders;this.commands=commands;this.channel=channel;this.outbox=outbox;tx=new TransactionTemplate(manager);tx.setTimeout(10);}
+    private final PaymentMapper mapper;private final OrderApi orders;private final Commands commands;private final PaymentChannel channel;private final Outbox outbox;private final TransactionTemplate tx;private final TenantRotation checks;
+    /**
+     * 核对车道公平契约：每次访问一个租户最多5笔（每笔一次渠道调用），每轮最多100笔或1秒；租户按游标轮转。
+     * 渠道不可用等瞬时失败退回已领取的核对次数并按TRANSIENT退避，连续发生时熔断车道，不把未知支付耗成人工核对。
+     */
+    public static final TenantRotation.Policy CHECKS=new TenantRotation.Policy(5,50,java.time.Duration.ofSeconds(1),100);
+    public PaymentService(PaymentMapper mapper,OrderApi orders,Commands commands,PaymentChannel channel,Outbox outbox,PlatformTransactionManager manager,WorkLanes lanes){this.mapper=mapper;this.orders=orders;this.commands=commands;this.channel=channel;this.outbox=outbox;tx=new TransactionTemplate(manager);tx.setTimeout(10);
+        checks=lanes.rotation("payments",CHECKS,()->mapper.checkBacklog(RetryPolicy.TRANSIENT.budget()));}
     /** 先持久化唯一意图，再调用渠道；远程失败不回滚已发起支付的订单。 */
     public View start(Actor actor,String key,String orderId){
         Identifiers.require(orderId);String provider=channel.provider();
@@ -64,15 +70,27 @@ public class PaymentService implements PaymentApi,EventHandler {
         boolean paid=event.eventType().equals("payment.paid.v1");if(current.status()!=(paid?Status.PAID:Status.CLOSED))throw new DomainException(DomainException.Code.CONFLICT,"支付事件类型不匹配");
         orders.paymentFact(event.tenantId(),fact.orderId(),fact.amount(),paid);
     }
-    private String checkCursor="";
-    /** 条件领取先提交，渠道调用不占事务；崩溃后到期重查相同幂等请求。 */
-    public synchronized int tick(){
-        var tenants=mapper.dueTenants(checkCursor);if(tenants.isEmpty()){checkCursor="";return 0;}int count=0;
-        for(String tenant:tenants)for(var check:mapper.due(tenant)){
+    /** 条件领取先提交，渠道调用不占事务；崩溃后到期重查相同幂等请求。租户公平轮转，单笔失败只影响该笔。 */
+    public int tick(){return checks.run((after,limit)->mapper.dueTenants(after,limit,RetryPolicy.TRANSIENT.budget()),this::checkTenant);}
+    private int checkTenant(String tenant,TenantRotation.Run run){
+        int count=0;
+        for(var check:mapper.due(tenant,run.limit(),RetryPolicy.TRANSIENT.budget())){
+            if(run.exhausted())break;
             int delay=(1<<Math.min(check.checkAttempts()+2,6))+java.util.concurrent.ThreadLocalRandom.current().nextInt(2);
             if(mapper.claimCheck(tenant,check.paymentId(),check.checkAttempts(),delay)!=1)continue;
-            try{reconcileInternal(tenant,check.orderId());count++;}catch(RuntimeException failure){org.slf4j.LoggerFactory.getLogger(getClass()).warn("payment check id={} errorType={}",check.paymentId(),failure.getClass().getSimpleName());}
-        }checkCursor=tenants.getLast();return count;
+            run.attempted();
+            try{reconcileInternal(tenant,check.orderId());count++;run.succeeded();}
+            catch(RuntimeException failure){var type=FailureClass.of(failure);checkFailed(tenant,check,type,failure);if(run.failed(type))break;}
+        }return count;
+    }
+    /** 瞬时失败退回本次领取并按瞬时退避；其他失败保留消耗的核对次数。两者都记录分类与异常类型，不含渠道报文。 */
+    private void checkFailed(String tenant,PaymentMapper.Check check,FailureClass type,RuntimeException failure){
+        String error=type+":"+(failure instanceof DomainException d?"DomainException/"+d.code():failure.getClass().getSimpleName());
+        try{
+            if(type.transientFailure())mapper.checkTransient(tenant,check.paymentId(),check.checkAttempts()+1,RetryPolicy.TRANSIENT.delayMillis(check.checkTransientFailures()+1,java.util.concurrent.ThreadLocalRandom.current().nextDouble()),error);
+            else mapper.checkError(tenant,check.paymentId(),error);
+        }catch(RuntimeException unrecorded){org.slf4j.LoggerFactory.getLogger(getClass()).warn("payment check failure not recorded id={} errorType={}",check.paymentId(),unrecorded.getClass().getSimpleName());}
+        org.slf4j.LoggerFactory.getLogger(getClass()).warn("payment check id={} failureClass={} errorType={}",check.paymentId(),type,failure.getClass().getSimpleName());
     }
     /** 复用订单权限边界，不凭客户端支付ID越权。 */
     public View adminRead(Actor actor,String orderId){orders.adminRead(actor,orderId);return Inputs.found(mapper.byOrder(actor.tenantId(),orderId));}

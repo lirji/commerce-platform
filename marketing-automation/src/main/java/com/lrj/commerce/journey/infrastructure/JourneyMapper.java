@@ -11,7 +11,7 @@ public interface JourneyMapper {
     Scan scanLock(String tenant,String id,long version);
     List<Scan> scans(String tenant,String after,int limit);
     int scanAdvance(String tenant,Scan previous,String status,String cursor,Instant before,Instant due,int scanned,int enrolled);
-    int scanFailed(String tenant,Scan previous,Instant due);
+    int scanFailed(String tenant,Scan previous,boolean counted,Instant due);
     int scanRetry(String tenant,Scan previous,Instant now);
     Instant anchor(String tenant,String id);
     void setAnchor(String tenant,String id,Instant at);
@@ -38,10 +38,11 @@ public interface JourneyMapper {
     Instance dueLock(String tenant,String id,Instant now);
     List<Instance> instances(String tenant,String member,String after,int limit);
     List<Instance> orderInstances(String tenant,String order);
-    List<String> tenants(String after,Instant now);
+    List<String> tenants(String after,Instant now,int limit);
     List<Instance> due(String tenant,Instant now);
     int advance(String tenant,Instance previous,String node,String status,Instant due,String result);
-    int failed(String tenant,String id,long version,Instant due);
+    /** counted为false表示瞬时失败：只延后，不累加尝试次数。 */
+    int failed(String tenant,String id,long version,boolean counted,Instant due);
     int control(String tenant,String id,long version,String status,Instant now);
     void notify(String tenant,String id,String instance,String node,String member,String title,String body);
     List<Notification> notifications(String tenant,String member,String after,int limit);

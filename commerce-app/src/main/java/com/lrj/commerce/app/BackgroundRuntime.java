@@ -1,0 +1,66 @@
+package com.lrj.commerce.app;
+import com.lrj.commerce.runtime.*;
+import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.persistence.EventMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import java.time.*;
+import java.util.*;
+
+/**
+ * 平台运维视图与车道告警契约：事件运行时、各车道轮转/积压/调度延迟以及当前告警代码，全部是跨租户聚合，不含租户标识。
+ * 只有具备EVENT_RUNTIME_METRICS_READ能力的平台运维可读；告警代码每分钟最多评估并记录一次。
+ */
+@Component
+public class BackgroundRuntime {
+    /** 车道等待开始超过30秒（正常约1秒）即判定饥饿。 */
+    static final long STARVATION_MILLIS=30_000;
+    /** 车道最老到期工作超过5分钟未处理。 */
+    static final long BACKLOG_AGE_SECONDS=300;
+    /** 车道一整圈租户轮转超过5分钟，即单租户最坏等待超过5分钟。 */
+    static final long ROTATION_SLOW_MILLIS=300_000;
+    public record EventView(EventMapper.Health health,EventDispatcher.Stats stats,long skipped) { }
+    public record LaneView(TenantRotation.Stats rotation,WorkLanes.Backlog backlog,LaneMonitor.LaneSchedule schedule) { }
+    public record View(Instant observedAt,EventView events,Map<String,LaneView> lanes,List<String> alerts) { }
+    private static final Logger log=LoggerFactory.getLogger(BackgroundRuntime.class);
+    private final EventDispatcher events;private final WorkLanes work;private final LaneMonitor monitor;private final Outbox outbox;
+    private volatile View previous;
+    public BackgroundRuntime(EventDispatcher events,WorkLanes work,LaneMonitor monitor,Outbox outbox){this.events=events;this.work=work;this.monitor=monitor;this.outbox=outbox;}
+
+    /** 跨租户聚合只对平台运维开放，租户管理员不隐含此能力。 */
+    public View view(Actor actor){actor.require(Actor.Capability.EVENT_RUNTIME_METRICS_READ);return snapshot(Instant.now());}
+    View snapshot(Instant now) {
+        var schedules=new HashMap<String,LaneMonitor.LaneSchedule>();for(var s:monitor.schedules())schedules.put(s.lane(),s);
+        var lanes=new TreeMap<String,LaneView>();
+        for(var e:work.snapshot().entrySet())lanes.put(e.getKey(),new LaneView(e.getValue().rotation(),e.getValue().backlog(),schedules.get(e.getKey())));
+        lanes.put("events",new LaneView(events.rotationStats(),null,schedules.get("events")));
+        var eventView=new EventView(events.health((String)null),events.stats(),outbox.skipped());
+        var view=new View(now,eventView,lanes,List.of());
+        return new View(now,eventView,lanes,evaluate(previous,view));
+    }
+    /** 每分钟由调度线程调用：有告警时WARN一行固定代码，不含租户与载荷；失败不影响任何车道。 */
+    void logHealth() {
+        try {
+            var current=snapshot(Instant.now());previous=current;
+            if(!current.alerts().isEmpty())log.warn("background runtime alert codes={}",current.alerts());
+        } catch(RuntimeException failure){log.warn("background runtime health unavailable errorType={}",failure.getClass().getSimpleName());}
+    }
+    /** 纯函数规则，便于测试告警契约；代码格式为CODE:车道，车道名是固定集合。 */
+    public static List<String> evaluate(View previous,View current) {
+        var alerts=new ArrayList<String>();
+        for(var e:current.lanes().entrySet()) {
+            String lane=e.getKey();var v=e.getValue();var before=previous==null?null:previous.lanes().get(lane);
+            var s=v.schedule();
+            if(s!=null&&s.lastFinishedAt()!=null&&(s.lastStartedAt()==null||!s.lastStartedAt().isAfter(s.lastFinishedAt()))&&Duration.between(s.lastFinishedAt(),current.observedAt()).toMillis()>STARVATION_MILLIS
+                ||s!=null&&s.lastStartLagMillis()>STARVATION_MILLIS)alerts.add("LANE_STARVATION:"+lane);
+            if(v.rotation().breakerOpen()||before!=null&&v.rotation().breakerTrips()>before.rotation().breakerTrips())alerts.add("LANE_DEPENDENCY_UNAVAILABLE:"+lane);
+            if(v.rotation().lastRotationMillis()>ROTATION_SLOW_MILLIS)alerts.add("LANE_ROTATION_SLOW:"+lane);
+            if(v.backlog()!=null) {
+                if(v.backlog().oldestDueAgeSeconds()!=null&&v.backlog().oldestDueAgeSeconds()>BACKLOG_AGE_SECONDS)alerts.add("LANE_BACKLOG_AGE:"+lane);
+                if(before!=null&&before.backlog()!=null&&v.backlog().quarantined()>before.backlog().quarantined())alerts.add("LANE_QUARANTINE_GROWTH:"+lane);
+            }
+        }
+        return alerts;
+    }
+}

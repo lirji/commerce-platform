@@ -14,7 +14,7 @@ public interface CatalogJobMapper {
  void receipt(String tenant,String id,Item item);
  int advance(String tenant,String id,long version,boolean success,boolean complete);
  int status(String tenant,String id,long version,String status,Instant now);
- void failed(String tenant,String id,String code,Instant next);
- List<String> tenants(String after,Instant now);
+ void failed(String tenant,String id,String code,boolean counted,Instant next);
+ List<String> tenants(String after,Instant now,int limit);
  String pending(String tenant,String store,Instant now);
 }
