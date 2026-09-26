@@ -1,11 +1,56 @@
+############################
+# Build output
+############################
 **/target/
+**/dist/
+**/node_modules/
+**/__pycache__/
+*.py[cod]
+*.tsbuildinfo
+
+############################
+# IDE / OS
+############################
 .idea/
 *.iml
+.vscode/
+*.swp
+*~
 .DS_Store
-.env
-.local/
-**/node_modules/
-**/dist/
+Thumbs.db
 
-**/__pycache__/
+############################
+# Local runtime & secrets
+############################
+.env
+.env.*
+!.env.example
+.local/
+# 仅本地对照端口的 Vite 预览配置，不作为正式开发配置
+frontend/vite.preview-*.config.ts
+
+############################
+# Test reports
+############################
 **/playwright-report/
+**/test-results/
+**/coverage/
+
+############################
+# Logs
+############################
+logs/
+log/
+*.log
+
+############################
+# Generated evidence under docs/
+# (规范状态与交付结果仍需纳入版本控制)
+############################
+docs/**/*.png
+docs/**/*.txt
+docs/**/*.json
+docs/**/*.jsonl
+!docs/PROGRESS_STATE.json
+!docs/**/CI_RESULT.json
+!docs/**/DELIVERY_RESULT.json
