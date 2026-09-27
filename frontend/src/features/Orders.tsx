@@ -53,7 +53,11 @@ export function Orders({
             ? "查看真实交易状态，跟进支付与履约。"
             : "报价在下单时锁定，支付结果以渠道核对为准。"
         }
-        extra={<Button onClick={resource.refresh}>{admin ? "刷新队列" : "刷新订单"}</Button>}
+        extra={
+          <Button onClick={resource.refresh}>
+            {admin ? "刷新队列" : "刷新订单"}
+          </Button>
+        }
       />
       <ErrorNotice error={resource.error} />
       <ListPanel
@@ -165,8 +169,16 @@ function OrderDetails({
           <Descriptions
             column={2}
             items={[
-              { key: "kind", label: "支付方式", children: value.paymentKind || "—" },
-              { key: "expires", label: "支付截止", children: time(value.expiresAt) },
+              {
+                key: "kind",
+                label: "支付方式",
+                children: value.paymentKind || "—",
+              },
+              {
+                key: "expires",
+                label: "支付截止",
+                children: time(value.expiresAt),
+              },
               { key: "version", label: "版本", children: value.version },
               { key: "lines", label: "商品行数", children: value.items.length },
             ]}
@@ -180,8 +192,16 @@ function OrderDetails({
                 { title: "商品", dataIndex: "title" },
                 { title: "数量", dataIndex: "quantity" },
                 { title: "行实付", dataIndex: "payable", render: money },
-                { title: "抵扣积分", dataIndex: "points", render: v => v ?? 0 },
-                { title: "积分抵扣额", dataIndex: "pointDiscount", render: v => money(v ?? "0.00") },
+                {
+                  title: "抵扣积分",
+                  dataIndex: "points",
+                  render: (v) => v ?? 0,
+                },
+                {
+                  title: "积分抵扣额",
+                  dataIndex: "pointDiscount",
+                  render: (v) => money(v ?? "0.00"),
+                },
               ]}
             />
           </Card>

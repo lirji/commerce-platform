@@ -243,7 +243,9 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
 }
 export function OpsPages({ store }: { store: string }) {
   const [after, setAfter] = useState("");
-  const r = useResource<Governed<PageDefinition>[]>(`/admin/ops-pages?after=${encode(after)}`);
+  const r = useResource<Governed<PageDefinition>[]>(
+    `/admin/ops-pages?after=${encode(after)}`,
+  );
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<PageDefinition>();
   const [selected, setSelected] = useState<string>();
@@ -333,9 +335,12 @@ export function OpsPages({ store }: { store: string }) {
             },
           ]}
         />
-        <Pager after={after} count={r.data?.length ?? 0}
+        <Pager
+          after={after}
+          count={r.data?.length ?? 0}
           onHome={() => setAfter("")}
-          onNext={() => setAfter(r.data!.at(-1)!.content.pageId)} />
+          onNext={() => setAfter(r.data!.at(-1)!.content.pageId)}
+        />
       </Card>
       <Drawer
         title="运营页面"

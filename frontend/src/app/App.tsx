@@ -19,28 +19,114 @@ import { request, setAccessToken, useResource } from "../shared/api";
 import { ErrorNotice } from "../shared/ui";
 import { memberTheme } from "../theme";
 // 按业务页面加载，登录和总览不下载所有经营表单。
-const Orders=lazy(()=>import("../features/Orders").then(m=>({default:m.Orders})));
-const Shop=lazy(()=>import("../features/Shop").then(m=>({default:m.Shop})));
-const MemberWallet=lazy(()=>import("../features/MemberWallet").then(m=>({default:m.MemberWallet})));
-const AdminData=lazy(()=>import("../features/AdminData").then(m=>({default:m.AdminData})));
-const Marketing=lazy(()=>import("../features/Marketing").then(m=>({default:m.Marketing})));
-const Journeys=lazy(()=>import("../features/Journeys").then(m=>({default:m.Journeys})));
-const OpsPages=lazy(()=>import("../features/OpsPages").then(m=>({default:m.OpsPages})));
-const ProductOperations=lazy(()=>import("../features/ProductOperations").then(m=>({default:m.ProductOperations})));
-const MemberGrowth=lazy(()=>import("../features/MemberGrowth").then(m=>({default:m.MemberGrowth})));
-const CouponDeliveries=lazy(()=>import("../features/CouponDeliveries").then(m=>({default:m.CouponDeliveries})));
-const Segments=lazy(()=>import("../features/Segments").then(m=>({default:m.Segments})));
-const MarketingEffects=lazy(()=>import("../features/MarketingEffects").then(m=>({default:m.MarketingEffects})));
-const Dashboard=lazy(()=>import("../features/Dashboard").then(m=>({default:m.Dashboard})));
+const Orders = lazy(() =>
+  import("../features/Orders").then((m) => ({ default: m.Orders })),
+);
+const Shop = lazy(() =>
+  import("../features/Shop").then((m) => ({ default: m.Shop })),
+);
+const MemberWallet = lazy(() =>
+  import("../features/MemberWallet").then((m) => ({ default: m.MemberWallet })),
+);
+const AdminData = lazy(() =>
+  import("../features/AdminData").then((m) => ({ default: m.AdminData })),
+);
+const Marketing = lazy(() =>
+  import("../features/Marketing").then((m) => ({ default: m.Marketing })),
+);
+const Journeys = lazy(() =>
+  import("../features/Journeys").then((m) => ({ default: m.Journeys })),
+);
+const OpsPages = lazy(() =>
+  import("../features/OpsPages").then((m) => ({ default: m.OpsPages })),
+);
+const ProductOperations = lazy(() =>
+  import("../features/ProductOperations").then((m) => ({
+    default: m.ProductOperations,
+  })),
+);
+const MemberGrowth = lazy(() =>
+  import("../features/MemberGrowth").then((m) => ({ default: m.MemberGrowth })),
+);
+const CouponDeliveries = lazy(() =>
+  import("../features/CouponDeliveries").then((m) => ({
+    default: m.CouponDeliveries,
+  })),
+);
+const Segments = lazy(() =>
+  import("../features/Segments").then((m) => ({ default: m.Segments })),
+);
+const MarketingEffects = lazy(() =>
+  import("../features/MarketingEffects").then((m) => ({
+    default: m.MarketingEffects,
+  })),
+);
+const Dashboard = lazy(() =>
+  import("../features/Dashboard").then((m) => ({ default: m.Dashboard })),
+);
 
 const groups = [
- {key:"member",label:"会员经营",children:[["members","会员档案"],["growth","会员成长"],["member-tags","会员标签字典"],["segments","动态人群"],["audiences","人群快照"]]},
- {key:"catalog",label:"商品与门店",children:[["skus","商品管理"],["inventory","库存额度"],["merchants","商家管理"],["stores","店铺管理"],["store-grants","经营授权"]]},
- {key:"marketing",label:"营销与旅程",children:[["campaigns","活动管理"],["effects","营销效果"],["rules","动态规则"],["budgets","营销预算"],["coupons","优惠券"],["coupon-deliveries","定向发券"],["definitions","权益定义"],["entitlements","权益台账"],["journeys","营销旅程"],["instances","旅程实例"]]},
- {key:"trade",label:"交易与交付",children:[["orders","订单工作台"],["fulfillments","履约队列"],["aftersales","售后审批"],["refunds","退款核对"]]},
- {key:"platform",label:"平台工具",children:[["pages","低代码页面"],["events","异步事件"]]},
+  {
+    key: "member",
+    label: "会员经营",
+    children: [
+      ["members", "会员档案"],
+      ["growth", "会员成长"],
+      ["member-tags", "会员标签字典"],
+      ["segments", "动态人群"],
+      ["audiences", "人群快照"],
+    ],
+  },
+  {
+    key: "catalog",
+    label: "商品与门店",
+    children: [
+      ["skus", "商品管理"],
+      ["inventory", "库存额度"],
+      ["merchants", "商家管理"],
+      ["stores", "店铺管理"],
+      ["store-grants", "经营授权"],
+    ],
+  },
+  {
+    key: "marketing",
+    label: "营销与旅程",
+    children: [
+      ["campaigns", "活动管理"],
+      ["effects", "营销效果"],
+      ["rules", "动态规则"],
+      ["budgets", "营销预算"],
+      ["coupons", "优惠券"],
+      ["coupon-deliveries", "定向发券"],
+      ["definitions", "权益定义"],
+      ["entitlements", "权益台账"],
+      ["journeys", "营销旅程"],
+      ["instances", "旅程实例"],
+    ],
+  },
+  {
+    key: "trade",
+    label: "交易与交付",
+    children: [
+      ["orders", "订单工作台"],
+      ["fulfillments", "履约队列"],
+      ["aftersales", "售后审批"],
+      ["refunds", "退款核对"],
+    ],
+  },
+  {
+    key: "platform",
+    label: "平台工具",
+    children: [
+      ["pages", "低代码页面"],
+      ["events", "异步事件"],
+    ],
+  },
 ];
-const adminPages=[["dashboard","经营总览"],...groups.flatMap(g=>g.children)];
+const adminPages = [
+  ["dashboard", "经营总览"],
+  ...groups.flatMap((g) => g.children),
+];
 function route() {
   const [page, query] = location.hash.slice(1).split("?");
   return {
@@ -49,7 +135,10 @@ function route() {
   };
 }
 export function App() {
-  const screens=Grid.useBreakpoint();const compact=screens.md===false;const [menuOpen,setMenuOpen]=useState(false);const [openGroups,setOpenGroups]=useState<string[]>([]);
+  const screens = Grid.useBreakpoint();
+  const compact = screens.md === false;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [actor, setActor] = useState<Actor>();
   const [locationState, setLocationState] = useState(route);
   const [loginError, setLoginError] = useState<Error>();
@@ -59,19 +148,31 @@ export function App() {
     addEventListener("hashchange", listener);
     return () => removeEventListener("hashchange", listener);
   }, []);
-  const stores = useResource<Store[]>(actor ? (actor.role === "OPERATOR" ? "/operations/stores" : "/stores") : null);
+  const stores = useResource<Store[]>(
+    actor
+      ? actor.role === "OPERATOR"
+        ? "/operations/stores"
+        : "/stores"
+      : null,
+  );
   const capabilities = useResource<Capabilities>(
     actor ? "/runtime-capabilities" : null,
   );
   const navigate = (page: string, store = locationState.store) => {
     setMenuOpen(false);
-    const group=groups.find(g=>g.children.some(([key])=>key===page));if(group)setOpenGroups([group.key]);
+    const group = groups.find((g) => g.children.some(([key]) => key === page));
+    if (group) setOpenGroups([group.key]);
     location.hash = page + (store ? "?store=" + encodeURIComponent(store) : "");
   };
   useEffect(() => {
     if (actor && stores.data?.length && !locationState.store)
       navigate(
-        locationState.page || (actor.role === "ADMIN" ? "dashboard" : actor.role === "OPERATOR" ? "skus" : "shop"),
+        locationState.page ||
+          (actor.role === "ADMIN"
+            ? "dashboard"
+            : actor.role === "OPERATOR"
+              ? "skus"
+              : "shop"),
         stores.data[0].storeId,
       );
   }, [actor, stores.data, locationState.store]);
@@ -84,121 +185,145 @@ export function App() {
   if (!actor)
     return (
       <ConfigProvider theme={memberTheme}>
-      <div className="login-page">
-        <div className="login-story">
-          <div className="brand brand-light">
-            <span className="brand-mark">商</span>
-            <span>
-              统一电商<span className="brand-sub">COMMERCE PLATFORM</span>
-            </span>
+        <div className="login-page">
+          <div className="login-story">
+            <div className="brand brand-light">
+              <span className="brand-mark">商</span>
+              <span>
+                统一电商<span className="brand-sub">COMMERCE PLATFORM</span>
+              </span>
+            </div>
+            <div>
+              <div className="eyebrow">CONNECTED COMMERCE</div>
+              <h1>
+                连接每一次交易，
+                <br />
+                经营每一份关系。
+              </h1>
+              <p>
+                从会员与商品，到营销、订单和售后，
+                <br />
+                让业务在一个平台有序流转。
+              </p>
+            </div>
+            <small>统一业务 · 清晰边界 · 可靠履约</small>
           </div>
-          <div>
-            <div className="eyebrow">CONNECTED COMMERCE</div>
-            <h1>
-              连接每一次交易，
-              <br />
-              经营每一份关系。
-            </h1>
-            <p>
-              从会员与商品，到营销、订单和售后，
-              <br />
-              让业务在一个平台有序流转。
-            </p>
-          </div>
-          <small>统一业务 · 清晰边界 · 可靠履约</small>
-        </div>
-        <main className="login-main">
-          <div className="login-panel">
-            <header className="login-panel-head">
-              <p className="login-kicker">安全进入</p>
-              <h2>进入业务空间</h2>
-              <p className="login-lead">粘贴已签发的访问凭据，系统按角色与租户打开对应工作台。</p>
-            </header>
-            <ErrorNotice error={loginError} />
-            <Form
-              className="login-form"
-              layout="vertical"
-              requiredMark={false}
-              onFinish={async (v) => {
-                setLogging(true);
-                setLoginError(undefined);
-                setAccessToken(v.token.trim());
-                try {
-                  const identity = await request<Actor>("/me");
-                  setActor(identity);
-                  navigate(identity.role === "ADMIN" ? "dashboard" : identity.role === "OPERATOR" ? "skus" : "shop", "");
-                } catch (e) {
-                  setAccessToken("");
-                  setLoginError(e instanceof Error ? e : new Error("登录失败"));
-                } finally {
-                  setLogging(false);
-                }
-              }}
-            >
-              <Form.Item
-                name="token"
-                label="访问凭据"
-                rules={[{ required: true, message: "请输入访问凭据" }]}
+          <main className="login-main">
+            <div className="login-panel">
+              <header className="login-panel-head">
+                <p className="login-kicker">安全进入</p>
+                <h2>进入业务空间</h2>
+                <p className="login-lead">
+                  粘贴已签发的访问凭据，系统按角色与租户打开对应工作台。
+                </p>
+              </header>
+              <ErrorNotice error={loginError} />
+              <Form
+                className="login-form"
+                layout="vertical"
+                requiredMark={false}
+                onFinish={async (v) => {
+                  setLogging(true);
+                  setLoginError(undefined);
+                  setAccessToken(v.token.trim());
+                  try {
+                    const identity = await request<Actor>("/me");
+                    setActor(identity);
+                    navigate(
+                      identity.role === "ADMIN"
+                        ? "dashboard"
+                        : identity.role === "OPERATOR"
+                          ? "skus"
+                          : "shop",
+                      "",
+                    );
+                  } catch (e) {
+                    setAccessToken("");
+                    setLoginError(
+                      e instanceof Error ? e : new Error("登录失败"),
+                    );
+                  } finally {
+                    setLogging(false);
+                  }
+                }}
               >
-                <Input.Password
-                  autoComplete="off"
+                <Form.Item
+                  name="token"
+                  label="访问凭据"
+                  rules={[{ required: true, message: "请输入访问凭据" }]}
+                >
+                  <Input.Password
+                    autoComplete="off"
+                    size="large"
+                    placeholder="粘贴访问凭据"
+                    visibilityToggle
+                  />
+                </Form.Item>
+                <Button
+                  className="login-submit"
+                  htmlType="submit"
+                  type="primary"
                   size="large"
-                  placeholder="粘贴访问凭据"
-                  visibilityToggle
-                />
-              </Form.Item>
-              <Button
-                className="login-submit"
-                htmlType="submit"
-                type="primary"
-                size="large"
-                loading={logging}
-                block
-              >
-                进入平台
-              </Button>
-            </Form>
-            <ul className="login-meta">
-              <li>凭据仅保存在本次会话</li>
-              <li>关闭或刷新页面后需重新输入</li>
-            </ul>
-          </div>
-        </main>
-      </div>
+                  loading={logging}
+                  block
+                >
+                  进入平台
+                </Button>
+              </Form>
+              <ul className="login-meta">
+                <li>凭据仅保存在本次会话</li>
+                <li>关闭或刷新页面后需重新输入</li>
+              </ul>
+            </div>
+          </main>
+        </div>
       </ConfigProvider>
     );
   const operator = actor.role === "OPERATOR";
   const admin = actor.role !== "MEMBER";
-  const page = locationState.page || (operator ? "skus" : admin ? "dashboard" : "shop");
+  const page =
+    locationState.page || (operator ? "skus" : admin ? "dashboard" : "shop");
   const store = locationState.store;
   const caps = capabilities.data ?? {
     sandboxEnabled: false,
     workersEnabled: false,
   };
-  const menu = operator ? [{ key: "skus", label: "授权商品经营" }] : admin
-    ? [{key:"dashboard",label:"经营总览"},...groups.map((g) => ({
-        key: g.key,
-        label: g.label,
-        children: g.children.map(([key, label]) => ({ key, label })),
-      }))]
-    : [
-        ["shop", "逛店铺"],
-        ["orders", "我的订单"],
-        ["coupons", "优惠券"],
-        ["benefits", "我的权益"],
-        ["growth", "我的成长"],
-        ["aftersales", "售后"],
-        ["notifications", "消息"],
-      ].map(([key, label]) => ({ key, label }));
+  const menu = operator
+    ? [{ key: "skus", label: "授权商品经营" }]
+    : admin
+      ? [
+          { key: "dashboard", label: "经营总览" },
+          ...groups.map((g) => ({
+            key: g.key,
+            label: g.label,
+            children: g.children.map(([key, label]) => ({ key, label })),
+          })),
+        ]
+      : [
+          ["shop", "逛店铺"],
+          ["orders", "我的订单"],
+          ["coupons", "优惠券"],
+          ["benefits", "我的权益"],
+          ["growth", "我的成长"],
+          ["aftersales", "售后"],
+          ["notifications", "消息"],
+        ].map(([key, label]) => ({ key, label }));
   let content;
-  if (!operator && admin && page === "dashboard") content = <Dashboard key={store} store={store} navigate={navigate}/>;
-  else if (admin && page === "skus") content = <ProductOperations key={store} store={store}/>;
-  else if (operator) content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
-  else if (admin && page === "coupon-deliveries") content = <CouponDeliveries key={store} store={store}/>;
-  else if (page === "growth") content = <MemberGrowth admin={admin} store={store}/>;
-  else if (admin && page === "segments") content = <Segments/>;
-  else if (admin && page === "effects") content = <MarketingEffects key={store} store={store}/>;
-  else if (page === "orders") content = <Orders admin={admin} capabilities={caps} />;
+  if (!operator && admin && page === "dashboard")
+    content = <Dashboard key={store} store={store} navigate={navigate} />;
+  else if (admin && page === "skus")
+    content = <ProductOperations key={store} store={store} />;
+  else if (operator)
+    content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
+  else if (admin && page === "coupon-deliveries")
+    content = <CouponDeliveries key={store} store={store} />;
+  else if (page === "growth")
+    content = <MemberGrowth admin={admin} store={store} />;
+  else if (admin && page === "segments") content = <Segments />;
+  else if (admin && page === "effects")
+    content = <MarketingEffects key={store} store={store} />;
+  else if (page === "orders")
+    content = <Orders admin={admin} capabilities={caps} />;
   else if (!admin) {
     if (page === "shop")
       content = (
@@ -209,7 +334,7 @@ export function App() {
     content = <Marketing kind={page} store={store} />;
   else if (page === "journeys") content = <Journeys store={store} />;
   else if (page === "pages") content = <OpsPages store={store} />;
-  else if (adminPages.some(([key])=>key===page))
+  else if (adminPages.some(([key]) => key === page))
     content = (
       <AdminData
         key={page + store}
@@ -225,17 +350,69 @@ export function App() {
     );
   const shell = (
     <Layout className={admin ? "app admin-app" : "app member-app"}>
-      {admin&&!compact&&<Layout.Sider width={224} theme="light" className="sidebar">
-        <div className="brand"><span className="brand-mark">商</span><span>日常经营<span className="brand-sub">COMMERCE WORKSPACE</span></span></div>
-        <div className="nav-caption">经营工作空间</div>
-        <Menu mode="inline" selectedKeys={[page]} openKeys={openGroups} onOpenChange={keys=>setOpenGroups(keys)} items={menu} onClick={({key})=>navigate(key)}/>
-        <div className="sidebar-note">会员 · 商品 · 营销<br/>让每一次经营都有据可循</div>
-      </Layout.Sider>}
-      {admin&&compact&&<Drawer title="经营导航" placement="left" size={280} open={menuOpen} onClose={()=>setMenuOpen(false)}><Menu mode="inline" selectedKeys={[page]} openKeys={openGroups} onOpenChange={keys=>setOpenGroups(keys)} items={menu} onClick={({key})=>navigate(key)}/></Drawer>}
+      {admin && !compact && (
+        <Layout.Sider width={224} theme="light" className="sidebar">
+          <div className="brand">
+            <span className="brand-mark">商</span>
+            <span>
+              日常经营<span className="brand-sub">COMMERCE WORKSPACE</span>
+            </span>
+          </div>
+          <div className="nav-caption">经营工作空间</div>
+          <Menu
+            mode="inline"
+            selectedKeys={[page]}
+            openKeys={openGroups}
+            onOpenChange={(keys) => setOpenGroups(keys)}
+            items={menu}
+            onClick={({ key }) => navigate(key)}
+          />
+          <div className="sidebar-note">
+            会员 · 商品 · 营销
+            <br />
+            让每一次经营都有据可循
+          </div>
+        </Layout.Sider>
+      )}
+      {admin && compact && (
+        <Drawer
+          title="经营导航"
+          placement="left"
+          size={280}
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+        >
+          <Menu
+            mode="inline"
+            selectedKeys={[page]}
+            openKeys={openGroups}
+            onOpenChange={(keys) => setOpenGroups(keys)}
+            items={menu}
+            onClick={({ key }) => navigate(key)}
+          />
+        </Drawer>
+      )}
       <Layout>
         <Layout.Header className="topbar">
-          {admin&&compact&&<Button aria-label="打开经营导航" onClick={()=>setMenuOpen(true)}>菜单</Button>}
-          {admin&&!operator&&<Select<string | null> className="nav-search" aria-label="搜索功能" showSearch={{optionFilterProp:"label"}} placeholder="搜索经营功能…" value={null} options={adminPages.map(([value,label])=>({value,label}))} onChange={v=>{if(v)navigate(v);}} popupMatchSelectWidth={260}/>}
+          {admin && compact && (
+            <Button aria-label="打开经营导航" onClick={() => setMenuOpen(true)}>
+              菜单
+            </Button>
+          )}
+          {admin && !operator && (
+            <Select<string | null>
+              className="nav-search"
+              aria-label="搜索功能"
+              showSearch={{ optionFilterProp: "label" }}
+              placeholder="搜索经营功能…"
+              value={null}
+              options={adminPages.map(([value, label]) => ({ value, label }))}
+              onChange={(v) => {
+                if (v) navigate(v);
+              }}
+              popupMatchSelectWidth={260}
+            />
+          )}
 
           {!admin && (
             <div className="brand">
@@ -284,7 +461,15 @@ export function App() {
           <ErrorNotice error={stores.error} />
           <ErrorNotice error={capabilities.error} />
           <div key={actor.tenantId + actor.actorId + page + store}>
-            <Suspense fallback={<div className="page-loading"><Spin description="正在加载经营页面"/></div>}>{content}</Suspense>
+            <Suspense
+              fallback={
+                <div className="page-loading">
+                  <Spin description="正在加载经营页面" />
+                </div>
+              }
+            >
+              {content}
+            </Suspense>
           </div>
         </Layout.Content>
         <Layout.Footer className="footer">
@@ -315,15 +500,16 @@ export function App() {
             </div>
           ) : (
             <>
-              统一电商业务平台{" "}
-              <span>
-                {actor.tenantId} · 运营管理
-              </span>
+              统一电商业务平台 <span>{actor.tenantId} · 运营管理</span>
             </>
           )}
         </Layout.Footer>
       </Layout>
     </Layout>
   );
-  return admin ? shell : <ConfigProvider theme={memberTheme}>{shell}</ConfigProvider>;
+  return admin ? (
+    shell
+  ) : (
+    <ConfigProvider theme={memberTheme}>{shell}</ConfigProvider>
+  );
 }

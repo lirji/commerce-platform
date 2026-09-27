@@ -32,7 +32,14 @@ services:
     stop_grace_period: 30s
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8600/actuator/health"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "--silent",
+          "http://127.0.0.1:8600/actuator/health",
+        ]
       interval: 10s
       timeout: 3s
       retries: 12

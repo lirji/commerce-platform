@@ -1,107 +1,526 @@
 #!/usr/bin/env python3
 """经真实API建立经营演示；重复运行回放同一批命令，--fresh创建新隔离租户供验收。"""
+
 from pathlib import Path
-import datetime,hashlib,json,os,secrets,shlex,subprocess,sys,urllib.request,urllib.error,uuid
-root=Path(__file__).resolve().parents[1]
-env={}
-for line in (root/'.local/runtime.env').read_text().splitlines():
-    if not line.strip() or line.lstrip().startswith('#'):continue
-    key,value=line.removeprefix('export ').split('=',1);env[key]=shlex.split(value)[0]
-schema=os.getenv('COMMERCE_E2E_SCHEMA','commerce_local')
-if schema not in ('commerce_local','commerce_test_20260923'):raise SystemExit('Only project local/test schemas are allowed.')
-url=env['COMMERCE_TEST_DB_URL'] if schema=='commerce_test_20260923' else env['COMMERCE_DB_URL']
-if '/'+schema+'?' not in url:raise SystemExit('Schema/configuration mismatch.')
-base=os.getenv('COMMERCE_E2E_BASE_URL','http://127.0.0.1:8600')
-if not base.startswith(('http://127.0.0.1:','http://localhost:')):raise SystemExit('Demo fixtures require a local API.')
-path=root/'.local/member-suite-access.json'
-if path.exists() and '--fresh' not in sys.argv:
-    access=json.loads(path.read_text())
-    if access['schema']!=schema or access['baseUrl']!=base:raise SystemExit('Existing fixture targets another environment; use --fresh explicitly.')
+import datetime, hashlib, json, os, secrets, shlex, subprocess, sys, urllib.request, urllib.error, uuid
+
+root = Path(__file__).resolve().parents[1]
+env = {}
+for line in (root / ".local/runtime.env").read_text().splitlines():
+    if not line.strip() or line.lstrip().startswith("#"):
+        continue
+    key, value = line.removeprefix("export ").split("=", 1)
+    env[key] = shlex.split(value)[0]
+schema = os.getenv("COMMERCE_E2E_SCHEMA", "commerce_local")
+if schema not in ("commerce_local", "commerce_test_20260923"):
+    raise SystemExit("Only project local/test schemas are allowed.")
+url = (
+    env["COMMERCE_TEST_DB_URL"]
+    if schema == "commerce_test_20260923"
+    else env["COMMERCE_DB_URL"]
+)
+if "/" + schema + "?" not in url:
+    raise SystemExit("Schema/configuration mismatch.")
+base = os.getenv("COMMERCE_E2E_BASE_URL", "http://127.0.0.1:8600")
+if not base.startswith(("http://127.0.0.1:", "http://localhost:")):
+    raise SystemExit("Demo fixtures require a local API.")
+path = root / ".local/member-suite-access.json"
+if path.exists() and "--fresh" not in sys.argv:
+    access = json.loads(path.read_text())
+    if access["schema"] != schema or access["baseUrl"] != base:
+        raise SystemExit(
+            "Existing fixture targets another environment; use --fresh explicitly."
+        )
 else:
-    access={'tenant':'member-suite-'+str(uuid.uuid4()),'adminToken':secrets.token_hex(32),'memberToken':secrets.token_hex(32),'operatorToken':secrets.token_hex(32),'checkoutToken':secrets.token_hex(32),'exchangeToken':secrets.token_hex(32),'behaviorToken':secrets.token_hex(32),'deliveryToken':secrets.token_hex(32),'journeyToken':secrets.token_hex(32),'baseUrl':base,'schema':schema,'storeId':'brand-store','seedAt':datetime.datetime.now(datetime.timezone.utc).isoformat()}
-    fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
-    with os.fdopen(fd,'w') as f:json.dump(access,f,indent=2)
-if 'dashboardToken' not in access:
-    access['dashboardToken']=secrets.token_hex(32)
-    fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
-    with os.fdopen(fd,'w') as f:json.dump(access,f,indent=2)
+    access = {
+        "tenant": "member-suite-" + str(uuid.uuid4()),
+        "adminToken": secrets.token_hex(32),
+        "memberToken": secrets.token_hex(32),
+        "operatorToken": secrets.token_hex(32),
+        "checkoutToken": secrets.token_hex(32),
+        "exchangeToken": secrets.token_hex(32),
+        "behaviorToken": secrets.token_hex(32),
+        "deliveryToken": secrets.token_hex(32),
+        "journeyToken": secrets.token_hex(32),
+        "baseUrl": base,
+        "schema": schema,
+        "storeId": "brand-store",
+        "seedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+    fd = os.open(path, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(access, f, indent=2)
+if "dashboardToken" not in access:
+    access["dashboardToken"] = secrets.token_hex(32)
+    fd = os.open(path, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(access, f, indent=2)
 # 仅身份夹具直写凭据表，业务数据一律通过API持久化；不将明文凭据写入SQL或日志。
-sql=''
-for field,actor,role in [('adminToken','ops-admin','ADMIN'),('memberToken','ops-buyer','MEMBER'),('operatorToken','ops-clerk','OPERATOR'),('checkoutToken','points-buyer','MEMBER'),('exchangeToken','exchange-buyer','MEMBER'),('behaviorToken','behavior-buyer','MEMBER'),('deliveryToken','delivery-buyer','MEMBER'),('journeyToken','journey-buyer','MEMBER'),('dashboardToken','dashboard-buyer','MEMBER')]:
-    digest=hashlib.sha256(access[field].encode()).hexdigest()
-    sql+=f"INSERT INTO platform_credential(token_hash,tenant_id,actor_id,role,expires_at) VALUES('{digest}','{access['tenant']}','{actor}','{role}',DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY)) ON DUPLICATE KEY UPDATE expires_at=DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY);\n"
-p=subprocess.run(['docker','exec','-i','-e','MYSQL_PWD',os.getenv('COMMERCE_MYSQL_CONTAINER','dev-infra-mysql84-1'),'mysql','-ucommerce_app',schema],input=sql,text=True,capture_output=True,env=dict(os.environ,MYSQL_PWD=env['COMMERCE_DB_PASSWORD']),timeout=15)
-if p.returncode:raise SystemExit('Could not provision fixture identities; private diagnostics suppressed.')
-sequence=0
-def post(route,body=None,identity="adminToken"):
+sql = ""
+for field, actor, role in [
+    ("adminToken", "ops-admin", "ADMIN"),
+    ("memberToken", "ops-buyer", "MEMBER"),
+    ("operatorToken", "ops-clerk", "OPERATOR"),
+    ("checkoutToken", "points-buyer", "MEMBER"),
+    ("exchangeToken", "exchange-buyer", "MEMBER"),
+    ("behaviorToken", "behavior-buyer", "MEMBER"),
+    ("deliveryToken", "delivery-buyer", "MEMBER"),
+    ("journeyToken", "journey-buyer", "MEMBER"),
+    ("dashboardToken", "dashboard-buyer", "MEMBER"),
+]:
+    digest = hashlib.sha256(access[field].encode()).hexdigest()
+    sql += f"INSERT INTO platform_credential(token_hash,tenant_id,actor_id,role,expires_at) VALUES('{digest}','{access['tenant']}','{actor}','{role}',DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY)) ON DUPLICATE KEY UPDATE expires_at=DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY);\n"
+p = subprocess.run(
+    [
+        "docker",
+        "exec",
+        "-i",
+        "-e",
+        "MYSQL_PWD",
+        os.getenv("COMMERCE_MYSQL_CONTAINER", "dev-infra-mysql84-1"),
+        "mysql",
+        "-ucommerce_app",
+        schema,
+    ],
+    input=sql,
+    text=True,
+    capture_output=True,
+    env=dict(os.environ, MYSQL_PWD=env["COMMERCE_DB_PASSWORD"]),
+    timeout=15,
+)
+if p.returncode:
+    raise SystemExit(
+        "Could not provision fixture identities; private diagnostics suppressed."
+    )
+sequence = 0
+
+
+def post(route, body=None, identity="adminToken"):
     global sequence
-    sequence+=1
-    req=urllib.request.Request(base+'/v1'+route,data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+access[identity],'Content-Type':'application/json','Idempotency-Key':'member-suite-seed-'+str(sequence)})
+    sequence += 1
+    req = urllib.request.Request(
+        base + "/v1" + route,
+        data=json.dumps(body).encode(),
+        headers={
+            "Authorization": "Bearer " + access[identity],
+            "Content-Type": "application/json",
+            "Idempotency-Key": "member-suite-seed-" + str(sequence),
+        },
+    )
     try:
-        with urllib.request.urlopen(req,timeout=15) as response:return json.load(response)
-    except urllib.error.HTTPError as e:raise SystemExit(f'Operations seed failed: {route} HTTP {e.code}; no credentials logged.')
-now=datetime.datetime.fromisoformat(access['seedAt'])
-def at(seconds):return (now+datetime.timedelta(seconds=seconds)).isoformat()
-def publish(kind,id):
-    for n,action in enumerate(['submit','approve','publish']):post('/admin/'+kind+'/'+id+'/1/'+action,{'expectedVersion':n})
-post('/admin/merchants',{'merchantId':'brand','name':'日常品牌'})
-post('/admin/stores',{'storeId':'brand-store','merchantId':'brand','name':'品牌直营旗舰店'})
-post('/admin/members',{'memberId':'suite-member','actorId':'ops-buyer','displayName':'周期礼遇会员','memberLevel':'BASIC'})
-post('/admin/member-growth/policies',{'version':1,'effectiveFrom':at(0),'growthPerYuan':'1.00','levels':[{'code':'BASIC','minimumGrowth':0},{'code':'GOLD','minimumGrowth':100}]})
-post('/admin/member-cycles/policies',{'version':1,'effectiveFrom':at(0),'periodDays':30,'levels':[{'code':'BASIC','minimumGrowth':0},{'code':'GOLD','minimumGrowth':100},{'code':'PLATINUM','minimumGrowth':500}]})
-post('/admin/entitlement-definitions',{'benefitId':'monthly-coffee','version':1,'storeId':'brand-store','name':'金卡每月咖啡礼遇','units':2,'quota':1000,'validFrom':at(-60),'validTo':at(86400*365),'validityDays':30})
-post('/admin/member-cycle-benefits',{'bindingId':'gold-monthly','policyVersion':1,'level':'GOLD','storeId':'brand-store','validUntil':at(86400*300),'benefits':[{'benefitId':'monthly-coffee','version':1}]})
-post('/admin/member-growth/suite-member/adjust',{'expectedVersion':0,'delta':120,'reason':'隔离演示周期成长'})
-post('/admin/member-cycle-benefits/suite-member/grant')
-post('/admin/member-points/policies',{'version':1,'effectiveFrom':at(0),'earnPerYuan':'1.00','expiryDays':30,'spendEnabled':True,'pointsPerYuan':100,'maxDeductionBps':5000})
-post('/admin/member-points/suite-member/adjust',{'expectedVersion':0,'delta':1200,'reason':'隔离演示积分入账'})
-post('/admin/members',{'memberId':'checkout-member','actorId':'points-buyer','displayName':'积分购物会员','memberLevel':'BASIC'})
-post('/admin/member-points/checkout-member/adjust',{'expectedVersion':0,'delta':2000,'reason':'隔离积分结算验收'})
-post('/operations/products',{'productId':'points-coffee','storeId':'brand-store','title':'积分精品咖啡','category':'咖啡','brand':'日常品牌'})
-post('/operations/skus',{'skuId':'points-coffee','productId':'points-coffee','storeId':'brand-store','title':'积分精品咖啡','unitPrice':'25.00','specifications':[{'name':'包装','value':'小盒'}]})
-post('/operations/skus/points-coffee',{'storeId':'brand-store','expectedVersion':1,'title':'积分精品咖啡','unitPrice':'25.00','status':'ACTIVE','reason':'积分结算演示上架'})
-post('/admin/inventory/receipts',{'storeId':'brand-store','skuId':'points-coffee','quantity':100})
-post('/admin/members',{'memberId':'exchange-member','actorId':'exchange-buyer','displayName':'积分兑换会员','memberLevel':'BASIC'})
-post('/admin/member-points/exchange-member/adjust',{'expectedVersion':0,'delta':2000,'reason':'隔离兑换验收'})
-post('/admin/coupon-definitions',{'definitionId':'points-exclusive','version':1,'storeId':'brand-store','name':'积分专享五元券','minimumSpend':'0.00','discountAmount':'5.00','validFrom':at(-60),'validTo':at(86400*60),'quota':1000,'stackable':True,'platformFundingBps':10000,'issuanceMode':'SOURCE_ONLY'})
-for id,name,kind,asset,cost in [('exclusive-coupon','积分专享五元券','COUPON','points-exclusive',200),('coffee-right','咖啡双杯礼遇','ENTITLEMENT','monthly-coffee',500)]:
-    post('/admin/point-offers',{'offerId':id,'storeId':'brand-store','name':name,'kind':kind,'assetId':asset,'assetVersion':1,'points':cost,'quota':100,'perMemberLimit':2,'validFrom':at(0),'validTo':at(86400*30)})
-post('/admin/members',{'memberId':'behavior-member','actorId':'behavior-buyer','displayName':'行为圈选会员','memberLevel':'BASIC'})
-post('/admin/member-behavior/behavior-member/profile',{'expectedVersion':0,'birthday':'06-18','journeyEnabled':True,'reason':'隔离会员画像演示'})
-post('/admin/members',{'memberId':'delivery-member','actorId':'delivery-buyer','displayName':'定向关怀会员','memberLevel':'BASIC'})
-post('/admin/coupon-definitions',{'definitionId':'target-care','version':1,'storeId':'brand-store','name':'会员关怀受控券','minimumSpend':'0.00','discountAmount':'3.00','validFrom':at(-60),'validTo':at(86400*60),'quota':1000,'stackable':True,'platformFundingBps':10000,'issuanceMode':'SOURCE_ONLY','validityDays':7})
-post('/admin/audiences',{'audienceId':'target-care-audience','version':1,'name':'会员关怀演示人群','source':'ISOLATED_DEMO','watermark':at(0),'validUntil':at(7200),'memberIds':['delivery-member','suite-member']})
-post('/admin/members',{'memberId':'journey-member','actorId':'journey-buyer','displayName':'生日旅程会员','memberLevel':'BASIC'})
-post('/admin/member-behavior/journey-member/profile',{'expectedVersion':0,'birthday':now.strftime('%m-%d'),'journeyEnabled':True,'reason':'隔离生命周期旅程演示'})
-post('/operations/catalog-categories',{'categoryId':'coffee','storeId':'brand-store','name':'咖啡精选'})
-post('/operations/specification-templates',{'templateId':'coffee-pack','version':1,'storeId':'brand-store','name':'咖啡包装模板','fields':[{'name':'包装','values':['小盒','大盒']}]})
-post('/operations/products/points-coffee/merchandising',{'storeId':'brand-store','expectedVersion':0,'categoryId':'coffee','description':'日常品牌精品咖啡，适合早餐与午后时光。图片为经营演示示意图，正式经营可替换商品图片。','images':[{'url':'/media/coffee.svg','alt':'日常品牌咖啡包装示意图'}],'reason':'补齐商品经营演示资料'})
-post('/operations/skus/points-coffee/barcode',{'storeId':'brand-store','expectedVersion':0,'barcode':'DAILY-COFFEE-01','reason':'演示门店条码检索'})
-post('/admin/skus',{'skuId':'schedule-coffee','storeId':'brand-store','title':'渠道经营咖啡','unitPrice':'35.00'})
+        with urllib.request.urlopen(req, timeout=15) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as e:
+        raise SystemExit(
+            f"Operations seed failed: {route} HTTP {e.code}; no credentials logged."
+        )
+
+
+now = datetime.datetime.fromisoformat(access["seedAt"])
+
+
+def at(seconds):
+    return (now + datetime.timedelta(seconds=seconds)).isoformat()
+
+
+def publish(kind, id):
+    for n, action in enumerate(["submit", "approve", "publish"]):
+        post("/admin/" + kind + "/" + id + "/1/" + action, {"expectedVersion": n})
+
+
+post("/admin/merchants", {"merchantId": "brand", "name": "日常品牌"})
+post(
+    "/admin/stores",
+    {"storeId": "brand-store", "merchantId": "brand", "name": "品牌直营旗舰店"},
+)
+post(
+    "/admin/members",
+    {
+        "memberId": "suite-member",
+        "actorId": "ops-buyer",
+        "displayName": "周期礼遇会员",
+        "memberLevel": "BASIC",
+    },
+)
+post(
+    "/admin/member-growth/policies",
+    {
+        "version": 1,
+        "effectiveFrom": at(0),
+        "growthPerYuan": "1.00",
+        "levels": [
+            {"code": "BASIC", "minimumGrowth": 0},
+            {"code": "GOLD", "minimumGrowth": 100},
+        ],
+    },
+)
+post(
+    "/admin/member-cycles/policies",
+    {
+        "version": 1,
+        "effectiveFrom": at(0),
+        "periodDays": 30,
+        "levels": [
+            {"code": "BASIC", "minimumGrowth": 0},
+            {"code": "GOLD", "minimumGrowth": 100},
+            {"code": "PLATINUM", "minimumGrowth": 500},
+        ],
+    },
+)
+post(
+    "/admin/entitlement-definitions",
+    {
+        "benefitId": "monthly-coffee",
+        "version": 1,
+        "storeId": "brand-store",
+        "name": "金卡每月咖啡礼遇",
+        "units": 2,
+        "quota": 1000,
+        "validFrom": at(-60),
+        "validTo": at(86400 * 365),
+        "validityDays": 30,
+    },
+)
+post(
+    "/admin/member-cycle-benefits",
+    {
+        "bindingId": "gold-monthly",
+        "policyVersion": 1,
+        "level": "GOLD",
+        "storeId": "brand-store",
+        "validUntil": at(86400 * 300),
+        "benefits": [{"benefitId": "monthly-coffee", "version": 1}],
+    },
+)
+post(
+    "/admin/member-growth/suite-member/adjust",
+    {"expectedVersion": 0, "delta": 120, "reason": "隔离演示周期成长"},
+)
+post("/admin/member-cycle-benefits/suite-member/grant")
+post(
+    "/admin/member-points/policies",
+    {
+        "version": 1,
+        "effectiveFrom": at(0),
+        "earnPerYuan": "1.00",
+        "expiryDays": 30,
+        "spendEnabled": True,
+        "pointsPerYuan": 100,
+        "maxDeductionBps": 5000,
+    },
+)
+post(
+    "/admin/member-points/suite-member/adjust",
+    {"expectedVersion": 0, "delta": 1200, "reason": "隔离演示积分入账"},
+)
+post(
+    "/admin/members",
+    {
+        "memberId": "checkout-member",
+        "actorId": "points-buyer",
+        "displayName": "积分购物会员",
+        "memberLevel": "BASIC",
+    },
+)
+post(
+    "/admin/member-points/checkout-member/adjust",
+    {"expectedVersion": 0, "delta": 2000, "reason": "隔离积分结算验收"},
+)
+post(
+    "/operations/products",
+    {
+        "productId": "points-coffee",
+        "storeId": "brand-store",
+        "title": "积分精品咖啡",
+        "category": "咖啡",
+        "brand": "日常品牌",
+    },
+)
+post(
+    "/operations/skus",
+    {
+        "skuId": "points-coffee",
+        "productId": "points-coffee",
+        "storeId": "brand-store",
+        "title": "积分精品咖啡",
+        "unitPrice": "25.00",
+        "specifications": [{"name": "包装", "value": "小盒"}],
+    },
+)
+post(
+    "/operations/skus/points-coffee",
+    {
+        "storeId": "brand-store",
+        "expectedVersion": 1,
+        "title": "积分精品咖啡",
+        "unitPrice": "25.00",
+        "status": "ACTIVE",
+        "reason": "积分结算演示上架",
+    },
+)
+post(
+    "/admin/inventory/receipts",
+    {"storeId": "brand-store", "skuId": "points-coffee", "quantity": 100},
+)
+post(
+    "/admin/members",
+    {
+        "memberId": "exchange-member",
+        "actorId": "exchange-buyer",
+        "displayName": "积分兑换会员",
+        "memberLevel": "BASIC",
+    },
+)
+post(
+    "/admin/member-points/exchange-member/adjust",
+    {"expectedVersion": 0, "delta": 2000, "reason": "隔离兑换验收"},
+)
+post(
+    "/admin/coupon-definitions",
+    {
+        "definitionId": "points-exclusive",
+        "version": 1,
+        "storeId": "brand-store",
+        "name": "积分专享五元券",
+        "minimumSpend": "0.00",
+        "discountAmount": "5.00",
+        "validFrom": at(-60),
+        "validTo": at(86400 * 60),
+        "quota": 1000,
+        "stackable": True,
+        "platformFundingBps": 10000,
+        "issuanceMode": "SOURCE_ONLY",
+    },
+)
+for id, name, kind, asset, cost in [
+    ("exclusive-coupon", "积分专享五元券", "COUPON", "points-exclusive", 200),
+    ("coffee-right", "咖啡双杯礼遇", "ENTITLEMENT", "monthly-coffee", 500),
+]:
+    post(
+        "/admin/point-offers",
+        {
+            "offerId": id,
+            "storeId": "brand-store",
+            "name": name,
+            "kind": kind,
+            "assetId": asset,
+            "assetVersion": 1,
+            "points": cost,
+            "quota": 100,
+            "perMemberLimit": 2,
+            "validFrom": at(0),
+            "validTo": at(86400 * 30),
+        },
+    )
+post(
+    "/admin/members",
+    {
+        "memberId": "behavior-member",
+        "actorId": "behavior-buyer",
+        "displayName": "行为圈选会员",
+        "memberLevel": "BASIC",
+    },
+)
+post(
+    "/admin/member-behavior/behavior-member/profile",
+    {
+        "expectedVersion": 0,
+        "birthday": "06-18",
+        "journeyEnabled": True,
+        "reason": "隔离会员画像演示",
+    },
+)
+post(
+    "/admin/members",
+    {
+        "memberId": "delivery-member",
+        "actorId": "delivery-buyer",
+        "displayName": "定向关怀会员",
+        "memberLevel": "BASIC",
+    },
+)
+post(
+    "/admin/coupon-definitions",
+    {
+        "definitionId": "target-care",
+        "version": 1,
+        "storeId": "brand-store",
+        "name": "会员关怀受控券",
+        "minimumSpend": "0.00",
+        "discountAmount": "3.00",
+        "validFrom": at(-60),
+        "validTo": at(86400 * 60),
+        "quota": 1000,
+        "stackable": True,
+        "platformFundingBps": 10000,
+        "issuanceMode": "SOURCE_ONLY",
+        "validityDays": 7,
+    },
+)
+post(
+    "/admin/audiences",
+    {
+        "audienceId": "target-care-audience",
+        "version": 1,
+        "name": "会员关怀演示人群",
+        "source": "ISOLATED_DEMO",
+        "watermark": at(0),
+        "validUntil": at(7200),
+        "memberIds": ["delivery-member", "suite-member"],
+    },
+)
+post(
+    "/admin/members",
+    {
+        "memberId": "journey-member",
+        "actorId": "journey-buyer",
+        "displayName": "生日旅程会员",
+        "memberLevel": "BASIC",
+    },
+)
+post(
+    "/admin/member-behavior/journey-member/profile",
+    {
+        "expectedVersion": 0,
+        "birthday": now.strftime("%m-%d"),
+        "journeyEnabled": True,
+        "reason": "隔离生命周期旅程演示",
+    },
+)
+post(
+    "/operations/catalog-categories",
+    {"categoryId": "coffee", "storeId": "brand-store", "name": "咖啡精选"},
+)
+post(
+    "/operations/specification-templates",
+    {
+        "templateId": "coffee-pack",
+        "version": 1,
+        "storeId": "brand-store",
+        "name": "咖啡包装模板",
+        "fields": [{"name": "包装", "values": ["小盒", "大盒"]}],
+    },
+)
+post(
+    "/operations/products/points-coffee/merchandising",
+    {
+        "storeId": "brand-store",
+        "expectedVersion": 0,
+        "categoryId": "coffee",
+        "description": "日常品牌精品咖啡，适合早餐与午后时光。图片为经营演示示意图，正式经营可替换商品图片。",
+        "images": [{"url": "/media/coffee.svg", "alt": "日常品牌咖啡包装示意图"}],
+        "reason": "补齐商品经营演示资料",
+    },
+)
+post(
+    "/operations/skus/points-coffee/barcode",
+    {
+        "storeId": "brand-store",
+        "expectedVersion": 0,
+        "barcode": "DAILY-COFFEE-01",
+        "reason": "演示门店条码检索",
+    },
+)
+post(
+    "/admin/skus",
+    {
+        "skuId": "schedule-coffee",
+        "storeId": "brand-store",
+        "title": "渠道经营咖啡",
+        "unitPrice": "35.00",
+    },
+)
 # 总览演示走真实报价、支付、退款与投影重建，不伪造前端经营曲线。
-post('/admin/members',{'memberId':'dashboard-member','actorId':'dashboard-buyer','displayName':'经营总览演示会员','memberLevel':'BASIC'})
-post('/admin/inventory/receipts',{'storeId':'brand-store','skuId':'schedule-coffee','quantity':10})
-q=post('/quotes',{'storeId':'brand-store','items':[{'skuId':'schedule-coffee','quantity':1}]},'dashboardToken')
-o=post('/orders',{'quoteId':q['quoteId'],'address':{'recipient':'经营演示','phone':'13800000000','detail':'本地隔离演示地址'}},'dashboardToken')
-pay=post('/orders/'+o['orderId']+'/payments',identity='dashboardToken')
-post('/admin/sandbox/payments/'+pay['paymentId']+'/fact',{'status':'PAID'})
-post('/orders/'+o['orderId']+'/payment/reconcile',identity='dashboardToken')
+post(
+    "/admin/members",
+    {
+        "memberId": "dashboard-member",
+        "actorId": "dashboard-buyer",
+        "displayName": "经营总览演示会员",
+        "memberLevel": "BASIC",
+    },
+)
+post(
+    "/admin/inventory/receipts",
+    {"storeId": "brand-store", "skuId": "schedule-coffee", "quantity": 10},
+)
+q = post(
+    "/quotes",
+    {"storeId": "brand-store", "items": [{"skuId": "schedule-coffee", "quantity": 1}]},
+    "dashboardToken",
+)
+o = post(
+    "/orders",
+    {
+        "quoteId": q["quoteId"],
+        "address": {
+            "recipient": "经营演示",
+            "phone": "13800000000",
+            "detail": "本地隔离演示地址",
+        },
+    },
+    "dashboardToken",
+)
+pay = post("/orders/" + o["orderId"] + "/payments", identity="dashboardToken")
+post("/admin/sandbox/payments/" + pay["paymentId"] + "/fact", {"status": "PAID"})
+post("/orders/" + o["orderId"] + "/payment/reconcile", identity="dashboardToken")
 # 支付事实消费者推进订单后才申请退款；仅推进当前种子租户。
 for _ in range(8):
-    req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})
-    with urllib.request.urlopen(req,timeout=15) as response:json.load(response)
-case=post('/aftersales',{'orderId':o['orderId'],'reason':'经营分析整单退款演示','items':[{'skuId':'schedule-coffee','quantity':1}]},'dashboardToken')
-approved=post('/admin/aftersales/'+case['caseId']+'/approve')
-post('/admin/sandbox/refunds/'+approved['refundId']+'/success')
-post('/admin/refunds/'+approved['refundId']+'/reconcile')
-q2=post('/quotes',{'storeId':'brand-store','items':[{'skuId':'schedule-coffee','quantity':1}]},'dashboardToken')
-o2=post('/orders',{'quoteId':q2['quoteId'],'address':{'recipient':'经营演示','phone':'13800000000','detail':'本地隔离演示地址'}},'dashboardToken')
-pay2=post('/orders/'+o2['orderId']+'/payments',identity='dashboardToken')
-post('/admin/sandbox/payments/'+pay2['paymentId']+'/fact',{'status':'PAID'})
-post('/orders/'+o2['orderId']+'/payment/reconcile',identity='dashboardToken')
-post('/admin/marketing-effects/rebuild',{'after':'','limit':100})
+    req = urllib.request.Request(
+        base + "/v1/admin/events/pump",
+        data=b"null",
+        headers={
+            "Authorization": "Bearer " + access["adminToken"],
+            "Content-Type": "application/json",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as response:
+        json.load(response)
+case = post(
+    "/aftersales",
+    {
+        "orderId": o["orderId"],
+        "reason": "经营分析整单退款演示",
+        "items": [{"skuId": "schedule-coffee", "quantity": 1}],
+    },
+    "dashboardToken",
+)
+approved = post("/admin/aftersales/" + case["caseId"] + "/approve")
+post("/admin/sandbox/refunds/" + approved["refundId"] + "/success")
+post("/admin/refunds/" + approved["refundId"] + "/reconcile")
+q2 = post(
+    "/quotes",
+    {"storeId": "brand-store", "items": [{"skuId": "schedule-coffee", "quantity": 1}]},
+    "dashboardToken",
+)
+o2 = post(
+    "/orders",
+    {
+        "quoteId": q2["quoteId"],
+        "address": {
+            "recipient": "经营演示",
+            "phone": "13800000000",
+            "detail": "本地隔离演示地址",
+        },
+    },
+    "dashboardToken",
+)
+pay2 = post("/orders/" + o2["orderId"] + "/payments", identity="dashboardToken")
+post("/admin/sandbox/payments/" + pay2["paymentId"] + "/fact", {"status": "PAID"})
+post("/orders/" + o2["orderId"] + "/payment/reconcile", identity="dashboardToken")
+post("/admin/marketing-effects/rebuild", {"after": "", "limit": 100})
 # 演示仅受理后不假称到账；正式消费者读取持久事件完成发放。
 for _ in range(6):
-    req=urllib.request.Request(base+'/v1/admin/events/pump',data=b'null',headers={'Authorization':'Bearer '+access['adminToken'],'Content-Type':'application/json'})
-    with urllib.request.urlopen(req,timeout=15) as response:json.load(response)
-print('Member suite fixture persisted. Private access: .local/member-suite-access.json (not printed).')
+    req = urllib.request.Request(
+        base + "/v1/admin/events/pump",
+        data=b"null",
+        headers={
+            "Authorization": "Bearer " + access["adminToken"],
+            "Content-Type": "application/json",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as response:
+        json.load(response)
+print(
+    "Member suite fixture persisted. Private access: .local/member-suite-access.json (not printed)."
+)

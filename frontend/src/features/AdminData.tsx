@@ -44,18 +44,47 @@ const version: Field = {
 import { dateFields, couponFields, couponBody } from "../shared/formSchemas";
 export const specs: Record<string, Spec> = {
   "member-tags": {
-    title:"会员标签字典",description:"标签标识供人群和促销规则稳定引用；在会员成长页维护会员标签关联。",
-    path:"/admin/member-tags",id:"tagId",fields:[id("tagId","标签标识"),name],columns:[["tagId","标识"],["name","名称"]],
+    title: "会员标签字典",
+    description:
+      "标签标识供人群和促销规则稳定引用；在会员成长页维护会员标签关联。",
+    path: "/admin/member-tags",
+    id: "tagId",
+    fields: [id("tagId", "标签标识"), name],
+    columns: [
+      ["tagId", "标识"],
+      ["name", "名称"],
+    ],
   },
   "store-grants": {
     title: "商家与门店经营授权",
-    description: "仅向已有运营身份授予商品经营权。商家授权包含其未来新增门店；不授予会员库、资金、订单或平台发布权限。",
-    path: "/admin/store-grants", id: "grantId",
-    fields: [id("grantId","授权标识"),id("actorId","运营主体"),
-      {name:"resourceType",label:"资源范围",type:"select",options:[{label:"单个门店",value:"STORE"},{label:"商家及所有门店",value:"MERCHANT"}]},
-      id("resourceId","门店或商家标识"),{name:"reason",label:"授权原因"}],
-    build:v=>({...v,permission:"CATALOG"}),
-    columns:[["actorId","运营主体"],["resourceType","范围"],["resourceId","资源"],["active","启用"],["version","版本"],["reason","原因"]],
+    description:
+      "仅向已有运营身份授予商品经营权。商家授权包含其未来新增门店；不授予会员库、资金、订单或平台发布权限。",
+    path: "/admin/store-grants",
+    id: "grantId",
+    fields: [
+      id("grantId", "授权标识"),
+      id("actorId", "运营主体"),
+      {
+        name: "resourceType",
+        label: "资源范围",
+        type: "select",
+        options: [
+          { label: "单个门店", value: "STORE" },
+          { label: "商家及所有门店", value: "MERCHANT" },
+        ],
+      },
+      id("resourceId", "门店或商家标识"),
+      { name: "reason", label: "授权原因" },
+    ],
+    build: (v) => ({ ...v, permission: "CATALOG" }),
+    columns: [
+      ["actorId", "运营主体"],
+      ["resourceType", "范围"],
+      ["resourceId", "资源"],
+      ["active", "启用"],
+      ["version", "版本"],
+      ["reason", "原因"],
+    ],
   },
   members: {
     title: "会员档案",
@@ -407,9 +436,20 @@ export function AdminData({
             详情
           </Button>
         )}
-        {kind === "store-grants" && <CommandModal title={r.active ? "撤销授权" : "恢复授权"} buttonType="link"
-          path={"/admin/store-grants/"+target+"/status"} fields={[{name:"reason",label:"变更原因"}]}
-          build={v=>({...v,active:!r.active,expectedVersion:r.version})} onDone={refresh}/>}
+        {kind === "store-grants" && (
+          <CommandModal
+            title={r.active ? "撤销授权" : "恢复授权"}
+            buttonType="link"
+            path={"/admin/store-grants/" + target + "/status"}
+            fields={[{ name: "reason", label: "变更原因" }]}
+            build={(v) => ({
+              ...v,
+              active: !r.active,
+              expectedVersion: r.version,
+            })}
+            onDone={refresh}
+          />
+        )}
         {kind === "fulfillments" && capabilities.sandboxEnabled && (
           <>
             {state === "READY" && !r.blocked && (
@@ -520,7 +560,9 @@ export function AdminData({
     );
   }
   const detailTitle = detail
-    ? string(detail.name || detail.title || detail.displayName || detail[spec.id])
+    ? string(
+        detail.name || detail.title || detail.displayName || detail[spec.id],
+      )
     : spec.title;
   return (
     <Workbench>
@@ -638,7 +680,16 @@ export function AdminData({
               status={detail.status ? string(detail.status) : undefined}
               metrics={spec.columns
                 .filter(([key]) =>
-                  ["unitPrice", "amount", "refundAmount", "cap", "discountAmount", "available", "memberCount", "remainingUnits"].includes(key),
+                  [
+                    "unitPrice",
+                    "amount",
+                    "refundAmount",
+                    "cap",
+                    "discountAmount",
+                    "available",
+                    "memberCount",
+                    "remainingUnits",
+                  ].includes(key),
                 )
                 .slice(0, 3)
                 .map(([key, label]) => ({

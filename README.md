@@ -39,6 +39,7 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 - [文档地图与契约入口](docs/doc-map.md)
 - [后端架构与数据所有权](docs/design/unified-commerce/BACKEND_ARCHITECTURE.md)
+- [Java 包组织约定](docs/architecture/java-packages.md)
 - [营销设计](docs/design/unified-commerce/MARKETING_DESIGN.md)、[前端设计](docs/design/unified-commerce/FRONTEND_ARCHITECTURE.md)
 - [技术基线](docs/design/unified-commerce/TECH_SELECTION.md)、[实施切片](docs/design/unified-commerce/IMPLEMENTATION_SLICES.md)
 - [架构审查与生产前缺口](.cursor/project-analysis/architecture-risks.md)

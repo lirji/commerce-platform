@@ -101,16 +101,47 @@ export function RuleEditor({
                 { value: "memberNetSpend", label: "完成净消费" },
                 { value: "memberTags", label: "会员标签" },
                 { value: "memberStatus", label: "会员状态" },
-                { value: "memberBrowse30", label: "30天浏览次数" }, { value: "memberCart30", label: "30天加购次数" },
-                { value: "memberOrders30", label: "30天完成订单" }, { value: "memberSpend30", label: "30天净现金消费" },
-                { value: "memberDaysSinceOrder", label: "距最近成交天数" }, { value: "memberDaysSinceJoin", label: "入会天数" },
-                { value: "memberBirthdayToday", label: "今日生日（TRUE）" }, { value: "memberJourneyEnabled", label: "接收旅程（TRUE）" },
-              ].filter(f=>!memberOnly||f.value!=="orderAmount")}
+                { value: "memberBrowse30", label: "30天浏览次数" },
+                { value: "memberCart30", label: "30天加购次数" },
+                { value: "memberOrders30", label: "30天完成订单" },
+                { value: "memberSpend30", label: "30天净现金消费" },
+                { value: "memberDaysSinceOrder", label: "距最近成交天数" },
+                { value: "memberDaysSinceJoin", label: "入会天数" },
+                { value: "memberBirthdayToday", label: "今日生日（TRUE）" },
+                { value: "memberJourneyEnabled", label: "接收旅程（TRUE）" },
+              ].filter((f) => !memberOnly || f.value !== "orderAmount")}
               onChange={(field) =>
                 change({
                   field,
-                  valueType: ["orderAmount","memberGrowth","memberNetSpend","memberBrowse30","memberCart30","memberOrders30","memberSpend30","memberDaysSinceOrder","memberDaysSinceJoin"].includes(field) ? "DECIMAL" : "TEXT",
-                  operator: field === "memberTags" ? "CONTAINS" : ["orderAmount","memberGrowth","memberNetSpend","memberBrowse30","memberCart30","memberOrders30","memberSpend30","memberDaysSinceOrder","memberDaysSinceJoin"].includes(field) ? "GTE" : "EQ",
+                  valueType: [
+                    "orderAmount",
+                    "memberGrowth",
+                    "memberNetSpend",
+                    "memberBrowse30",
+                    "memberCart30",
+                    "memberOrders30",
+                    "memberSpend30",
+                    "memberDaysSinceOrder",
+                    "memberDaysSinceJoin",
+                  ].includes(field)
+                    ? "DECIMAL"
+                    : "TEXT",
+                  operator:
+                    field === "memberTags"
+                      ? "CONTAINS"
+                      : [
+                            "orderAmount",
+                            "memberGrowth",
+                            "memberNetSpend",
+                            "memberBrowse30",
+                            "memberCart30",
+                            "memberOrders30",
+                            "memberSpend30",
+                            "memberDaysSinceOrder",
+                            "memberDaysSinceJoin",
+                          ].includes(field)
+                        ? "GTE"
+                        : "EQ",
                 })
               }
             />
@@ -118,9 +149,16 @@ export function RuleEditor({
               aria-label="比较方式"
               value={rule.operator}
               style={{ width: 110 }}
-              options={(rule.field === "memberTags" ? ["CONTAINS"] : ["memberLevel","memberStatus","memberBirthdayToday","memberJourneyEnabled"].includes(rule.field??"")
-                ? ["EQ"]
-                : ["EQ", "GT", "GTE", "LT", "LTE"]
+              options={(rule.field === "memberTags"
+                ? ["CONTAINS"]
+                : [
+                      "memberLevel",
+                      "memberStatus",
+                      "memberBirthdayToday",
+                      "memberJourneyEnabled",
+                    ].includes(rule.field ?? "")
+                  ? ["EQ"]
+                  : ["EQ", "GT", "GTE", "LT", "LTE"]
               ).map((x) => ({
                 value: x,
                 label: {
@@ -249,15 +287,46 @@ export function CampaignEditor({
                 percentageBps: Number(v.percentageBps ?? 0),
                 platformFundingBps: Number(v.platformFundingBps ?? 0),
                 budget: v.budget ? String(v.budget) : null,
-                ...(v.advanced ? {pricing:{
-                  includedSkuIds:String(v.includedSkuIds??"").split(",").map(v=>v.trim()).filter(Boolean),
-                  excludedSkuIds:String(v.excludedSkuIds??"").split(",").map(v=>v.trim()).filter(Boolean),
-                  tiers:String(v.tiers??"").split("\n").filter(v=>v.trim()).map(line=>{
-                    const [minimumSpend,discountAmount,bps,...extra]=line.split(",").map(v=>v.trim());
-                    if(extra.length||!minimumSpend||!discountAmount||bps===undefined||!Number.isInteger(Number(bps)))throw new Error("阶梯每行填写 门槛,优惠上限,比例万分比");
-                    return {minimumSpend,discountAmount,percentageBps:Number(bps)};
-                  }),
-                }}:{}),
+                ...(v.advanced
+                  ? {
+                      pricing: {
+                        includedSkuIds: String(v.includedSkuIds ?? "")
+                          .split(",")
+                          .map((v) => v.trim())
+                          .filter(Boolean),
+                        excludedSkuIds: String(v.excludedSkuIds ?? "")
+                          .split(",")
+                          .map((v) => v.trim())
+                          .filter(Boolean),
+                        tiers: String(v.tiers ?? "")
+                          .split("\n")
+                          .filter((v) => v.trim())
+                          .map((line) => {
+                            const [
+                              minimumSpend,
+                              discountAmount,
+                              bps,
+                              ...extra
+                            ] = line.split(",").map((v) => v.trim());
+                            if (
+                              extra.length ||
+                              !minimumSpend ||
+                              !discountAmount ||
+                              bps === undefined ||
+                              !Number.isInteger(Number(bps))
+                            )
+                              throw new Error(
+                                "阶梯每行填写 门槛,优惠上限,比例万分比",
+                              );
+                            return {
+                              minimumSpend,
+                              discountAmount,
+                              percentageBps: Number(bps),
+                            };
+                          }),
+                      },
+                    }
+                  : {}),
                 ...(v.benefitId
                   ? {
                       grant: {
@@ -279,16 +348,34 @@ export function CampaignEditor({
         disabled={!store}
         onClick={() => {
           command.clear();
-          if(initialCampaign){
-            const c=initialCampaign;const terms=c.policy?.terms;
-            form.setFieldsValue({...c,version:c.version+1,validFrom:localDateTime(c.validFrom),validTo:localDateTime(c.validTo),
-              audienceId:c.policy?.audience?.id??"",audienceVersion:c.policy?.audience?.version??1,
-              ruleId:c.policy?.rule?.id??"",ruleVersion:c.policy?.rule?.version??1,
-              percentageBps:terms?.percentageBps??0,platformFundingBps:terms?.platformFundingBps??0,budget:terms?.budget??"",
-              benefitId:terms?.grant?.benefitId??"",benefitVersion:terms?.grant?.version??1,
-              advanced:!!terms?.pricing,includedSkuIds:terms?.pricing?.includedSkuIds.join(",")??"",
-              excludedSkuIds:terms?.pricing?.excludedSkuIds.join(",")??"",
-              tiers:terms?.pricing?.tiers.map(t=>`${t.minimumSpend},${t.discountAmount},${t.percentageBps}`).join("\n")??""});
+          if (initialCampaign) {
+            const c = initialCampaign;
+            const terms = c.policy?.terms;
+            form.setFieldsValue({
+              ...c,
+              version: c.version + 1,
+              validFrom: localDateTime(c.validFrom),
+              validTo: localDateTime(c.validTo),
+              audienceId: c.policy?.audience?.id ?? "",
+              audienceVersion: c.policy?.audience?.version ?? 1,
+              ruleId: c.policy?.rule?.id ?? "",
+              ruleVersion: c.policy?.rule?.version ?? 1,
+              percentageBps: terms?.percentageBps ?? 0,
+              platformFundingBps: terms?.platformFundingBps ?? 0,
+              budget: terms?.budget ?? "",
+              benefitId: terms?.grant?.benefitId ?? "",
+              benefitVersion: terms?.grant?.version ?? 1,
+              advanced: !!terms?.pricing,
+              includedSkuIds: terms?.pricing?.includedSkuIds.join(",") ?? "",
+              excludedSkuIds: terms?.pricing?.excludedSkuIds.join(",") ?? "",
+              tiers:
+                terms?.pricing?.tiers
+                  .map(
+                    (t) =>
+                      `${t.minimumSpend},${t.discountAmount},${t.percentageBps}`,
+                  )
+                  .join("\n") ?? "",
+            });
           }
           setOpen(true);
         }}
@@ -345,7 +432,17 @@ export function CampaignEditor({
               return;
             }
             let input: Campaign;
-            try { input=build(v); } catch(e){form.setFields([{name:"tiers",errors:[e instanceof Error?e.message:"配置格式无效"]}]);return;}
+            try {
+              input = build(v);
+            } catch (e) {
+              form.setFields([
+                {
+                  name: "tiers",
+                  errors: [e instanceof Error ? e.message : "配置格式无效"],
+                },
+              ]);
+              return;
+            }
             if (
               (await command.run(path, wrap ? { campaign: input } : input)) !==
               undefined
@@ -377,12 +474,33 @@ export function CampaignEditor({
             <RuleEditor />
           </Form.Item>
           <div className="form-section-title">精细促销（可选，需审批发布）</div>
-          <Fields fields={[
-            {name:"advanced",label:"启用商品范围与阶梯",type:"switch",required:false},
-            {name:"includedSkuIds",label:"参与SKU（逗号分隔，留空为全部）",required:false},
-            {name:"excludedSkuIds",label:"排除SKU（逗号分隔，排除优先）",required:false},
-            {name:"tiers",label:"优惠阶梯",type:"textarea",required:false,help:"每行：门槛,优惠上限,优惠比例万分比。比例0表示固定减免，1000表示减10%；按门槛升序，最多8档。留空使用上方基础优惠。"}
-          ]}/>
+          <Fields
+            fields={[
+              {
+                name: "advanced",
+                label: "启用商品范围与阶梯",
+                type: "switch",
+                required: false,
+              },
+              {
+                name: "includedSkuIds",
+                label: "参与SKU（逗号分隔，留空为全部）",
+                required: false,
+              },
+              {
+                name: "excludedSkuIds",
+                label: "排除SKU（逗号分隔，排除优先）",
+                required: false,
+              },
+              {
+                name: "tiers",
+                label: "优惠阶梯",
+                type: "textarea",
+                required: false,
+                help: "每行：门槛,优惠上限,优惠比例万分比。比例0表示固定减免，1000表示减10%；按门槛升序，最多8档。留空使用上方基础优惠。",
+              },
+            ]}
+          />
           <div className="form-section-title">可信资产与预算（可选）</div>
           <p className="muted">
             引用人群或规则资产后走审批发布流程。百分比、预算、资方与权益配置随该受治理版本一起生效。

@@ -282,7 +282,10 @@ export function fieldLabel(key: string) {
 export function formatField(key: string, value: unknown): ReactNode {
   if (value == null || value === "") return "—";
   if (key === "status") return <Status value={string(value)} />;
-  if (moneyKeys.has(key) && (typeof value === "string" || typeof value === "number"))
+  if (
+    moneyKeys.has(key) &&
+    (typeof value === "string" || typeof value === "number")
+  )
     return money(value);
   if (timeKeys.has(key)) return time(value);
   if (typeof value === "boolean") return value ? "是" : "否";
@@ -392,7 +395,9 @@ export function RecordHero({
         <div>
           {eyebrow && <div className="page-eyebrow">{eyebrow}</div>}
           <div className="record-hero-title">{title}</div>
-          {id != null && id !== "" && <div className="record-hero-id">{id}</div>}
+          {id != null && id !== "" && (
+            <div className="record-hero-id">{id}</div>
+          )}
         </div>
         <Space wrap>
           {status && <Status value={status} />}

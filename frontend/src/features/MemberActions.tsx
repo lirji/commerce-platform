@@ -75,9 +75,7 @@ export function MemberActions({
         size="large"
         destroyOnHidden
       >
-        {detail && (
-          <MemberBehavior admin memberId={String(row.memberId)} />
-        )}
+        {detail && <MemberBehavior admin memberId={String(row.memberId)} />}
       </Drawer>
       <CommandModal
         hideButton
@@ -149,9 +147,7 @@ export function MemberActions({
           </Button>
           <Button
             disabled={history.data?.length !== 50}
-            onClick={() =>
-              setAfter(Number(history.data!.at(-1)!.version))
-            }
+            onClick={() => setAfter(Number(history.data!.at(-1)!.version))}
           >
             下一页
           </Button>

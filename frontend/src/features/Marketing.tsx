@@ -1,11 +1,4 @@
-import {
-  Button,
-  Drawer,
-  Form,
-  Modal,
-  Space,
-  Table,
-} from "antd";
+import { Button, Drawer, Form, Modal, Space, Table } from "antd";
 import { useState } from "react";
 import type { Campaign, Governed, Rule } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
@@ -28,12 +21,11 @@ import { CampaignEditor, Governance, RuleEditor } from "../shared/marketing";
 export function Marketing({ kind, store }: { kind: string; store: string }) {
   const [after, setAfter] = useState("");
   const path = kind === "rules" ? "/admin/rules" : "/admin/campaigns";
-  const resource =
-    useResource<
-      Governed<
-        Campaign | { ruleId: string; version: number; name: string; rule: Rule }
-      >[]
-    >(`${path}?after=${encode(after)}`);
+  const resource = useResource<
+    Governed<
+      Campaign | { ruleId: string; version: number; name: string; rule: Rule }
+    >[]
+  >(`${path}?after=${encode(after)}`);
   const last = resource.data?.at(-1)?.content;
   const [detail, setDetail] = useState<unknown>();
   const [open, setOpen] = useState(false);
@@ -62,11 +54,15 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
         }
       />
       <ErrorNotice error={resource.error} />
-      <ListPanel count={resource.data?.length ?? 0} after={after}
+      <ListPanel
+        count={resource.data?.length ?? 0}
+        after={after}
         onHome={() => setAfter("")}
         onNext={() => {
-          if (last) setAfter("campaignId" in last ? last.campaignId : last.ruleId);
-        }}>
+          if (last)
+            setAfter("campaignId" in last ? last.campaignId : last.ruleId);
+        }}
+      >
         <Table
           rowKey={(r) =>
             "campaignId" in r.content ? r.content.campaignId : r.content.ruleId
@@ -76,7 +72,19 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           pagination={false}
           scroll={{ x: 720 }}
           columns={[
-            { title: "名称", render: (_, r) => <PrimaryCell title={r.content.name} subtitle={"campaignId" in r.content ? r.content.campaignId : r.content.ruleId} /> },
+            {
+              title: "名称",
+              render: (_, r) => (
+                <PrimaryCell
+                  title={r.content.name}
+                  subtitle={
+                    "campaignId" in r.content
+                      ? r.content.campaignId
+                      : r.content.ruleId
+                  }
+                />
+              ),
+            },
             { title: "版本", render: (_, r) => r.content.version },
             {
               title: "优惠",
@@ -97,7 +105,17 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
                   <Button size="small" onClick={() => setDetail(r)}>
                     查看配置
                   </Button>
-                  {"campaignId" in r.content && <><CampaignPreview campaign={r.content}/><CampaignEditor store={r.content.storeId} onDone={resource.refresh} initialCampaign={r.content} label="复制新版本"/></>}
+                  {"campaignId" in r.content && (
+                    <>
+                      <CampaignPreview campaign={r.content} />
+                      <CampaignEditor
+                        store={r.content.storeId}
+                        onDone={resource.refresh}
+                        initialCampaign={r.content}
+                        label="复制新版本"
+                      />
+                    </>
+                  )}
                   {"campaignId" in r.content ? (
                     <Governance
                       base={path}

@@ -73,40 +73,48 @@ export function MemberWallet({
             {
               key: "claim",
               label: "领取优惠",
-              children: available.loading && !available.data ? (
-                <div className="page-loading">正在加载可领优惠</div>
-              ) : (
-                <Row gutter={[16, 16]}>
-                  {available.data?.length === 0 && <Col span={24}><Blank text="暂无可公开领取的优惠券，已发放的券请查看「我的优惠券」" /></Col>}
-                  {available.data?.map(({ content: c, issued }) => (
-                    <Col xs={24} md={12} lg={8} key={c.definitionId}>
-                      <Card className="coupon-card" title={c.name}>
-                        <p className="coupon-value">
-                          {money(c.discountAmount)}
-                        </p>
-                        <p>
-                          满 {money(c.minimumSpend)} 可用 ·{" "}
-                          {c.stackable ? "可叠加活动" : "择优使用"}
-                        </p>
-                        <p className="muted">
-                          {(c.validityDays ?? 0) > 0 ? `领取后${c.validityDays}天有效，发行截止${time(c.validTo)}` : `有效期至${time(c.validTo)}`} · 已领 {issued}/{c.quota}
-                        </p>
-                        <ActionButton
-                          path={
-                            "/coupons/" +
-                            encode(c.definitionId) +
-                            "/" +
-                            c.version +
-                            "/claim"
-                          }
-                          label="领取优惠券"
-                          onDone={refresh}
-                        />
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-              ),
+              children:
+                available.loading && !available.data ? (
+                  <div className="page-loading">正在加载可领优惠</div>
+                ) : (
+                  <Row gutter={[16, 16]}>
+                    {available.data?.length === 0 && (
+                      <Col span={24}>
+                        <Blank text="暂无可公开领取的优惠券，已发放的券请查看「我的优惠券」" />
+                      </Col>
+                    )}
+                    {available.data?.map(({ content: c, issued }) => (
+                      <Col xs={24} md={12} lg={8} key={c.definitionId}>
+                        <Card className="coupon-card" title={c.name}>
+                          <p className="coupon-value">
+                            {money(c.discountAmount)}
+                          </p>
+                          <p>
+                            满 {money(c.minimumSpend)} 可用 ·{" "}
+                            {c.stackable ? "可叠加活动" : "择优使用"}
+                          </p>
+                          <p className="muted">
+                            {(c.validityDays ?? 0) > 0
+                              ? `领取后${c.validityDays}天有效，发行截止${time(c.validTo)}`
+                              : `有效期至${time(c.validTo)}`}{" "}
+                            · 已领 {issued}/{c.quota}
+                          </p>
+                          <ActionButton
+                            path={
+                              "/coupons/" +
+                              encode(c.definitionId) +
+                              "/" +
+                              c.version +
+                              "/claim"
+                            }
+                            label="领取优惠券"
+                            onDone={refresh}
+                          />
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                ),
             },
             {
               key: "wallet",
@@ -116,7 +124,11 @@ export function MemberWallet({
                   rowKey="couponId"
                   dataSource={wallet.data}
                   loading={wallet.loading}
-                  locale={{ emptyText: <Blank text="还没有优惠券，可先到领取优惠页领取" /> }}
+                  locale={{
+                    emptyText: (
+                      <Blank text="还没有优惠券，可先到领取优惠页领取" />
+                    ),
+                  }}
                   columns={[
                     { title: "优惠券", dataIndex: "name" },
                     {
@@ -138,59 +150,61 @@ export function MemberWallet({
           ]}
         />
       )}
-      {section === "benefits" && (benefits.loading && !benefits.data ? (
-        <div className="page-loading">正在加载权益</div>
-      ) : (
-        <Row gutter={[16, 16]}>
-          {benefits.data?.map((b) => (
-            <Col xs={24} md={12} lg={8} key={b.grantId}>
-              <Card title={b.name} extra={<Status value={b.status} />}>
-                <p className="balance-number">
-                  {b.remainingUnits}
-                  <small> / {b.units} 单位</small>
-                </p>
-                <p className="muted">有效期至 {time(b.expiresAt)}</p>
-                {b.status === "AVAILABLE" && (
-                  <CommandModal
-                    title="核销权益"
-                    path={"/entitlements/" + encode(b.grantId) + "/consume"}
-                    fields={[
-                      {
-                        name: "units",
-                        label: "核销数量",
-                        type: "number",
-                        min: 1,
-                        max: b.remainingUnits,
-                        initial: 1,
-                      },
-                    ]}
-                    onDone={refresh}
-                  />
-                )}
+      {section === "benefits" &&
+        (benefits.loading && !benefits.data ? (
+          <div className="page-loading">正在加载权益</div>
+        ) : (
+          <Row gutter={[16, 16]}>
+            {benefits.data?.map((b) => (
+              <Col xs={24} md={12} lg={8} key={b.grantId}>
+                <Card title={b.name} extra={<Status value={b.status} />}>
+                  <p className="balance-number">
+                    {b.remainingUnits}
+                    <small> / {b.units} 单位</small>
+                  </p>
+                  <p className="muted">有效期至 {time(b.expiresAt)}</p>
+                  {b.status === "AVAILABLE" && (
+                    <CommandModal
+                      title="核销权益"
+                      path={"/entitlements/" + encode(b.grantId) + "/consume"}
+                      fields={[
+                        {
+                          name: "units",
+                          label: "核销数量",
+                          type: "number",
+                          min: 1,
+                          max: b.remainingUnits,
+                          initial: 1,
+                        },
+                      ]}
+                      onDone={refresh}
+                    />
+                  )}
+                </Card>
+              </Col>
+            ))}
+            {benefits.data?.length === 0 && (
+              <Blank text="暂无权益，参与活动后可在这里查看" />
+            )}
+          </Row>
+        ))}
+      {section === "notifications" &&
+        (notices.loading && !notices.data ? (
+          <div className="page-loading">正在加载消息</div>
+        ) : (
+          <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+            {notices.data?.map((n) => (
+              <Card
+                key={n.notificationId}
+                title={n.title}
+                extra={<span className="muted">{time(n.createdAt)}</span>}
+              >
+                <p>{n.body}</p>
               </Card>
-            </Col>
-          ))}
-          {benefits.data?.length === 0 && (
-            <Blank text="暂无权益，参与活动后可在这里查看" />
-          )}
-        </Row>
-      ))}
-      {section === "notifications" && (notices.loading && !notices.data ? (
-        <div className="page-loading">正在加载消息</div>
-      ) : (
-        <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-          {notices.data?.map((n) => (
-            <Card
-              key={n.notificationId}
-              title={n.title}
-              extra={<span className="muted">{time(n.createdAt)}</span>}
-            >
-              <p>{n.body}</p>
-            </Card>
-          ))}
-          {notices.data?.length === 0 && <Blank text="暂时没有新消息" />}
-        </Space>
-      ))}
+            ))}
+            {notices.data?.length === 0 && <Blank text="暂时没有新消息" />}
+          </Space>
+        ))}
       {section === "aftersales" && (
         <Card className="list-panel">
           <Table<Aftersale>
@@ -203,7 +217,11 @@ export function MemberWallet({
               { title: "申请编号", dataIndex: "caseId", ellipsis: true },
               { title: "订单编号", dataIndex: "orderId", ellipsis: true },
               { title: "退款金额", dataIndex: "refundAmount", render: money },
-              { title: "名义返还积分", render: (_, r) => r.items.reduce((sum, line) => sum + (line.points ?? 0), 0) },
+              {
+                title: "名义返还积分",
+                render: (_, r) =>
+                  r.items.reduce((sum, line) => sum + (line.points ?? 0), 0),
+              },
               {
                 title: "处理状态",
                 dataIndex: "status",

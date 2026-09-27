@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """为本地验收店铺补齐类目与商品展示资料；只写项目本地库，不改成交价。"""
+
 from pathlib import Path
 import hashlib, json, os, shlex, subprocess
 
@@ -15,18 +16,24 @@ if schema not in ("commerce_local", "commerce_test_20260923"):
     raise SystemExit("Only project local/test schemas are allowed.")
 target = os.getenv("COMMERCE_SHOP_SEED_TARGET", "e2e")
 if target == "demo":
-    tenant, store, existing = "demo", "store-demo", {
-        "coffee": "sku-coffee",
-        "mug": "sku-mug",
-        "bag": "sku-bag",
-    }
+    tenant, store, existing = (
+        "demo",
+        "store-demo",
+        {
+            "coffee": "sku-coffee",
+            "mug": "sku-mug",
+            "bag": "sku-bag",
+        },
+    )
 elif target == "e2e":
     access = json.loads((root / ".local/e2e-access.json").read_text())
     tenant = access["tenant"]
     store = access.get("storeId", "browser-store")
     existing = {"coffee": "coffee", "mug": "mug", "bag": "bag"}
     if not tenant.startswith("browser-"):
-        raise SystemExit("e2e catalog seed only targets the local browser fixture tenant.")
+        raise SystemExit(
+            "e2e catalog seed only targets the local browser fixture tenant."
+        )
 else:
     raise SystemExit("COMMERCE_SHOP_SEED_TARGET must be e2e or demo.")
 
@@ -54,12 +61,90 @@ categories = [
     ("stationery", "living", "文具", 2),
 ]
 products = [
-    ("coffee-box", "精品咖啡礼盒", "咖啡", "日常焙火", "coffee-cat", "中度烘焙拼配豆，适合手冲与分享。会员优惠在结算报价时确认。", "包装", "礼盒", "coffee", "精品咖啡礼盒", "129.00", "DAILY-COFFEE-01"),
-    ("ceramic-mug", "陶瓷随行杯", "餐具", "日常器皿", "tableware", "350ml 陶瓷随行杯，杯盖可密封。适合通勤与办公室。", "容量", "350ml", "mug", "陶瓷随行杯", "59.00", "DAILY-MUG-01"),
-    ("commute-bag", "城市通勤包", "出行", "日常出行", "outing", "13 寸隔层通勤包，轻量防泼水。适合日常往返。", "尺寸", "13寸", "bag", "城市通勤包", "239.00", "DAILY-BAG-01"),
-    ("tea-box", "日式煎茶礼盒", "茶饮", "日常茶事", "tea-cat", "单丛煎茶礼盒，清香耐泡。适合下午与待客。", "包装", "礼盒", "tea", "日式煎茶礼盒", "89.00", "DAILY-TEA-01"),
-    ("pour-kettle", "手冲细口壶", "餐具", "日常器皿", "tableware", "不锈钢细口手冲壶，出水稳定。适合家用冲煮。", "容量", "600ml", "kettle", "手冲细口壶", "168.00", "DAILY-KETTLE-01"),
-    ("soft-notebook", "软皮手账本", "文具", "日常书写", "stationery", "A5 软皮手账，内页点阵。适合记录与计划。", "规格", "A5", "notebook", "软皮手账本", "45.00", "DAILY-NOTE-01"),
+    (
+        "coffee-box",
+        "精品咖啡礼盒",
+        "咖啡",
+        "日常焙火",
+        "coffee-cat",
+        "中度烘焙拼配豆，适合手冲与分享。会员优惠在结算报价时确认。",
+        "包装",
+        "礼盒",
+        "coffee",
+        "精品咖啡礼盒",
+        "129.00",
+        "DAILY-COFFEE-01",
+    ),
+    (
+        "ceramic-mug",
+        "陶瓷随行杯",
+        "餐具",
+        "日常器皿",
+        "tableware",
+        "350ml 陶瓷随行杯，杯盖可密封。适合通勤与办公室。",
+        "容量",
+        "350ml",
+        "mug",
+        "陶瓷随行杯",
+        "59.00",
+        "DAILY-MUG-01",
+    ),
+    (
+        "commute-bag",
+        "城市通勤包",
+        "出行",
+        "日常出行",
+        "outing",
+        "13 寸隔层通勤包，轻量防泼水。适合日常往返。",
+        "尺寸",
+        "13寸",
+        "bag",
+        "城市通勤包",
+        "239.00",
+        "DAILY-BAG-01",
+    ),
+    (
+        "tea-box",
+        "日式煎茶礼盒",
+        "茶饮",
+        "日常茶事",
+        "tea-cat",
+        "单丛煎茶礼盒，清香耐泡。适合下午与待客。",
+        "包装",
+        "礼盒",
+        "tea",
+        "日式煎茶礼盒",
+        "89.00",
+        "DAILY-TEA-01",
+    ),
+    (
+        "pour-kettle",
+        "手冲细口壶",
+        "餐具",
+        "日常器皿",
+        "tableware",
+        "不锈钢细口手冲壶，出水稳定。适合家用冲煮。",
+        "容量",
+        "600ml",
+        "kettle",
+        "手冲细口壶",
+        "168.00",
+        "DAILY-KETTLE-01",
+    ),
+    (
+        "soft-notebook",
+        "软皮手账本",
+        "文具",
+        "日常书写",
+        "stationery",
+        "A5 软皮手账，内页点阵。适合记录与计划。",
+        "规格",
+        "A5",
+        "notebook",
+        "软皮手账本",
+        "45.00",
+        "DAILY-NOTE-01",
+    ),
 ]
 image = [{"url": "/media/coffee.svg", "alt": "商品示意图"}]
 images_json = json.dumps(image, ensure_ascii=False, separators=(",", ":"))
@@ -70,7 +155,20 @@ for category_id, parent_id, name, depth in categories:
         f"{q(tenant)},{q(store)},{q(category_id)},{q(parent_id) if parent_id else 'NULL'},{q(name)},{depth},'ACTIVE',0) "
         "ON DUPLICATE KEY UPDATE name=VALUES(name),status='ACTIVE';"
     )
-for product_id, title, category, brand, category_id, description, spec_name, spec_value, sku_id, sku_title, price, barcode in products:
+for (
+    product_id,
+    title,
+    category,
+    brand,
+    category_id,
+    description,
+    spec_name,
+    spec_value,
+    sku_id,
+    sku_title,
+    price,
+    barcode,
+) in products:
     specs = [(spec_name, spec_value)]
     sql.append(
         "INSERT INTO catalog_product(tenant_id,product_id,store_id,title,category,brand,version) VALUES("
@@ -130,4 +228,6 @@ process = subprocess.run(
 )
 if process.returncode:
     raise SystemExit("Shop catalog seed failed; credentials omitted.")
-print(f"Shop catalog seed persisted for {target} / {store}. Categories=7, products=6, existing SKU titles/prices unchanged.")
+print(
+    f"Shop catalog seed persisted for {target} / {store}. Categories=7, products=6, existing SKU titles/prices unchanged."
+)

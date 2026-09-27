@@ -48,7 +48,15 @@ export type Campaign = {
       platformFundingBps: number;
       budget: string | null;
       grant?: BenefitRef;
-      pricing?: {includedSkuIds:string[];excludedSkuIds:string[];tiers:{minimumSpend:string;discountAmount:string;percentageBps:number}[]};
+      pricing?: {
+        includedSkuIds: string[];
+        excludedSkuIds: string[];
+        tiers: {
+          minimumSpend: string;
+          discountAmount: string;
+          percentageBps: number;
+        }[];
+      };
     };
   };
 };
@@ -147,7 +155,12 @@ export type Aftersale = {
   refundAmount: string;
   returnRequired: boolean;
   refundId: string | null;
-  items: { skuId: string; quantity: number; refundAmount: string; points?: number }[];
+  items: {
+    skuId: string;
+    quantity: number;
+    refundAmount: string;
+    points?: number;
+  }[];
 };
 export type Fulfillment = {
   orderId: string;
@@ -174,7 +187,7 @@ export type JourneyNode = {
   yesNext?: string;
   noNext?: string;
   benefit?: BenefitRef;
-  coupon?: {definitionId:string;version:number};
+  coupon?: { definitionId: string; version: number };
   title?: string;
   body?: string;
 };
@@ -183,14 +196,35 @@ export type Journey = {
   version: number;
   storeId: string;
   name: string;
-  trigger: "MANUAL" | "ORDER_PAID" | "MEMBER_REGISTERED" | "LEVEL_CHANGED" | "SEGMENT_ENTERED" | "BIRTHDAY" | "DORMANT" | "REPURCHASE" | "CART_ABANDONED";
+  trigger:
+    | "MANUAL"
+    | "ORDER_PAID"
+    | "MEMBER_REGISTERED"
+    | "LEVEL_CHANGED"
+    | "SEGMENT_ENTERED"
+    | "BIRTHDAY"
+    | "DORMANT"
+    | "REPURCHASE"
+    | "CART_ABANDONED";
   validFrom: string;
   validTo: string;
   maxDurationSeconds: number;
   entry: string;
   nodes: JourneyNode[];
-  lifecycle?: {thresholdDays:number;cartDelaySeconds:number;scanIntervalSeconds:number;conversionWindowDays:number};
-  controls?: {segmentId?:string;entryRule?:Rule;maxEntries:number;entryWindowSeconds:number;notificationLimit:number;notificationWindowSeconds:number};
+  lifecycle?: {
+    thresholdDays: number;
+    cartDelaySeconds: number;
+    scanIntervalSeconds: number;
+    conversionWindowDays: number;
+  };
+  controls?: {
+    segmentId?: string;
+    entryRule?: Rule;
+    maxEntries: number;
+    entryWindowSeconds: number;
+    notificationLimit: number;
+    notificationWindowSeconds: number;
+  };
 };
 export type JourneyInstance = {
   instanceId: string;
