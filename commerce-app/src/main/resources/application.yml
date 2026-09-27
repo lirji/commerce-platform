@@ -10,6 +10,8 @@ server:
     accept-count: 64
 commerce:
   marketing:
+    # 仅在所有旧节点退出后开启，旧二进制会忽略coupon字段而丢失赠券承诺。
+    coupon-enabled: ${COMMERCE_MARKETING_COUPON_ENABLED:false}
     # 新落选枚举不能由旧二进制解码；滚动期写原ELIGIBLE，全部升级后才启用解释增强。
     extended-trace-enabled: ${COMMERCE_MARKETING_EXTENDED_TRACE_ENABLED:false}
     # 隔离容量测试的固定阶段耗时，默认关闭；日志不写业务标识。

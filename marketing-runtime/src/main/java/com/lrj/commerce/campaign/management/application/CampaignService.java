@@ -30,6 +30,8 @@ public class CampaignService implements CampaignApi {
 	private final com.lrj.commerce.marketing.api.DecisionPort decisions;
 
 	private final com.lrj.commerce.benefit.entitlement.api.EntitlementApi entitlements;
+	private final com.lrj.commerce.benefit.coupon.api.CouponApi coupons;
+	private final boolean couponEnabled;
 
 	private final com.lrj.commerce.campaign.funding.infrastructure.persistence.BudgetMapper budgets;
 
@@ -49,12 +51,16 @@ public class CampaignService implements CampaignApi {
 			com.lrj.commerce.member.profile.api.MemberApi members,
 			com.lrj.commerce.member.growth.api.MemberGrowthApi memberGrowth,
 			com.lrj.commerce.catalog.assortment.api.CatalogApi catalog,
-			com.lrj.commerce.marketing.api.DecisionPort decisions) {
+			com.lrj.commerce.marketing.api.DecisionPort decisions,
+			com.lrj.commerce.benefit.coupon.api.CouponApi coupons,
+			@org.springframework.beans.factory.annotation.Value("${commerce.marketing.coupon-enabled:false}") boolean couponEnabled) {
 		this.members = members;
 		this.memberGrowth = memberGrowth;
 		this.catalog = catalog;
 		this.decisions = decisions;
 		this.entitlements = entitlements;
+		this.coupons = coupons;
+		this.couponEnabled = couponEnabled;
 		this.budgets = budgets;
 		this.assets = assets;
 		this.clock = clock;
@@ -83,6 +89,7 @@ public class CampaignService implements CampaignApi {
 					"受治理活动需引用可信资产或声明精细价格策略");
 		if (input.policy() != null && input.policy().terms() != null) {
 			var terms = input.policy().terms();
+			validateBenefitChoice(terms);
 			pricing(terms.pricing());
 			Inputs.require(terms.percentageBps() >= 0 && terms.percentageBps() <= 10000
 					&& terms.platformFundingBps() >= 0 && terms.platformFundingBps() <= 10000, "活动百分比参数无效");
@@ -99,6 +106,9 @@ public class CampaignService implements CampaignApi {
 					rule = assets.publishedRule(actor.tenantId(), input.policy().rule());
 				if (input.policy().terms() != null && input.policy().terms().grant() != null)
 					entitlements.validateBinding(actor.tenantId(), input.storeId(), input.policy().terms().grant(),
+							input.validFrom(), input.validTo());
+				if (input.policy().terms() != null && input.policy().terms().coupon() != null)
+					coupons.validateCampaignBinding(actor.tenantId(), input.storeId(), input.policy().terms().coupon(),
 							input.validFrom(), input.validTo());
 				if (input.policy().audience() != null)
 					assets.requireFresh(actor.tenantId(), input.policy().audience(), clock.instant());
@@ -166,6 +176,7 @@ public class CampaignService implements CampaignApi {
 		}
 		if (policy.terms() != null) {
 			var terms = policy.terms();
+			validateBenefitChoice(terms);
 			pricing(terms.pricing());
 			Inputs.require(terms.percentageBps() >= 0 && terms.percentageBps() <= 10000
 					&& terms.platformFundingBps() >= 0 && terms.platformFundingBps() <= 10000,
@@ -174,7 +185,16 @@ public class CampaignService implements CampaignApi {
 				Inputs.require(money(terms.budget()).compareTo(Money.ZERO) > 0, "活动预算必须大于零");
 			if (terms.grant() != null)
 				entitlements.validateBinding(tenant, row.storeId(), terms.grant(), row.validFrom(), row.validTo());
+			if (terms.coupon() != null)
+				coupons.validateCampaignBinding(tenant, row.storeId(), terms.coupon(), row.validFrom(), row.validTo());
 		}
+	}
+
+	/** 新券字段会使旧二进制严格 JSON 解码失败；全部旧节点退出前拒绝写入新配置。 */
+	private void validateBenefitChoice(Terms terms) {
+		Inputs.require(terms.grant() == null || terms.coupon() == null, "同一活动只能选择一种权益");
+		if (terms.coupon() != null && !couponEnabled)
+			throw new DomainException(DomainException.Code.CONFLICT, "活动券能力尚未完成全节点升级");
 	}
 
 	/** 管理台按活动ID列出每个活动最新内容版本。 */

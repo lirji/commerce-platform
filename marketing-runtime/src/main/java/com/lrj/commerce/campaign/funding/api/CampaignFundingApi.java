@@ -8,7 +8,8 @@ import java.util.List;
 public interface CampaignFundingApi {
 
 	record Commitment(String campaignId, long version, String discount, String platformFunding, String merchantFunding,
-			com.lrj.commerce.benefit.entitlement.api.EntitlementApi.Ref grant) {
+			com.lrj.commerce.benefit.entitlement.api.EntitlementApi.Ref grant,
+			@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) com.lrj.commerce.benefit.coupon.api.CouponApi.Ref coupon) {
 	}
 
 	record Budget(String budgetId, String campaignId, long version, String cap, String held, String spent) {

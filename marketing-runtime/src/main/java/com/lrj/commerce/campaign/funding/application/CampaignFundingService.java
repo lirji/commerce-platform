@@ -40,7 +40,7 @@ public class CampaignFundingService implements CampaignFundingApi {
 			.longValueExact();
 		return new Commitment(selected.campaignId(), selected.version(), discount,
 				Money.minor(platform).amount().toPlainString(), Money.minor(cents - platform).amount().toPlainString(),
-				terms.grant());
+				terms.grant(), terms.coupon());
 	}
 
 	/** 金额/店铺二次核对且数据库限制总额度，任何失败由下单事务回滚。 */

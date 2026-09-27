@@ -8,6 +8,7 @@ import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
 import java.time.Clock;
+import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.*;
 import com.lrj.commerce.runtime.api.identity.Actor;
@@ -118,6 +119,80 @@ public class CouponService implements CouponApi {
 			propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
 	public Coupon grantFromJourney(String tenant, String member, String store, String source, String id, long version) {
 		return grantSource(tenant, member, store, source, id, version, "JOURNEY");
+	}
+
+	/** 活动券在支付后才进入钱包，因此必须使用相对有效期，避免已预留订单过期失约。 */
+	public void validateCampaignBinding(String tenant, String store, Ref ref, Instant from, Instant to) {
+		Inputs.require(ref != null && ref.version() > 0, "活动券引用无效");
+		validateExchange(tenant, store, ref.definitionId(), ref.version(), from, to);
+		var definition = Inputs.found(mapper.definitionFind(tenant, ref.definitionId(), ref.version()));
+		Inputs.require(definition.validityDays() != null && definition.validityDays() > 0,
+				"活动券必须配置领取后相对有效期");
+	}
+
+	/** 券定义行锁和额度条件更新与订单事务共提交；重复订单只能拿到原券 ID。 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public CampaignHold reserveCampaign(String tenant, String order, String member, String store, Ref ref) {
+		if (ref == null)
+			return null;
+		Identifiers.require(tenant);
+		Identifiers.require(order);
+		Identifiers.require(member);
+		Identifiers.require(store);
+		Identifiers.require(ref.definitionId());
+		Inputs.require(ref.version() > 0, "活动券版本无效");
+		var definition = Inputs.found(mapper.definitionLock(tenant, ref.definitionId(), ref.version()));
+		var old = mapper.campaignHold(tenant, order);
+		if (old != null) {
+			if (!old.memberId().equals(member) || !old.storeId().equals(store)
+					|| !old.definitionId().equals(ref.definitionId()) || old.version() != ref.version())
+				throw conflict("活动券订单来源冲突");
+			return old;
+		}
+		if (!definition.storeId().equals(store) || !definition.issuanceMode().equals("SOURCE_ONLY")
+				|| definition.validityDays() == null || definition.validityDays() <= 0
+				|| clock.instant().isBefore(definition.validFrom()) || !clock.instant().isBefore(definition.validTo())
+				|| mapper.reserveCampaignQuota(tenant, ref.definitionId(), ref.version()) != 1)
+			throw conflict("活动券未生效或发行额度不足");
+		mapper.insertCampaignHold(tenant, order, member, store, ref, UUID.randomUUID().toString());
+		return Inputs.found(mapper.campaignHold(tenant, order));
+	}
+
+	/** 付款与发券在同一事务：扣预留、计已发、写钱包和状态任一步失败均回滚。 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void confirmCampaign(String tenant, String order) {
+		var hold = mapper.lockCampaignHold(tenant, order);
+		if (hold == null || hold.status().equals("ISSUED"))
+			return;
+		if (!hold.status().equals("HELD"))
+			throw conflict("活动券预留已释放");
+		var definition = Inputs.found(mapper.definitionLock(tenant, hold.definitionId(), hold.version()));
+		if (mapper.issueCampaignQuota(tenant, hold.definitionId(), hold.version()) != 1)
+			throw conflict("活动券预留额度冲突");
+		var validity = validity(definition);
+		mapper.sourceCoupon(tenant, hold.memberId(), hold.couponId(), order, "CAMPAIGN", definition,
+				validity.from(), validity.to());
+		if (mapper.campaignHoldStatus(tenant, order, "HELD", "ISSUED") != 1)
+			throw conflict("活动券发放状态冲突");
+	}
+
+	/** 取消只退还未发行额度；支付后的退款不暗中撤销已到账券。 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void releaseCampaign(String tenant, String order) {
+		var hold = mapper.lockCampaignHold(tenant, order);
+		if (hold == null || hold.status().equals("RELEASED"))
+			return;
+		if (!hold.status().equals("HELD")
+				|| mapper.releaseCampaignQuota(tenant, hold.definitionId(), hold.version()) != 1
+				|| mapper.campaignHoldStatus(tenant, order, "HELD", "RELEASED") != 1)
+			throw conflict("活动券释放状态冲突");
+	}
+
+	/** 营销执行只引用固定来源和券 ID，不复制券余额权威。 */
+	public CampaignHold campaignHold(String tenant, String order) {
+		Identifiers.require(tenant);
+		Identifiers.require(order);
+		return mapper.campaignHold(tenant, order);
 	}
 
 	private Coupon grantSource(String tenant, String member, String store, String source, String id, long version,

@@ -30,6 +30,11 @@ import com.lrj.commerce.runtime.work.WorkLanes;
 /** 订单用例编排同库端口，远程支付/物流不进入这段事务。 */
 @Service
 public class OrderService implements OrderApi {
+	/** 仅隔离压测按需启用；不把订单、会员或租户标识写入性能日志。 */
+	@org.springframework.beans.factory.annotation.Value("${commerce.marketing.profiling-enabled:false}")
+	private boolean profilingEnabled;
+
+	private static final org.slf4j.Logger PROFILE = org.slf4j.LoggerFactory.getLogger(OrderService.class);
 
 	private final com.lrj.commerce.member.points.spend.api.PointsSpendApi points;
 
@@ -116,16 +121,25 @@ public class OrderService implements OrderApi {
 						.add(quote.points() == null ? BigDecimal.ZERO : new BigDecimal(quote.points().discount()))
 						.toPlainString());
 			coupons.reserve(actor, id, quote.storeId(), quote.coupon());
+			long quotaStarted = System.nanoTime();
+			coupons.reserveCampaign(actor.tenantId(), id, member.memberId(), quote.storeId(),
+					quote.promotion() == null ? null : quote.promotion().coupon());
+			long couponReserved = System.nanoTime();
 			funding.reserve(actor, id, quote.storeId(), quote.promotion());
+			long budgetReserved = System.nanoTime();
 			entitlements.reserveOrder(actor, id, member.memberId(), quote.storeId(),
 					quote.promotion() == null ? null : quote.promotion().grant());
+			long creditReserved = System.nanoTime();
 			for (var line : quote.items().stream().sorted(Comparator.comparing(QuoteApi.Line::skuId)).toList())
 				inventory.reserve(actor, id, quote.storeId(), line.skuId(), line.quantity());
 			// 活动参与与所有订单预占同事务，保证额度争用失败时不会留下虚假的营销成功记录。
+			long executionStarted = System.nanoTime();
 			executions.recordOrder(actor, new com.lrj.commerce.campaign.execution.api.CampaignExecutionApi.OrderTrigger(
 					id, quote.quoteId(), member.memberId(), quote.storeId(), quote.campaign(),
 					quote.campaignDiscount(), quote.createdAt(), quote.trace(), quote.sources(),
-					quote.promotion() == null ? null : quote.promotion().grant()));
+					quote.promotion() == null ? null : quote.promotion().grant(),
+					quote.promotion() == null ? null : quote.promotion().coupon()));
+			long executionRecorded = System.nanoTime();
 			var lifecycle = OrderLifecycle.start();
 			boolean free = new BigDecimal(quote.payable()).signum() == 0;
 			if (free) {
@@ -142,6 +156,12 @@ public class OrderService implements OrderApi {
 			// 零元单可以履约，但不能伪造OrderPaid渠道收款事实。
 			if (free)
 				outbox.append(actor.tenantId(), "order.ready.v1", id, view.version(), view);
+			if (profilingEnabled)
+				PROFILE.info("marketing_order_profile coupon_quota_us={} budget_us={} credit_quota_us={} inventory_us={} execution_us={} order_persistence_us={}",
+						(couponReserved - quotaStarted) / 1000, (budgetReserved - couponReserved) / 1000,
+						(creditReserved - budgetReserved) / 1000, (executionStarted - creditReserved) / 1000,
+						(executionRecorded - executionStarted) / 1000,
+						(System.nanoTime() - executionRecorded) / 1000);
 			return view;
 		});
 	}
@@ -350,14 +370,21 @@ public class OrderService implements OrderApi {
 		if (confirm) {
 			points.confirm(tenant, order, member);
 			coupons.confirm(tenant, order);
+			long couponStarted = System.nanoTime();
+			coupons.confirmCampaign(tenant, order);
+			long couponGranted = System.nanoTime();
 			funding.confirm(tenant, order);
 			entitlements.confirmOrder(tenant, order);
 			inventory.confirm(tenant, order);
 			executions.settleOrder(tenant, order, true);
+			if (profilingEnabled)
+				PROFILE.info("marketing_settle_profile coupon_grant_us={} remaining_settle_us={}",
+						(couponGranted - couponStarted) / 1000, (System.nanoTime() - couponGranted) / 1000);
 		}
 		else {
 			points.release(tenant, order, member);
 			coupons.release(tenant, order);
+			coupons.releaseCampaign(tenant, order);
 			funding.release(tenant, order);
 			entitlements.releaseOrder(tenant, order);
 			inventory.release(tenant, order);

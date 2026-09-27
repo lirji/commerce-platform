@@ -12,7 +12,8 @@ public interface CampaignExecutionMapper {
 	record Row(String orderId, String campaignId, long campaignVersion, String quoteId, String memberId,
 			String storeId, String ruleId, Long ruleVersion, String audienceId, Long audienceVersion,
 			String benefitId, Long benefitVersion, String grantId, String discountAmount, String reasonCode,
-			String status, Instant evaluatedAt, Instant createdAt, Instant updatedAt, long lockVersion) {
+			String status, Instant evaluatedAt, Instant createdAt, Instant updatedAt, long lockVersion,
+			String benefitType) {
 	}
 
 	void insert(@Param("tenant") String tenant, @Param("row") Row row);

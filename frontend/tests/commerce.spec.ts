@@ -127,6 +127,16 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
   await admin
     .getByRole("button", { name: "确认退货入库", exact: true })
     .click();
+  // 退款由事件异步创建；先等待当前订单的真实退款，避免页面初次加载空列表。
+  await expect
+    .poll(
+      async () =>
+        (await api("/admin/refunds")).some(
+          (r: { orderId: string }) => r.orderId === order.orderId,
+        ),
+      { timeout: 30000 },
+    )
+    .toBe(true);
   await nav(admin, "退款核对");
   await admin
     .getByRole("button", { name: "沙箱：模拟退款成功", exact: true })

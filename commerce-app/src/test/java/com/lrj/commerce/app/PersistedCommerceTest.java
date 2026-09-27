@@ -40,6 +40,7 @@ class PersistedCommerceTest {
 		registry.add("spring.datasource.url", () -> url);
 		registry.add("commerce.sandbox-enabled", () -> true);
 		registry.add("commerce.workers-enabled", () -> false);
+		registry.add("commerce.marketing.coupon-enabled", () -> true);
 		registry.add("commerce.marketing.extended-trace-enabled", () -> true);
 		registry.add("spring.datasource.username", () -> System.getenv("COMMERCE_DB_USER"));
 		registry.add("spring.datasource.password", () -> System.getenv("COMMERCE_DB_PASSWORD"));
@@ -68,6 +69,9 @@ class PersistedCommerceTest {
 
 	@Autowired
 	PaymentService paymentService;
+
+	@Autowired
+	com.lrj.commerce.benefit.coupon.api.CouponApi campaignCoupons;
 
 	@Autowired
 	org.springframework.transaction.PlatformTransactionManager transactions;
@@ -1705,6 +1709,158 @@ class PersistedCommerceTest {
 								Map.of("benefitId", "credit", "version", 1))));
 		post("/v1/admin/campaigns", admin, "benefit-campaign", campaign);
 		approveAndPublish("benefit-campaign");
+	}
+
+	private void campaignCoupon(int quota) throws Exception {
+		post("/v1/admin/coupon-definitions", admin, "campaign-coupon-definition",
+				Map.ofEntries(Map.entry("definitionId", "campaign-coupon"), Map.entry("version", 1),
+						Map.entry("storeId", "store1"), Map.entry("name", "支付赠券"),
+						Map.entry("minimumSpend", "0.00"), Map.entry("discountAmount", "2.00"),
+						Map.entry("validFrom", Instant.now().minusSeconds(120).toString()),
+						Map.entry("validTo", Instant.now().plusSeconds(7200).toString()), Map.entry("quota", quota),
+						Map.entry("stackable", false), Map.entry("issuanceMode", "SOURCE_ONLY"),
+						Map.entry("validityDays", 1)));
+		audience("coupon-audience", 1, List.of("m1"));
+		var campaign = new HashMap<>(draft("coupon-campaign", 1, "1.00"));
+		campaign.put("policy", Map.of("audience", Map.of("id", "coupon-audience", "version", 1), "terms",
+				Map.of("percentageBps", 0, "platformFundingBps", 0, "budget", "20.00", "coupon",
+						Map.of("definitionId", "campaign-coupon", "version", 1))));
+		post("/v1/admin/campaigns", admin, "campaign-coupon-create", campaign);
+		approveAndPublish("coupon-campaign");
+	}
+
+	@Test
+	void campaignCouponReservesQuotaAndIssuesOnceAfterPayment() throws Exception {
+		seed();
+		stock("sku1", 2);
+		campaignCoupon(1);
+		var firstQuote = post("/v1/quotes", member, "coupon-q1", basket(1));
+		var first = post("/v1/orders", member, "coupon-o1", orderInput(firstQuote));
+		var before = execution(first, "coupon-campaign");
+		assertEquals("COUPON", before.path("benefitType").asString());
+		assertEquals("RESERVED", before.path("status").asString());
+		assertEquals("HELD", before.path("grantStatus").asString());
+		assertEquals(1, jdbc.queryForObject("SELECT reserved FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		var secondQuote = post("/v1/quotes", member, "coupon-q2", basket(1));
+		assertEquals(409, call("POST", "/v1/orders", member, "coupon-o2", orderInput(secondQuote)).status());
+		payOrder(first);
+		pump();
+		var after = execution(first, "coupon-campaign");
+		assertEquals("GRANTED", after.path("status").asString());
+		assertEquals("ISSUED", after.path("grantStatus").asString());
+		assertEquals(0, jdbc.queryForObject("SELECT reserved FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		assertEquals(1, jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		assertEquals(after.path("grantId").asString(), jdbc.queryForObject("SELECT coupon_id FROM benefit_coupon WHERE tenant_id=? AND source_type='CAMPAIGN' AND source_id=?", String.class, tenant, first.path("orderId").asString()));
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon WHERE tenant_id=? AND source_type='CAMPAIGN'", Integer.class, tenant));
+	}
+
+	@Test
+	void cancelledCampaignCouponReleasesQuotaWithoutIssuing() throws Exception {
+		seed();
+		stock("sku1", 2);
+		campaignCoupon(1);
+		var first = post("/v1/orders", member, "cancel-coupon-o1",
+				orderInput(post("/v1/quotes", member, "cancel-coupon-q1", basket(1))));
+		post("/v1/orders/" + first.path("orderId").asString() + "/cancel", member, "cancel-coupon", null);
+		assertEquals("RELEASED", execution(first, "coupon-campaign").path("status").asString());
+		assertEquals(0, jdbc.queryForObject("SELECT reserved FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		var second = post("/v1/orders", member, "cancel-coupon-o2",
+				orderInput(post("/v1/quotes", member, "cancel-coupon-q2", basket(1))));
+		assertEquals("RESERVED", execution(second, "coupon-campaign").path("status").asString());
+	}
+
+	@Test
+	void campaignCouponLastUnitRaceCannotOverReserve() throws Exception {
+		seed();
+		stock("sku1", 2);
+		campaignCoupon(1);
+		var q1 = post("/v1/quotes", member, "race-coupon-q1", basket(1));
+		var q2 = post("/v1/quotes", member, "race-coupon-q2", basket(1));
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var one = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/orders", member, "race-coupon-o1", orderInput(q1));
+			});
+			var two = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/orders", member, "race-coupon-o2", orderInput(q2));
+			});
+			start.countDown();
+			var outcomes = List.of(one.get(), two.get());
+			assertEquals(List.of(200, 409), outcomes.stream().map(Reply::status).sorted().toList());
+			var winner = outcomes.stream().filter(result -> result.status() == 200).findFirst().orElseThrow().body();
+			assertEquals(1, jdbc.queryForObject("SELECT reserved FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+			assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_campaign_coupon_hold WHERE tenant_id=?", Integer.class, tenant));
+			payOrder(winner);
+			assertEquals("GRANTED", execution(winner, "coupon-campaign").path("status").asString());
+			assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon WHERE tenant_id=? AND source_type='CAMPAIGN'", Integer.class, tenant));
+		}
+	}
+
+	@Test
+	void campaignCouponGrantRollsBackWithTransactionAndThenRecovers() throws Exception {
+		seed();
+		stock("sku1", 1);
+		campaignCoupon(1);
+		var order = post("/v1/orders", member, "coupon-fault-order",
+				orderInput(post("/v1/quotes", member, "coupon-fault-quote", basket(1))));
+		String orderId = order.path("orderId").asString();
+		var transaction = new org.springframework.transaction.support.TransactionTemplate(transactions);
+		assertThrows(IllegalStateException.class, () -> transaction.execute(status -> {
+			campaignCoupons.confirmCampaign(tenant, orderId);
+			throw new IllegalStateException("注入发券后提交前崩溃");
+		}));
+		assertEquals(1, jdbc.queryForObject("SELECT reserved FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon WHERE tenant_id=? AND source_type='CAMPAIGN'", Integer.class, tenant));
+		assertEquals("HELD", execution(order, "coupon-campaign").path("grantStatus").asString());
+		payOrder(order);
+		assertEquals("GRANTED", execution(order, "coupon-campaign").path("status").asString());
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon WHERE tenant_id=? AND source_type='CAMPAIGN'", Integer.class, tenant));
+	}
+
+	@Test
+	void twoNewInstancesIssueOneCampaignCoupon() throws Exception {
+		seed();
+		stock("sku1", 1);
+		campaignCoupon(1);
+		var order = post("/v1/orders", member, "two-coupon-order",
+				orderInput(post("/v1/quotes", member, "two-coupon-quote", basket(1))));
+		var payment = startPayment(order);
+		sandbox(payment, "PAID");
+		reconcile(order);
+		try (var second = new SpringApplicationBuilder(CommerceApplication.class)
+			.initializers(context -> context.getEnvironment().getPropertySources().addFirst(new MapPropertySource(
+					"phase7-coupon-second-instance", Map.of("server.port", 0, "spring.datasource.url",
+							System.getenv("COMMERCE_TEST_DB_URL"), "spring.datasource.username",
+							System.getenv("COMMERCE_DB_USER"), "spring.datasource.password",
+							System.getenv("COMMERCE_DB_PASSWORD"), "commerce.sandbox-enabled", true,
+							"commerce.workers-enabled", false, "commerce.marketing.coupon-enabled", true))))
+			.run()) {
+			int otherPort = ((ServletWebServerApplicationContext) second).getWebServer().getPort();
+			try (var pool = Executors.newFixedThreadPool(2)) {
+				var start = new CountDownLatch(1);
+				var one = pool.submit(() -> {
+					start.await();
+					return call("POST", "/v1/admin/events/pump", admin, null, null);
+				});
+				var two = pool.submit(() -> {
+					start.await();
+					return callAt(otherPort, "POST", "/v1/admin/events/pump", admin, null, null);
+				});
+				start.countDown();
+				assertEquals(200, one.get().status());
+				assertEquals(200, two.get().status());
+			}
+		}
+		pump();
+		pump();
+		assertEquals("GRANTED", execution(order, "coupon-campaign").path("status").asString());
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon WHERE tenant_id=? AND source_type='CAMPAIGN'", Integer.class, tenant));
+		assertEquals(1, jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
 	}
 
 	private JsonNode entitlementOrder() throws Exception {

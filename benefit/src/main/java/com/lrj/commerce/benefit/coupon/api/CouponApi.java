@@ -6,6 +6,12 @@ import java.util.List;
 
 /** 券钱包是资格与占用权威，报价命中不代表已经占到券。 */
 public interface CouponApi {
+	record Ref(String definitionId, long version) {
+	}
+
+	record CampaignHold(String orderId, String memberId, String storeId, String definitionId,
+			long version, String couponId, String status) {
+	}
 
 	record Definition(String definitionId, long version, String storeId, String name, String minimumSpend,
 			String discountAmount, Instant validFrom, Instant validTo, int quota, boolean stackable,
@@ -53,6 +59,19 @@ public interface CouponApi {
 
 	/** 旅程节点来源独立，副作用与检查点由同一事务提交。 */
 	Coupon grantFromJourney(String tenant, String member, String store, String source, String definition, long version);
+
+	/** 仅绑定受控且有相对有效期的券，保证付款晚于活动截止时仍能兑现已预留权益。 */
+	void validateCampaignBinding(String tenant, String store, Ref ref, Instant from, Instant to);
+
+	/** 订单事务预留发行额度；返回稳定券 ID 供营销执行记录关联。 */
+	CampaignHold reserveCampaign(String tenant, String order, String member, String store, Ref ref);
+
+	/** 支付与取消沿用订单事务，保留同一订单来源幂等。 */
+	void confirmCampaign(String tenant, String order);
+
+	void releaseCampaign(String tenant, String order);
+
+	CampaignHold campaignHold(String tenant, String order);
 
 	/** 仅撤销此定向来源的可用券，返回REVOKED或保留原因。 */
 	String revokeTargeted(String tenant, String member, String coupon, String source);

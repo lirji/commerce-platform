@@ -1,6 +1,7 @@
 package com.lrj.commerce.campaign.execution.application;
 
 import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
+import com.lrj.commerce.benefit.coupon.api.CouponApi;
 import com.lrj.commerce.campaign.asset.api.MarketingAssets;
 import com.lrj.commerce.campaign.execution.api.CampaignExecutionApi;
 import com.lrj.commerce.campaign.execution.infrastructure.persistence.CampaignExecutionMapper;
@@ -35,14 +36,16 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 	private final CampaignMapper campaigns;
 
 	private final EntitlementApi entitlements;
+	private final CouponApi coupons;
 
 	private final EventInspection events;
 
 	public CampaignExecutionService(CampaignExecutionMapper executions, CampaignMapper campaigns,
-			EntitlementApi entitlements, EventInspection events) {
+			EntitlementApi entitlements, EventInspection events, CouponApi coupons) {
 		this.executions = executions;
 		this.campaigns = campaigns;
 		this.entitlements = entitlements;
+		this.coupons = coupons;
 		this.events = events;
 	}
 
@@ -83,7 +86,9 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 		MarketingAssets.Ref rule = policy == null ? null : policy.rule();
 		MarketingAssets.Ref audience = policy == null ? null : policy.audience();
 		EntitlementApi.Ref benefit = policy == null || policy.terms() == null ? null : policy.terms().grant();
+		CouponApi.Ref coupon = policy == null || policy.terms() == null ? null : policy.terms().coupon();
 		Inputs.require(Objects.equals(benefit, trigger.benefit()), "报价权益版本与活动不一致");
+		Inputs.require(Objects.equals(coupon, trigger.coupon()), "报价活动券版本与活动不一致");
 		if (audience != null) {
 			Inputs.require(trigger.audiences() != null && trigger.audiences()
 				.stream()
@@ -91,17 +96,26 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 						&& source.match().equals("HIT")), "报价缺少人群命中证据");
 		}
 		var grant = entitlements.orderGrant(actor.tenantId(), trigger.orderId());
+		var couponHold = coupons.campaignHold(actor.tenantId(), trigger.orderId());
 		Inputs.require(benefit == null ? grant == null
 				: grant != null && grant.benefitId().equals(benefit.benefitId())
 						&& grant.benefitVersion() == benefit.version() && grant.memberId().equals(trigger.memberId()),
 				"权益预留与营销决定不一致");
+		Inputs.require(coupon == null ? couponHold == null
+				: couponHold != null && couponHold.status().equals("HELD")
+						&& couponHold.definitionId().equals(coupon.definitionId())
+						&& couponHold.version() == coupon.version()
+						&& couponHold.memberId().equals(trigger.memberId()), "活动券预留与营销决定不一致");
 		var row = new CampaignExecutionMapper.Row(trigger.orderId(), selected.campaignId(), selected.version(),
 				trigger.quoteId(), trigger.memberId(), trigger.storeId(), rule == null ? null : rule.id(),
 				rule == null ? null : rule.version(), audience == null ? null : audience.id(),
-				audience == null ? null : audience.version(), benefit == null ? null : benefit.benefitId(),
-				benefit == null ? null : benefit.version(), grant == null ? null : grant.grantId(),
+				audience == null ? null : audience.version(),
+				benefit != null ? benefit.benefitId() : coupon == null ? null : coupon.definitionId(),
+				benefit != null ? Long.valueOf(benefit.version())
+						: coupon == null ? null : Long.valueOf(coupon.version()),
+				grant != null ? grant.grantId() : couponHold == null ? null : couponHold.couponId(),
 				discount.amount().toPlainString(), trace.reason().name(), "RESERVED", trigger.evaluatedAt(), null,
-				null, 0);
+				null, 0, benefit != null ? "CREDIT" : coupon != null ? "COUPON" : null);
 		executions.insert(actor.tenantId(), row);
 	}
 
@@ -150,8 +164,10 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 	}
 
 	private View view(CampaignExecutionMapper.Row row, String tenant, boolean detail) {
-		var grant = detail && row.grantId() != null ? entitlements.orderGrant(tenant, row.orderId()) : null;
-		var event = detail && row.grantId() != null
+		String benefitType = row.benefitType() == null && row.grantId() != null ? "CREDIT" : row.benefitType();
+		var grant = detail && "CREDIT".equals(benefitType) ? entitlements.orderGrant(tenant, row.orderId()) : null;
+		var couponHold = detail && "COUPON".equals(benefitType) ? coupons.campaignHold(tenant, row.orderId()) : null;
+		var event = detail && "CREDIT".equals(benefitType)
 				? events.latest(tenant, "benefit.grant.requested.v1", row.grantId()) : null;
 		String status = row.status();
 		if (status.equals("GRANT_REQUESTED") && grant != null
@@ -165,9 +181,10 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 		return new View(row.orderId(), row.campaignId(), row.campaignVersion(), row.quoteId(), row.memberId(),
 				row.storeId(), row.ruleId(), row.ruleVersion(), row.audienceId(), row.audienceVersion(), row.benefitId(),
 				row.benefitVersion(), row.grantId(), row.discountAmount(), row.reasonCode(), status,
-				grant == null ? null : grant.status().getCode(), event == null ? null : event.eventId(),
+				grant != null ? grant.status().getCode() : couponHold == null ? null : couponHold.status(),
+				event == null ? null : event.eventId(),
 				event == null ? null : event.status(), event == null ? null : event.failureClass(), row.evaluatedAt(),
-				row.createdAt(), row.updatedAt(), row.lockVersion());
+				row.createdAt(), row.updatedAt(), row.lockVersion(), benefitType);
 	}
 
 	@Override

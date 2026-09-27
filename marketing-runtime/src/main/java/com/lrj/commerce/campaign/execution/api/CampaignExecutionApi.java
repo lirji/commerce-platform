@@ -12,14 +12,16 @@ public interface CampaignExecutionApi {
 
 	record OrderTrigger(String orderId, String quoteId, String memberId, String storeId,
 			DecisionModels.Selection campaign, String campaignDiscount, Instant evaluatedAt,
-			List<DecisionModels.Trace> trace, List<MarketingAssets.Source> audiences, EntitlementApi.Ref benefit) {
+			List<DecisionModels.Trace> trace, List<MarketingAssets.Source> audiences, EntitlementApi.Ref benefit,
+			com.lrj.commerce.benefit.coupon.api.CouponApi.Ref coupon) {
 	}
 
 	record View(String orderId, String campaignId, long campaignVersion, String quoteId, String memberId,
 			String storeId, String ruleId, Long ruleVersion, String audienceId, Long audienceVersion,
 			String benefitId, Long benefitVersion, String grantId, String discountAmount, String reasonCode,
 			String status, String grantStatus, String eventId, String eventStatus, String failureClass,
-			Instant evaluatedAt, Instant createdAt, Instant updatedAt, long lockVersion) {
+			Instant evaluatedAt, Instant createdAt, Instant updatedAt, long lockVersion,
+			String benefitType) {
 	}
 
 	/** 必须与订单消费报价、预算和权益预占处于同一数据库事务。 */

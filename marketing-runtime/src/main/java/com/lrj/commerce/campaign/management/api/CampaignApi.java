@@ -23,10 +23,11 @@ public interface CampaignApi {
 
 	record Terms(int percentageBps, int platformFundingBps, String budget,
 			@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) com.lrj.commerce.benefit.entitlement.api.EntitlementApi.Ref grant,
-			@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) Pricing pricing) {
+			@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) Pricing pricing,
+			@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) com.lrj.commerce.benefit.coupon.api.CouponApi.Ref coupon) {
 		public Terms(int percentageBps, int platformFundingBps, String budget,
 				com.lrj.commerce.benefit.entitlement.api.EntitlementApi.Ref grant) {
-			this(percentageBps, platformFundingBps, budget, grant, null);
+			this(percentageBps, platformFundingBps, budget, grant, null, null);
 		}
 	}
 

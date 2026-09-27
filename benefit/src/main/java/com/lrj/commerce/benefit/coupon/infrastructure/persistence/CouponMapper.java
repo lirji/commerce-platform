@@ -27,6 +27,26 @@ public interface CouponMapper {
 
 	int issue(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
+	int reserveCampaignQuota(@Param("tenant") String tenant, @Param("id") String id,
+			@Param("version") long version);
+
+	int releaseCampaignQuota(@Param("tenant") String tenant, @Param("id") String id,
+			@Param("version") long version);
+
+	int issueCampaignQuota(@Param("tenant") String tenant, @Param("id") String id,
+			@Param("version") long version);
+
+	void insertCampaignHold(@Param("tenant") String tenant, @Param("order") String order,
+			@Param("member") String member, @Param("store") String store, @Param("ref") Ref ref,
+			@Param("coupon") String coupon);
+
+	CampaignHold campaignHold(@Param("tenant") String tenant, @Param("order") String order);
+
+	CampaignHold lockCampaignHold(@Param("tenant") String tenant, @Param("order") String order);
+
+	int campaignHoldStatus(@Param("tenant") String tenant, @Param("order") String order,
+			@Param("expected") String expected, @Param("target") String target);
+
 	Coupon bySource(@Param("tenant") String tenant, @Param("source") String source, @Param("type") String type);
 
 	void sourceCoupon(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id,
