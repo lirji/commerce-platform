@@ -1,6 +1,6 @@
 package com.lrj.commerce.inventory.api;
 
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
 /** 可售额度与仓内实物库存分开；本域最终决定能否预占。 */

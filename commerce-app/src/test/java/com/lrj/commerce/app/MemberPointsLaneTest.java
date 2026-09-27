@@ -1,7 +1,7 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.member.api.MemberPointsApi;
-import com.lrj.commerce.member.application.MemberPointsService;
+import com.lrj.commerce.member.points.api.MemberPointsApi;
+import com.lrj.commerce.member.points.application.MemberPointsService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

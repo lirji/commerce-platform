@@ -1,10 +1,9 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.Commands;
-import com.lrj.commerce.runtime.EventDispatcher;
-import com.lrj.commerce.runtime.JsonCodec;
-import com.lrj.commerce.runtime.api.*;
-import com.lrj.commerce.runtime.persistence.EventMapper;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
+import com.lrj.commerce.runtime.event.persistence.EventMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.api.identity.Actor;
 
 /**
  * 调度契约回归：每个用例使用本轮专属事件类型和独立调度器，历史残留不参与调度。 以事件数预算代替时间预算，使每轮处理量确定，断言不依赖机器速度。

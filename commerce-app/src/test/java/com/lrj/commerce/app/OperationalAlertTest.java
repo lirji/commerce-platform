@@ -1,9 +1,8 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.app.runtime.BackgroundRuntime;
-import com.lrj.commerce.app.runtime.LaneMonitor;
-import com.lrj.commerce.app.runtime.OperationalAlertPublisher;
-import com.lrj.commerce.runtime.*;
+import com.lrj.commerce.app.runtime.monitoring.BackgroundRuntime;
+import com.lrj.commerce.app.runtime.monitoring.LaneMonitor;
+import com.lrj.commerce.app.runtime.monitoring.OperationalAlertPublisher;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +12,11 @@ import java.time.Instant;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.event.Outbox;
+import com.lrj.commerce.runtime.replay.EventReplay;
+import com.lrj.commerce.runtime.retention.RetentionLane;
+import com.lrj.commerce.runtime.work.WorkLanes;
 
 /** §31 告警出口：固定代码经供应商无关的接口发布；默认实现只写日志；发布失败不影响健康评估与车道。 */
 @SpringBootTest

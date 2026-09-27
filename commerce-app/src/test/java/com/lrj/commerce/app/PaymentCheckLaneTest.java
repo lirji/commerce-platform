@@ -1,13 +1,10 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.payment.infrastructure.adapter.SandboxPaymentChannel;
-import com.lrj.commerce.payment.infrastructure.persistence.PaymentMapper;
+import com.lrj.commerce.payment.charge.infrastructure.adapter.SandboxPaymentChannel;
+import com.lrj.commerce.payment.charge.infrastructure.persistence.PaymentMapper;
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.ordering.api.OrderApi;
-import com.lrj.commerce.payment.api.*;
-import com.lrj.commerce.payment.application.PaymentService;
-import com.lrj.commerce.payment.infrastructure.persistence.*;
-import com.lrj.commerce.runtime.*;
+import com.lrj.commerce.ordering.order.api.OrderApi;
+import com.lrj.commerce.payment.charge.application.PaymentService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +16,12 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.payment.charge.api.PaymentApi;
+import com.lrj.commerce.payment.charge.application.port.PaymentChannel;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.event.Outbox;
+import com.lrj.commerce.runtime.work.RetryPolicy;
+import com.lrj.commerce.runtime.work.WorkLanes;
 
 /**
  * 支付核对车道：渠道暂不可用不消耗五次自动核对（旧实现约2分钟就转人工），恢复后确认真实结果；

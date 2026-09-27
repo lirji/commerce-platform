@@ -1,9 +1,9 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.app.runtime.BackgroundRuntime;
+import com.lrj.commerce.app.runtime.monitoring.BackgroundRuntime;
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.runtime.JsonCodec;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

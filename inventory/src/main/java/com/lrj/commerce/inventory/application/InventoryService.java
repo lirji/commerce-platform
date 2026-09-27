@@ -2,14 +2,15 @@ package com.lrj.commerce.inventory.application;
 
 import com.lrj.commerce.inventory.api.InventoryApi;
 import com.lrj.commerce.inventory.infrastructure.persistence.InventoryMapper;
-import com.lrj.commerce.catalog.api.CatalogApi;
-import com.lrj.commerce.store.api.StoreApi;
-import com.lrj.commerce.runtime.Commands;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.catalog.assortment.api.CatalogApi;
+import com.lrj.commerce.store.management.api.StoreApi;
+import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.kernel.*;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.Inputs;
 
 /** 库存没有远程调用，在订单事务内有条件扣减防止超卖。 */
 @Service

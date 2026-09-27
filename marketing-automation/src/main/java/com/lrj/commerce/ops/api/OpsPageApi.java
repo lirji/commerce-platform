@@ -1,8 +1,8 @@
 package com.lrj.commerce.ops.api;
 
-import com.lrj.commerce.runtime.api.Actor;
-import com.lrj.commerce.campaign.api.CampaignApi;
-import com.lrj.commerce.benefit.api.CouponApi;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.campaign.management.api.CampaignApi;
+import com.lrj.commerce.benefit.coupon.api.CouponApi;
 import com.lrj.commerce.journey.api.JourneyApi;
 import java.util.List;
 

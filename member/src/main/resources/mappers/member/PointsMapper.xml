@@ -1,45 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.lrj.commerce.member.infrastructure.persistence.PointsMapper">
+<mapper namespace="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper">
   <insert id="policy">INSERT INTO member_point_policy(tenant_id,version,effective_from,policy_json) VALUES(#{tenant},#{p.version},#{p.effectiveFrom},#{json})</insert>
-  <select id="effective" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$PolicyRow">SELECT CAST(policy_json AS CHAR) policy_json FROM member_point_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
-  <select id="policies" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$PolicyRow">SELECT CAST(policy_json AS CHAR) policy_json FROM member_point_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
+  <select id="effective" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$PolicyRow">SELECT CAST(policy_json AS CHAR) policy_json FROM member_point_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
+  <select id="policies" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$PolicyRow">SELECT CAST(policy_json AS CHAR) policy_json FROM member_point_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
   <insert id="ensure">INSERT INTO member_point_account(tenant_id,member_id) VALUES(#{tenant},#{member}) ON DUPLICATE KEY UPDATE member_id=member_id</insert>
-  <select id="account" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Account">SELECT debt,version FROM member_point_account WHERE tenant_id=#{tenant} AND member_id=#{member} FOR UPDATE</select>
+  <select id="account" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Account">SELECT debt,version FROM member_point_account WHERE tenant_id=#{tenant} AND member_id=#{member} FOR UPDATE</select>
   <update id="accountChange">UPDATE member_point_account SET debt=#{debt},version=version+1 WHERE tenant_id=#{tenant} AND member_id=#{member} AND version=#{expected}</update>
-  <select id="walletRead" resultType="com.lrj.commerce.member.api.MemberPointsApi$Wallet">
+  <select id="walletRead" resultType="com.lrj.commerce.member.points.api.MemberPointsApi$Wallet">
   SELECT m.member_id,GREATEST(COALESCE(SUM(IF(l.expires_at&gt;#{at},l.remaining,0)),0)-COALESCE(a.debt,0),0) available,
    COALESCE(SUM(l.held),0) held,COALESCE(a.debt,0) debt,COALESCE(SUM(IF(l.expires_at&gt;#{at},l.remaining,0)),0) credit,COALESCE(a.version,0) version
   FROM member_record m LEFT JOIN member_point_account a ON a.tenant_id=m.tenant_id AND a.member_id=m.member_id
   LEFT JOIN member_point_lot l ON l.tenant_id=m.tenant_id AND l.member_id=m.member_id AND l.active_balance=TRUE
   WHERE m.tenant_id=#{tenant} AND m.member_id=#{member} GROUP BY m.member_id,a.debt,a.version
  </select>
-  <select id="totals" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Totals">SELECT COALESCE(SUM(IF(expires_at&gt;#{at},remaining,0)),0) credit,COALESCE(SUM(held),0) held FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE FOR UPDATE</select>
-  <select id="source" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Source">SELECT member_id,CAST(paid AS CHAR) paid,completed,policy_version,CAST(earn_rate AS CHAR) earn_rate,expiry_days,contribution FROM member_point_order WHERE tenant_id=#{tenant} AND order_id=#{order} FOR UPDATE</select>
+  <select id="totals" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Totals">SELECT COALESCE(SUM(IF(expires_at&gt;#{at},remaining,0)),0) credit,COALESCE(SUM(held),0) held FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE FOR UPDATE</select>
+  <select id="source" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Source">SELECT member_id,CAST(paid AS CHAR) paid,completed,policy_version,CAST(earn_rate AS CHAR) earn_rate,expiry_days,contribution FROM member_point_order WHERE tenant_id=#{tenant} AND order_id=#{order} FOR UPDATE</select>
   <insert id="sourceInsert">INSERT INTO member_point_order(tenant_id,order_id,member_id,paid,completed,policy_version,earn_rate,expiry_days) VALUES(#{tenant},#{f.orderId},#{f.memberId},#{f.paid},FALSE,#{version},#{rate},#{days})</insert>
   <update id="sourceChange">UPDATE member_point_order SET completed=#{completed},contribution=#{contribution} WHERE tenant_id=#{tenant} AND order_id=#{order}</update>
-  <select id="refund" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Refund">SELECT order_id,CAST(amount AS CHAR) amount FROM member_point_refund WHERE tenant_id=#{tenant} AND refund_id=#{id} FOR UPDATE</select>
+  <select id="refund" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Refund">SELECT order_id,CAST(amount AS CHAR) amount FROM member_point_refund WHERE tenant_id=#{tenant} AND refund_id=#{id} FOR UPDATE</select>
   <insert id="refundInsert">INSERT INTO member_point_refund(tenant_id,refund_id,order_id,amount) VALUES(#{tenant},#{f.refundId},#{f.orderId},#{f.refundAmount})</insert>
   <select id="refundTotal" resultType="string">SELECT CAST(COALESCE(SUM(amount),0) AS CHAR) FROM member_point_refund WHERE tenant_id=#{tenant} AND order_id=#{order} FOR UPDATE</select>
   <sql id="lot">lot_id,member_id,policy_version,credited,remaining,held,expired,expires_at</sql>
-  <select id="lot" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND lot_id=#{id} FOR UPDATE</select>
+  <select id="lot" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND lot_id=#{id} FOR UPDATE</select>
   <insert id="insertLot">INSERT INTO member_point_lot(tenant_id,lot_id,member_id,policy_version,credited,remaining,held,expired,expires_at) VALUES(#{tenant},#{lot.lotId},#{lot.memberId},#{lot.policyVersion},#{lot.credited},#{lot.remaining},#{lot.held},#{lot.expired},#{lot.expiresAt})</insert>
   <update id="changeLot">UPDATE member_point_lot SET remaining=#{remaining},held=#{held},expired=#{expired} WHERE tenant_id=#{tenant} AND lot_id=#{id}</update>
-  <select id="availableLots" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE AND remaining&gt;0 AND expires_at&gt;#{at} ORDER BY expires_at,lot_id LIMIT #{limit} FOR UPDATE</select>
-  <select id="expiredLots" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE AND remaining&gt;0 AND expires_at&lt;=#{at} ORDER BY expires_at,lot_id LIMIT #{limit} FOR UPDATE</select>
+  <select id="availableLots" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE AND remaining&gt;0 AND expires_at&gt;#{at} ORDER BY expires_at,lot_id LIMIT #{limit} FOR UPDATE</select>
+  <select id="expiredLots" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE AND remaining&gt;0 AND expires_at&lt;=#{at} ORDER BY expires_at,lot_id LIMIT #{limit} FOR UPDATE</select>
   <!-- 退避或隔离中的批次不参与到期：一个持续失败的批次只按自己的退避重试，不占用该租户后续批次的处理机会。 -->
   <sql id="notBlocked">NOT EXISTS(SELECT 1 FROM member_work_retry r WHERE r.tenant_id=l.tenant_id AND r.lane='points' AND r.item_id=l.lot_id AND (r.quarantined_at IS NOT NULL OR r.retry_at&gt;#{at}))</sql>
   <!-- 租户内取数固定走(有余额,租户,到期)索引：优化器在租户历史批次多或租户无数据时可能选主键，按主键会扫描该租户全部历史批次。 -->
-  <select id="due" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Due">SELECT l.tenant_id,l.member_id,l.lot_id,r.attempts,r.transient_attempts FROM member_point_lot l FORCE INDEX(ix_point_tenant_expiry)
+  <select id="due" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Due">SELECT l.tenant_id,l.member_id,l.lot_id,r.attempts,r.transient_attempts FROM member_point_lot l FORCE INDEX(ix_point_tenant_expiry)
   LEFT JOIN member_work_retry r ON r.tenant_id=l.tenant_id AND r.lane='points' AND r.item_id=l.lot_id
   WHERE l.tenant_id=#{tenant} AND l.active_balance=TRUE AND l.remaining&gt;0 AND l.expires_at&lt;=#{at} AND (r.item_id IS NULL OR (r.quarantined_at IS NULL AND r.retry_at&lt;=#{at}))
   ORDER BY l.expires_at,l.lot_id LIMIT #{limit}</select>
   <!-- 沿(有余额,租户,到期)索引的租户顺序扫描、取满即停，不扫已过期清零批次的历史；退避与隔离中的批次按主键排除。 -->
   <select id="dueTenants" resultType="string">SELECT DISTINCT l.tenant_id FROM member_point_lot l FORCE INDEX(ix_point_tenant_expiry) WHERE l.active_balance=TRUE AND l.remaining&gt;0 AND l.expires_at&lt;=#{at} AND l.tenant_id&gt;#{after} AND <include refid="notBlocked"/> ORDER BY l.tenant_id LIMIT #{limit}</select>
-  <select id="backlog" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Backlog">SELECT COUNT(*) due,MIN(l.expires_at) oldest_due FROM member_point_lot l FORCE INDEX(idx_point_active_expiry) WHERE l.active_balance=TRUE AND l.remaining&gt;0 AND l.expires_at&lt;=#{at} AND <include refid="notBlocked"/></select>
+  <select id="backlog" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Backlog">SELECT COUNT(*) due,MIN(l.expires_at) oldest_due FROM member_point_lot l FORCE INDEX(idx_point_active_expiry) WHERE l.active_balance=TRUE AND l.remaining&gt;0 AND l.expires_at&lt;=#{at} AND <include refid="notBlocked"/></select>
   <select id="expiryDue" resultType="boolean">SELECT COUNT(*)&gt;0 FROM member_point_lot WHERE tenant_id=#{tenant} AND lot_id=#{lot} AND remaining&gt;0 AND expires_at&lt;=#{at}</select>
   <insert id="entry">INSERT INTO member_point_ledger(tenant_id,member_id,action,source_id,delta,available,debt,policy_version,reason,created_at,held) VALUES(#{tenant},#{member},#{action},#{source},#{delta},#{wallet.available},#{wallet.debt},#{policy},#{reason},#{at},#{wallet.held})</insert>
-  <select id="ledger" resultType="com.lrj.commerce.member.api.MemberPointsApi$Entry">SELECT sequence_id,action,source_id,delta,available,debt,policy_version,reason,created_at,held FROM member_point_ledger WHERE tenant_id=#{tenant} AND member_id=#{member} AND sequence_id&gt;#{after} ORDER BY sequence_id LIMIT #{limit}</select>
-  <select id="exchange" resultType="com.lrj.commerce.member.infrastructure.persistence.PointsMapper$Exchange">SELECT member_id,points FROM member_point_exchange WHERE tenant_id=#{tenant} AND redemption_id=#{id} FOR UPDATE</select>
+  <select id="ledger" resultType="com.lrj.commerce.member.points.api.MemberPointsApi$Entry">SELECT sequence_id,action,source_id,delta,available,debt,policy_version,reason,created_at,held FROM member_point_ledger WHERE tenant_id=#{tenant} AND member_id=#{member} AND sequence_id&gt;#{after} ORDER BY sequence_id LIMIT #{limit}</select>
+  <select id="exchange" resultType="com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper$Exchange">SELECT member_id,points FROM member_point_exchange WHERE tenant_id=#{tenant} AND redemption_id=#{id} FOR UPDATE</select>
   <insert id="exchangeInsert">INSERT INTO member_point_exchange(tenant_id,redemption_id,member_id,points) VALUES(#{tenant},#{id},#{member},#{points})</insert>
 </mapper>

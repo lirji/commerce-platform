@@ -1,10 +1,8 @@
 package com.lrj.commerce.app;
 
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.member.api.MemberPointsApi;
-import com.lrj.commerce.member.infrastructure.persistence.WorkRetryMapper;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.member.points.api.MemberPointsApi;
+import com.lrj.commerce.member.recovery.infrastructure.persistence.WorkRetryMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +15,10 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.recovery.RecoverableWork;
+import com.lrj.commerce.runtime.recovery.RuntimeRecovery;
+import com.lrj.commerce.runtime.work.RetryPolicy;
 
 /**
  * P4.3 隔离恢复：查看 → 按分类筛选 → 指定标识决定 → 执行 → 审计。恢复只作用于本租户、只接受显式标识，

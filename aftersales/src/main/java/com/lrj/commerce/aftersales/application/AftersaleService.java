@@ -2,23 +2,27 @@ package com.lrj.commerce.aftersales.application;
 
 import com.lrj.commerce.aftersales.api.AftersaleApi;
 import com.lrj.commerce.aftersales.infrastructure.persistence.AftersaleMapper;
-import com.lrj.commerce.ordering.api.OrderApi;
+import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.fulfillment.api.FulfillmentApi;
-import com.lrj.commerce.payment.api.RefundApi;
+import com.lrj.commerce.payment.refund.api.RefundApi;
 import com.lrj.commerce.inventory.api.InventoryApi;
-import com.lrj.commerce.member.api.MemberApi;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.math.*;
 import java.util.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.Inputs;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.event.Outbox;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 申请、退货、退款三个事实分开，只有可信退款成功消费后才完成售后。 */
 @Service
 public class AftersaleService implements AftersaleApi, EventHandler {
 
-	private final com.lrj.commerce.member.api.PointsSpendApi points;
+	private final com.lrj.commerce.member.points.spend.api.PointsSpendApi points;
 
 	private final AftersaleMapper mapper;
 
@@ -38,7 +42,7 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 
 	public AftersaleService(AftersaleMapper mapper, OrderApi orders, FulfillmentApi fulfillment, RefundApi refunds,
 			InventoryApi inventory, MemberApi members, Commands commands, Outbox outbox,
-			com.lrj.commerce.member.api.PointsSpendApi points) {
+			com.lrj.commerce.member.points.spend.api.PointsSpendApi points) {
 		this.points = points;
 		this.mapper = mapper;
 		this.orders = orders;
@@ -175,11 +179,11 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 
 	/** 重放分类见phase4重放安全矩阵。 */
 	@Override
-	public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety() {
-		return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable(
+	public com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety replaySafety() {
+		return com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety.notReplayable(
 				"售后单状态、版本与积分返还主键使重复执行无效；会返还积分并解除履约阻断，属积分副作用",
-				com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE,
-				com.lrj.commerce.runtime.api.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);
+				com.lrj.commerce.runtime.api.event.EventHandler.SideEffect.IDEMPOTENT_WRITE,
+				com.lrj.commerce.runtime.api.event.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);
 	}
 
 	public Set<String> types() {

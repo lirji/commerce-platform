@@ -1,8 +1,8 @@
 package com.lrj.commerce.journey.api;
 
-import com.lrj.commerce.runtime.api.Actor;
-import com.lrj.commerce.campaign.api.RuleNode;
-import com.lrj.commerce.benefit.api.EntitlementApi;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.campaign.rule.api.RuleNode;
+import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
 import java.time.Instant;
 import java.util.List;
 

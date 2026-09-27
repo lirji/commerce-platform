@@ -1,6 +1,6 @@
 package com.lrj.commerce.insight.api;
 
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import java.time.Instant;
 import java.util.List;
 

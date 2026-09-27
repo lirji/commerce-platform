@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,10 +45,10 @@ class MemberGrowthTest {
 	Commands commands;
 
 	@Autowired
-	com.lrj.commerce.payment.api.PaymentApi payments;
+	com.lrj.commerce.payment.charge.api.PaymentApi payments;
 
 	@Autowired
-	com.lrj.commerce.payment.api.RefundApi refunds;
+	com.lrj.commerce.payment.refund.api.RefundApi refunds;
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
 
@@ -115,7 +116,7 @@ class MemberGrowthTest {
 	}
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberGrowthApi growth;
+	com.lrj.commerce.member.growth.api.MemberGrowthApi growth;
 
 	private void policy(long version, String rate, Instant effective) throws Exception {
 		post("/v1/admin/member-growth/policies", admin, "policy" + version, Map.of("version", version, "effectiveFrom",
@@ -123,7 +124,7 @@ class MemberGrowthTest {
 				List.of(Map.of("code", "BASIC", "minimumGrowth", 0), Map.of("code", "GOLD", "minimumGrowth", 20))));
 	}
 
-	private void observe(String key, com.lrj.commerce.member.api.MemberGrowthApi.OrderFact fact) {
+	private void observe(String key, com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact fact) {
 		commands.run(new Actor(tenant, "admin", Actor.Role.ADMIN), "test.growth.fact", key, fact, String.class, () -> {
 			growth.observe(tenant, fact);
 			return "ok";
@@ -139,24 +140,24 @@ class MemberGrowthTest {
 		seed();
 		Instant ordered = Instant.now();
 		policy(1, "2.00", ordered.minusSeconds(1));
-		var early = new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00", ordered, false,
-				"refund1", "5.00");
+		var early = new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00", ordered,
+				false, "refund1", "5.00");
 		observe("early", early);
 		assertEquals(0, wallet().path("growth").asLong());
-		observe("complete", new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00", ordered,
-				true, null, null));
+		observe("complete", new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00",
+				ordered, true, null, null));
 		assertEquals(40, wallet().path("growth").asLong());
 		assertEquals("GOLD", wallet().path("memberLevel").asString());
 		observe("repeat", early);
 		assertEquals(40, wallet().path("growth").asLong());
 		policy(2, "10.00", Instant.now());
-		observe("refund2", new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00", ordered,
-				true, "refund2", "15.00"));
+		observe("refund2", new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00",
+				ordered, true, "refund2", "15.00"));
 		assertEquals(10, wallet().path("growth").asLong());
 		assertEquals("BASIC", wallet().path("memberLevel").asString());
 		assertEquals("5.00", wallet().path("netSpend").asString());
 		assertEquals(2, call("GET", "/v1/members/me/growth/ledger", member, null, null).body().size());
-		var old = new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("historical", "m1", "100.00",
+		var old = new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("historical", "m1", "100.00",
 				ordered.minusSeconds(3600), true, null, null);
 		observe("historical", old);
 		assertEquals(10, wallet().path("growth").asLong());
@@ -171,13 +172,13 @@ class MemberGrowthTest {
 		seed();
 		Instant at = Instant.now();
 		policy(1, "1.00", at.minusSeconds(1));
-		observe("completed", new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00", at,
-				true, null, null));
+		observe("completed", new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00",
+				at, true, null, null));
 		var input = Map.of("expectedVersion", wallet().path("version").asLong(), "delta", -20, "reason", "人工纠错");
 		var adjusted = post("/v1/admin/member-growth/m1/adjust", admin, "adjust", input);
 		assertEquals(adjusted, post("/v1/admin/member-growth/m1/adjust", admin, "adjust", input));
 		assertEquals(409, call("POST", "/v1/admin/member-growth/m1/adjust", admin, "stale", input).status());
-		var refund = new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00", at, true,
+		var refund = new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("order1", "m1", "25.00", at, true,
 				"refund1", "25.00");
 		try (var pool = Executors.newFixedThreadPool(2)) {
 			var a = pool.submit(() -> observe("refund-a", refund));
@@ -239,7 +240,7 @@ class MemberGrowthTest {
 	}
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberBehaviorApi behavior;
+	com.lrj.commerce.member.behavior.api.MemberBehaviorApi behavior;
 
 	/** 两个事务先建立旧快照再竞争会员锁，验证不同退款不会相互覆盖。 */
 	@Test
@@ -247,8 +248,8 @@ class MemberGrowthTest {
 		seed();
 		Instant at = Instant.now();
 		policy(1, "1.00", at.minusSeconds(1));
-		observe("initial", new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("rr-order", "m1", "100.00", at,
-				true, null, null));
+		observe("initial", new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("rr-order", "m1", "100.00",
+				at, true, null, null));
 		var barrier = new CyclicBarrier(2);
 		try (var pool = Executors.newFixedThreadPool(2)) {
 			var jobs = new ArrayList<Future<String>>();
@@ -265,8 +266,9 @@ class MemberGrowthTest {
 							catch (Exception e) {
 								throw new RuntimeException(e);
 							}
-							growth.observe(tenant, new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("rr-order",
-									"m1", "100.00", at, true, "rr-refund-" + index, index == 0 ? "20.00" : "30.00"));
+							growth.observe(tenant,
+									new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("rr-order", "m1",
+											"100.00", at, true, "rr-refund-" + index, index == 0 ? "20.00" : "30.00"));
 							behavior.projectOrder(tenant, "rr-order", at);
 							return "ok";
 						})));

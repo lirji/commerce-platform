@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -131,10 +132,10 @@ class LifecycleJourneyTest {
 	TestClock testClock;
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberGrowthApi growth;
+	com.lrj.commerce.member.growth.api.MemberGrowthApi growth;
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberBehaviorApi behavior;
+	com.lrj.commerce.member.behavior.api.MemberBehaviorApi behavior;
 
 	private void setup() throws Exception {
 		seed();
@@ -196,7 +197,8 @@ class LifecycleJourneyTest {
 
 	private void fact(String id, int days, String amount) {
 		var at = testClock.instant().minusSeconds(days * 86400L);
-		var f = new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact(id, "m1", amount, at, true, null, null);
+		var f = new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact(id, "m1", amount, at, true, null,
+				null);
 		commands.run(new Actor(tenant, "admin", Actor.Role.ADMIN), "test.lifecycle.fact", id, f, String.class, () -> {
 			growth.observe(tenant, f);
 			behavior.projectOrder(tenant, id, at);
@@ -231,9 +233,9 @@ class LifecycleJourneyTest {
 		testClock.at = Instant.parse("2028-02-29T08:00:00Z");
 		profile("m1", "02-29", true, 0);
 		post("/v1/admin/coupon-definitions", admin, "coupon",
-				new com.lrj.commerce.benefit.api.CouponApi.Definition("birthday", 1, "store1", "生日礼券", "0.00", "5.00",
-						testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(5 * 86400), 10, true,
-						10000, "SOURCE_ONLY", 7));
+				new com.lrj.commerce.benefit.coupon.api.CouponApi.Definition("birthday", 1, "store1", "生日礼券", "0.00",
+						"5.00", testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(5 * 86400), 10,
+						true, 10000, "SOURCE_ONLY", 7));
 		publish("birthday", "BIRTHDAY", List.of(Map.of("id", "coupon", "kind", "COUPON", "next", "end", "coupon",
 				Map.of("definitionId", "birthday", "version", 1)), node("end", "END", null)));
 		pump();
@@ -272,8 +274,8 @@ class LifecycleJourneyTest {
 		assertEquals(2, instances().size());
 		for (var row : instances())
 			assertEquals("m1", row.path("memberId").asString());
-		var f = new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact("old", "m1", "100.00", originalAt, true,
-				"full", "100.00");
+		var f = new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact("old", "m1", "100.00", originalAt,
+				true, "full", "100.00");
 		commands.run(new Actor(tenant, "admin", Actor.Role.ADMIN), "test.lifecycle.refund", "full", f, String.class,
 				() -> {
 					growth.observe(tenant, f);
@@ -389,14 +391,14 @@ class LifecycleJourneyTest {
 		pump();
 		pump();
 		post("/v1/admin/coupon-definitions", admin, "coupon",
-				new com.lrj.commerce.benefit.api.CouponApi.Definition("target", 1, "store1", "分析券", "0.00", "5.00",
-						testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(86400), 10, true, 10000,
-						"SOURCE_ONLY", 7));
-		post("/v1/admin/audiences", admin, "audience", new com.lrj.commerce.campaign.api.MarketingAssets.Audience(
+				new com.lrj.commerce.benefit.coupon.api.CouponApi.Definition("target", 1, "store1", "分析券", "0.00",
+						"5.00", testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(86400), 10, true,
+						10000, "SOURCE_ONLY", 7));
+		post("/v1/admin/audiences", admin, "audience", new com.lrj.commerce.campaign.asset.api.MarketingAssets.Audience(
 				"group", 1, "人群", "TEST", testClock.instant(), testClock.instant().plusSeconds(7200), List.of("m1")));
 		post("/v1/admin/coupon-deliveries", admin, "batch",
-				new com.lrj.commerce.journey.api.CouponDeliveryApi.Create("batch", "store1", "比较批次", "target", 1,
-						new com.lrj.commerce.campaign.api.MarketingAssets.Ref("group", 1),
+				new com.lrj.commerce.journey.delivery.api.CouponDeliveryApi.Create("batch", "store1", "比较批次", "target",
+						1, new com.lrj.commerce.campaign.asset.api.MarketingAssets.Ref("group", 1),
 						testClock.instant().plusSeconds(3600), 1));
 		post("/v1/admin/coupon-deliveries/pump", admin, null, null);
 		String coupon = call("GET", "/v1/coupons", member, null, null).body().get(0).path("couponId").asString();

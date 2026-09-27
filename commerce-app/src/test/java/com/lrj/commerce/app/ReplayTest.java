@@ -1,11 +1,9 @@
 package com.lrj.commerce.app;
 
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
-import com.lrj.commerce.runtime.api.EventHandler.ReplaySafety;
-import com.lrj.commerce.runtime.api.EventHandler.SideEffect;
-import com.lrj.commerce.runtime.persistence.ReplayMapper;
+import com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety;
+import com.lrj.commerce.runtime.api.event.EventHandler.SideEffect;
+import com.lrj.commerce.runtime.replay.persistence.ReplayMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +18,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.recovery.RecoveryAudit;
+import com.lrj.commerce.runtime.replay.EventReplay;
+import com.lrj.commerce.runtime.replay.ReplayGate;
+import com.lrj.commerce.runtime.work.WorkLanes;
 
 /**
  * P4.4/P4.5 重放：安全门由消费者声明的副作用分类驱动，资金、外部、不可逆副作用与未分类一律拒绝；

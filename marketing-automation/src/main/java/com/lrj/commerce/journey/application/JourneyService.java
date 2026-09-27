@@ -2,14 +2,12 @@ package com.lrj.commerce.journey.application;
 
 import com.lrj.commerce.journey.api.JourneyApi;
 import com.lrj.commerce.journey.infrastructure.persistence.JourneyMapper;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
 import com.lrj.commerce.kernel.*;
-import com.lrj.commerce.member.api.MemberApi;
-import com.lrj.commerce.store.api.StoreApi;
-import com.lrj.commerce.benefit.api.EntitlementApi;
+import com.lrj.commerce.member.profile.api.MemberApi;
+import com.lrj.commerce.store.management.api.StoreApi;
+import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
 import com.lrj.commerce.aftersales.api.AftersaleApi;
-import com.lrj.commerce.ordering.api.OrderApi;
+import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.marketing.api.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.*;
@@ -17,24 +15,34 @@ import org.springframework.transaction.annotation.*;
 import org.springframework.transaction.support.TransactionTemplate;
 import java.time.*;
 import java.util.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.Inputs;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.recovery.RecoveryAudit;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
+import com.lrj.commerce.runtime.work.FailureClass;
+import com.lrj.commerce.runtime.work.RetryPolicy;
+import com.lrj.commerce.runtime.work.TenantRotation;
+import com.lrj.commerce.runtime.work.WorkLanes;
 
 /** 单节点效果与检查点同事务，等待靠数据库时间点恢复，不占用睡眠线程。 */
 @Service
 public class JourneyService implements JourneyApi, EventHandler {
 
-	private final com.lrj.commerce.member.api.MemberBehaviorApi behavior;
+	private final com.lrj.commerce.member.behavior.api.MemberBehaviorApi behavior;
 
-	private final com.lrj.commerce.benefit.api.CouponApi coupons;
+	private final com.lrj.commerce.benefit.coupon.api.CouponApi coupons;
 
 	private final JourneyMapper mapper;
 
-	private final com.lrj.commerce.campaign.api.MarketingAssets assets;
+	private final com.lrj.commerce.campaign.asset.api.MarketingAssets assets;
 
 	private final Commands commands;
 
 	private final MemberApi members;
 
-	private final com.lrj.commerce.member.api.MemberGrowthApi memberGrowth;
+	private final com.lrj.commerce.member.growth.api.MemberGrowthApi memberGrowth;
 
 	private final StoreApi stores;
 
@@ -58,10 +66,10 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	public JourneyService(JourneyMapper mapper, Commands commands, MemberApi members, StoreApi stores,
 			EntitlementApi benefits, OrderApi orders, AftersaleApi aftersales, RuleDecisionPort rules, Clock clock,
-			PlatformTransactionManager manager, com.lrj.commerce.member.api.MemberGrowthApi memberGrowth,
-			com.lrj.commerce.campaign.api.MarketingAssets assets,
-			com.lrj.commerce.member.api.MemberBehaviorApi behavior, com.lrj.commerce.benefit.api.CouponApi coupons,
-			WorkLanes lanes) {
+			PlatformTransactionManager manager, com.lrj.commerce.member.growth.api.MemberGrowthApi memberGrowth,
+			com.lrj.commerce.campaign.asset.api.MarketingAssets assets,
+			com.lrj.commerce.member.behavior.api.MemberBehaviorApi behavior,
+			com.lrj.commerce.benefit.coupon.api.CouponApi coupons, WorkLanes lanes) {
 		this.behavior = behavior;
 		this.coupons = coupons;
 		this.assets = assets;
@@ -310,10 +318,10 @@ public class JourneyService implements JourneyApi, EventHandler {
 	}
 
 	/** 运维恢复审计：重试、取消等对停止工作的人工干预与状态变更同一事务记录。 */
-	private com.lrj.commerce.runtime.RecoveryAudit audit;
+	private com.lrj.commerce.runtime.recovery.RecoveryAudit audit;
 
 	@org.springframework.beans.factory.annotation.Autowired
-	void audit(com.lrj.commerce.runtime.RecoveryAudit audit) {
+	void audit(com.lrj.commerce.runtime.recovery.RecoveryAudit audit) {
 		this.audit = audit;
 	}
 
@@ -336,7 +344,7 @@ public class JourneyService implements JourneyApi, EventHandler {
 			audit.record(actor, "journey." + action, key, "journey.instance", id,
 					action.equals("retry") ? "RETRY" : "CANCEL", old.status().name(),
 					action.equals("retry") ? "RUNNING" : "CANCELLED", null, null,
-					com.lrj.commerce.runtime.RecoveryAudit.APPLIED, null);
+					com.lrj.commerce.runtime.recovery.RecoveryAudit.APPLIED, null);
 			return mapper.findInstance(actor.tenantId(), id);
 		});
 	}
@@ -353,11 +361,11 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 重放分类见phase4重放安全矩阵。 */
 	@Override
-	public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety() {
-		return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable(
+	public com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety replaySafety() {
+		return com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety.notReplayable(
 				"入组唯一键与发生时间窗口使重复执行无效；但迟到入组会继续发放券、权益与站内通知",
-				com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE,
-				com.lrj.commerce.runtime.api.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);
+				com.lrj.commerce.runtime.api.event.EventHandler.SideEffect.IDEMPOTENT_WRITE,
+				com.lrj.commerce.runtime.api.event.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);
 	}
 
 	public Set<String> types() {
@@ -382,23 +390,24 @@ public class JourneyService implements JourneyApi, EventHandler {
 			}
 			case "member.registered.v1" -> {
 				member = JsonCodec
-					.read(event.payloadJson(), com.lrj.commerce.member.api.MemberGrowthApi.Registered.class)
+					.read(event.payloadJson(), com.lrj.commerce.member.growth.api.MemberGrowthApi.Registered.class)
 					.memberId();
 				trigger = Trigger.MEMBER_REGISTERED;
 			}
 			case "member.level.changed.v1" -> {
 				member = JsonCodec
-					.read(event.payloadJson(), com.lrj.commerce.member.api.MemberGrowthApi.LevelChanged.class)
+					.read(event.payloadJson(), com.lrj.commerce.member.growth.api.MemberGrowthApi.LevelChanged.class)
 					.memberId();
 				trigger = Trigger.LEVEL_CHANGED;
 			}
 			case "segment.member.entered.v1" -> {
-				var entry = JsonCodec.read(event.payloadJson(), com.lrj.commerce.campaign.api.SegmentApi.Entered.class);
+				var entry = JsonCodec.read(event.payloadJson(),
+						com.lrj.commerce.campaign.segment.api.SegmentApi.Entered.class);
 				member = entry.memberId();
 				segment = entry.segmentId();
 				trigger = Trigger.SEGMENT_ENTERED;
 				var source = assets.sources(event.tenantId(), member,
-						List.of(new com.lrj.commerce.campaign.api.MarketingAssets.Ref(entry.audienceId(),
+						List.of(new com.lrj.commerce.campaign.asset.api.MarketingAssets.Ref(entry.audienceId(),
 								entry.snapshotVersion())),
 						now())
 					.getFirst();
@@ -418,7 +427,7 @@ public class JourneyService implements JourneyApi, EventHandler {
 				continue;
 			if (d.controls() != null && d.controls().entryRule() != null && rules.evaluate(
 					d.controls().entryRule().toCondition(),
-					com.lrj.commerce.campaign.api.MemberRuleFacts.from(facts, orderId == null ? null
+					com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(facts, orderId == null ? null
 							: orders.internalRead(event.tenantId(), orderId).payable())) != Condition.Truth.MATCH)
 				continue;
 			start(event.tenantId(), d, member, orderId, trigger == Trigger.ORDER_PAID ? orderId : event.eventId(),
@@ -539,7 +548,7 @@ public class JourneyService implements JourneyApi, EventHandler {
 				due = now.plusSeconds(node.seconds());
 			}
 			case DECIDE -> {
-				Map<String, Fact> facts = com.lrj.commerce.campaign.api.MemberRuleFacts.from(
+				Map<String, Fact> facts = com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(
 						memberGrowth.facts(tenant, member.memberId()),
 						row.orderId() == null ? null : orders.internalRead(tenant, row.orderId()).payable());
 				var truth = rules.evaluate(node.rule().toCondition(), facts);
@@ -670,7 +679,7 @@ public class JourneyService implements JourneyApi, EventHandler {
 			};
 			if (matched && d.controls().entryRule() != null)
 				matched = rules.evaluate(d.controls().entryRule().toCondition(),
-						com.lrj.commerce.campaign.api.MemberRuleFacts.from(fact, null)) == Condition.Truth.MATCH;
+						com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(fact, null)) == Condition.Truth.MATCH;
 			if (matched) {
 				String anchor = switch (d.trigger()) {
 					case BIRTHDAY -> String.valueOf(now.atZone(ZoneOffset.UTC).getYear());
@@ -718,7 +727,8 @@ public class JourneyService implements JourneyApi, EventHandler {
 				throw conflict("扫描并发修改");
 			var after = mapper.scanLock(actor.tenantId(), id, version);
 			audit.record(actor, "journey.scan.retry", key, "journey.scan", id + "/" + version, "RETRY", scan.status(),
-					after.status(), null, input.reason(), com.lrj.commerce.runtime.RecoveryAudit.APPLIED, null);
+					after.status(), null, input.reason(), com.lrj.commerce.runtime.recovery.RecoveryAudit.APPLIED,
+					null);
 			return after;
 		});
 	}

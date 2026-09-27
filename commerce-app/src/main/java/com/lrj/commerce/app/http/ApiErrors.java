@@ -1,6 +1,6 @@
 package com.lrj.commerce.app.http;
 
-import com.lrj.commerce.app.configuration.SecurityConfiguration;
+import com.lrj.commerce.app.configuration.security.SecurityConfiguration;
 import com.lrj.commerce.kernel.DomainException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;

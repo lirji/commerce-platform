@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,10 +45,10 @@ class PointsCheckoutTest {
 	Commands commands;
 
 	@Autowired
-	com.lrj.commerce.payment.api.PaymentApi payments;
+	com.lrj.commerce.payment.charge.api.PaymentApi payments;
 
 	@Autowired
-	com.lrj.commerce.payment.api.RefundApi refunds;
+	com.lrj.commerce.payment.refund.api.RefundApi refunds;
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
 
@@ -116,7 +117,7 @@ class PointsCheckoutTest {
 	}
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberGrowthApi growth;
+	com.lrj.commerce.member.growth.api.MemberGrowthApi growth;
 
 	private void policy(long version, String rate, Instant effective) throws Exception {
 		post("/v1/admin/member-points/policies", admin, "points-policy" + version,
@@ -124,7 +125,7 @@ class PointsCheckoutTest {
 						"spendEnabled", true, "pointsPerYuan", 100, "maxDeductionBps", 5000));
 	}
 
-	private void observe(String key, com.lrj.commerce.member.api.MemberGrowthApi.OrderFact fact) {
+	private void observe(String key, com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact fact) {
 		commands.run(new Actor(tenant, "admin", Actor.Role.ADMIN), "test.growth.fact", key, fact, String.class, () -> {
 			points.observe(tenant, fact);
 			return "ok";
@@ -168,12 +169,12 @@ class PointsCheckoutTest {
 	TestClock testClock;
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberPointsApi points;
+	com.lrj.commerce.member.points.api.MemberPointsApi points;
 
 	private void fact(String key, String order, String amount, Instant at, boolean completed, String refund,
 			String refundAmount) {
-		observe(key, new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact(order, "m1", amount, at, completed,
-				refund, refundAmount));
+		observe(key, new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact(order, "m1", amount, at,
+				completed, refund, refundAmount));
 	}
 
 	private void spending(int cap, long balance) throws Exception {

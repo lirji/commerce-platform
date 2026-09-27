@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -104,7 +105,7 @@ class PointOfferTest {
 						"spendEnabled", true, "pointsPerYuan", 100, "maxDeductionBps", 5000));
 	}
 
-	private void observe(String key, com.lrj.commerce.member.api.MemberGrowthApi.OrderFact fact) {
+	private void observe(String key, com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact fact) {
 		commands.run(new Actor(tenant, "admin", Actor.Role.ADMIN), "test.growth.fact", key, fact, String.class, () -> {
 			points.observe(tenant, fact);
 			return "ok";
@@ -148,12 +149,12 @@ class PointOfferTest {
 	TestClock testClock;
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberPointsApi points;
+	com.lrj.commerce.member.points.api.MemberPointsApi points;
 
 	private void fact(String key, String order, String amount, Instant at, boolean completed, String refund,
 			String refundAmount) {
-		observe(key, new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact(order, "m1", amount, at, completed,
-				refund, refundAmount));
+		observe(key, new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact(order, "m1", amount, at,
+				completed, refund, refundAmount));
 	}
 
 	private void spending(int cap, long balance) throws Exception {
@@ -169,14 +170,14 @@ class PointOfferTest {
 	}
 
 	private Object coupon(String mode, int quota) {
-		return new com.lrj.commerce.benefit.api.CouponApi.Definition("exchange-coupon", 1, "store1", "积分专享券", "0.00",
-				"5.00", testClock.instant().minusSeconds(10), testClock.instant().plusSeconds(3600), quota, true, 10000,
-				mode);
+		return new com.lrj.commerce.benefit.coupon.api.CouponApi.Definition("exchange-coupon", 1, "store1", "积分专享券",
+				"0.00", "5.00", testClock.instant().minusSeconds(10), testClock.instant().plusSeconds(3600), quota,
+				true, 10000, mode);
 	}
 
 	private Object offer(String id, String kind, String asset, int quota, int cap, long cost) {
-		return new com.lrj.commerce.benefit.api.PointOfferApi.Offer(id, "store1", "积分礼遇",
-				com.lrj.commerce.benefit.api.PointOfferApi.Kind.valueOf(kind), asset, 1, cost, quota, cap,
+		return new com.lrj.commerce.benefit.pointoffer.api.PointOfferApi.Offer(id, "store1", "积分礼遇",
+				com.lrj.commerce.benefit.pointoffer.api.PointOfferApi.Kind.valueOf(kind), asset, 1, cost, quota, cap,
 				testClock.instant(), testClock.instant().plusSeconds(1800));
 	}
 
@@ -226,8 +227,8 @@ class PointOfferTest {
 	void entitlementIsRequestedExactlyOnceThenDeliveredByExistingConsumer() throws Exception {
 		spending(10000, 2000);
 		post("/v1/admin/entitlement-definitions", admin, "asset",
-				new com.lrj.commerce.benefit.api.EntitlementApi.Definition("coffee", 1, "store1", "咖啡权益", 2, 10,
-						testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(3600), 7));
+				new com.lrj.commerce.benefit.entitlement.api.EntitlementApi.Definition("coffee", 1, "store1", "咖啡权益", 2,
+						10, testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(3600), 7));
 		post("/v1/admin/point-offers", admin, "offer", offer("coffee", "ENTITLEMENT", "coffee", 10, 2, 500));
 		var receipt = redeem("coffee", "coffee-1");
 		redeem("coffee", "coffee-1");

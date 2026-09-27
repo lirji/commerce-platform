@@ -1,6 +1,6 @@
 # 文档地图
 
-历史同步基线：fb7adf6。2026-09-27 Java 包重构与项目排版的当前同步范围见 `architecture/java-packages.md` 和 `evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md`。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；最新验证入口为 `delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
+历史同步基线：fb7adf6。2026-09-27 Java 包能力细分的当前约定见 `architecture/java-packages.md`，执行证据见 `evidence/capability-package-refactor/PROJECT_REFACTORING_REPORT.md`；上一轮排版证据仍在 `evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md`。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；最新验证入口为 `delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
 
 | 实现所有者 | 权威设计/契约 |
 |---|---|
@@ -14,7 +14,7 @@
 | commerce-app、frontend、控制台读取接口 | design/unified-commerce/s10/CONTRACTS.md、FRONTEND_ARCHITECTURE.md |
 | 构建/镜像/Compose/CI/私密配置位置 | ../deploy/README.md、design/unified-commerce/TECH_SELECTION.md |
 | 数据所有权/事务及静态边界 | design/unified-commerce/BACKEND_ARCHITECTURE.md、architecture-tests |
-| 当前 Java 包归属与格式化约定 | architecture/java-packages.md、evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md |
+| 当前 Java 包归属与格式化约定 | architecture/java-packages.md、evidence/capability-package-refactor/PROJECT_REFACTORING_REPORT.md、evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md |
 | 风险/外部后置项 | design/unified-commerce/RISKS.md、../.cursor/project-analysis/architecture-risks.md |
 | 计划/状态/恢复/Git | design/unified-commerce/IMPLEMENTATION_SLICES.md、PROGRESS_STATE.json、../CODEX_PROGRESS.md、evidence/DELIVERY_RESULT.md |
 

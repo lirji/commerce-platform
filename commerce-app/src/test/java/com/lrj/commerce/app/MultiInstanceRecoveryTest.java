@@ -1,9 +1,7 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.member.api.MemberPointsApi;
-import com.lrj.commerce.member.infrastructure.persistence.WorkRetryMapper;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.member.points.api.MemberPointsApi;
+import com.lrj.commerce.member.recovery.infrastructure.persistence.WorkRetryMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +13,10 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.recovery.RecoverableWork;
+import com.lrj.commerce.runtime.recovery.RuntimeRecovery;
+import com.lrj.commerce.runtime.work.RetryPolicy;
 
 /**
  * P4.7/§19 多实例恢复：并发的恢复命令只有一个生效且全部留有审计（不丢请求），并发的SKIP与RETRY只产生合法的状态链，

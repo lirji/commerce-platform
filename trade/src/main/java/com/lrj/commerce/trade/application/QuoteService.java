@@ -2,29 +2,31 @@ package com.lrj.commerce.trade.application;
 
 import com.lrj.commerce.trade.api.QuoteApi;
 import com.lrj.commerce.trade.infrastructure.persistence.QuoteMapper;
-import com.lrj.commerce.member.api.MemberApi;
-import com.lrj.commerce.store.api.StoreApi;
-import com.lrj.commerce.catalog.api.CatalogApi;
-import com.lrj.commerce.campaign.api.CampaignApi;
+import com.lrj.commerce.member.profile.api.MemberApi;
+import com.lrj.commerce.store.management.api.StoreApi;
+import com.lrj.commerce.catalog.assortment.api.CatalogApi;
+import com.lrj.commerce.campaign.management.api.CampaignApi;
 import com.lrj.commerce.marketing.api.*;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
 import com.lrj.commerce.kernel.*;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import org.springframework.stereotype.Service;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.Inputs;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 报价编排只消费各领域API，服务端快照与命令结果同事务提交。 */
 @Service
 public class QuoteService implements QuoteApi {
 
-	private final com.lrj.commerce.member.api.PointsSpendApi points;
+	private final com.lrj.commerce.member.points.spend.api.PointsSpendApi points;
 
-	private final com.lrj.commerce.campaign.api.CampaignFundingApi funding;
+	private final com.lrj.commerce.campaign.funding.api.CampaignFundingApi funding;
 
-	private final com.lrj.commerce.benefit.api.CouponApi coupons;
+	private final com.lrj.commerce.benefit.coupon.api.CouponApi coupons;
 
 	private final QuoteMapper mapper;
 
@@ -34,7 +36,7 @@ public class QuoteService implements QuoteApi {
 
 	private final StoreApi stores;
 
-	private final com.lrj.commerce.member.api.MemberGrowthApi memberGrowth;
+	private final com.lrj.commerce.member.growth.api.MemberGrowthApi memberGrowth;
 
 	private final CatalogApi catalog;
 
@@ -45,10 +47,11 @@ public class QuoteService implements QuoteApi {
 	private final Clock clock;
 
 	public QuoteService(QuoteMapper mapper, Commands commands, MemberApi members, StoreApi stores, CatalogApi catalog,
-			CampaignApi campaigns, DecisionPort decisions, Clock clock, com.lrj.commerce.benefit.api.CouponApi coupons,
-			com.lrj.commerce.campaign.api.CampaignFundingApi funding,
-			com.lrj.commerce.member.api.MemberGrowthApi memberGrowth,
-			com.lrj.commerce.member.api.PointsSpendApi points) {
+			CampaignApi campaigns, DecisionPort decisions, Clock clock,
+			com.lrj.commerce.benefit.coupon.api.CouponApi coupons,
+			com.lrj.commerce.campaign.funding.api.CampaignFundingApi funding,
+			com.lrj.commerce.member.growth.api.MemberGrowthApi memberGrowth,
+			com.lrj.commerce.member.points.spend.api.PointsSpendApi points) {
 		this.points = points;
 		this.memberGrowth = memberGrowth;
 		this.funding = funding;
@@ -99,14 +102,14 @@ public class QuoteService implements QuoteApi {
 					var priced = decisions.decide(new DecisionModels.Request(
 							new DecisionModels.Scope(actor.tenantId(), store.merchantId(), store.storeId()),
 							member.memberId(), now, lines,
-							com.lrj.commerce.campaign.api.MemberRuleFacts.from(
+							com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(
 									memberGrowth.facts(actor.tenantId(), member.memberId()),
 									gross.amount().toPlainString()),
 							candidates.offers()));
 					var selectedCampaign = priced.selected();
 					Money campaignDiscount = priced.discount();
 					Money couponDiscount = Money.ZERO;
-					com.lrj.commerce.benefit.api.CouponApi.Application couponApplication = null;
+					com.lrj.commerce.benefit.coupon.api.CouponApi.Application couponApplication = null;
 					String couponStatus = "NOT_REQUESTED";
 					var expires = now.plusSeconds(300);
 					for (var sku : skus)
@@ -130,7 +133,7 @@ public class QuoteService implements QuoteApi {
 						}
 						couponStatus = couponDiscount.compareTo(Money.ZERO) > 0 ? "APPLIED" : "NOT_SELECTED";
 						if (couponDiscount.compareTo(Money.ZERO) > 0) {
-							couponApplication = new com.lrj.commerce.benefit.api.CouponApi.Application(
+							couponApplication = new com.lrj.commerce.benefit.coupon.api.CouponApi.Application(
 									coupon.couponId(), coupon.definitionId(), coupon.version(),
 									couponDiscount.amount().toPlainString(), coupon.platformFundingBps());
 							if (coupon.validTo().isBefore(expires))

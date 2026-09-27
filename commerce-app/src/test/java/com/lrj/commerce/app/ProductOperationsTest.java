@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,10 +45,10 @@ class ProductOperationsTest {
 	Commands commands;
 
 	@Autowired
-	com.lrj.commerce.payment.api.PaymentApi payments;
+	com.lrj.commerce.payment.charge.api.PaymentApi payments;
 
 	@Autowired
-	com.lrj.commerce.payment.api.RefundApi refunds;
+	com.lrj.commerce.payment.refund.api.RefundApi refunds;
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
 

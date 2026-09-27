@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -131,10 +132,10 @@ class MemberBehaviorTest {
 	TestClock testClock;
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberGrowthApi growth;
+	com.lrj.commerce.member.growth.api.MemberGrowthApi growth;
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberBehaviorApi behavior;
+	com.lrj.commerce.member.behavior.api.MemberBehaviorApi behavior;
 
 	private Object signal(String id, String kind) {
 		return Map.of("eventId", id, "kind", kind, "storeId", "store1", "skuId", "sku1");
@@ -149,8 +150,8 @@ class MemberBehaviorTest {
 	}
 
 	private void fact(String order, String paid, Instant at, boolean complete, String refund, String amount) {
-		var fact = new com.lrj.commerce.member.api.MemberGrowthApi.OrderFact(order, "m1", paid, at, complete, refund,
-				amount);
+		var fact = new com.lrj.commerce.member.growth.api.MemberGrowthApi.OrderFact(order, "m1", paid, at, complete,
+				refund, amount);
 		commands.run(new Actor(tenant, "admin", Actor.Role.ADMIN), "test.behavior", UUID.randomUUID().toString(), fact,
 				String.class, () -> {
 					growth.observe(tenant, fact);
@@ -265,7 +266,7 @@ class MemberBehaviorTest {
 		var run = call("GET", "/v1/admin/segments/cart/runs", admin, null, null).body().get(0);
 		assertEquals("COMPLETED", run.path("status").asString());
 		assertEquals(1, run.path("matched").asInt());
-		var facts = com.lrj.commerce.campaign.api.MemberRuleFacts.from(growth.facts(tenant, "m1"), null);
+		var facts = com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(growth.facts(tenant, "m1"), null);
 		assertFalse(facts.containsKey("memberDaysSinceOrder"));
 		assertTrue(facts.containsKey("memberCart30"));
 	}

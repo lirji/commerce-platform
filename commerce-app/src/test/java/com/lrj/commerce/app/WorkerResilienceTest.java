@@ -1,6 +1,5 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +14,8 @@ import java.net.http.*;
 import java.time.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 后台任务无需管理员触发即可释放过期订单，单行故障不能阻塞同一任务的其他数据。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -39,13 +40,13 @@ class WorkerResilienceTest {
 	JdbcTemplate jdbc;
 
 	@Autowired
-	com.lrj.commerce.ordering.api.OrderApi orders;
+	com.lrj.commerce.ordering.order.api.OrderApi orders;
 
 	@Autowired
-	com.lrj.commerce.payment.api.PaymentApi payments;
+	com.lrj.commerce.payment.charge.api.PaymentApi payments;
 
 	@Autowired
-	com.lrj.commerce.member.api.MemberCycleApi cycles;
+	com.lrj.commerce.member.cycle.api.MemberCycleApi cycles;
 
 	@Autowired
 	EventDispatcher events;

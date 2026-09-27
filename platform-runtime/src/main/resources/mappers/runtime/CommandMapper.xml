@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.lrj.commerce.runtime.persistence.CommandMapper">
+<mapper namespace="com.lrj.commerce.runtime.command.persistence.CommandMapper">
   <insert id="claim">INSERT INTO platform_command(tenant_id,actor_id,operation,command_key,request_hash)
     VALUES(#{key.tenantId},#{key.actorId},#{key.operation},#{key.commandKey},#{hash})
     ON DUPLICATE KEY UPDATE command_key=command_key</insert>
-  <select id="lock" resultType="com.lrj.commerce.runtime.persistence.CommandMapper$Row">
+  <select id="lock" resultType="com.lrj.commerce.runtime.command.persistence.CommandMapper$Row">
     SELECT request_hash,response_json FROM platform_command WHERE tenant_id=#{tenantId} AND actor_id=#{actorId}
     AND operation=#{operation} AND command_key=#{commandKey} FOR UPDATE
   </select>

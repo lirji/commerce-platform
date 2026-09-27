@@ -1,8 +1,8 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.EventDispatcher;
-import com.lrj.commerce.runtime.EventHealthLog;
-import com.lrj.commerce.runtime.persistence.EventMapper;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.event.EventHealthLog;
+import com.lrj.commerce.runtime.event.persistence.EventMapper;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;

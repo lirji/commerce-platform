@@ -1,8 +1,8 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.EventDispatcher;
-import com.lrj.commerce.runtime.api.Actor;
-import com.lrj.commerce.runtime.persistence.EventMapper;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.event.persistence.EventMapper;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

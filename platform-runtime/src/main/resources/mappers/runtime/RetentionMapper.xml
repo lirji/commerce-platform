@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.lrj.commerce.runtime.persistence.RetentionMapper">
+<mapper namespace="com.lrj.commerce.runtime.retention.persistence.RetentionMapper">
   <!-- available_at是最后一次可投递时间，是终态时间的安全上界；创建时间同样须早于截止时间。 -->
   <select id="terminalEvents" resultType="string">SELECT event_id FROM platform_event FORCE INDEX(ix_event_delivery) WHERE status=#{status} AND available_at&lt;#{cutoff} AND created_at&lt;#{cutoff}
   ORDER BY available_at,event_id LIMIT #{limit} FOR UPDATE SKIP LOCKED</select>

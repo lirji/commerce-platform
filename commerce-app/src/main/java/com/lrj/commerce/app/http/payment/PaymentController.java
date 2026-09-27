@@ -1,9 +1,9 @@
 package com.lrj.commerce.app.http.payment;
 
-import com.lrj.commerce.payment.api.PaymentApi;
-import com.lrj.commerce.ordering.api.OrderApi;
-import com.lrj.commerce.runtime.EventDispatcher;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.payment.charge.api.PaymentApi;
+import com.lrj.commerce.ordering.order.api.OrderApi;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,11 +1,11 @@
 package com.lrj.commerce.app.http.commerce;
 
-import com.lrj.commerce.runtime.api.Actor;
-import com.lrj.commerce.member.api.MemberApi;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.merchant.api.MerchantApi;
-import com.lrj.commerce.store.api.StoreApi;
-import com.lrj.commerce.catalog.api.CatalogApi;
-import com.lrj.commerce.campaign.api.CampaignApi;
+import com.lrj.commerce.store.management.api.StoreApi;
+import com.lrj.commerce.catalog.assortment.api.CatalogApi;
+import com.lrj.commerce.campaign.management.api.CampaignApi;
 import com.lrj.commerce.trade.api.QuoteApi;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;

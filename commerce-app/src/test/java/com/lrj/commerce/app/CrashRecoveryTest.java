@@ -1,11 +1,9 @@
 package com.lrj.commerce.app;
 
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
-import com.lrj.commerce.runtime.api.EventHandler.ReplaySafety;
-import com.lrj.commerce.runtime.persistence.EventMapper;
-import com.lrj.commerce.runtime.persistence.ReplayMapper;
+import com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety;
+import com.lrj.commerce.runtime.event.persistence.EventMapper;
+import com.lrj.commerce.runtime.replay.persistence.ReplayMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +17,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.recovery.RecoveryAudit;
+import com.lrj.commerce.runtime.replay.EventReplay;
+import com.lrj.commerce.runtime.work.WorkLanes;
 
 /**
  * P4.7 崩溃与重启：在第n次开启事务或第n次提交时模拟进程终止（抛出Error，业务代码的catch(RuntimeException)不会拦截，

@@ -1,6 +1,6 @@
 package com.lrj.commerce.merchant.api;
 
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
 /** Merchant边界只暴露不可变业务投影，表由本模块独占。 */

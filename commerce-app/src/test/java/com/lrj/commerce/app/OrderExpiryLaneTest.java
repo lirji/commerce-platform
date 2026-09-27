@@ -1,12 +1,11 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.ordering.infrastructure.security.AddressCipher;
+import com.lrj.commerce.ordering.address.infrastructure.security.AddressCipher;
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.ordering.api.OrderApi;
-import com.lrj.commerce.ordering.application.OrderService;
-import com.lrj.commerce.ordering.infrastructure.persistence.OrderMapper;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.ordering.order.api.OrderApi;
+import com.lrj.commerce.ordering.order.application.OrderService;
+import com.lrj.commerce.ordering.order.infrastructure.persistence.OrderMapper;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +18,10 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.event.Outbox;
+import com.lrj.commerce.runtime.work.RetryPolicy;
+import com.lrj.commerce.runtime.work.WorkLanes;
 
 /**
  * 订单到期车道：逐单事务使一个坏订单只影响它自己；租户轮转使热租户不能拖住其他租户；多实例并发每单只取消一次。
@@ -172,13 +175,13 @@ class OrderExpiryLaneTest {
 		return new OrderService(mapper, context.getBean(Commands.class),
 				context.getBean(com.lrj.commerce.trade.api.QuoteApi.class),
 				context.getBean(com.lrj.commerce.inventory.api.InventoryApi.class),
-				context.getBean(com.lrj.commerce.member.api.MemberApi.class),
-				context.getBean(com.lrj.commerce.store.api.StoreApi.class), context.getBean(Outbox.class),
-				context.getBean(com.lrj.commerce.ordering.infrastructure.security.AddressCipher.class),
-				context.getBean(Clock.class), context.getBean(com.lrj.commerce.benefit.api.CouponApi.class),
-				context.getBean(com.lrj.commerce.campaign.api.CampaignFundingApi.class),
-				context.getBean(com.lrj.commerce.benefit.api.EntitlementApi.class),
-				context.getBean(com.lrj.commerce.member.api.PointsSpendApi.class),
+				context.getBean(com.lrj.commerce.member.profile.api.MemberApi.class),
+				context.getBean(com.lrj.commerce.store.management.api.StoreApi.class), context.getBean(Outbox.class),
+				context.getBean(com.lrj.commerce.ordering.address.infrastructure.security.AddressCipher.class),
+				context.getBean(Clock.class), context.getBean(com.lrj.commerce.benefit.coupon.api.CouponApi.class),
+				context.getBean(com.lrj.commerce.campaign.funding.api.CampaignFundingApi.class),
+				context.getBean(com.lrj.commerce.benefit.entitlement.api.EntitlementApi.class),
+				context.getBean(com.lrj.commerce.member.points.spend.api.PointsSpendApi.class),
 				context.getBean(org.springframework.transaction.PlatformTransactionManager.class), new WorkLanes());
 	}
 

@@ -1,7 +1,7 @@
 package com.lrj.commerce.app.http.store;
 
-import com.lrj.commerce.store.api.StoreAccessApi;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.store.access.api.StoreAccessApi;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 

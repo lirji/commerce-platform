@@ -1,6 +1,6 @@
 package com.lrj.commerce.fulfillment.infrastructure.adapter;
 
-import com.lrj.commerce.fulfillment.api.WmsPort;
+import com.lrj.commerce.fulfillment.application.port.WmsPort;
 import com.lrj.commerce.kernel.DomainException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

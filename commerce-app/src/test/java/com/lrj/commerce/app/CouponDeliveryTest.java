@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +16,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -133,14 +134,14 @@ class CouponDeliveryTest {
 	private void assets(int quota, Integer validity) throws Exception {
 		seed();
 		post("/v1/admin/coupon-definitions", admin, "coupon",
-				new com.lrj.commerce.benefit.api.CouponApi.Definition("target", 1, "store1", "定向关怀券", "0.00", "5.00",
-						testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(7 * 86400), quota, true,
-						10000, "SOURCE_ONLY", validity));
+				new com.lrj.commerce.benefit.coupon.api.CouponApi.Definition("target", 1, "store1", "定向关怀券", "0.00",
+						"5.00", testClock.instant().minusSeconds(1), testClock.instant().plusSeconds(7 * 86400), quota,
+						true, 10000, "SOURCE_ONLY", validity));
 	}
 
 	private void audience(long version, List<String> ids) throws Exception {
 		post("/v1/admin/audiences", admin, "audience-" + version,
-				new com.lrj.commerce.campaign.api.MarketingAssets.Audience("group", version, "固定人群", "TEST",
+				new com.lrj.commerce.campaign.asset.api.MarketingAssets.Audience("group", version, "固定人群", "TEST",
 						testClock.instant(), testClock.instant().plusSeconds(7200), ids));
 	}
 
@@ -151,8 +152,8 @@ class CouponDeliveryTest {
 
 	private JsonNode batch(String id, long version, int hours) throws Exception {
 		return post("/v1/admin/coupon-deliveries", admin, "batch-" + id,
-				new com.lrj.commerce.journey.api.CouponDeliveryApi.Create(id, "store1", "人群关怀", "target", 1,
-						new com.lrj.commerce.campaign.api.MarketingAssets.Ref("group", version),
+				new com.lrj.commerce.journey.delivery.api.CouponDeliveryApi.Create(id, "store1", "人群关怀", "target", 1,
+						new com.lrj.commerce.campaign.asset.api.MarketingAssets.Ref("group", version),
 						testClock.instant().plusSeconds(3600), hours));
 	}
 
@@ -299,7 +300,7 @@ class CouponDeliveryTest {
 		seed();
 		var start = testClock.instant();
 		post("/v1/admin/coupon-definitions", admin, "relative",
-				new com.lrj.commerce.benefit.api.CouponApi.Definition("relative", 1, "store1", "领取后一天有效", "0.00",
+				new com.lrj.commerce.benefit.coupon.api.CouponApi.Definition("relative", 1, "store1", "领取后一天有效", "0.00",
 						"5.00", start.minusSeconds(1), start.plusSeconds(3600), 10, true, 10000, "PUBLIC", 1));
 		var coupon = post("/v1/coupons/relative/1/claim", member, "claim", null);
 		assertEquals(start.plusSeconds(86400), Instant.parse(coupon.path("validTo").asString()));

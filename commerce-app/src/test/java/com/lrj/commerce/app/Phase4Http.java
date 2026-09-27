@@ -1,6 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.JsonCodec;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 import org.springframework.jdbc.core.JdbcTemplate;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;

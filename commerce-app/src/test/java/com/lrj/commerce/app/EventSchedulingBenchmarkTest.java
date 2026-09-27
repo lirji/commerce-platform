@@ -1,9 +1,9 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.Commands;
-import com.lrj.commerce.runtime.EventDispatcher;
-import com.lrj.commerce.runtime.api.EventHandler;
-import com.lrj.commerce.runtime.persistence.EventMapper;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.event.persistence.EventMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;

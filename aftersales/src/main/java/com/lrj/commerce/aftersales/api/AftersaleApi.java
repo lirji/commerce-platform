@@ -1,6 +1,6 @@
 package com.lrj.commerce.aftersales.api;
 
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
 /** 售后不回退原订单和支付；部分退款绑定已固化行金额。 */

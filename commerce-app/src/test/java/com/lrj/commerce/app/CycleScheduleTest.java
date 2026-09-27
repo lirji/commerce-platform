@@ -1,8 +1,8 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.member.infrastructure.persistence.PointsMapper;
-import com.lrj.commerce.member.api.MemberCycleApi;
-import com.lrj.commerce.member.infrastructure.persistence.CycleMapper;
+import com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper;
+import com.lrj.commerce.member.cycle.api.MemberCycleApi;
+import com.lrj.commerce.member.cycle.infrastructure.persistence.CycleMapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,18 +123,18 @@ class CycleScheduleTest {
 	@Test
 	void criticalDiscoveryQueriesKeepTheirIndexPlans() {
 		var at = Instant.now();
-		var cycleDue = plan("com.lrj.commerce.member.infrastructure.persistence.CycleMapper.due",
+		var cycleDue = plan("com.lrj.commerce.member.cycle.infrastructure.persistence.CycleMapper.due",
 				Map.of("tenant", "t", "at", at, "limit", 10));
 		assertEquals("ix_member_cycle_due", key(cycleDue, "m"), cycleDue.toString());
-		var cycleTenants = plan("com.lrj.commerce.member.infrastructure.persistence.CycleMapper.dueTenants",
+		var cycleTenants = plan("com.lrj.commerce.member.cycle.infrastructure.persistence.CycleMapper.dueTenants",
 				Map.of("after", "", "at", at, "limit", 50));
 		assertEquals("ix_member_cycle_due", key(cycleTenants, "m"), cycleTenants.toString());
 		// 到期探测必须沿索引顺序只读第一项：出现文件排序说明探测会读取并排序该租户全部会员。
 		assertFalse(sortsMembers(cycleTenants), "周期发现探测不得对会员排序：" + cycleTenants);
-		var pointTenants = plan("com.lrj.commerce.member.infrastructure.persistence.PointsMapper.dueTenants",
+		var pointTenants = plan("com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper.dueTenants",
 				Map.of("after", "", "at", at, "limit", 50));
 		assertEquals("ix_point_tenant_expiry", key(pointTenants, "l"), pointTenants.toString());
-		var pointDue = plan("com.lrj.commerce.member.infrastructure.persistence.PointsMapper.due",
+		var pointDue = plan("com.lrj.commerce.member.points.infrastructure.persistence.PointsMapper.due",
 				Map.of("tenant", "t", "at", at, "limit", 20));
 		assertEquals("ix_point_tenant_expiry", key(pointDue, "l"), pointDue.toString());
 		// 只检查基表；派生表（两路各取limit后的合并结果）按设计是小结果集上的扫描。

@@ -1,6 +1,6 @@
 package com.lrj.commerce.fulfillment.api;
 
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
 /** 履约单与售后阻拦共用数据库行锁，避免退款获批后又发货。 */

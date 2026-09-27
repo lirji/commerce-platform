@@ -1,12 +1,14 @@
 package com.lrj.commerce.app;
 
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.runtime.*;
 import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.work.FailureClass;
+import com.lrj.commerce.runtime.work.TenantRotation;
 
 /**
  * 共享轮转原语的公平与隔离契约，用内存工作队列验证，不依赖数据库与机器速度： 时间预算设得足够大，以项数预算作为每轮的唯一限制。
@@ -215,13 +217,14 @@ class TenantRotationTest {
 	@Test
 	void eventFreshLaneDiscoveryFailureAlsoTripsTheBreaker() {
 		var calls = new java.util.concurrent.atomic.AtomicInteger();
-		var mapper = (com.lrj.commerce.runtime.persistence.EventMapper) java.lang.reflect.Proxy.newProxyInstance(
-				getClass().getClassLoader(), new Class<?>[] { com.lrj.commerce.runtime.persistence.EventMapper.class },
+		var mapper = (com.lrj.commerce.runtime.event.persistence.EventMapper) java.lang.reflect.Proxy.newProxyInstance(
+				getClass().getClassLoader(),
+				new Class<?>[] { com.lrj.commerce.runtime.event.persistence.EventMapper.class },
 				(proxy, method, args) -> {
 					calls.incrementAndGet();
 					throw new org.springframework.jdbc.CannotGetJdbcConnectionException("down");
 				});
-		var handler = new com.lrj.commerce.runtime.api.EventHandler() {
+		var handler = new com.lrj.commerce.runtime.api.event.EventHandler() {
 			public String consumer() {
 				return "c";
 			}

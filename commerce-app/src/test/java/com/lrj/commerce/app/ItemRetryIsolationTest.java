@@ -1,11 +1,11 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.member.api.MemberCycleApi;
-import com.lrj.commerce.member.api.MemberPointsApi;
-import com.lrj.commerce.member.application.MemberCycleService;
-import com.lrj.commerce.member.application.MemberPointsService;
-import com.lrj.commerce.member.infrastructure.persistence.WorkRetryMapper;
-import com.lrj.commerce.runtime.RetryPolicy;
+import com.lrj.commerce.member.cycle.api.MemberCycleApi;
+import com.lrj.commerce.member.points.api.MemberPointsApi;
+import com.lrj.commerce.member.cycle.application.MemberCycleService;
+import com.lrj.commerce.member.points.application.MemberPointsService;
+import com.lrj.commerce.member.recovery.infrastructure.persistence.WorkRetryMapper;
+import com.lrj.commerce.runtime.work.RetryPolicy;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

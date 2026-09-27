@@ -1,0 +1,110 @@
+package com.lrj.commerce.member.points.infrastructure.persistence;
+
+import org.apache.ibatis.annotations.*;
+import java.time.Instant;
+import java.util.List;
+import com.lrj.commerce.member.growth.api.MemberGrowthApi;
+import com.lrj.commerce.member.points.api.MemberPointsApi;
+
+/** 积分策略、贡献和批次由会员域独占；所有写入由会员行锁保护。 */
+@Mapper
+public interface PointsMapper {
+
+	record Exchange(String memberId, long points) {
+	}
+
+	Exchange exchange(@Param("tenant") String tenant, @Param("id") String id);
+
+	void exchangeInsert(@Param("tenant") String tenant, @Param("id") String id, @Param("member") String member,
+			@Param("points") long points);
+
+	record PolicyRow(String policyJson) {
+	}
+
+	record Account(long debt, long version) {
+	}
+
+	record Totals(long credit, long held) {
+	}
+
+	record Source(String memberId, String paid, boolean completed, long policyVersion, String earnRate, int expiryDays,
+			long contribution) {
+	}
+
+	record Refund(String orderId, String amount) {
+	}
+
+	record Lot(String lotId, String memberId, long policyVersion, long credited, long remaining, long held,
+			long expired, Instant expiresAt) {
+	}
+
+	/** attempts与transientAttempts来自逐项重试行，从未失败时为null。 */
+	record Due(String tenantId, String memberId, String lotId, Integer attempts, Integer transientAttempts) {
+	}
+
+	void policy(@Param("tenant") String tenant, @Param("p") MemberPointsApi.Policy p, @Param("json") String json);
+
+	PolicyRow effective(@Param("tenant") String tenant, @Param("at") Instant at);
+
+	List<PolicyRow> policies(@Param("tenant") String tenant, @Param("after") long after, @Param("limit") int limit);
+
+	void ensure(@Param("tenant") String tenant, @Param("member") String member);
+
+	Account account(@Param("tenant") String tenant, @Param("member") String member);
+
+	int accountChange(@Param("tenant") String tenant, @Param("member") String member, @Param("debt") long debt,
+			@Param("expected") long expected);
+
+	MemberPointsApi.Wallet walletRead(@Param("tenant") String tenant, @Param("member") String member,
+			@Param("at") Instant at);
+
+	Totals totals(@Param("tenant") String tenant, @Param("member") String member, @Param("at") Instant at);
+
+	Source source(@Param("tenant") String tenant, @Param("order") String order);
+
+	void sourceInsert(@Param("tenant") String tenant, @Param("f") MemberGrowthApi.OrderFact fact,
+			@Param("version") long version, @Param("rate") String rate, @Param("days") int days);
+
+	int sourceChange(@Param("tenant") String tenant, @Param("order") String order,
+			@Param("completed") boolean completed, @Param("contribution") long contribution);
+
+	Refund refund(@Param("tenant") String tenant, @Param("id") String id);
+
+	void refundInsert(@Param("tenant") String tenant, @Param("f") MemberGrowthApi.OrderFact fact);
+
+	String refundTotal(@Param("tenant") String tenant, @Param("order") String order);
+
+	Lot lot(@Param("tenant") String tenant, @Param("id") String id);
+
+	void insertLot(@Param("tenant") String tenant, @Param("lot") Lot lot);
+
+	int changeLot(@Param("tenant") String tenant, @Param("id") String id, @Param("remaining") long remaining,
+			@Param("held") long held, @Param("expired") long expired);
+
+	List<Lot> availableLots(@Param("tenant") String tenant, @Param("member") String member, @Param("at") Instant at,
+			@Param("limit") int limit);
+
+	List<Lot> expiredLots(@Param("tenant") String tenant, @Param("member") String member, @Param("at") Instant at,
+			@Param("limit") int limit);
+
+	List<Due> due(@Param("tenant") String tenant, @Param("at") Instant at, @Param("limit") int limit);
+
+	List<String> dueTenants(@Param("after") String after, @Param("at") Instant at, @Param("limit") int limit);
+
+	/** 车道积压：到期未处理批次（不含退避与隔离中的批次）数与最老到期时间。 */
+	record Backlog(long due, Instant oldestDue) {
+	}
+
+	Backlog backlog(@Param("at") Instant at);
+
+	/** 批次是否仍需过期处理（恢复时判断隔离项是否已由其他路径归档）。 */
+	boolean expiryDue(@Param("tenant") String tenant, @Param("lot") String lot, @Param("at") Instant at);
+
+	void entry(@Param("tenant") String tenant, @Param("member") String member, @Param("action") String action,
+			@Param("source") String source, @Param("delta") long delta, @Param("wallet") MemberPointsApi.Wallet wallet,
+			@Param("policy") long policy, @Param("reason") String reason, @Param("at") Instant at);
+
+	List<MemberPointsApi.Entry> ledger(@Param("tenant") String tenant, @Param("member") String member,
+			@Param("after") long after, @Param("limit") int limit);
+
+}

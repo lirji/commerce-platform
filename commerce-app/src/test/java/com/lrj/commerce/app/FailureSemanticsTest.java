@@ -1,13 +1,14 @@
 package com.lrj.commerce.app;
 
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.runtime.*;
 import org.junit.jupiter.api.Test;
 import java.sql.*;
 import java.time.Duration;
 import java.util.*;
-import static com.lrj.commerce.runtime.FailureClass.*;
+import static com.lrj.commerce.runtime.work.FailureClass.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.work.FailureClass;
+import com.lrj.commerce.runtime.work.RetryPolicy;
 
 /** 失败分类与重试预算是纯规则：按异常类型层级、SQLState类别与领域错误码判断，不看异常文本；退避可注入随机数确定。 */
 class FailureSemanticsTest {

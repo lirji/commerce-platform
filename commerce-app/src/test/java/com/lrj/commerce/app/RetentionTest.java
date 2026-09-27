@@ -1,9 +1,8 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.app.runtime.BackgroundRuntime;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.EventHandler;
-import com.lrj.commerce.runtime.persistence.RetentionMapper;
+import com.lrj.commerce.app.runtime.monitoring.BackgroundRuntime;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.retention.persistence.RetentionMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +14,8 @@ import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.replay.EventReplay;
+import com.lrj.commerce.runtime.retention.RetentionLane;
 
 /**
  * P4.6 保留期：默认关闭；开启时每类保留时长必须显式配置且不低于下限。只删除可证明安全的数据（终态事件连同其Inbox、已完成的命令），

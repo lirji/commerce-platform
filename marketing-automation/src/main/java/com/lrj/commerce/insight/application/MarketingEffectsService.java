@@ -2,16 +2,19 @@ package com.lrj.commerce.insight.application;
 
 import com.lrj.commerce.insight.api.MarketingEffectsApi;
 import com.lrj.commerce.insight.infrastructure.persistence.EffectsMapper;
-import com.lrj.commerce.ordering.api.OrderApi;
+import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.trade.api.QuoteApi;
-import com.lrj.commerce.payment.api.RefundApi;
-import com.lrj.commerce.store.api.StoreApi;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.payment.refund.api.RefundApi;
+import com.lrj.commerce.store.management.api.StoreApi;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.util.*;
 import java.time.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.Inputs;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 按订单键重建读模型，成交和成功退款仅单调前进，重放不叠加金额。 */
 @Service
@@ -54,9 +57,9 @@ public class MarketingEffectsService implements MarketingEffectsApi, EventHandle
 
 	/** 重放分类见phase4重放安全矩阵。 */
 	@Override
-	public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety() {
-		return new com.lrj.commerce.runtime.api.EventHandler.ReplaySafety(
-				java.util.Set.of(com.lrj.commerce.runtime.api.EventHandler.SideEffect.PURE), true, true,
+	public com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety replaySafety() {
+		return new com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety(
+				java.util.Set.of(com.lrj.commerce.runtime.api.event.EventHandler.SideEffect.PURE), true, true,
 				"事件只是信号：从订单、报价与退款权威数据重算，按订单主键与GREATEST单调合并写投影，可重建且不叠加金额");
 	}
 

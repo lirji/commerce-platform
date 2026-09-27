@@ -1,9 +1,7 @@
 package com.lrj.commerce.app;
 
 import com.lrj.commerce.kernel.DomainException;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
-import com.lrj.commerce.runtime.persistence.EventMapper;
+import com.lrj.commerce.runtime.event.persistence.EventMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +15,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.api.event.UnconsumedEventType;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.event.Outbox;
 
 /**
  * 第三阶段事件失败语义：瞬时失败不把健康事件耗成隔离、连续依赖故障熔断、毒事件有界终止并保留证据、

@@ -1,6 +1,6 @@
 package com.lrj.commerce.trade.api;
 
-import com.lrj.commerce.runtime.api.Actor;
+import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.marketing.api.DecisionModels;
 import java.time.Instant;
 import java.util.List;
@@ -59,10 +59,11 @@ public interface QuoteApi {
 	record View(String quoteId, String memberId, String merchantId, String storeId, String currency, String gross,
 			String discount, String payable, Instant createdAt, Instant expiresAt, List<Line> items,
 			DecisionModels.Selection campaign, List<DecisionModels.Trace> trace,
-			List<com.lrj.commerce.campaign.api.MarketingAssets.Source> sources,
-			com.lrj.commerce.benefit.api.CouponApi.Application coupon, String campaignDiscount, String couponStatus,
-			com.lrj.commerce.campaign.api.CampaignFundingApi.Commitment promotion, Funding funding,
-			com.lrj.commerce.member.api.PointsSpendApi.Application points, Actor.Channel channel) {
+			List<com.lrj.commerce.campaign.asset.api.MarketingAssets.Source> sources,
+			com.lrj.commerce.benefit.coupon.api.CouponApi.Application coupon, String campaignDiscount,
+			String couponStatus, com.lrj.commerce.campaign.funding.api.CampaignFundingApi.Commitment promotion,
+			Funding funding, com.lrj.commerce.member.points.spend.api.PointsSpendApi.Application points,
+			Actor.Channel channel) {
 		public View {
 			channel = channel == null ? Actor.Channel.WEB : channel;
 			items = List.copyOf(items);

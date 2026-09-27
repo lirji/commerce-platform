@@ -2,11 +2,12 @@ package com.lrj.commerce.merchant.application;
 
 import com.lrj.commerce.merchant.api.MerchantApi;
 import com.lrj.commerce.merchant.infrastructure.persistence.MerchantMapper;
-import com.lrj.commerce.runtime.Commands;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.Inputs;
 
 /** Merchant用例负责权限与状态，SQL仅在本域Mapper。 */
 @Service

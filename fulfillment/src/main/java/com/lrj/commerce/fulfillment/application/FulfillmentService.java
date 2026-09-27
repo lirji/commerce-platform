@@ -1,14 +1,17 @@
 package com.lrj.commerce.fulfillment.application;
 
 import com.lrj.commerce.fulfillment.api.*;
+import com.lrj.commerce.fulfillment.application.port.WmsPort;
 import com.lrj.commerce.fulfillment.infrastructure.persistence.FulfillmentMapper;
-import com.lrj.commerce.ordering.api.OrderApi;
-import com.lrj.commerce.runtime.*;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
 import java.util.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.Inputs;
+import com.lrj.commerce.runtime.command.Commands;
 
 /** 履约与订单生命周期经端口同事务协作，远程证明在命令事务前取得。 */
 @Service
@@ -107,10 +110,10 @@ public class FulfillmentService implements FulfillmentApi, EventHandler {
 
 	/** 重放分类见phase4重放安全矩阵。 */
 	@Override
-	public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety() {
-		return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable(
+	public com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety replaySafety() {
+		return com.lrj.commerce.runtime.api.event.EventHandler.ReplaySafety.notReplayable(
 				"履约单主键ON DUPLICATE KEY使重复执行无效；但对历史已付订单会生成待发货履约单，进入发货队列",
-				com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE);
+				com.lrj.commerce.runtime.api.event.EventHandler.SideEffect.IDEMPOTENT_WRITE);
 	}
 
 	public Set<String> types() {

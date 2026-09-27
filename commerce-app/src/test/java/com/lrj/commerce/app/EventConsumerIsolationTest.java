@@ -1,7 +1,6 @@
 package com.lrj.commerce.app;
 
-import com.lrj.commerce.runtime.EventDispatcher;
-import com.lrj.commerce.runtime.api.*;
+import com.lrj.commerce.runtime.event.EventDispatcher;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +12,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.api.identity.Actor;
 
 /** 同一事件的多个消费者各自提交，一个消费者失败不能回滚或阻塞其他消费者。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
