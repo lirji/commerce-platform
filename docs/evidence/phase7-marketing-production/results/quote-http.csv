@@ -1,0 +1,4 @@
+tier,concurrency,samples,success,trace_candidates,p50_ms,p95_ms,p99_ms,throughput_per_second
+small,8,120,120,10,45.11,81.67,108.89,161.8
+medium,8,120,120,50,35.38,45.75,48.17,220.3
+large,8,120,120,80,35.61,80.88,91.19,201.1

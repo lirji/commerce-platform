@@ -1,0 +1,5 @@
+scenario,samples,p50_ms,p95_ms,p99_ms,throughput_per_second,selected,trace_candidates
+no_match,120,47.55,136.86,147.31,138.9,0,10
+one_match_among_81,120,44.29,378.37,438.81,88.3,120,81
+audience_miss,120,35.17,189.98,197.01,152.0,0,1
+three_tenants,180,50.19,71.56,78.98,228.2,180,mixed

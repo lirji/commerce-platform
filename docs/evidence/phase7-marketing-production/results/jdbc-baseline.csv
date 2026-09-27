@@ -1,0 +1,10 @@
+stage,tier,rows,p50_ms,p95_ms,p99_ms,throughput_per_second
+candidate_discovery,small,10,0.754,1.201,2.415,1209.3
+audience_membership,small,1,0.465,0.933,1.621,1872.7
+execution_page,small,50,0.652,0.978,2.215,1405.6
+candidate_discovery,medium,50,0.686,1.016,1.317,1387.1
+audience_membership,medium,1,0.440,0.885,1.594,1936.2
+execution_page,medium,50,0.655,1.031,7.711,1188.3
+candidate_discovery,large,80,0.856,1.896,3.711,971.1
+audience_membership,large,1,0.381,0.582,0.943,2454.8
+execution_page,large,50,0.575,0.991,1.809,1536.4

@@ -1,0 +1,17 @@
+provider,stage,samples,p50_ms,p95_ms,p99_ms
+credit,coupon_quota_us,30,0.010,0.553,0.729
+credit,budget_us,30,233.342,305.220,314.152
+credit,credit_quota_us,30,3.963,6.435,7.227
+credit,inventory_us,30,2.602,3.839,9.249
+credit,execution_us,30,4.118,8.817,17.840
+credit,order_persistence_us,30,3.390,7.365,28.856
+credit,coupon_grant_us,30,0.480,0.724,0.767
+credit,remaining_settle_us,30,12.944,21.837,32.464
+coupon,coupon_quota_us,30,310.316,388.471,403.656
+coupon,budget_us,30,3.906,7.299,7.877
+coupon,credit_quota_us,30,0.037,0.052,0.053
+coupon,inventory_us,30,2.307,5.686,9.161
+coupon,execution_us,30,3.571,8.621,10.437
+coupon,order_persistence_us,30,2.931,7.799,8.118
+coupon,coupon_grant_us,30,7.374,19.548,22.720
+coupon,remaining_settle_us,30,5.725,7.742,11.047

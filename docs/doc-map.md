@@ -45,3 +45,5 @@
 2026-09-26 运行时第四阶段（逐项重试隔离、周期考核可索引到期与策略分批推进、统一恢复与恢复审计、重放安全分类与安全门、有界历史重放、可配置保留期清理、崩溃重启与多实例恢复证明、SLO与告警出口、运维手册）见 evidence/phase4-runtime-recovery/PHASE4_REPORT.md 与 evidence/phase4-runtime-recovery/13-runbook.md；契约写在 design/unified-commerce/BACKEND_ARCHITECTURE.md“一致性和恢复”。
 2026-09-27 业务一致性第五阶段（支付/到期竞态、事件原子性、履约/权益/积分/券/退款/售后并发与故障验证）见 evidence/phase5-business-consistency/PHASE5_REPORT.md；细分矩阵、测试和限制见同目录 00–18 证据。产品源码、数据库迁移及 Phase 2–4 运行时实现未变更。
 2026-09-27 营销规则与权益第六阶段的权威计划/状态见 delivery/phase6-marketing-platform/DELIVERY_PLAN.md、DELIVERY_STATUS.md；活动执行、版本、规则/人群/权益矩阵、纵向切片和运行手册见 evidence/phase6-marketing-platform/00-baseline.md 至 14-regression.md 及 PHASE6_REPORT.md。新订单活动执行持久化由 `V41__marketing_execution.sql` 定义；既有 S8/S9 契约仍是历史设计，不将 Phase 6 结果倒填到旧交付记录。
+
+2026-09-27 Phase 7 增量同步基线为 `ddf55026bf026f96cec8793556b6559bdc749b72`。当前工作树的营销候选时间过滤/V42 索引、V43 活动券预留、CREDIT/COUPON 执行、竞争预览与滚动开关契约见 `delivery/phase7-marketing-production/CONTRACTS.md`；唯一计划/状态见同目录 `DELIVERY_PLAN.md`、`DELIVERY_STATUS.md`。隔离容量和旧/新二进制证据见 `evidence/phase7-marketing-production/`；本轮不提交、推送或生产部署，不能把本地 schema 验证当作生产生效事实。

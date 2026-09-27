@@ -34,7 +34,13 @@
 - 诊断：`docker compose --env-file .local/compose.env ps`、`logs --tail=100 app`。不要公开 `docker inspect` 完整环境或 `compose config` 展开的机密；校验使用 `config --quiet`。
 - API 错误返回 traceId；事件/旅程列表展示状态、尝试数和待处理记录；隔离记录由管理员核查后按接口重试。Worker 开关关闭会停止自动推进，应用健康不能证明积压为零。
 - `./deploy/down.sh` 仅停止本应用；之后 up 恢复。同源 UI 和业务数据应仍可查询。共享 MySQL 不受这些命令管理。
-- 发布前保存已验证 jar/image 的不可变引用；先验证迁移与事件兼容，再切应用版本。Flyway 已应用的 V1–V34 不允许改历史或执行 clean。V13 扩展了权益来源和可空订单关联，不能无验证回退到 S8 旧应用。S9+ 也需要检查具体 schema/事件兼容，不承诺任意旧镜像能滚回。
+- 发布前保存已验证 jar/image 的不可变引用；先验证迁移与事件兼容，再切应用版本。Flyway 已应用迁移不允许改历史或执行 clean。V13 扩展了权益来源和可空订单关联，不能无验证回退到 S8 旧应用。S9+ 也需要检查具体 schema/事件兼容，不承诺任意旧镜像能滚回。
+
+## Phase 7 营销滚动发布约束
+
+源码新增 V42 候选有效窗口索引与 V43 活动券额度预留，已在隔离 MySQL 验证；现有运行容器未由本任务更新。`COMMERCE_MARKETING_COUPON_ENABLED` 默认 false，OLD/NEW 并存时保持关闭。全节点升级后才启用并发布新券活动。回退旧应用前先暂停新券活动、停止新券流量并处理在途报价/订单与 HELD 券预留，保留扩展 schema；已发券不能靠镜像回滚撤销。详细顺序和实际二进制矩阵见 `../docs/evidence/phase7-marketing-production/07-deployment-order.md`。
+
+`COMMERCE_MARKETING_PROFILING_ENABLED` 默认 false，可在隔离容量测试开启固定报价阶段耗时日志；它不记录业务标识，不代表生产 SLA。
 - 已提交的支付/退款、券使用、发权益和通知是业务事实；镜像回退不撤销这些效果，应走售后/权益补偿流程。地址密钥与数据库备份必须匹配保存；本次未执行备份恢复演练，不宣称达到 RTO/RPO。
 
 ## 外部适配后置清单
@@ -62,3 +68,7 @@ V23–V34追加会员周期/积分/行为、定向发券/旅程效果、商品�
 `.local/member-suite-access.json` 保存专项演示身份。运行 `COMMERCE_E2E_BASE_URL=http://127.0.0.1:8602 python3 scripts/seed-member-suite.py --fresh` 通过API创建新隔离演示租户，不清数据；随后不带 `--fresh` 可验证重放。生日、券、人群与兑换有效窗固定于首次创建，过期后可新建夹具，不覆盖运营数据。认证MINI_APP渠道需要受控运维设置platform_credential.sales_channel，没有客户端自选接口。
 
 本轮启用新功能前需所有应用与worker升级；特别是新旅程节点、积分订单行与渠道报价不能交给旧版本处理。升级后不得直接回退到仅V22语义的镜像。失败时先限制新增入口并停止worker，再核对数据库与既有订单快照，使用兼容修复版本恢复；保持数据和地址密钥，不能将镜像回退当作业务补偿。
+
+券功能开启后的应用回退应选择仍支持 COUPON 的已验证版本。OLD 会忽略 `terms.coupon`，不是拒绝解码；仅清空在途预留不足以证明 OLD 可重新承接券活动。详见 Phase 7 部署顺序中的激活点限制。
+
+`COMMERCE_MARKETING_EXTENDED_TRACE_ENABLED` 也默认 false；混合版本期间保持关闭，使持久报价 Trace 仍使用旧枚举。全部旧节点退出后可按需启用 OUTRANKED_BEST_OF 解释码。该值写入历史 quote/命令后，回退目标必须认识新枚举，等 TTL 不能使历史 JSON 自动兼容。

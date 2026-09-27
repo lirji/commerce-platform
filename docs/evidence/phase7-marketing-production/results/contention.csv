@@ -1,0 +1,23 @@
+provider,stage,samples,success,conflict,p50_ms,p95_ms,p99_ms,throughput_per_second
+credit,quote,120,120,0,56.40,90.45,106.25,na
+credit,order_reservation,120,30,90,57.94,314.78,320.32,104.1
+credit,payment_reconcile,30,30,0,19.08,22.52,23.99,na
+credit,event_pump_drain_seconds,8.233
+credit,payment_to_observed_granted_upper_bound,30,30,0,8439.91,8481.01,8488.49,na
+credit,invariant,reserved=0 issued=30 grants=30 orders=30 conflicts=90
+coupon,quote,120,120,0,40.67,50.74,78.20,na
+coupon,order_reservation,120,30,90,41.20,244.10,260.40,132.4
+coupon,payment_reconcile,30,30,0,24.13,38.25,38.59,na
+coupon,event_pump_drain_seconds,4.655
+coupon,payment_to_observed_granted_upper_bound,30,30,0,4806.77,4851.01,4857.06,na
+coupon,invariant,reserved=0 issued=30 grants=30 orders=30 conflicts=90
+lock_counters_before
+lock_deadlocks	21
+lock_timeouts	24
+lock_row_lock_time	382855
+lock_row_lock_waits	40146
+lock_counters_after
+lock_deadlocks	21
+lock_timeouts	24
+lock_row_lock_time	402059
+lock_row_lock_waits	40431

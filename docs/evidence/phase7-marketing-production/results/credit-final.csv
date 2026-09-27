@@ -1,0 +1,17 @@
+provider,stage,samples,success,conflict,p50_ms,p95_ms,p99_ms,throughput_per_second
+credit,quote,120,120,0,65.66,279.66,297.03,na
+credit,order_reservation,120,30,90,63.90,327.70,347.74,95.7
+credit,payment_reconcile,30,30,0,27.79,33.75,34.64,na
+credit,event_pump_drain_seconds,5.953
+credit,payment_to_observed_granted_upper_bound,30,30,0,6126.26,6182.16,6188.98,na
+credit,invariant,reserved=0 issued=30 grants=30 orders=30 conflicts=90
+lock_counters_before
+lock_deadlocks	21
+lock_timeouts	25
+lock_row_lock_time	409871
+lock_row_lock_waits	40900
+lock_counters_after
+lock_deadlocks	21
+lock_timeouts	25
+lock_row_lock_time	421181
+lock_row_lock_waits	41043

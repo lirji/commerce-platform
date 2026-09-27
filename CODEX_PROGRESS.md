@@ -2,50 +2,63 @@
 
 ## 任务目标
 
-按用户提供的 Phase 6 文档，在现有订单活动、规则、人群与内部 CREDIT 权益上构建可配置、可发布、可追溯、可恢复的营销纵向闭环，并用真实 MySQL、并发、版本与回归证据验收。
+执行用户提供的 Phase 7 文档，验证营销平台的生产规模模型、旧/新滚动兼容、第二既有权益、确定性活动冲突及运维可恢复性。
 
 ## 当前状态
 
-本地分支 `feat/phase6-marketing-platform` 基于 `origin/main` 的 `df955f1`。用户回复“确认”通过设计 Gate A，Phase 6 已完成，严格状态为 `PHASE_6_COMPLETE_WITH_LIMITATIONS`。权威计划、状态和最终报告分别为 `docs/delivery/phase6-marketing-platform/DELIVERY_PLAN.md`、`DELIVERY_STATUS.md` 和 `docs/evidence/phase6-marketing-platform/PHASE6_REPORT.md`。原 Phase 6 文档禁止提交/推送；用户在后续回合明确要求“推送合并到远程main分支”，已授权本任务的正常提交、合并和推送。生产部署仍未授权。
+`PHASE_7_COMPLETE_WITH_LIMITATIONS`。任务分支 `feat/phase7-marketing-production`，基线 main `ddf55026bf026f96cec8793556b6559bdc749b72`。权威报告：`docs/evidence/phase7-marketing-production/PHASE7_REPORT.md`；状态与计划：`docs/delivery/phase7-marketing-production/`。
+
+Phase 7 原实施轮次未 commit/push。用户现明确要求「先把阶段7的代码提交并推送到远程main分支，再开启阶段8」，授权正常提交、合并和推送 origin/main。本轮 Git 交付正在进行，不包含生产部署。
 
 ## 已完成
 
-- 阅读 Phase 5 最终报告并确认其 `PHASE_5_COMPLETE_WITH_LIMITATIONS` 边界。
-- 盘点活动、规则、人群、权益、订单与事件链，形成 Phase 6 当前能力清单和差距图。
-- 执行 `./scripts/verify.sh` 基线：退出码 0、`BUILD SUCCESS`；`commerce-app` 264 项无失败、5 项配置跳过，架构测试 3 项通过。
-- 写出代表订单活动的交付设计、验收条件、实施切片和回退边界。
-- 新增 V41 营销执行表及查询接口；订单事务写参与、支付/取消状态推进，权益可用事件通过原 Outbox/Inbox 投影结果，隔离失败通过原运行时证据展示与恢复。
-- 发布时重新校验固定规则、人群、权益与有效期；规则树拒绝重复同级分支；活动/执行使用分别命名的能力检查。
-- 新增真实 MySQL 用例：订单发放、租户隔离、版本回退、故障恢复、两实例发放、并发发布、草稿预览和发布负例。第二轮全量 `./scripts/verify.sh` 在追加最后两个负例前通过：269 项，0 失败，5 跳过；架构 3/3。
-- 第一次干净 `./scripts/build.sh` 在 `publicationRechecksAudienceAndRejectsDuplicateRuleBranches` 的断言上失败：现有 API 对过期人群返回 409，测试误期望 400；已修正并干净重跑通过：应用 271 run/0 failure/5 skipped、架构 3/3，前端打包进 jar。
-- 最终 jar 的受影响浏览器 2/2 通过；完整证据 00–14、Review、QA、运行手册和 Phase 6 报告已完成。
+- 基线 verify：应用 271/0/5 configured skips、架构 3/3，V41。
+- V42 有效期索引/SQL；历史过期发布活动不再占当前候选限额，仍保留 100 同时有效候选。
+- 显式 BEST_OF 纯解析、落选解释、竞争预览，同额按 ID，旧预览缺省语义不变。
+- V43 券订单额度预留/同事务发放/释放、来源唯一与固定券 ID、执行类型；COUPON 复用原券 owner，原 CREDIT 保持。
+- 默认关闭 coupon 配置与 extended-trace 门禁；真实 OLD df955f1+NEW 共享 V43 和事件，旧 CREDIT 生产链、新 completion 唯一消费已验证。
+- 收尾实际发现并修复新 Trace enum 使 OLD 读 NEW quote 500；最后门禁关闭时 OLD 读/下单/取消均 200，赢家与金额不变，旧 enum 往返回归通过。
+- 额外回退探针证明 OLD 会忽略 coupon 字段而丢失承诺；部署/回退文档明确只在 OLD 全退后启用，启用后回退目标必须保留券能力。
+- 三层真实 quote、方法段、规则/选择微基准、三租户、无命中/单命中/人群 miss；50k 执行/grant/event/Inbox、人群存储探针及真实查询计划。
+- 10→81 候选、1→20 人群、69 节点时 quote 查询数不增长；公开固定名单 API 仍 500（数据库 CHECK 100k）。
+- 最终双进程每种 120 用户/30 额度，30 成功/90 409、reserved=0/issued=30/grants=30，独立批次零新增死锁/锁超时；额度/执行/订单/赠券分段有证据。
+- 券最后一份竞争、取消、事务效果后回滚恢复、真实双实例唯一发放；七个新增 MySQL 场景及一项旧 enum 契约回归。
+- 删除冲突 ID 破平局的 mutation 检出，finally 恢复；最终 clean 构建应用 279/0/5、架构 3/3、marketing 27/27、order 45/45、UI 入 jar。
+- 最终 jar 浏览器受影响 2/2；测试等待真实异步退款记录后进入退款页面。
+- 完成 00–15 证据、可复跑脚本、无密钥结果 CSV/计划、Review/QA、报告和文档同步。
 
 ## 已修改文件
 
-- `docs/delivery/phase6-marketing-platform/DELIVERY_PLAN.md`
-- `docs/delivery/phase6-marketing-platform/DELIVERY_STATUS.md`
-- `docs/evidence/phase6-marketing-platform/`（00–14、最终报告及浏览器复跑脚本）
-- `docs/delivery/phase6-marketing-platform/REVIEW.md`、`QA.md`
-- `commerce-app/src/main/resources/db/migration/V41__marketing_execution.sql`、`commerce-app/src/main/java/com/lrj/commerce/app/http/marketing/execution/` 与集成测试
-- `marketing-runtime/src/main/java/com/lrj/commerce/campaign/execution/`、`marketing-runtime/src/main/resources/mappers/campaign/CampaignExecutionMapper.xml`、`CampaignService.java`、`RuleNode.java`
-- `benefit` 的权益 API/服务/Mapper、`order-runtime` 的订单服务与模块依赖、`platform-runtime` 的 Actor/EventInspection/EventMapper
-- `docs/doc-map.md`
-- `CODEX_PROGRESS.md`
+完整清单：`docs/evidence/phase7-marketing-production/results/changed-files.md`。
+
+- `benefit/` 券 API、Service、Mapper/XML
+- `marketing/` 冲突解析、决策、强化确定性测试
+- `marketing-runtime/` 活动契约、有效候选、预览、资金承诺与执行
+- `order-runtime/` 券预留/支付/取消和可关闭性能日志
+- `trade/` 可关闭 quote 分段采样
+- `commerce-app/` V42/V43、默认门禁/采样配置、MySQL 测试
+- `frontend/tests/commerce.spec.ts` 异步退款等待
+- `docs/delivery/phase7-marketing-production/`、`docs/evidence/phase7-marketing-production/`
+- `deploy/README.md`、`docs/doc-map.md`、`CODEX_PROGRESS.md`
 
 ## 未完成
 
-- 本轮批准的 Phase 6 工作无剩余实施项。生产混合版本部署验证、大租户容量、细分运营员授权、多权益礼包及外部提供者属于后续独立任务。
+本轮已授权范围内没有剩余实施/验证门禁。生产上线/长期压测、真实硬件和峰值、跨券激活点 OLD 全量回退、细角色、叠加、礼包、外部权益和客户 SLO 是后续独立工作，不宣称已完成。
 
 ## 当前问题
 
-- Git 交付正在执行；提交、任务分支推送和远程 main 合并尚待实际结果。Phase 5 全套浏览器四项原有失败本轮未重跑；只验受影响两项并通过。
-- Phase 5 已知：外部支付/WMS 适配器及礼包原子性不在已认证范围；本次只选择单个内部 CREDIT 权益，不扩大承诺。
+- 生产容量没有获批目标，本地短批次与共享 MySQL 实例结果不可当生产承诺。
+- 首次最终构建两项旧旅程偶发失败未归因；独立复跑及后续两次完整 clean 都通过，历史记录未删除。
+- Phase 5 完整浏览器集合未重跑，其原有四项失败仍是历史边界；本轮只认证受影响 2/2。
+- OLD 忽略 coupon 字段；券或扩展 Trace 激活后的安全回退目标必须保留已启用能力/enum，不能仅排空 HELD 后切回 OLD。
+- `.local/phase7-old` detached df955f1 worktree、专用 `commerce_phase7_bench` 数据库及忽略目录原始日志/令牌保留用于复跑；没有删除共享数据。所有本轮验证节点在收尾停止，共享 dev_infra 未重启。
 
 ## 下一步建议
 
-1. 按后续明确授权，审查暂存差异、分批提交 Phase 6，在不绕过保护的前提下合并并推送远程 main；核对远程结果及 CI 状态。
-2. 后续独立任务优先测真实大租户分段延迟与新旧节点滚动事件兼容，再处理产品待定项。
+1. 完成当前明确授权的 Phase 7 Git 交付：全量构建、受影响浏览器、按逻辑单元提交、正常合并与推送 origin/main、核对远程 SHA。
+2. 下一阶段先输入真实生产峰值、租户/历史分布和 SLO，在授权环境做持续负载及滚动/恢复验收。
+3. Phase 7 远程交付确认后，创建 Phase 8 任务分支，按用户提供的 phase-8-marketing-journey-workflow-orchestration.md 先做基线与 Journey 能力盘点。
 
 ## 恢复 Prompt
 
-请读取 `CODEX_PROGRESS.md`、Phase 6 最终报告和当前 Git 状态。Phase 6 实现已完成；用户已明确授权本任务正常提交、合并并推送远程 main。若 Git 交付中断，从实际提交/远程状态恢复，不重做实现，不强推、不绕过保护，不部署。
+读取 `CODEX_PROGRESS.md` 和 Phase 7 最终报告。用户已明确授权本轮把 Phase 7 提交并推送到远程 main，再开启 Phase 8；先核对 Git 实际状态，完成未完成交付，然后接续 Phase 8。不重做 Phase 7 实现，不强推、不生产部署。

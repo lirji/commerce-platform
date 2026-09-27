@@ -1,0 +1,5 @@
+scenario,quotes,total_selects,candidate_queries,audience_queries
+10_candidates,20,321,20,0
+81_candidates,20,321,20,0
+1_audience,20,321,20,20
+20_audiences_69_nodes,20,321,20,20
