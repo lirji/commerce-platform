@@ -44,6 +44,10 @@
 
 回退方式：回退本任务的源码和文档提交；没有数据迁移，也无需数据补偿。已发布的外部 Java 客户端若引用旧全限定名，应按版本窗口单独评估，本仓库未发现此类构建依赖。
 
+Git 交付：`7811dc4 refactor(backend): 按业务能力细分服务端包结构` 已位于任务分支 `refactor/backend-capability-packages` 及远程 `main`。
+
+远程 CI：`main` 运行 [36318647988](https://github.com/lirji/commerce-platform/actions/runs/36318647988) 的真实 MySQL 构建验证、前端依赖审计、打包应用启动均通过，浏览器验收为 20 通过、4 失败。4 个失败分别在 `catalog-merchandising.spec.ts`、`coupon-deliveries.spec.ts`、`member-behavior.spec.ts` 和 `member-cycles.spec.ts`，与基线 `3743eb1` 的 [36306871849](https://github.com/lirji/commerce-platform/actions/runs/36306871849) 相同，且失败断言位置相同。任务分支运行 [36318625871](https://github.com/lirji/commerce-platform/actions/runs/36318625871) 同样在浏览器阶段失败；除了这 4 个，还有 `commerce.spec.ts:126` 等待“批准”按钮超时，该用例在同一提交的 `main` 运行通过。额外超时原因未确认，不能声称整条远程 CI 通过。
+
 ## 剩余关注
 
 - 包结构不会自动收窄现有大型接口的方法集合；商品经营契约如需进一步拆分，应作为独立契约任务评估调用方与兼容窗口。
