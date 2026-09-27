@@ -1683,6 +1683,216 @@ class PersistedCommerceTest {
 		return call("GET", "/v1/entitlements", member, null, null).body().get(0);
 	}
 
+	private JsonNode execution(JsonNode order, String campaign) throws Exception {
+		return call("GET", "/v1/admin/marketing-executions/" + order.path("orderId").asString() + "/" + campaign,
+				admin, null, null).body();
+	}
+
+	@Test
+	void marketingExecutionTracksRealOrderGrantAndTenantBoundary() throws Exception {
+		var order = entitlementOrder();
+		var first = execution(order, "benefit-campaign");
+		assertEquals("RESERVED", first.path("status").asString());
+		assertEquals("ELIGIBLE", first.path("reasonCode").asString());
+		assertEquals(1, first.path("campaignVersion").asLong());
+		assertEquals("benefit-audience", first.path("audienceId").asString());
+		assertEquals(1, first.path("audienceVersion").asLong());
+		assertEquals("credit", first.path("benefitId").asString());
+		assertEquals("RESERVED", first.path("grantStatus").asString());
+		assertEquals(403, call("GET", "/v1/admin/marketing-executions/" + order.path("orderId").asString()
+				+ "/benefit-campaign", member, null, null).status());
+		String foreignAdmin = token("other-" + UUID.randomUUID(), "admin", "ADMIN");
+		assertEquals(404, call("GET", "/v1/admin/marketing-executions/" + order.path("orderId").asString()
+				+ "/benefit-campaign", foreignAdmin, null, null).status());
+		assertEquals(order,
+				post("/v1/orders", member, "o", orderInput(call("GET", "/v1/quotes/"
+						+ first.path("quoteId").asString(), member, null, null).body())));
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM marketing_execution WHERE tenant_id=?", Integer.class,
+				tenant));
+		assertEquals(1, call("GET", "/v1/admin/marketing-executions", admin, null, null).body().size());
+		payOrder(order);
+		assertEquals("GRANT_REQUESTED", execution(order, "benefit-campaign").path("status").asString());
+		pump();
+		pump();
+		var last = execution(order, "benefit-campaign");
+		assertEquals("GRANTED", last.path("status").asString());
+		assertEquals("AVAILABLE", last.path("grantStatus").asString());
+		assertEquals("DELIVERED", last.path("eventStatus").asString());
+		assertEquals("GRANTED", jdbc.queryForObject(
+				"SELECT status FROM marketing_execution WHERE tenant_id=? AND order_id=?", String.class, tenant,
+				order.path("orderId").asString()));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'", Integer.class, tenant));
+	}
+
+	@Test
+	void draftPreviewUsesProductionDecisionWithoutParticipationOrQuotaWrites() throws Exception {
+		seed();
+		stock("sku1", 2);
+		post("/v1/admin/entitlement-definitions", admin, "preview-benefit",
+				Map.of("benefitId", "preview-credit", "version", 1, "storeId", "store1", "name", "预览权益",
+						"units", 1, "quota", 2, "validFrom", Instant.now().minusSeconds(120).toString(),
+						"validTo", Instant.now().plusSeconds(7200).toString(), "validityDays", 1));
+		audience("preview-audience", 1, List.of("m1"));
+		var draft = new HashMap<>(draft("preview-campaign", 1, "1.00"));
+		draft.put("policy", Map.of("audience", Map.of("id", "preview-audience", "version", 1), "terms",
+				Map.of("percentageBps", 0, "platformFundingBps", 0, "budget", "20.00", "grant",
+						Map.of("benefitId", "preview-credit", "version", 1))));
+		post("/v1/admin/campaigns", admin, "preview-create", draft);
+		var input = Map.of("memberId", "m1", "items", List.of(Map.of("skuId", "sku1", "quantity", 1)));
+		var first = post("/v1/admin/campaigns/preview-campaign/1/preview", admin, null, input);
+		assertEquals(first, post("/v1/admin/campaigns/preview-campaign/1/preview", admin, null, input));
+		assertEquals("1.00", first.path("discount").asString());
+		assertEquals("ELIGIBLE", first.path("trace").get(0).path("reason").asString());
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM marketing_execution WHERE tenant_id=?", Integer.class,
+				tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?", Integer.class,
+				tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT reserved FROM benefit_definition WHERE tenant_id=? AND benefit_id='preview-credit'",
+				Integer.class, tenant));
+		assertEquals(new java.math.BigDecimal("0.00"), jdbc.queryForObject(
+				"SELECT held FROM marketing_budget WHERE tenant_id=? AND campaign_id='preview-campaign'",
+				java.math.BigDecimal.class, tenant));
+	}
+
+	@Test
+	void publicationRechecksAudienceAndRejectsDuplicateRuleBranches() throws Exception {
+		seed();
+		audience("publish-audience", 1, List.of("m1"));
+		post("/v1/admin/campaigns", admin, "publication-create",
+				governed("publish-guard", Map.of("audience", Map.of("id", "publish-audience", "version", 1))));
+		post("/v1/admin/campaigns/publish-guard/1/submit", admin, "publication-submit",
+				Map.of("expectedVersion", 0));
+		post("/v1/admin/campaigns/publish-guard/1/approve", admin, "publication-approve",
+				Map.of("expectedVersion", 1));
+		jdbc.update("UPDATE marketing_audience_snapshot SET valid_until=? WHERE tenant_id=? AND audience_id='publish-audience'",
+				java.sql.Timestamp.from(Instant.now().minusSeconds(1)), tenant);
+		assertEquals(409, call("POST", "/v1/admin/campaigns/publish-guard/1/publish", admin,
+				"publication-invalid", Map.of("expectedVersion", 2)).status());
+		assertEquals(0, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM marketing_campaign WHERE tenant_id=? AND campaign_id='publish-guard' AND status='PUBLISHED'",
+				Integer.class, tenant));
+		var condition = Map.of("kind", "COMPARE", "field", "orderAmount", "operator", "GTE",
+				"valueType", "DECIMAL", "value", "20.00");
+		var invalid = new HashMap<>(draft("duplicate-rule", 1, "1.00"));
+		invalid.put("rule", Map.of("kind", "ALL", "children", List.of(condition, condition)));
+		assertEquals(400, call("POST", "/v1/admin/campaigns", admin, "duplicate-rule", invalid).status());
+	}
+
+	@Test
+	void marketingExecutionKeepsVersionsAcrossPublishAndRollback() throws Exception {
+		seed();
+		stock("sku1", 5);
+		entitlementCampaign(3);
+		var first = post("/v1/orders", member, "version-o1",
+				orderInput(post("/v1/quotes", member, "version-q1", basket(1))));
+		var secondDraft = new HashMap<>(draft("benefit-campaign", 2, "2.00"));
+		secondDraft.put("policy", Map.of("audience", Map.of("id", "benefit-audience", "version", 1), "terms",
+				Map.of("percentageBps", 0, "platformFundingBps", 0, "budget", "20.00", "grant",
+						Map.of("benefitId", "credit", "version", 1))));
+		post("/v1/admin/campaigns", admin, "version-v2", secondDraft);
+		post("/v1/admin/campaigns/benefit-campaign/2/submit", admin, "version-submit", Map.of("expectedVersion", 0));
+		post("/v1/admin/campaigns/benefit-campaign/2/approve", admin, "version-approve", Map.of("expectedVersion", 1));
+		post("/v1/admin/campaigns/benefit-campaign/2/publish", admin, "version-publish", Map.of("expectedVersion", 2));
+		var second = post("/v1/orders", member, "version-o2",
+				orderInput(post("/v1/quotes", member, "version-q2", basket(1))));
+		post("/v1/admin/campaigns/benefit-campaign/1/publish", admin, "version-rollback",
+				Map.of("expectedVersion", 4));
+		var third = post("/v1/orders", member, "version-o3",
+				orderInput(post("/v1/quotes", member, "version-q3", basket(1))));
+		assertEquals(List.of(1L, 2L, 1L), List.of(execution(first, "benefit-campaign").path("campaignVersion").asLong(),
+				execution(second, "benefit-campaign").path("campaignVersion").asLong(),
+				execution(third, "benefit-campaign").path("campaignVersion").asLong()));
+		assertEquals(List.of("1.00", "2.00", "1.00"), List.of(execution(first, "benefit-campaign").path("discountAmount").asString(),
+				execution(second, "benefit-campaign").path("discountAmount").asString(),
+				execution(third, "benefit-campaign").path("discountAmount").asString()));
+		assertEquals(3, jdbc.queryForObject("SELECT COUNT(*) FROM marketing_execution WHERE tenant_id=?", Integer.class,
+				tenant));
+	}
+
+	@Test
+	void marketingExecutionShowsIsolatedGrantAndUsesExistingRecovery() throws Exception {
+		var order = entitlementOrder();
+		payOrder(order);
+		var pending = execution(order, "benefit-campaign");
+		String eventId = pending.path("eventId").asString();
+		assertFalse(eventId.isBlank());
+		jdbc.update("UPDATE platform_event SET status='ISOLATED',attempts=5,failure_class='BUSINESS_REJECTED',"
+				+ "last_error='test-injected' WHERE event_id=? AND tenant_id=?", eventId, tenant);
+		assertEquals("GRANT_FAILED", execution(order, "benefit-campaign").path("status").asString());
+		assertEquals("REQUESTED", execution(order, "benefit-campaign").path("grantStatus").asString());
+		var recovered = post("/v1/admin/runtime/recoveries", admin, "grant-retry",
+				Map.of("workType", "event", "action", "RETRY", "workIds", List.of(eventId),
+						"expectedFailureClass", "BUSINESS_REJECTED", "reason", "验证营销发放恢复"));
+		assertEquals(1, recovered.path("applied").asInt());
+		pump();
+		pump();
+		assertEquals("GRANTED", execution(order, "benefit-campaign").path("status").asString());
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'", Integer.class, tenant));
+	}
+
+	@Test
+	void twoAppInstancesCompleteOneMarketingGrant() throws Exception {
+		var order = entitlementOrder();
+		payOrder(order);
+		try (var second = new SpringApplicationBuilder(CommerceApplication.class)
+			.initializers(context -> context.getEnvironment().getPropertySources().addFirst(new MapPropertySource(
+					"phase6-second-instance", Map.of("server.port", 0, "spring.datasource.url",
+							System.getenv("COMMERCE_TEST_DB_URL"), "spring.datasource.username",
+							System.getenv("COMMERCE_DB_USER"), "spring.datasource.password",
+							System.getenv("COMMERCE_DB_PASSWORD"), "commerce.sandbox-enabled", true,
+							"commerce.workers-enabled", false))))
+			.run()) {
+			int secondPort = ((ServletWebServerApplicationContext) second).getWebServer().getPort();
+			try (var pool = Executors.newFixedThreadPool(2)) {
+				var start = new CountDownLatch(1);
+				var first = pool.submit(() -> {
+					start.await();
+					return call("POST", "/v1/admin/events/pump", admin, null, null);
+				});
+				var otherInstance = pool.submit(() -> {
+					start.await();
+					return callAt(secondPort, "POST", "/v1/admin/events/pump", admin, null, null);
+				});
+				start.countDown();
+				assertEquals(200, first.get().status());
+				assertEquals(200, otherInstance.get().status());
+			}
+		}
+		pump();
+		assertEquals("GRANTED", execution(order, "benefit-campaign").path("status").asString());
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'", Integer.class, tenant));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM marketing_execution WHERE tenant_id=?", Integer.class, tenant));
+	}
+
+	@Test
+	void concurrentCampaignPublicationKeepsOneEffectiveVersion() throws Exception {
+		seed();
+		post("/v1/admin/campaigns", admin, "race-create", draft("publish-race", 1, "3.00"));
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var first = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/admin/campaigns/publish-race/1/publish", admin, "race-a",
+						Map.of("expectedVersion", 0));
+			});
+			var second = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/admin/campaigns/publish-race/1/publish", admin, "race-b",
+						Map.of("expectedVersion", 0));
+			});
+			start.countDown();
+			assertEquals(List.of(200, 409),
+					java.util.stream.Stream.of(first.get(), second.get()).map(Reply::status).sorted().toList());
+		}
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM marketing_campaign WHERE tenant_id=? AND campaign_id='publish-race' AND status='PUBLISHED'",
+				Integer.class, tenant));
+	}
+
 	@Test
 	void entitlementIsReservedThenGrantedOnceAfterTrustedPayment() throws Exception {
 		var order = entitlementOrder();
@@ -1748,6 +1958,8 @@ class PersistedCommerceTest {
 					java.util.stream.Stream.of(first.get(), second.get()).map(Reply::status).sorted().toList());
 		}
 		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?", Integer.class,
+				tenant));
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM marketing_execution WHERE tenant_id=?", Integer.class,
 				tenant));
 		assertEquals(1, jdbc.queryForObject("SELECT reserved FROM benefit_definition WHERE tenant_id=?", Integer.class,
 				tenant));

@@ -29,7 +29,9 @@ public record Actor(String tenantId, String actorId, Role role, Channel channel)
 	 */
 	public enum Capability {
 
-		EVENT_RUNTIME_METRICS_READ, RUNTIME_RECOVERY_READ, RUNTIME_RECOVERY_EXECUTE, RUNTIME_REPLAY_EXECUTE
+		EVENT_RUNTIME_METRICS_READ, RUNTIME_RECOVERY_READ, RUNTIME_RECOVERY_EXECUTE, RUNTIME_REPLAY_EXECUTE,
+		MARKETING_ACTIVITY_READ, MARKETING_DRAFT_EDIT, MARKETING_REVIEW, MARKETING_PUBLISH, MARKETING_PAUSE,
+		MARKETING_PREVIEW, MARKETING_EXECUTION_READ
 
 	}
 
@@ -46,14 +48,16 @@ public record Actor(String tenantId, String actorId, Role role, Channel channel)
 		return switch (role) {
 			case PLATFORM_OPERATOR -> java.util.EnumSet.of(Capability.EVENT_RUNTIME_METRICS_READ);
 			case ADMIN -> java.util.EnumSet.of(Capability.RUNTIME_RECOVERY_READ, Capability.RUNTIME_RECOVERY_EXECUTE,
-					Capability.RUNTIME_REPLAY_EXECUTE);
+					Capability.RUNTIME_REPLAY_EXECUTE, Capability.MARKETING_ACTIVITY_READ, Capability.MARKETING_DRAFT_EDIT,
+					Capability.MARKETING_REVIEW, Capability.MARKETING_PUBLISH, Capability.MARKETING_PAUSE,
+					Capability.MARKETING_PREVIEW, Capability.MARKETING_EXECUTION_READ);
 			default -> java.util.EnumSet.noneOf(Capability.class);
 		};
 	}
 
 	public void require(Capability capability) {
 		if (!capabilities().contains(capability))
-			throw new DomainException(DomainException.Code.FORBIDDEN, "缺少运行时能力：" + capability);
+			throw new DomainException(DomainException.Code.FORBIDDEN, "缺少操作能力：" + capability);
 	}
 
 	/** 管理权限仍在用例层校验，不能只靠控制器或页面隐藏入口。 */

@@ -37,6 +37,8 @@ public class OrderService implements OrderApi {
 
 	private final com.lrj.commerce.campaign.funding.api.CampaignFundingApi funding;
 
+	private final com.lrj.commerce.campaign.execution.api.CampaignExecutionApi executions;
+
 	private final com.lrj.commerce.benefit.coupon.api.CouponApi coupons;
 
 	private final OrderMapper mapper;
@@ -73,10 +75,12 @@ public class OrderService implements OrderApi {
 			com.lrj.commerce.benefit.coupon.api.CouponApi coupons,
 			com.lrj.commerce.campaign.funding.api.CampaignFundingApi funding,
 			com.lrj.commerce.benefit.entitlement.api.EntitlementApi entitlements,
+			com.lrj.commerce.campaign.execution.api.CampaignExecutionApi executions,
 			com.lrj.commerce.member.points.spend.api.PointsSpendApi points,
 			org.springframework.transaction.PlatformTransactionManager manager, WorkLanes lanes) {
 		this.points = points;
 		this.entitlements = entitlements;
+		this.executions = executions;
 		this.funding = funding;
 		this.coupons = coupons;
 		this.tx = new org.springframework.transaction.support.TransactionTemplate(manager);
@@ -117,6 +121,11 @@ public class OrderService implements OrderApi {
 					quote.promotion() == null ? null : quote.promotion().grant());
 			for (var line : quote.items().stream().sorted(Comparator.comparing(QuoteApi.Line::skuId)).toList())
 				inventory.reserve(actor, id, quote.storeId(), line.skuId(), line.quantity());
+			// 活动参与与所有订单预占同事务，保证额度争用失败时不会留下虚假的营销成功记录。
+			executions.recordOrder(actor, new com.lrj.commerce.campaign.execution.api.CampaignExecutionApi.OrderTrigger(
+					id, quote.quoteId(), member.memberId(), quote.storeId(), quote.campaign(),
+					quote.campaignDiscount(), quote.createdAt(), quote.trace(), quote.sources(),
+					quote.promotion() == null ? null : quote.promotion().grant()));
 			var lifecycle = OrderLifecycle.start();
 			boolean free = new BigDecimal(quote.payable()).signum() == 0;
 			if (free) {
@@ -344,6 +353,7 @@ public class OrderService implements OrderApi {
 			funding.confirm(tenant, order);
 			entitlements.confirmOrder(tenant, order);
 			inventory.confirm(tenant, order);
+			executions.settleOrder(tenant, order, true);
 		}
 		else {
 			points.release(tenant, order, member);
@@ -351,6 +361,7 @@ public class OrderService implements OrderApi {
 			funding.release(tenant, order);
 			entitlements.releaseOrder(tenant, order);
 			inventory.release(tenant, order);
+			executions.settleOrder(tenant, order, false);
 		}
 	}
 

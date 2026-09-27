@@ -47,6 +47,8 @@ public record RuleNode(String kind, String field, String operator, String valueT
 		}
 		Inputs.require(field == null && operator == null && valueType == null && value == null, "组合节点不能携带比较字段");
 		Inputs.require(children != null && !children.isEmpty() && children.size() <= 16, "组合子节点数量无效");
+		// 同层重复条件只会增加执行成本并使诊断含糊，发布前与创建时统一拒绝。
+		Inputs.require(new java.util.HashSet<>(children).size() == children.size(), "组合规则存在重复子条件");
 		var converted = children.stream().map(child -> child.convert(depth + 1, nodes)).toList();
 		return switch (kind) {
 			case "ALL" -> new Condition.All(converted);

@@ -43,6 +43,11 @@
       <artifactId>benefit</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.lrj.commerce</groupId>
+      <artifactId>marketing-runtime</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

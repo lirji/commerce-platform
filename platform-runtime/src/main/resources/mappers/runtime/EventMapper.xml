@@ -21,6 +21,7 @@
   <sql id="view">event_id,event_type,aggregate_id,status,attempts,available_at,last_error,transient_attempts,failure_class,first_failed_at,last_failed_at,skip_reason,manual_retries</sql>
   <select id="isolated" resultType="com.lrj.commerce.runtime.event.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE status='ISOLATED' AND tenant_id=#{tenant}<if test="failureClass!=null"> AND failure_class=#{failureClass}</if> AND event_id&gt;#{after} ORDER BY event_id LIMIT #{limit}</select>
   <select id="view" resultType="com.lrj.commerce.runtime.event.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id}</select>
+  <select id="latestFact" resultType="com.lrj.commerce.runtime.event.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_type=#{type} AND aggregate_id=#{aggregate} ORDER BY aggregate_version DESC LIMIT 1</select>
   <select id="lockView" resultType="com.lrj.commerce.runtime.event.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id} FOR UPDATE</select>
   <update id="skip">UPDATE platform_event SET status='SKIPPED',skip_reason='OPERATOR_SKIPPED' WHERE tenant_id=#{tenant} AND event_id=#{id} AND status='ISOLATED'</update>
   <select id="health" resultType="com.lrj.commerce.runtime.event.persistence.EventMapper$Health">

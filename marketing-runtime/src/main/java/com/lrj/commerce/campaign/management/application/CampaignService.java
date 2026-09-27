@@ -65,7 +65,7 @@ public class CampaignService implements CampaignApi {
 
 	/** 草稿内容不可变，修改必须创建新版本。 */
 	public View create(Actor actor, String key, Draft input) {
-		actor.requireAdmin();
+		actor.require(Actor.Capability.MARKETING_DRAFT_EDIT);
 		Inputs.require(input != null, "请求不能为空");
 		Identifiers.require(input.campaignId());
 		Inputs.text(input.name(), 128);
@@ -123,7 +123,7 @@ public class CampaignService implements CampaignApi {
 	}
 
 	private View change(Actor actor, String key, String id, long version, long expected, boolean publish) {
-		actor.requireAdmin();
+		actor.require(publish ? Actor.Capability.MARKETING_PUBLISH : Actor.Capability.MARKETING_PAUSE);
 		Identifiers.require(id);
 		Inputs.require(version > 0 && expected >= 0, "活动版本无效");
 		return commands.run(actor, publish ? "campaign.publish" : "campaign.pause", key, List.of(id, version, expected),
@@ -136,18 +136,8 @@ public class CampaignService implements CampaignApi {
 					if (row.lockVersion() != expected || (publish && row.status().equals("PUBLISHED"))
 							|| (!publish && !row.status().equals("PUBLISHED")))
 						throw new DomainException(DomainException.Code.CONFLICT, "活动状态或版本冲突");
-					if (publish && row.policyJson() != null) {
-						if (!java.util.Set.of("APPROVED", "PAUSED").contains(row.status()))
-							throw new DomainException(DomainException.Code.CONFLICT, "受治理活动必须审批后发布");
-						var policy = JsonCodec.read(row.policyJson(), Policy.class);
-						if (policy.audience() != null)
-							assets.requireFresh(actor.tenantId(), policy.audience(), clock.instant());
-						if (policy.rule() != null)
-							assets.publishedRule(actor.tenantId(), policy.rule());
-						if (policy.terms() != null && policy.terms().grant() != null)
-							entitlements.validateBinding(actor.tenantId(), row.storeId(), policy.terms().grant(),
-									row.validFrom(), row.validTo());
-					}
+					if (publish)
+						validatePublication(actor.tenantId(), row);
 					stores.requireActive(actor, row.storeId());
 					if (publish)
 						mapper.pauseOthers(actor.tenantId(), id);
@@ -157,9 +147,39 @@ public class CampaignService implements CampaignApi {
 				});
 	}
 
+	/** 内容版本不改写；每次激活都复核固定引用和当前时间，避免恢复旧版时绕过发布门。 */
+	private void validatePublication(String tenant, CampaignMapper.Row row) {
+		Inputs.require(row.validFrom().isBefore(row.validTo()) && clock.instant().isBefore(row.validTo()),
+				"活动有效期已结束或无效");
+		JsonCodec.read(row.ruleJson(), RuleNode.class).requireTrustedFields();
+		if (row.policyJson() == null)
+			return;
+		if (!java.util.Set.of("APPROVED", "PAUSED").contains(row.status()))
+			throw new DomainException(DomainException.Code.CONFLICT, "受治理活动必须审批后发布");
+		var policy = JsonCodec.read(row.policyJson(), Policy.class);
+		if (policy.audience() != null)
+			assets.requireFresh(tenant, policy.audience(), clock.instant());
+		if (policy.rule() != null) {
+			var publishedRule = assets.publishedRule(tenant, policy.rule());
+			Inputs.require(publishedRule.equals(JsonCodec.read(row.ruleJson(), RuleNode.class)),
+					"活动固定规则与引用版本不一致");
+		}
+		if (policy.terms() != null) {
+			var terms = policy.terms();
+			pricing(terms.pricing());
+			Inputs.require(terms.percentageBps() >= 0 && terms.percentageBps() <= 10000
+					&& terms.platformFundingBps() >= 0 && terms.platformFundingBps() <= 10000,
+					"活动百分比参数无效");
+			if (terms.budget() != null)
+				Inputs.require(money(terms.budget()).compareTo(Money.ZERO) > 0, "活动预算必须大于零");
+			if (terms.grant() != null)
+				entitlements.validateBinding(tenant, row.storeId(), terms.grant(), row.validFrom(), row.validTo());
+		}
+	}
+
 	/** 管理台按活动ID列出每个活动最新内容版本。 */
 	public List<View> list(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		actor.require(Actor.Capability.MARKETING_ACTIVITY_READ);
 		Inputs.page(after, limit);
 		return mapper.list(actor.tenantId(), after, limit).stream().map(this::view).toList();
 	}
@@ -184,7 +204,7 @@ public class CampaignService implements CampaignApi {
 
 	/** 每次审批变更都带预期版本并写命令审计，不能跳级发布。 */
 	public View review(Actor actor, String key, String id, long version, long expected, String action) {
-		actor.requireAdmin();
+		actor.require(Actor.Capability.MARKETING_REVIEW);
 		Identifiers.require(id);
 		Inputs.require(version > 0 && expected >= 0 && java.util.Set.of("submit", "approve", "reject").contains(action),
 				"审批动作无效");
@@ -244,7 +264,7 @@ public class CampaignService implements CampaignApi {
 
 	/** 预览真实会员和目录价格，但不存报价、不预占库存/预算、不发权益。 */
 	public PreviewResult preview(Actor actor, String id, long version, Preview input) {
-		actor.requireAdmin();
+		actor.require(Actor.Capability.MARKETING_PREVIEW);
 		Identifiers.require(id);
 		Inputs.require(version > 0 && input != null && input.items() != null && !input.items().isEmpty()
 				&& input.items().size() <= 100, "预览购物清单无效");

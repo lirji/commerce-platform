@@ -31,6 +31,8 @@ public interface EntitlementMapper {
 
 	View byOrder(@Param("tenant") String tenant, @Param("order") String order);
 
+	View readOrder(@Param("tenant") String tenant, @Param("order") String order);
+
 	View find(@Param("tenant") String tenant, @Param("id") String id);
 
 	View lock(@Param("tenant") String tenant, @Param("id") String id);

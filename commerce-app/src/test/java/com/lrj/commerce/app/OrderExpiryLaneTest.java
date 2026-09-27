@@ -181,6 +181,7 @@ class OrderExpiryLaneTest {
 				context.getBean(Clock.class), context.getBean(com.lrj.commerce.benefit.coupon.api.CouponApi.class),
 				context.getBean(com.lrj.commerce.campaign.funding.api.CampaignFundingApi.class),
 				context.getBean(com.lrj.commerce.benefit.entitlement.api.EntitlementApi.class),
+				context.getBean(com.lrj.commerce.campaign.execution.api.CampaignExecutionApi.class),
 				context.getBean(com.lrj.commerce.member.points.spend.api.PointsSpendApi.class),
 				context.getBean(org.springframework.transaction.PlatformTransactionManager.class), new WorkLanes());
 	}

@@ -87,6 +87,13 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 		mapper.grant(actor.tenantId(), UUID.randomUUID().toString(), order, member, d, "ORDER", order);
 	}
 
+	/** 只供受信任的服务端用例读取；调用方必须带认证边界取得的租户。 */
+	public View orderGrant(String tenant, String order) {
+		Identifiers.require(tenant);
+		Identifiers.require(order);
+		return mapper.readOrder(tenant, order);
+	}
+
 	/** 付款只产生发放任务，真实余额由独立幂等消费者授予。 */
 	@Transactional(propagation = Propagation.MANDATORY)
 	public void confirmOrder(String tenant, String order) {
@@ -221,6 +228,10 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 		change(event.tenantId(), grant, State.AVAILABLE, grant.units(), 0, grant.expiresAt());
 		entry(event.tenantId(), grant.grantId(), "GRANT", grant.units(), grant.units(),
 				grant.orderId() == null ? grant.sourceId() : grant.orderId());
+		// 营销只消费真实订单发放完成的事实；事件与余额/账本同事务，失败会整体回滚。
+		if (grant.sourceType().equals("ORDER"))
+			outbox.append(event.tenantId(), "benefit.grant.available.v1", grant.grantId(), grant.version() + 1,
+					Map.of("orderId", grant.orderId(), "grantId", grant.grantId()));
 	}
 
 	private void change(String tenant, View grant, State status, int remaining, int debt, Instant expires) {

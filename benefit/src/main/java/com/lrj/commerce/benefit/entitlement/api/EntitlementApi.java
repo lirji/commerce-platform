@@ -59,6 +59,9 @@ public interface EntitlementApi {
 
 	void reserveOrder(Actor actor, String order, String member, String store, Ref ref);
 
+	/** 内部只读订单来源权益，营销执行只引用真实grant，不复制额度权威。 */
+	View orderGrant(String tenant, String order);
+
 	void confirmOrder(String tenant, String order);
 
 	void releaseOrder(String tenant, String order);

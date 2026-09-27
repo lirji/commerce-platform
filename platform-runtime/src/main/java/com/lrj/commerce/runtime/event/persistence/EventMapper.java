@@ -46,6 +46,10 @@ public interface EventMapper {
 
 	EventView view(@Param("tenant") String tenant, @Param("id") String id);
 
+	/** 借助已有事件事实唯一索引定位一个聚合的最后受理事件，不读取载荷。 */
+	EventView latestFact(@Param("tenant") String tenant, @Param("type") String type,
+			@Param("aggregate") String aggregate);
+
 	/** 恢复前加行锁读取：并发的恢复命令串行化，审计记录的前状态就是被改变的状态。 */
 	EventView lockView(@Param("tenant") String tenant, @Param("id") String id);
 
