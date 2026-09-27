@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-实现和本地验证已完成；正在进行任务分支提交、远程 main 合并与推送。交付状态以 Git 事实为准。
+实现和本地验证已完成。任务分支 `refactor/java-packages-formatting` 的 `c23f873`、`8e5c883` 已推送，远程 `main` 已快进包含这两个提交。远程 CI 状态待核验。
 
 ## 已完成
 
@@ -25,7 +25,7 @@
 
 ## 未完成
 
-- 核对暂存差异并完成任务分支提交、远程 main 合并和推送；核验远程 CI 结果。
+- 核验本次远程 CI 结果；若失败，确认是否由本任务引入并在任务分支修复。
 
 ## 当前问题
 
@@ -35,9 +35,9 @@
 
 ## 下一步建议
 
-1. 检查暂存范围和提交差异，按后端包重构与其余排版分别提交。
-2. 正常推送任务分支并合入远程 `main`，核验 CI，随后更新本文件的 Git 状态。
+1. 查看远程 `main` 对应的 Verify commerce platform CI 结果。
+2. 若 CI 失败，先核对失败与本任务的因果关系，再做有界修复。
 
 ## 恢复 Prompt
 
-请读取 `CODEX_PROGRESS.md` 与 `docs/evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md`，核对当前 Git 状态，从未完成的交付步骤继续。保留用户已有改动，不重复格式化或改写历史迁移。
+请读取 `CODEX_PROGRESS.md` 与 `docs/evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md`，核对当前 Git 与 CI 状态，从未完成的远程验证步骤继续。保留用户已有改动，不重复格式化或改写历史迁移。
