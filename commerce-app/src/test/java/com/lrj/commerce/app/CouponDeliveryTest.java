@@ -338,4 +338,38 @@ class CouponDeliveryTest {
 		assertEquals("HELD", wallet().get(0).path("status").asString());
 	}
 
+	@Test
+	void couponReservationAndRevocationRaceHasOneWinner() throws Exception {
+		assets(10, 7);
+		audience(1, List.of("m1"));
+		batch("race", 1, 1);
+		pump();
+		post("/v1/admin/inventory/receipts", admin, "race-stock",
+				Map.of("storeId", "store1", "skuId", "sku1", "quantity", 2));
+		var coupon = wallet().get(0);
+		var quotation = quote(coupon.path("couponId").asString(), "race-quote");
+		var input = Map.of("quoteId", quotation.path("quoteId").asString(), "address",
+				Map.of("recipient", "券竞争验收", "phone", "13800000000", "detail", "隔离地址"));
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var order = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/orders", member, "race-order", input);
+			});
+			var revoke = pool.submit(() -> {
+				start.await();
+				control("race", "REVOKE");
+				pump();
+				return read("race");
+			});
+			start.countDown();
+			var result = order.get();
+			var batch = revoke.get();
+			assertTrue(Set.of(200, 409).contains(result.status()));
+			assertEquals(result.status() == 200 ? "HELD" : "REVOKED", wallet().get(0).path("status").asString());
+			assertEquals(result.status() == 200 ? 1 : 0, batch.path("kept").asInt());
+			assertEquals(result.status() == 200 ? 0 : 1, batch.path("revoked").asInt());
+		}
+	}
+
 }

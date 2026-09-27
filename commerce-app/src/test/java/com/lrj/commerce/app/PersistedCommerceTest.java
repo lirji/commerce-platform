@@ -5,6 +5,9 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -18,6 +21,12 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
+import com.lrj.commerce.ordering.order.infrastructure.persistence.OrderMapper;
+import com.lrj.commerce.runtime.work.RetryPolicy;
+import com.lrj.commerce.runtime.api.event.EventHandler;
+import com.lrj.commerce.runtime.event.EventDispatcher;
+import com.lrj.commerce.runtime.event.persistence.EventMapper;
+import com.lrj.commerce.payment.charge.application.PaymentService;
 
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -51,6 +60,15 @@ class PersistedCommerceTest {
 	com.lrj.commerce.payment.refund.api.RefundApi refunds;
 
 	@Autowired
+	OrderMapper orderMapper;
+
+	@Autowired
+	EventMapper eventMapper;
+
+	@Autowired
+	PaymentService paymentService;
+
+	@Autowired
 	org.springframework.transaction.PlatformTransactionManager transactions;
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
@@ -78,7 +96,13 @@ class PersistedCommerceTest {
 	}
 
 	private Reply call(String method, String path, String token, String key, Object body) throws Exception {
-		var req = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).timeout(Duration.ofSeconds(15));
+		return callAt(port, method, path, token, key, body);
+	}
+
+	private Reply callAt(int targetPort, String method, String path, String token, String key, Object body)
+			throws Exception {
+		var req = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + targetPort + path))
+			.timeout(Duration.ofSeconds(15));
 		if (token != null)
 			req.header("Authorization", "Bearer " + token);
 		if (key != null)
@@ -458,6 +482,162 @@ class PersistedCommerceTest {
 	}
 
 	@Test
+	void paidProviderFactConvergesAfterExpiryStartsClosing() throws Exception {
+		var order = pendingOrder();
+		var payment = startPayment(order);
+		sandbox(payment, "PAID");
+		jdbc.update("UPDATE order_record SET expires_at=? WHERE tenant_id=?",
+				java.sql.Timestamp.from(Instant.now().minusSeconds(1)), tenant);
+		// 渠道已收款但本地尚无付款事件；到期只能进入 CLOSING，不能释放预占。
+		assertEquals(1, post("/v1/admin/orders/expire", admin, "expire-paid-provider", null).asInt());
+		assertEquals("CLOSING", readOrder(order).path("status").asString());
+		assertEquals(1, stockValue("held"));
+		assertEquals("PAID", reconcile(order).path("status").asString());
+		pump();
+		assertEquals("PAID", readOrder(order).path("status").asString());
+		assertEquals(1, stockValue("sold"));
+		assertEquals(0, stockValue("held"));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='payment.paid.v1'",
+				Integer.class, tenant));
+	}
+
+	@Test
+	void twoLiveAppInstancesConvergeWhenExpiryRacesWithPaidRecheck() throws Exception {
+		var order = pendingOrder();
+		var payment = startPayment(order);
+		sandbox(payment, "PAID");
+		jdbc.update("UPDATE order_record SET expires_at=? WHERE tenant_id=?",
+				java.sql.Timestamp.from(Instant.now().minusSeconds(1)), tenant);
+		// 第二个 Spring 上下文持有独立连接池与事务管理器，模拟另一应用实例共享同一 MySQL。
+		try (var second = new SpringApplicationBuilder(CommerceApplication.class)
+			.initializers(context -> context.getEnvironment().getPropertySources().addFirst(new MapPropertySource(
+					"phase5-second-instance", Map.of("server.port", 0, "spring.datasource.url",
+							System.getenv("COMMERCE_TEST_DB_URL"), "spring.datasource.username",
+							System.getenv("COMMERCE_DB_USER"), "spring.datasource.password",
+							System.getenv("COMMERCE_DB_PASSWORD"), "commerce.sandbox-enabled", true,
+							"commerce.workers-enabled", false))))
+			.run()) {
+			int secondPort = ((ServletWebServerApplicationContext) second).getWebServer().getPort();
+			try (var pool = Executors.newFixedThreadPool(2)) {
+				var start = new CountDownLatch(1);
+				var expiry = pool.submit(() -> {
+					start.await();
+					return call("POST", "/v1/admin/orders/expire", admin, "two-instance-expire", null);
+				});
+				var recheck = pool.submit(() -> {
+					start.await();
+					return callAt(secondPort, "POST", "/v1/orders/" + order.path("orderId").asString()
+							+ "/payment/reconcile", member, null, null);
+				});
+				start.countDown();
+				assertEquals(200, expiry.get().status());
+				assertEquals("PAID", recheck.get().body().path("status").asString());
+			}
+		}
+		pump();
+		assertEquals("PAID", readOrder(order).path("status").asString());
+		assertEquals(1, stockValue("sold"));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='payment.paid.v1'",
+				Integer.class, tenant));
+	}
+
+	@Test
+	void staleExpiryCannotCancelAnAlreadyPaidOrder() throws Exception {
+		var order = pendingOrder();
+		var payment = startPayment(order);
+		sandbox(payment, "PAID");
+		reconcile(order);
+		pump();
+		assertEquals("PAID", readOrder(order).path("status").asString());
+		jdbc.update("UPDATE order_record SET expires_at=? WHERE tenant_id=?",
+				java.sql.Timestamp.from(Instant.now().minusSeconds(1)), tenant);
+		assertEquals(0, post("/v1/admin/orders/expire", admin, "stale-expire", null).asInt());
+		assertEquals("PAID", readOrder(order).path("status").asString());
+		assertEquals(1, stockValue("sold"));
+	}
+
+	@Test
+	void paymentAfterExpiryDiscoveryIsRecheckedUnderTheOrderLock() throws Exception {
+		var order = pendingOrder();
+		var payment = startPayment(order);
+		sandbox(payment, "PAID");
+		String id = order.path("orderId").asString();
+		jdbc.update("UPDATE order_record SET expires_at=? WHERE tenant_id=?",
+				java.sql.Timestamp.from(Instant.now().minusSeconds(1)), tenant);
+		int poisonBudget = RetryPolicy.POISON.budget();
+		int transientBudget = RetryPolicy.TRANSIENT.budget();
+		// 候选发现不加锁；在它与事务内领取之间，可信付款先提交。
+		assertEquals(id, orderMapper.expiryDue(tenant, Instant.now(), 1, poisonBudget, transientBudget).getFirst()
+			.orderId());
+		reconcile(order);
+		pump();
+		var transaction = new org.springframework.transaction.support.TransactionTemplate(transactions);
+		assertNull(transaction.execute(status -> orderMapper.expiredLock(tenant, id, Instant.now(), poisonBudget,
+				transientBudget)));
+		assertEquals(0, post("/v1/admin/orders/expire", admin, "post-payment-expire", null).asInt());
+		assertEquals("PAID", readOrder(order).path("status").asString());
+	}
+
+	@Test
+	void concurrentPaymentRechecksCommitOnePaidFactAndOneOrderEffect() throws Exception {
+		var order = pendingOrder();
+		var payment = startPayment(order);
+		sandbox(payment, "PAID");
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var first = pool.submit(() -> {
+				start.await();
+				return reconcile(order);
+			});
+			var second = pool.submit(() -> {
+				start.await();
+				return reconcile(order);
+			});
+			start.countDown();
+			assertEquals("PAID", first.get().path("status").asString());
+			assertEquals("PAID", second.get().path("status").asString());
+		}
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='payment.paid.v1'",
+				Integer.class, tenant));
+		pump();
+		assertEquals("PAID", readOrder(order).path("status").asString());
+		assertEquals(1, stockValue("sold"));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=? AND consumer_id='order-payment-v1'",
+				Integer.class, tenant));
+	}
+
+	@Test
+	void oneProviderTransactionCannotPayTwoOrders() throws Exception {
+		var firstOrder = pendingOrder();
+		var secondQuote = post("/v1/quotes", member, "second-quote", basket(1));
+		var secondOrder = post("/v1/orders", member, "second-order", orderInput(secondQuote));
+		var firstPayment = startPayment(firstOrder);
+		var secondPayment = post("/v1/orders/" + secondOrder.path("orderId").asString() + "/payments", member,
+				"second-payment", null);
+		sandbox(firstPayment, "PAID");
+		post("/v1/admin/sandbox/payments/" + secondPayment.path("paymentId").asString() + "/fact", admin,
+				"second-paid", Map.of("status", "PAID"));
+		String transaction = jdbc.queryForObject(
+				"SELECT transaction_id FROM payment_sandbox_ledger WHERE tenant_id=? AND payment_id=?", String.class,
+				tenant, firstPayment.path("paymentId").asString());
+		jdbc.update("UPDATE payment_sandbox_ledger SET transaction_id=? WHERE tenant_id=? AND payment_id=?", transaction,
+				tenant, secondPayment.path("paymentId").asString());
+		assertEquals("PAID", reconcile(firstOrder).path("status").asString());
+		assertEquals(409, call("POST", "/v1/orders/" + secondOrder.path("orderId").asString()
+				+ "/payment/reconcile", member, null, null).status());
+		assertEquals("UNKNOWN", jdbc.queryForObject(
+				"SELECT status FROM payment_attempt WHERE tenant_id=? AND payment_id=?", String.class, tenant,
+				secondPayment.path("paymentId").asString()));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='payment.paid.v1'",
+				Integer.class, tenant));
+	}
+
+	@Test
 	void concurrentCloseAndChannelSuccessChooseOneDurableFact() throws Exception {
 		var order = pendingOrder();
 		var payment = startPayment(order);
@@ -532,6 +712,47 @@ class PersistedCommerceTest {
 		pump();
 		assertEquals("PAID", readOrder(order).path("status").asString());
 		assertEquals(1, stockValue("sold"));
+	}
+
+	@Test
+	void crashAfterPaymentConsumerEffectBeforeCommitRollsBackAndRetriesOnce() throws Exception {
+		var order = pendingOrder();
+		var payment = startPayment(order);
+		sandbox(payment, "PAID");
+		reconcile(order);
+		var failing = new EventHandler() {
+			public String consumer() {
+				return paymentService.consumer();
+			}
+
+			public Set<String> types() {
+				return Set.of("payment.paid.v1");
+			}
+
+			public void handle(Event event) {
+				paymentService.handle(event);
+				throw new IllegalStateException("injected crash before consumer commit");
+			}
+		};
+		var dispatcher = new EventDispatcher(eventMapper, List.of(failing), transactions, commands);
+		assertEquals(0, dispatcher.pump(new Actor(tenant, "admin", Actor.Role.ADMIN)));
+		assertEquals("PAYMENT_IN_PROGRESS", readOrder(order).path("status").asString());
+		assertEquals(1, stockValue("held"));
+		assertEquals(0, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=? AND consumer_id='order-payment-v1'",
+				Integer.class, tenant));
+		jdbc.update("UPDATE platform_event SET available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='payment.paid.v1'",
+				tenant);
+		pump();
+		assertEquals("PAID", readOrder(order).path("status").asString());
+		assertEquals(1, stockValue("sold"));
+		jdbc.update("UPDATE platform_event SET status='PENDING',available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=? AND event_type='payment.paid.v1'",
+				tenant);
+		pump();
+		assertEquals(1, stockValue("sold"));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_inbox WHERE tenant_id=? AND consumer_id='order-payment-v1'",
+				Integer.class, tenant));
 	}
 
 	@Test
@@ -638,6 +859,34 @@ class PersistedCommerceTest {
 	}
 
 	@Test
+	void duplicateConcurrentShipmentCommandsCreateOneShipmentTransition() throws Exception {
+		var order = payOrder(pendingOrder());
+		String id = order.path("orderId").asString();
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var first = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/admin/fulfillments/" + id + "/ship", admin, "ship-first",
+						Map.of("trackingNo", "ONE-TRACK"));
+			});
+			var second = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/admin/fulfillments/" + id + "/ship", admin, "ship-second",
+						Map.of("trackingNo", "ONE-TRACK"));
+			});
+			start.countDown();
+			assertEquals(200, first.get().status());
+			assertEquals(200, second.get().status());
+		}
+		assertEquals(1, jdbc.queryForObject("SELECT version FROM fulfillment_record WHERE tenant_id=? AND order_id=?",
+				Integer.class, tenant, id));
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='order.fulfilling.v1'",
+				Integer.class, tenant));
+		assertEquals("FULFILLING", readOrder(order).path("status").asString());
+	}
+
+	@Test
 	void beforeShipmentRefundBlocksShippingAndWaitsForRealRefundFact() throws Exception {
 		var order = payOrder(pendingOrder());
 		var request = requestReturn(order, 1, "r");
@@ -668,6 +917,37 @@ class PersistedCommerceTest {
 		assertEquals(2, stockValue("available"));
 		assertEquals(1,
 				jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund WHERE tenant_id=?", Integer.class, tenant));
+	}
+
+	@Test
+	void shipmentAndAftersaleRaceKeepsOneConsistentFulfillmentState() throws Exception {
+		var order = payOrder(pendingOrder());
+		String id = order.path("orderId").asString();
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var shipment = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/admin/fulfillments/" + id + "/ship", admin, "racing-ship",
+						Map.of("trackingNo", "RACING-TRACK"));
+			});
+			var aftersale = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/aftersales", member, "racing-return",
+						Map.of("orderId", id, "reason", "并发退货", "items",
+								List.of(Map.of("skuId", "sku1", "quantity", 1))));
+			});
+			start.countDown();
+			var shipped = shipment.get();
+			var returned = aftersale.get();
+			assertEquals(200, returned.status(), returned.body().toString());
+			assertTrue(Set.of(200, 409).contains(shipped.status()));
+			var fulfillment = call("GET", "/v1/orders/" + id + "/fulfillment", member, null, null).body();
+			assertTrue(fulfillment.path("blocked").asBoolean());
+			assertEquals(shipped.status() == 200 ? "SHIPPED" : "READY", fulfillment.path("status").asString());
+			assertEquals(shipped.status() == 200, returned.body().path("returnRequired").asBoolean());
+		}
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM aftersales_case WHERE tenant_id=?", Integer.class,
+				tenant));
 	}
 
 	@Test
@@ -807,6 +1087,60 @@ class PersistedCommerceTest {
 				"SELECT refund_reserved FROM payment_attempt WHERE tenant_id=?", java.math.BigDecimal.class, tenant));
 		assertEquals(1,
 				jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund WHERE tenant_id=?", Integer.class, tenant));
+	}
+
+	@Test
+	void duplicateConcurrentRefundRequestsReserveThePaymentOnlyOnce() throws Exception {
+		var order = payOrder(pendingOrder());
+		String id = order.path("orderId").asString();
+		var actor = new Actor(tenant, "admin", Actor.Role.ADMIN);
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var first = pool.submit(() -> {
+				start.await();
+				return commands.run(actor, "test.refund.duplicate", "first", id, String.class,
+						() -> refunds.request(tenant, "same-case", id, "25.00").refundId());
+			});
+			var second = pool.submit(() -> {
+				start.await();
+				return commands.run(actor, "test.refund.duplicate", "second", id, String.class,
+						() -> refunds.request(tenant, "same-case", id, "25.00").refundId());
+			});
+			start.countDown();
+			assertEquals(first.get(), second.get());
+		}
+		assertEquals(new java.math.BigDecimal("25.00"), jdbc.queryForObject(
+				"SELECT refund_reserved FROM payment_attempt WHERE tenant_id=?", java.math.BigDecimal.class, tenant));
+		assertEquals(1,
+				jdbc.queryForObject("SELECT COUNT(*) FROM payment_refund WHERE tenant_id=?", Integer.class, tenant));
+	}
+
+	@Test
+	void concurrentRefundRechecksEmitOneSuccessAndCompleteOneCase() throws Exception {
+		var order = payOrder(pendingOrder());
+		var refunding = approve(requestReturn(order, 1, "refund-race"), "approve-race");
+		String refundId = refunding.path("refundId").asString();
+		post("/v1/admin/sandbox/refunds/" + refundId + "/success", admin, "provider-success", null);
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var first = pool.submit(() -> {
+				start.await();
+				return post("/v1/admin/refunds/" + refundId + "/reconcile", admin, null, null);
+			});
+			var second = pool.submit(() -> {
+				start.await();
+				return post("/v1/admin/refunds/" + refundId + "/reconcile", admin, null, null);
+			});
+			start.countDown();
+			assertEquals("SUCCEEDED", first.get().path("status").asString());
+			assertEquals("SUCCEEDED", second.get().path("status").asString());
+		}
+		assertEquals(1, jdbc.queryForObject(
+				"SELECT COUNT(*) FROM platform_event WHERE tenant_id=? AND event_type='refund.succeeded.v1'",
+				Integer.class, tenant));
+		pump();
+		assertEquals("COMPLETED", call("GET", "/v1/aftersales/" + refunding.path("caseId").asString(), member,
+				null, null).body().path("status").asString());
 	}
 
 	@Test
@@ -1389,6 +1723,35 @@ class PersistedCommerceTest {
 				tenant));
 		post("/v1/orders", member, "o2", orderInput(secondQuote));
 		assertEquals(1, jdbc.queryForObject("SELECT reserved FROM benefit_definition WHERE tenant_id=?", Integer.class,
+				tenant));
+	}
+
+	@Test
+	void lastEntitlementQuotaLetsOnlyOneConcurrentOrderReserve() throws Exception {
+		seed();
+		stock("sku1", 3);
+		entitlementCampaign(1);
+		var firstQuote = post("/v1/quotes", member, "quota-q1", basket(1));
+		var secondQuote = post("/v1/quotes", member, "quota-q2", basket(1));
+		try (var pool = Executors.newFixedThreadPool(2)) {
+			var start = new CountDownLatch(1);
+			var first = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/orders", member, "quota-o1", orderInput(firstQuote));
+			});
+			var second = pool.submit(() -> {
+				start.await();
+				return call("POST", "/v1/orders", member, "quota-o2", orderInput(secondQuote));
+			});
+			start.countDown();
+			assertEquals(List.of(200, 409),
+					java.util.stream.Stream.of(first.get(), second.get()).map(Reply::status).sorted().toList());
+		}
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?", Integer.class,
+				tenant));
+		assertEquals(1, jdbc.queryForObject("SELECT reserved FROM benefit_definition WHERE tenant_id=?", Integer.class,
+				tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT issued FROM benefit_definition WHERE tenant_id=?", Integer.class,
 				tenant));
 	}
 

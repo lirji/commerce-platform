@@ -269,7 +269,18 @@ test("旅程与效果：升级通知、成交退款和历史补齐", async ({ pa
     status: "PAID",
   });
   await api(`/orders/${order.orderId}/payment/reconcile`, null, "member");
-  await events();
+  // 后台事件车道可能已领取待处理事件，此时手工 pump 返回 0 不代表履约单已建立。
+  await expect
+    .poll(
+      async () => {
+        await api("/admin/events/pump", null);
+        return (await api("/admin/fulfillments")).some(
+          (item: { orderId: string }) => item.orderId === order.orderId,
+        );
+      },
+      { timeout: 15000 },
+    )
+    .toBe(true);
   const returned = await api(
     "/aftersales",
     {
