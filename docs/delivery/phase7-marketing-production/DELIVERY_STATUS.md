@@ -3,7 +3,7 @@
 **Status:** `PHASE_7_COMPLETE_WITH_LIMITATIONS`
 **Branch:** `feat/phase7-marketing-production`
 **Baseline:** `ddf55026bf026f96cec8793556b6559bdc749b72`
-**Git delivery:** 原实施轮次为工作树交付。用户后续明确授权正常提交、合并与推送 `origin/main`；当前正在验证与交付，无生产部署。详见 `DELIVERY_RESULT.md`（交付完成后生成）。
+**Git delivery:** 原实施轮次为工作树交付。用户后续明确授权正常提交、合并与推送 `origin/main`；代码及验收已推送，远程引用实测 `40376b3`，无生产部署。详见 `DELIVERY_RESULT.md`。
 
 | 稳定切片 | 状态 | 验收 |
 | --- | --- | --- |

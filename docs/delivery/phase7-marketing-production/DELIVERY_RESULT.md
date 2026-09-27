@@ -23,7 +23,7 @@ a6b3b8d34414d5d66b15ea14f7ac99caee610267 feat(benefit): 支付赠券复用额度
 
 ## 远程交付
 
-目标 `origin/main`；当前代码提交已完成，正在正常合并与推送。远程引用确认后补写实测结果，不提前声称推送成功。
+`main` 已通过 `--ff-only` 从任务分支正常合并；`git push origin main` 返回成功（`ddf5502..40376b3`）。随后 `git ls-remote origin refs/heads/main` 实测为 `40376b3741a9723377810c69d8dbda972e79f018`，与本地 HEAD 一致。此结果包含两笔代码和一笔验收归档提交。本文交付结果补记通过后续普通文档提交同步，不修改上述提交历史。
 
 ## 限制
 

@@ -8,7 +8,7 @@
 
 `PHASE_7_COMPLETE_WITH_LIMITATIONS`。任务分支 `feat/phase7-marketing-production`，基线 main `ddf55026bf026f96cec8793556b6559bdc749b72`。权威报告：`docs/evidence/phase7-marketing-production/PHASE7_REPORT.md`；状态与计划：`docs/delivery/phase7-marketing-production/`。
 
-Phase 7 原实施轮次未 commit/push。用户现明确要求「先把阶段7的代码提交并推送到远程main分支，再开启阶段8」，授权正常提交、合并和推送 origin/main。本轮 Git 交付正在进行，不包含生产部署。
+Phase 7 原实施轮次未 commit/push。用户现明确要求「先把阶段7的代码提交并推送到远程main分支，再开启阶段8」，授权正常提交、合并和推送 origin/main。本轮两笔代码提交 `11c7f37`、`a6b3b8d` 和验收 `40376b3` 已正常合并并推送 origin/main；远程实测 SHA `40376b3741a9723377810c69d8dbda972e79f018`，不包含生产部署。
 
 ## 已完成
 
@@ -55,7 +55,7 @@ Phase 7 原实施轮次未 commit/push。用户现明确要求「先把阶段7�
 
 ## 下一步建议
 
-1. 完成当前明确授权的 Phase 7 Git 交付：全量构建、受影响浏览器、按逻辑单元提交、正常合并与推送 origin/main、核对远程 SHA。
+1. Phase 7 Git 交付已完成，完成本交付结果补记提交后，从远程 main 创建 Phase 8 任务分支。
 2. 下一阶段先输入真实生产峰值、租户/历史分布和 SLO，在授权环境做持续负载及滚动/恢复验收。
 3. Phase 7 远程交付确认后，创建 Phase 8 任务分支，按用户提供的 phase-8-marketing-journey-workflow-orchestration.md 先做基线与 Journey 能力盘点。
 
