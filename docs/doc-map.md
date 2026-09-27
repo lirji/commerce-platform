@@ -41,3 +41,4 @@
 2026-09-25 架构整改（异步消费者/后台任务隔离、自动到期、默认拒绝授权、锁顺序、应用壳边界）见 evidence/remediation-r1/REMEDIATION_REPORT.md，发现来源为 ../.project-analysis/project-architecture-business-gap-evolution-report.md。
 2026-09-26 事件运行时第二阶段（租户公平调度、积压索引、隔离证据、历史报价兼容、积压诊断与告警契约、403/404契约）见 evidence/phase2-event-runtime/PHASE2_REPORT.md；调度契约写在 design/unified-commerce/BACKEND_ARCHITECTURE.md“一致性和恢复”。
 2026-09-26 后台运行时第三阶段（车道拓扑与跨车道公平、共享租户轮转、失败分类与重试预算、依赖熔断、无消费者事件SKIPPED、平台运维跨租户指标授权、车道告警、保留策略提案、运维手册）见 evidence/phase3-background-runtime/PHASE3_REPORT.md 与 evidence/phase3-background-runtime/13-runbook.md；契约写在 design/unified-commerce/BACKEND_ARCHITECTURE.md“一致性和恢复”“积压诊断”。
+2026-09-26 运行时第四阶段（逐项重试隔离、周期考核可索引到期与策略分批推进、统一恢复与恢复审计、重放安全分类与安全门、有界历史重放、可配置保留期清理、崩溃重启与多实例恢复证明、SLO与告警出口、运维手册）见 evidence/phase4-runtime-recovery/PHASE4_REPORT.md 与 evidence/phase4-runtime-recovery/13-runbook.md；契约写在 design/unified-commerce/BACKEND_ARCHITECTURE.md“一致性和恢复”。

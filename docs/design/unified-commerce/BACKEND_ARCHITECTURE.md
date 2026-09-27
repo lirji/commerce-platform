@@ -42,6 +42,16 @@ shared-kernel 仅 Money、稳定标识校验等无业务所有权的值类型。
 
 积压诊断：GET /v1/admin/events/health只返回本租户到期数、最老到期秒数、重试/隔离/无消费者计数和近期最大投递延迟；全局Micrometer指标commerce.events.*不带标签，commerce.lanes.*只带固定车道名标签。跨租户聚合（B2）只经GET /v1/platform/runtime提供给PLATFORM_OPERATOR角色（能力EVENT_RUNTIME_METRICS_READ，路由与用例两层校验）；租户管理员不隐含跨租户能力，访问任何/v1/platform路径为403，平台运维在平台命名空间内访问不存在路径为404、访问任何租户接口为403。车道告警每分钟评估一次：LANE_STARVATION（等待开始>30秒）、LANE_DEPENDENCY_UNAVAILABLE（熔断打开或新增熔断）、LANE_BACKLOG_AGE（最老到期>5分钟）、LANE_QUARANTINE_GROWTH、LANE_ROTATION_SLOW（一圈>5分钟），事件另增EVENT_NO_REQUIRED_CONSUMER与EVENT_DEPENDENCY_UNAVAILABLE。调度线程每分钟输出一次全局健康日志，超过阈值以固定代码告警：EVENT_BACKLOG_AGE（最老到期>5分钟）、EVENT_ROTATION_SLOW（一圈>5分钟）、EVENT_BACKLOG_GROWING（连续5分钟增长）、EVENT_QUARANTINE_GROWTH、EVENT_FAILURE_RATE（≥20次尝试且失败>20%）、EVENT_NO_PROGRESS；外部告警投递未接入。调度线程完全停止时不会产生日志，需外部探测管理端接口。
 
+调度、重试、恢复、重放、保留（第四阶段）彼此独立：调度只表达业务何时到期；重试是同一执行在可恢复失败后的自动继续（RetryPolicy两类预算）；隔离是自动处理停止；恢复是租户管理员把停止的工作放回（RETRY）或终止（SKIP，仅事件）；重放是刻意对历史DELIVERED事件重新执行单一消费者；保留期只删除可证明不再需要的数据。恢复只重置重试状态并保留失败证据，不改变业务到期时间；重放从不改变事件状态；保留期从不触碰非终态行。
+
+逐项重试（第四阶段）：积分过期与周期考核在会员域member_work_retry记录失败项（仅失败期间存在，成功事务内删除），瞬时失败只累加瞬时次数，5次非瞬时失败或300次瞬时失败隔离；退避与隔离中的项不参与到期查询，一个坏项不再反复占用同租户的处理机会。周期考核到期由member_record.cycle_due_at（非空，未考核取纪元值，注销取9999-12-31）与(tenant_id,cycle_due_at)索引表达，考核后取周期结束与下一策略生效时间中较早者；新策略按会员主键每批500名推进（rolled_out/rollout_cursor比较交换），不在发布事务里更新整租户；发现只读每个有策略租户在该索引上的第一项（ORDER BY必须写全索引前缀），代价与策略租户数而非会员数成正比。
+
+恢复（第四阶段）：各模块以runtime.api.RecoverableWork登记可恢复工作类型（event、order.expiry、member.points.expiry、member.cycle.assessment），RuntimeRecovery统一授权（RUNTIME_RECOVERY_READ/EXECUTE，仅租户管理员、仅本租户）、限定范围（每次1至50个显式标识、可附带期望失败分类护栏、必须填写原因）、幂等（Commands）与审计：platform_recovery逐项记录操作者、时间、工作、前后状态、失败分类、原因与结果（含被拒绝项），与状态变更同一事务。恢复只做条件更新并先加行锁读取，保留失败分类、首末失败时间与最后错误，之后由原车道按原预算执行；事件恢复只执行尚无Inbox的消费者。旧的单项重试与各模块的重试/取消控制也写同一审计。
+
+重放（第四阶段）：消费者以EventHandler.replaySafety声明副作用分类（PURE、IDEMPOTENT_WRITE、DEDUP_PROTECTED、COMPENSATABLE、IRREVERSIBLE、EXTERNAL、FINANCIAL）与依据，未声明即未分类。ReplayGate在创建、恢复与每一项执行前校验：资金、外部、不可逆副作用无论声明如何一律拒绝，未分类拒绝，重新执行已处理事件只允许纯投影。当前只有marketing-effects-v1可重放，其余消费者REPLAY_NOT_SUPPORTED，未完成工作走恢复。任务（platform_replay）限定本租户、单一消费者、事件类型、31天内区间与1万事件上限，每租户最多3个活动任务；独立重放车道小预算（200毫秒或100项），有消费者的实时到期事件达到阈值时整轮让路；每项一个事务锁任务行与事件主键（共享锁），效果与游标同一事务提交；UNPROCESSED以Inbox去重，失败项计数跳过，10次失败任务失败；可暂停、恢复、取消，均写审计。
+
+保留期（第四阶段）：保留时长属于产品/法务决定，commerce.retention默认关闭；开启时每类时长须显式配置且不低于下限（事件7天、命令30天）。只删除DELIVERED、SKIPPED事件及其Inbox（同一事务，先Inbox后事件）与已完成的命令；PENDING、ISOLATED、审计、恢复审计、重放任务永不由此删除，运行中或暂停的重放区间内的事件不删除。第12条车道每5秒一轮，READ COMMITTED、SKIP LOCKED、每批500、每轮至多2000行或300毫秒，实时积压时让路；删除数与锁定数不一致时回滚。告警代码新增REPLAY_BLOCKED、RETENTION_LAG_HIGH、RETENTION_FAILURE，统一经OperationalAlertPublisher发布（外部供应商未选定前只写日志）。
+
 支付超时进入未知/待查，不能当失败退款或释放库存；取消已发起支付的订单进入 CLOSING，待可信未收款事实或资金处理。开启后台任务时，到期未付订单由调度自动请求取消（与管理员到期同一转换）；进入 CLOSING 时支付域重新安排渠道核对，自动关闭或确认迟到付款。订单确认/释放与下单预占使用同一加锁顺序：积分→券→预算→权益→库存（SKU 升序）。退款/权益冲正是新业务效果，不通过订单状态回退删除历史。报价是不可变快照，绑定 SKU/活动/规则/人群版本；可接受陈旧窗口由报价 TTL 和下单二次校验共同定义。
 
 ## 安全、边界和演进
