@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.lrj.commerce.insight.infrastructure.EffectsMapper">
- <insert id="observe">INSERT INTO marketing_effect_order(tenant_id,order_id,store_id,series_id,campaign_id,campaign_version,ordered_at,paid,paid_amount,refunded,discount_amount,platform_funding,merchant_funding,member_id,coupon_id,coupon_discount)
+<mapper namespace="com.lrj.commerce.insight.infrastructure.persistence.EffectsMapper">
+  <insert id="observe">INSERT INTO marketing_effect_order(tenant_id,order_id,store_id,series_id,campaign_id,campaign_version,ordered_at,paid,paid_amount,refunded,discount_amount,platform_funding,merchant_funding,member_id,coupon_id,coupon_discount)
  VALUES(#{tenant},#{input.orderId},#{input.storeId},#{input.seriesId},#{input.campaignId},#{input.campaignVersion},#{input.orderedAt},#{input.paid},#{input.paidAmount},#{input.refunded},#{input.discountAmount},#{input.platformFunding},#{input.merchantFunding},#{input.memberId},#{input.couponId},#{input.couponDiscount})
  ON DUPLICATE KEY UPDATE member_id=#{input.memberId},coupon_id=#{input.couponId},coupon_discount=#{input.couponDiscount},paid=GREATEST(paid,#{input.paid}),refunded=GREATEST(refunded,#{input.refunded}),updated_at=UTC_TIMESTAMP(3)
  </insert>
- <select id="report" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$Series">
+  <select id="report" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$Series">
   SELECT series_id,campaign_id,campaign_version,COUNT(*) orders,SUM(paid) paid_orders,
   CAST(SUM(IF(paid,paid_amount,0)) AS CHAR) received,CAST(SUM(IF(paid,refunded,0)) AS CHAR) refunded,
   CAST(SUM(IF(paid,paid_amount-refunded,0)) AS CHAR) net_receipts,CAST(SUM(IF(paid,discount_amount,0)) AS CHAR) discount_granted,
@@ -13,7 +13,7 @@
   FROM marketing_effect_order WHERE tenant_id=#{tenant} AND store_id=#{store} AND ordered_at&gt;=#{from} AND ordered_at&lt;#{to} AND series_id&gt;#{after}
   GROUP BY series_id,campaign_id,campaign_version ORDER BY series_id LIMIT #{limit}
  </select>
- <select id="journeys" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$JourneySeries">
+  <select id="journeys" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$JourneySeries">
   WITH versions AS (
    SELECT DISTINCT e.journey_id,e.journey_version,SHA2(CONCAT(e.journey_id,'/',e.journey_version),256) series_id,
    COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(d.definition_json,'$.lifecycle.conversionWindowDays')) AS UNSIGNED),7) observation_days
@@ -44,7 +44,7 @@
    CAST(COALESCE(s.discount_granted,0.00) AS CHAR) discount_granted,CAST(COALESCE(s.platform_funding,0.00) AS CHAR) platform_funding,CAST(COALESCE(s.merchant_funding,0.00) AS CHAR) merchant_funding,s.updated_at
   FROM versions v JOIN cohorts c ON c.series_id=v.series_id LEFT JOIN touches t ON t.series_id=v.series_id LEFT JOIN sales s ON s.series_id=v.series_id ORDER BY v.series_id
  </select>
- <select id="deliveries" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$DeliverySeries">
+  <select id="deliveries" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$DeliverySeries">
   WITH batches AS (SELECT batch_id,issued,skipped,revoked,kept FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND store_id=#{store} AND created_at&gt;=#{from} AND created_at&lt;#{to} AND batch_id&gt;#{after} ORDER BY batch_id LIMIT #{limit})
   SELECT b.batch_id series_id,b.batch_id,b.issued,b.skipped,b.revoked,b.kept,COUNT(o.order_id) paid_orders,
    CAST(COALESCE(SUM(o.paid_amount),0.00) AS CHAR) received,CAST(COALESCE(SUM(o.refunded),0.00) AS CHAR) refunded,CAST(COALESCE(SUM(o.paid_amount-o.refunded),0.00) AS CHAR) net_receipts,
@@ -53,7 +53,7 @@
   LEFT JOIN marketing_effect_order o ON o.tenant_id=#{tenant} AND o.store_id=#{store} AND o.coupon_id=r.coupon_id AND o.paid=TRUE
   GROUP BY b.batch_id,b.issued,b.skipped,b.revoked,b.kept ORDER BY b.batch_id
  </select>
- <select id="daily" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$Daily">
+  <select id="daily" resultType="com.lrj.commerce.insight.api.MarketingEffectsApi$Daily">
  SELECT DATE(CONVERT_TZ(ordered_at,@@session.time_zone,'+00:00')) day,COUNT(*) orders,SUM(paid) paid_orders,
  CAST(SUM(IF(paid,paid_amount,0)) AS CHAR) received,CAST(SUM(IF(paid,refunded,0)) AS CHAR) refunded,
  CAST(SUM(IF(paid,paid_amount-refunded,0)) AS CHAR) net_receipts,CAST(SUM(IF(paid,discount_amount,0)) AS CHAR) discount_granted,

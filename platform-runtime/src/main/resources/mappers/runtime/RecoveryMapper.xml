@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.runtime.persistence.RecoveryMapper">
- <insert id="insert">INSERT INTO platform_recovery(tenant_id,actor_id,operation,command_key,work_type,work_id,action,previous_state,new_state,failure_class,reason,result,rejection)
+  <insert id="insert">INSERT INTO platform_recovery(tenant_id,actor_id,operation,command_key,work_type,work_id,action,previous_state,new_state,failure_class,reason,result,rejection)
   VALUES(#{e.tenantId},#{e.actorId},#{e.operation},#{e.commandKey},#{e.workType},#{e.workId},#{e.action},#{e.previousState},#{e.newState},#{e.failureClass},#{e.reason},#{e.result},#{e.rejection})</insert>
- <select id="list" resultType="com.lrj.commerce.runtime.persistence.RecoveryMapper$Row">SELECT id,actor_id,operation,work_type,work_id,action,previous_state,new_state,failure_class,reason,result,rejection,created_at
+  <select id="list" resultType="com.lrj.commerce.runtime.persistence.RecoveryMapper$Row">SELECT id,actor_id,operation,work_type,work_id,action,previous_state,new_state,failure_class,reason,result,rejection,created_at
   FROM platform_recovery WHERE tenant_id=#{tenant}<if test="workType!=null"> AND work_type=#{workType}</if><if test="workId!=null"> AND work_id=#{workId}</if> AND id&gt;#{after} ORDER BY id LIMIT #{limit}</select>
 </mapper>

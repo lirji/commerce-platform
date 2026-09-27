@@ -1,30 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.runtime.persistence.ReplayMapper">
- <sql id="job">job_id,consumer_id,event_types,mode,from_at,to_at,max_events,status,cursor_created_at,cursor_event_id,examined,executed,already_processed,failed,last_error,reason,created_by,version,created_at,updated_at</sql>
- <sql id="types">event_type IN <foreach collection="types" item="t" open="(" separator="," close=")">#{t}</foreach></sql>
- <insert id="insert">INSERT INTO platform_replay(tenant_id,job_id,consumer_id,event_types,mode,from_at,to_at,max_events,status,reason,created_by)
+  <sql id="job">job_id,consumer_id,event_types,mode,from_at,to_at,max_events,status,cursor_created_at,cursor_event_id,examined,executed,already_processed,failed,last_error,reason,created_by,version,created_at,updated_at</sql>
+  <sql id="types">event_type IN <foreach collection="types" item="t" open="(" separator="," close=")">#{t}</foreach></sql>
+  <insert id="insert">INSERT INTO platform_replay(tenant_id,job_id,consumer_id,event_types,mode,from_at,to_at,max_events,status,reason,created_by)
   VALUES(#{tenant},#{j.jobId},#{j.consumerId},#{j.eventTypes},#{j.mode},#{j.fromAt},#{j.toAt},#{j.maxEvents},#{j.status},#{j.reason},#{j.createdBy})</insert>
- <select id="find" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Job">SELECT <include refid="job"/> FROM platform_replay WHERE tenant_id=#{tenant} AND job_id=#{id}</select>
- <select id="lock" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Job">SELECT <include refid="job"/> FROM platform_replay WHERE tenant_id=#{tenant} AND job_id=#{id} FOR UPDATE</select>
- <select id="list" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Job">SELECT <include refid="job"/> FROM platform_replay WHERE tenant_id=#{tenant} AND job_id&gt;#{after} ORDER BY job_id LIMIT #{limit}</select>
- <select id="active" resultType="int">SELECT COUNT(*) FROM platform_replay WHERE tenant_id=#{tenant} AND status IN ('RUNNING','PAUSED')</select>
- <update id="progress">UPDATE platform_replay SET status=#{j.status},cursor_created_at=#{j.cursorCreatedAt},cursor_event_id=#{j.cursorEventId},examined=#{j.examined},executed=#{j.executed},
+  <select id="find" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Job">SELECT <include refid="job"/> FROM platform_replay WHERE tenant_id=#{tenant} AND job_id=#{id}</select>
+  <select id="lock" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Job">SELECT <include refid="job"/> FROM platform_replay WHERE tenant_id=#{tenant} AND job_id=#{id} FOR UPDATE</select>
+  <select id="list" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Job">SELECT <include refid="job"/> FROM platform_replay WHERE tenant_id=#{tenant} AND job_id&gt;#{after} ORDER BY job_id LIMIT #{limit}</select>
+  <select id="active" resultType="int">SELECT COUNT(*) FROM platform_replay WHERE tenant_id=#{tenant} AND status IN ('RUNNING','PAUSED')</select>
+  <update id="progress">UPDATE platform_replay SET status=#{j.status},cursor_created_at=#{j.cursorCreatedAt},cursor_event_id=#{j.cursorEventId},examined=#{j.examined},executed=#{j.executed},
   already_processed=#{j.alreadyProcessed},failed=#{j.failed},last_error=#{j.lastError},version=version+1 WHERE tenant_id=#{tenant} AND job_id=#{j.jobId} AND version=#{j.version}</update>
- <update id="status">UPDATE platform_replay SET status=#{status},version=version+1 WHERE tenant_id=#{tenant} AND job_id=#{id} AND version=#{expected}</update>
- <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM platform_replay WHERE status='RUNNING' AND tenant_id&gt;#{after} ORDER BY tenant_id LIMIT #{limit}</select>
- <select id="oldestRunning" resultType="string">SELECT job_id FROM platform_replay WHERE status='RUNNING' AND tenant_id=#{tenant} ORDER BY created_at,job_id LIMIT 1</select>
- <select id="next" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Next">SELECT event_id,created_at FROM platform_event FORCE INDEX(ix_event_replay)
+  <update id="status">UPDATE platform_replay SET status=#{status},version=version+1 WHERE tenant_id=#{tenant} AND job_id=#{id} AND version=#{expected}</update>
+  <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM platform_replay WHERE status='RUNNING' AND tenant_id&gt;#{after} ORDER BY tenant_id LIMIT #{limit}</select>
+  <select id="oldestRunning" resultType="string">SELECT job_id FROM platform_replay WHERE status='RUNNING' AND tenant_id=#{tenant} ORDER BY created_at,job_id LIMIT 1</select>
+  <select id="next" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Next">SELECT event_id,created_at FROM platform_event FORCE INDEX(ix_event_replay)
   WHERE tenant_id=#{tenant} AND status='DELIVERED' AND created_at&gt;=#{j.fromAt} AND created_at&lt;#{j.toAt} AND <include refid="types"/>
   <if test="j.cursorEventId!=null"> AND (created_at&gt;#{j.cursorCreatedAt} OR (created_at=#{j.cursorCreatedAt} AND event_id&gt;#{j.cursorEventId}))</if>
   ORDER BY created_at,event_id LIMIT 1</select>
- <select id="lockDelivered" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,created_at,attempts,transient_attempts
+  <select id="lockDelivered" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,created_at,attempts,transient_attempts
   FROM platform_event WHERE event_id=#{id} AND tenant_id=#{tenant} AND status='DELIVERED' FOR SHARE</select>
- <insert id="inbox">INSERT IGNORE INTO platform_inbox(consumer_id,event_id,tenant_id) VALUES(#{consumer},#{event.eventId},#{event.tenantId})</insert>
- <select id="dryRun" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$TypeCount">SELECT e.event_type,COUNT(*) events,COALESCE(SUM(i.consumer_id IS NOT NULL),0) processed
+  <insert id="inbox">INSERT IGNORE INTO platform_inbox(consumer_id,event_id,tenant_id) VALUES(#{consumer},#{event.eventId},#{event.tenantId})</insert>
+  <select id="dryRun" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$TypeCount">SELECT e.event_type,COUNT(*) events,COALESCE(SUM(i.consumer_id IS NOT NULL),0) processed
   FROM (SELECT event_id,event_type FROM platform_event FORCE INDEX(ix_event_replay) WHERE tenant_id=#{tenant} AND status='DELIVERED' AND created_at&gt;=#{from} AND created_at&lt;#{to} AND <include refid="types"/> ORDER BY created_at,event_id LIMIT #{cap}) e
   LEFT JOIN platform_inbox i ON i.consumer_id=#{consumer} AND i.event_id=e.event_id GROUP BY e.event_type ORDER BY e.event_type</select>
- <!-- 只计有消费者的类型：无消费者的遗留PENDING由EVENT_NO_REQUIRED_CONSUMER告警处理，不应永久阻塞重放。 -->
- <select id="liveDue" resultType="int">SELECT COUNT(*) FROM (SELECT 1 FROM platform_event FORCE INDEX(ix_event_delivery) WHERE status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) AND <include refid="types"/> LIMIT #{cap}) d</select>
- <select id="backlog" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Backlog">SELECT COALESCE(SUM(status='RUNNING'),0) running,MIN(IF(status='RUNNING',created_at,NULL)) oldest_running,COALESCE(SUM(status='FAILED'),0) failed FROM platform_replay WHERE status IN ('RUNNING','FAILED')</select>
+  <!-- 只计有消费者的类型：无消费者的遗留PENDING由EVENT_NO_REQUIRED_CONSUMER告警处理，不应永久阻塞重放。 -->
+  <select id="liveDue" resultType="int">SELECT COUNT(*) FROM (SELECT 1 FROM platform_event FORCE INDEX(ix_event_delivery) WHERE status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) AND <include refid="types"/> LIMIT #{cap}) d</select>
+  <select id="backlog" resultType="com.lrj.commerce.runtime.persistence.ReplayMapper$Backlog">SELECT COALESCE(SUM(status='RUNNING'),0) running,MIN(IF(status='RUNNING',created_at,NULL)) oldest_running,COALESCE(SUM(status='FAILED'),0) failed FROM platform_replay WHERE status IN ('RUNNING','FAILED')</select>
 </mapper>

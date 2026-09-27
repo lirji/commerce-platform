@@ -13,71 +13,103 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** 检查真实编译产物依赖，不用预设目录列表冒充模块隔离已经成立。 */
 class ModuleBoundaryTest {
-    @Test void persistedModulesOnlyReachOtherDomainsThroughApi() throws Exception {
-        var diagnostics=new StringWriter();
-        var arguments=new java.util.ArrayList<>(List.of("-verbose:class","-filter:none"));
-        for(String module:List.of("shared-kernel","platform-runtime","member","merchant","store","catalog","marketing","marketing-runtime","trade","inventory","order","order-runtime","payment","fulfillment","aftersales","benefit","marketing-automation")) {
-            Path classes=Path.of("..",module,"target","classes").toRealPath();
-            arguments.add(classes.toString());
-        }
-        int code=ToolProvider.findFirst("jdeps").orElseThrow().run(new PrintWriter(diagnostics),new PrintWriter(diagnostics),arguments.toArray(String[]::new));
-        assertEquals(0,code,diagnostics.toString());
-        int edges=0;
-        for(String line:diagnostics.toString().split("\\R")) {
-            String[] parts=line.trim().split("\\s+");
-            if(parts.length<3||!parts[1].equals("->")||!parts[0].startsWith("com.lrj.commerce.")||!parts[2].startsWith("com.lrj.commerce.")) continue;
-            edges++;String owner=parts[0].split("\\.")[3],targetOwner=parts[2].split("\\.")[3];
-            owner=owner.equals("ordering")?"order":owner;targetOwner=targetOwner.equals("ordering")?"order":targetOwner;
-            assertTrue(owner.equals(targetOwner)||targetOwner.equals("kernel")||targetOwner.equals("runtime")||parts[2].contains(".api."),line);
-            if(parts[0].contains(".api.")) assertFalse(parts[2].contains(".infrastructure.")||parts[2].contains(".application.")||parts[2].contains(".persistence."),line);
-        }
-        assertTrue(edges>100,"必须真实检查全部持久化模块");
-    }
-    /** 应用壳只装配和暴露HTTP，跨域调用仍须经过.api；仅组合根可实例化无Spring依赖的纯内核。 */
-    @Test void appShellReachesDomainsOnlyThroughApi() throws Exception {
-        var diagnostics=new StringWriter();
-        int code=ToolProvider.findFirst("jdeps").orElseThrow().run(new PrintWriter(diagnostics),new PrintWriter(diagnostics),"-verbose:class","-filter:none",Path.of("..","commerce-app","target","classes").toRealPath().toString());
-        assertEquals(0,code,diagnostics.toString());
-        int edges=0;
-        for(String line:diagnostics.toString().split("\\R")) {
-            String[] parts=line.trim().split("\\s+");
-            if(parts.length<3||!parts[1].equals("->")||!parts[0].startsWith("com.lrj.commerce.app.")||!parts[2].startsWith("com.lrj.commerce.")) continue;
-            edges++;String targetOwner=parts[2].split("\\.")[3];
-            boolean compositionRoot=parts[0].equals("com.lrj.commerce.app.CommerceApplication")&&List.of("marketing","order").contains(targetOwner);
-            assertTrue(targetOwner.equals("app")||targetOwner.equals("kernel")||targetOwner.equals("runtime")||parts[2].contains(".api.")||compositionRoot,line);
-        }
-        assertTrue(edges>100,"必须真实检查应用壳依赖");
-    }
-    @Test void compiledDomainDependenciesRespectOwnershipAndApiDirection() throws Exception {
-        var diagnostics = new StringWriter();
-        var arguments = new java.util.ArrayList<>(List.of("-verbose:class", "-filter:none"));
-        for (Class<?> type : List.of(Money.class, DecisionPort.class, OrderLifecycle.class)) {
-            arguments.add(Path.of(type.getProtectionDomain().getCodeSource().getLocation().toURI()).toString());
-        }
-        int code = ToolProvider.findFirst("jdeps").orElseThrow().run(new PrintWriter(diagnostics),
-            new PrintWriter(diagnostics), arguments.toArray(String[]::new));
-        assertEquals(0, code, diagnostics.toString());
-        int edges = 0;
-        for (String line : diagnostics.toString().split("\\R")) {
-            String[] parts = line.trim().split("\\s+");
-            if (parts.length < 3 || !parts[1].equals("->") || !parts[0].startsWith("com.lrj.commerce.")) continue;
-            edges++;
-            String source = parts[0], target = parts[2];
-            String owner = source.split("\\.")[3];
-            if (target.startsWith("com.lrj.commerce.")) {
-                String targetOwner = target.split("\\.")[3];
-                assertTrue(owner.equals(targetOwner) || targetOwner.equals("kernel"), line);
-                if (source.contains(".api.")) {
-                    assertFalse(target.contains(".domain.") || target.contains(".application."), line);
-                }
-                if (source.contains(".domain.")) assertFalse(target.contains(".application."), line);
-            } else {
-                assertTrue(target.startsWith("java.lang.") || target.startsWith("java.math.")
-                    || target.startsWith("java.util.") || target.startsWith("java.time."), line);
-                assertFalse(target.startsWith("java.lang.reflect.") || target.equals("java.lang.Runtime")
-                    || target.equals("java.lang.ProcessBuilder") || target.startsWith("java.util.spi."), line);
-            }
-        }
-        assertTrue(edges > 50, "未扫描到足够的真实类依赖，不能空跑通过");
-    }
+
+	@Test
+	void persistedModulesOnlyReachOtherDomainsThroughApi() throws Exception {
+		var diagnostics = new StringWriter();
+		var arguments = new java.util.ArrayList<>(List.of("-verbose:class", "-filter:none"));
+		for (String module : List.of("shared-kernel", "platform-runtime", "member", "merchant", "store", "catalog",
+				"marketing", "marketing-runtime", "trade", "inventory", "order", "order-runtime", "payment",
+				"fulfillment", "aftersales", "benefit", "marketing-automation")) {
+			Path classes = Path.of("..", module, "target", "classes").toRealPath();
+			arguments.add(classes.toString());
+		}
+		int code = ToolProvider.findFirst("jdeps")
+			.orElseThrow()
+			.run(new PrintWriter(diagnostics), new PrintWriter(diagnostics), arguments.toArray(String[]::new));
+		assertEquals(0, code, diagnostics.toString());
+		int edges = 0;
+		for (String line : diagnostics.toString().split("\\R")) {
+			String[] parts = line.trim().split("\\s+");
+			if (parts.length < 3 || !parts[1].equals("->") || !parts[0].startsWith("com.lrj.commerce.")
+					|| !parts[2].startsWith("com.lrj.commerce."))
+				continue;
+			edges++;
+			String owner = parts[0].split("\\.")[3], targetOwner = parts[2].split("\\.")[3];
+			owner = owner.equals("ordering") ? "order" : owner;
+			targetOwner = targetOwner.equals("ordering") ? "order" : targetOwner;
+			assertTrue(owner.equals(targetOwner) || targetOwner.equals("kernel") || targetOwner.equals("runtime")
+					|| parts[2].contains(".api."), line);
+			if (parts[0].contains(".api."))
+				assertFalse(parts[2].contains(".infrastructure.") || parts[2].contains(".application.")
+						|| parts[2].contains(".persistence."), line);
+		}
+		assertTrue(edges > 100, "必须真实检查全部持久化模块");
+	}
+
+	/** 应用壳只装配和暴露HTTP，跨域调用仍须经过.api；仅组合根可实例化无Spring依赖的纯内核。 */
+	@Test
+	void appShellReachesDomainsOnlyThroughApi() throws Exception {
+		var diagnostics = new StringWriter();
+		int code = ToolProvider.findFirst("jdeps")
+			.orElseThrow()
+			.run(new PrintWriter(diagnostics), new PrintWriter(diagnostics), "-verbose:class", "-filter:none",
+					Path.of("..", "commerce-app", "target", "classes").toRealPath().toString());
+		assertEquals(0, code, diagnostics.toString());
+		int edges = 0;
+		for (String line : diagnostics.toString().split("\\R")) {
+			String[] parts = line.trim().split("\\s+");
+			if (parts.length < 3 || !parts[1].equals("->") || !parts[0].startsWith("com.lrj.commerce.app.")
+					|| !parts[2].startsWith("com.lrj.commerce."))
+				continue;
+			edges++;
+			String targetOwner = parts[2].split("\\.")[3];
+			boolean compositionRoot = parts[0].equals("com.lrj.commerce.app.CommerceApplication")
+					&& List.of("marketing", "order").contains(targetOwner);
+			assertTrue(targetOwner.equals("app") || targetOwner.equals("kernel") || targetOwner.equals("runtime")
+					|| parts[2].contains(".api.") || compositionRoot, line);
+		}
+		assertTrue(edges > 100, "必须真实检查应用壳依赖");
+	}
+
+	@Test
+	void compiledDomainDependenciesRespectOwnershipAndApiDirection() throws Exception {
+		var diagnostics = new StringWriter();
+		var arguments = new java.util.ArrayList<>(List.of("-verbose:class", "-filter:none"));
+		for (Class<?> type : List.of(Money.class, DecisionPort.class, OrderLifecycle.class)) {
+			arguments.add(Path.of(type.getProtectionDomain().getCodeSource().getLocation().toURI()).toString());
+		}
+		int code = ToolProvider.findFirst("jdeps")
+			.orElseThrow()
+			.run(new PrintWriter(diagnostics), new PrintWriter(diagnostics), arguments.toArray(String[]::new));
+		assertEquals(0, code, diagnostics.toString());
+		int edges = 0;
+		for (String line : diagnostics.toString().split("\\R")) {
+			String[] parts = line.trim().split("\\s+");
+			if (parts.length < 3 || !parts[1].equals("->") || !parts[0].startsWith("com.lrj.commerce."))
+				continue;
+			edges++;
+			String source = parts[0], target = parts[2];
+			String owner = source.split("\\.")[3];
+			if (target.startsWith("com.lrj.commerce.")) {
+				String targetOwner = target.split("\\.")[3];
+				assertTrue(owner.equals(targetOwner) || targetOwner.equals("kernel"), line);
+				if (source.contains(".api.")) {
+					assertFalse(target.contains(".domain.") || target.contains(".application."), line);
+				}
+				if (source.contains(".domain."))
+					assertFalse(target.contains(".application."), line);
+			}
+			else {
+				assertTrue(target.startsWith("java.lang.") || target.startsWith("java.math.")
+						|| target.startsWith("java.util.") || target.startsWith("java.time."), line);
+				assertFalse(
+						target.startsWith("java.lang.reflect.") || target.equals("java.lang.Runtime")
+								|| target.equals("java.lang.ProcessBuilder") || target.startsWith("java.util.spi."),
+						line);
+			}
+		}
+		assertTrue(edges > 50, "未扫描到足够的真实类依赖，不能空跑通过");
+	}
+
 }

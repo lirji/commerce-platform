@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.runtime.persistence.EventMapper">
- <insert id="insert">INSERT INTO platform_event(event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,status,skip_reason) VALUES(#{id},#{tenant},#{type},#{aggregate},#{version},#{json},IF(#{skipReason} IS NULL,'PENDING','SKIPPED'),#{skipReason})</insert>
- <sql id="event">event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,created_at,attempts,transient_attempts</sql>
- <sql id="types">event_type IN <foreach collection="types" item="t" open="(" separator="," close=")">#{t}</foreach></sql>
- <select id="pending" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE status='PENDING' AND tenant_id=#{tenant} AND available_at&lt;=CURRENT_TIMESTAMP(3) AND <include refid="types"/> ORDER BY available_at,event_id LIMIT #{limit}</select>
- <select id="lock" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id} AND status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) FOR UPDATE SKIP LOCKED</select>
- <insert id="inbox">INSERT IGNORE INTO platform_inbox(consumer_id,event_id,tenant_id) VALUES(#{consumer},#{event.eventId},#{event.tenantId})</insert>
- <update id="delivered">UPDATE platform_event SET status='DELIVERED' WHERE event_id=#{id} AND status='PENDING'</update>
- <!-- MySQL单表UPDATE按从左到右赋值，status判断使用已累加的计数。 -->
- <update id="failed">UPDATE platform_event SET attempts=attempts+IF(#{transient},0,1),transient_attempts=transient_attempts+IF(#{transient},1,0),status=IF(attempts&gt;=#{max} OR transient_attempts&gt;=#{transientMax},'ISOLATED','PENDING'),last_error=#{error},failure_class=#{failureClass},first_failed_at=COALESCE(first_failed_at,CURRENT_TIMESTAMP(3)),last_failed_at=CURRENT_TIMESTAMP(3),available_at=TIMESTAMPADD(MICROSECOND,1000*#{delayMillis},CURRENT_TIMESTAMP(3)) WHERE event_id=#{id} AND status='PENDING'</update>
- <select id="find" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id}</select>
- <!-- 积压轮转：只走PENDING索引区间，按租户字典序从游标继续；类型过滤排除只含无消费者事件的租户。 -->
- <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM platform_event WHERE status='PENDING' AND tenant_id&gt;#{after} AND available_at&lt;=CURRENT_TIMESTAMP(3) AND <include refid="types"/> ORDER BY tenant_id LIMIT #{limit}</select>
- <!-- 新到期优先：只扫描最近窗口内到期且从未失败的事件，较早到期的租户排前；到期重试走轮转，重试风暴不挤占新事件。 -->
- <select id="freshTenants" resultType="string">SELECT tenant_id FROM platform_event WHERE status='PENDING' AND available_at&gt;TIMESTAMPADD(MICROSECOND,-1000*#{windowMillis},CURRENT_TIMESTAMP(3)) AND available_at&lt;=CURRENT_TIMESTAMP(3) AND attempts=0 AND transient_attempts=0 AND <include refid="types"/> GROUP BY tenant_id ORDER BY MIN(available_at),tenant_id LIMIT #{limit}</select>
- <select id="list" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT event_id,event_type,aggregate_id,status,attempts,available_at,last_error,transient_attempts,failure_class,first_failed_at,last_failed_at,skip_reason,manual_retries FROM platform_event WHERE tenant_id=#{tenant} AND event_id&gt;#{after} ORDER BY event_id LIMIT #{limit}</select>
- <!-- 只重置重放所需状态；失败分类、首末失败时间、最后错误和跳过原因保留为证据。 -->
- <update id="retry">UPDATE platform_event SET status='PENDING',attempts=0,transient_attempts=0,manual_retries=manual_retries+1,available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=#{tenant} AND event_id=#{id} AND status IN ('ISOLATED','SKIPPED')</update>
- <sql id="view">event_id,event_type,aggregate_id,status,attempts,available_at,last_error,transient_attempts,failure_class,first_failed_at,last_failed_at,skip_reason,manual_retries</sql>
- <select id="isolated" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE status='ISOLATED' AND tenant_id=#{tenant}<if test="failureClass!=null"> AND failure_class=#{failureClass}</if> AND event_id&gt;#{after} ORDER BY event_id LIMIT #{limit}</select>
- <select id="view" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id}</select>
- <select id="lockView" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id} FOR UPDATE</select>
- <update id="skip">UPDATE platform_event SET status='SKIPPED',skip_reason='OPERATOR_SKIPPED' WHERE tenant_id=#{tenant} AND event_id=#{id} AND status='ISOLATED'</update>
- <select id="health" resultType="com.lrj.commerce.runtime.persistence.EventMapper$Health">
+  <insert id="insert">INSERT INTO platform_event(event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,status,skip_reason) VALUES(#{id},#{tenant},#{type},#{aggregate},#{version},#{json},IF(#{skipReason} IS NULL,'PENDING','SKIPPED'),#{skipReason})</insert>
+  <sql id="event">event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,created_at,attempts,transient_attempts</sql>
+  <sql id="types">event_type IN <foreach collection="types" item="t" open="(" separator="," close=")">#{t}</foreach></sql>
+  <select id="pending" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE status='PENDING' AND tenant_id=#{tenant} AND available_at&lt;=CURRENT_TIMESTAMP(3) AND <include refid="types"/> ORDER BY available_at,event_id LIMIT #{limit}</select>
+  <select id="lock" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id} AND status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) FOR UPDATE SKIP LOCKED</select>
+  <insert id="inbox">INSERT IGNORE INTO platform_inbox(consumer_id,event_id,tenant_id) VALUES(#{consumer},#{event.eventId},#{event.tenantId})</insert>
+  <update id="delivered">UPDATE platform_event SET status='DELIVERED' WHERE event_id=#{id} AND status='PENDING'</update>
+  <!-- MySQL单表UPDATE按从左到右赋值，status判断使用已累加的计数。 -->
+  <update id="failed">UPDATE platform_event SET attempts=attempts+IF(#{transient},0,1),transient_attempts=transient_attempts+IF(#{transient},1,0),status=IF(attempts&gt;=#{max} OR transient_attempts&gt;=#{transientMax},'ISOLATED','PENDING'),last_error=#{error},failure_class=#{failureClass},first_failed_at=COALESCE(first_failed_at,CURRENT_TIMESTAMP(3)),last_failed_at=CURRENT_TIMESTAMP(3),available_at=TIMESTAMPADD(MICROSECOND,1000*#{delayMillis},CURRENT_TIMESTAMP(3)) WHERE event_id=#{id} AND status='PENDING'</update>
+  <select id="find" resultType="com.lrj.commerce.runtime.api.EventHandler$Event">SELECT <include refid="event"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id}</select>
+  <!-- 积压轮转：只走PENDING索引区间，按租户字典序从游标继续；类型过滤排除只含无消费者事件的租户。 -->
+  <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM platform_event WHERE status='PENDING' AND tenant_id&gt;#{after} AND available_at&lt;=CURRENT_TIMESTAMP(3) AND <include refid="types"/> ORDER BY tenant_id LIMIT #{limit}</select>
+  <!-- 新到期优先：只扫描最近窗口内到期且从未失败的事件，较早到期的租户排前；到期重试走轮转，重试风暴不挤占新事件。 -->
+  <select id="freshTenants" resultType="string">SELECT tenant_id FROM platform_event WHERE status='PENDING' AND available_at&gt;TIMESTAMPADD(MICROSECOND,-1000*#{windowMillis},CURRENT_TIMESTAMP(3)) AND available_at&lt;=CURRENT_TIMESTAMP(3) AND attempts=0 AND transient_attempts=0 AND <include refid="types"/> GROUP BY tenant_id ORDER BY MIN(available_at),tenant_id LIMIT #{limit}</select>
+  <select id="list" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT event_id,event_type,aggregate_id,status,attempts,available_at,last_error,transient_attempts,failure_class,first_failed_at,last_failed_at,skip_reason,manual_retries FROM platform_event WHERE tenant_id=#{tenant} AND event_id&gt;#{after} ORDER BY event_id LIMIT #{limit}</select>
+  <!-- 只重置重放所需状态；失败分类、首末失败时间、最后错误和跳过原因保留为证据。 -->
+  <update id="retry">UPDATE platform_event SET status='PENDING',attempts=0,transient_attempts=0,manual_retries=manual_retries+1,available_at=CURRENT_TIMESTAMP(3) WHERE tenant_id=#{tenant} AND event_id=#{id} AND status IN ('ISOLATED','SKIPPED')</update>
+  <sql id="view">event_id,event_type,aggregate_id,status,attempts,available_at,last_error,transient_attempts,failure_class,first_failed_at,last_failed_at,skip_reason,manual_retries</sql>
+  <select id="isolated" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE status='ISOLATED' AND tenant_id=#{tenant}<if test="failureClass!=null"> AND failure_class=#{failureClass}</if> AND event_id&gt;#{after} ORDER BY event_id LIMIT #{limit}</select>
+  <select id="view" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id}</select>
+  <select id="lockView" resultType="com.lrj.commerce.runtime.persistence.EventMapper$EventView">SELECT <include refid="view"/> FROM platform_event WHERE tenant_id=#{tenant} AND event_id=#{id} FOR UPDATE</select>
+  <update id="skip">UPDATE platform_event SET status='SKIPPED',skip_reason='OPERATOR_SKIPPED' WHERE tenant_id=#{tenant} AND event_id=#{id} AND status='ISOLATED'</update>
+  <select id="health" resultType="com.lrj.commerce.runtime.persistence.EventMapper$Health">
   SELECT COALESCE(SUM(status='PENDING' AND <include refid="types"/>),0) pending,
    COALESCE(SUM(status='PENDING' AND <include refid="types"/> AND available_at&lt;=CURRENT_TIMESTAMP(3)),0) due,
    COALESCE(SUM(status='PENDING' AND <include refid="types"/> AND (attempts&gt;0 OR transient_attempts&gt;0)),0) retrying,

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.lrj.commerce.member.infrastructure.WorkRetryMapper">
- <sql id="row">lane,item_id,attempts,transient_attempts,retry_at,failure_class,last_error,first_failed_at,last_failed_at,quarantined_at,manual_recoveries</sql>
- <!-- 冲突更新按从左到右赋值，隔离判断使用已累加的计数。 -->
- <insert id="failed">INSERT INTO member_work_retry(tenant_id,lane,item_id,attempts,transient_attempts,retry_at,failure_class,last_error,first_failed_at,last_failed_at,quarantined_at)
+<mapper namespace="com.lrj.commerce.member.infrastructure.persistence.WorkRetryMapper">
+  <sql id="row">lane,item_id,attempts,transient_attempts,retry_at,failure_class,last_error,first_failed_at,last_failed_at,quarantined_at,manual_recoveries</sql>
+  <!-- 冲突更新按从左到右赋值，隔离判断使用已累加的计数。 -->
+  <insert id="failed">INSERT INTO member_work_retry(tenant_id,lane,item_id,attempts,transient_attempts,retry_at,failure_class,last_error,first_failed_at,last_failed_at,quarantined_at)
   VALUES(#{tenant},#{lane},#{item},IF(#{transient},0,1),IF(#{transient},1,0),#{retryAt},#{failureClass},#{error},#{now},#{now},IF((NOT #{transient} AND #{max}&lt;=1) OR (#{transient} AND #{transientMax}&lt;=1),#{now},NULL))
   ON DUPLICATE KEY UPDATE attempts=attempts+IF(#{transient},0,1),transient_attempts=transient_attempts+IF(#{transient},1,0),retry_at=#{retryAt},
    failure_class=#{failureClass},last_error=#{error},last_failed_at=#{now},quarantined_at=COALESCE(quarantined_at,IF(attempts&gt;=#{max} OR transient_attempts&gt;=#{transientMax},#{now},NULL))</insert>
- <delete id="clear">DELETE FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item}</delete>
- <select id="find" resultType="com.lrj.commerce.member.infrastructure.WorkRetryMapper$Row">SELECT <include refid="row"/> FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item}</select>
- <select id="lock" resultType="com.lrj.commerce.member.infrastructure.WorkRetryMapper$Row">SELECT <include refid="row"/> FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item} FOR UPDATE</select>
- <update id="recover">UPDATE member_work_retry SET quarantined_at=NULL,attempts=0,transient_attempts=0,retry_at=#{now},manual_recoveries=manual_recoveries+1 WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item} AND quarantined_at IS NOT NULL</update>
- <select id="quarantined" resultType="com.lrj.commerce.member.infrastructure.WorkRetryMapper$Row">SELECT <include refid="row"/> FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND quarantined_at IS NOT NULL
+  <delete id="clear">DELETE FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item}</delete>
+  <select id="find" resultType="com.lrj.commerce.member.infrastructure.persistence.WorkRetryMapper$Row">SELECT <include refid="row"/> FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item}</select>
+  <select id="lock" resultType="com.lrj.commerce.member.infrastructure.persistence.WorkRetryMapper$Row">SELECT <include refid="row"/> FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item} FOR UPDATE</select>
+  <update id="recover">UPDATE member_work_retry SET quarantined_at=NULL,attempts=0,transient_attempts=0,retry_at=#{now},manual_recoveries=manual_recoveries+1 WHERE tenant_id=#{tenant} AND lane=#{lane} AND item_id=#{item} AND quarantined_at IS NOT NULL</update>
+  <select id="quarantined" resultType="com.lrj.commerce.member.infrastructure.persistence.WorkRetryMapper$Row">SELECT <include refid="row"/> FROM member_work_retry WHERE tenant_id=#{tenant} AND lane=#{lane} AND quarantined_at IS NOT NULL
   <if test="failureClass!=null"> AND failure_class=#{failureClass}</if> AND item_id&gt;#{after} ORDER BY item_id LIMIT #{limit}</select>
- <select id="quarantinedCount" resultType="long">SELECT COUNT(*) FROM member_work_retry WHERE lane=#{lane} AND quarantined_at IS NOT NULL</select>
+  <select id="quarantinedCount" resultType="long">SELECT COUNT(*) FROM member_work_retry WHERE lane=#{lane} AND quarantined_at IS NOT NULL</select>
 </mapper>

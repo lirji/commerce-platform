@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.lrj.commerce.member.infrastructure.CycleMapper">
+<mapper namespace="com.lrj.commerce.member.infrastructure.persistence.CycleMapper">
   <insert id="policy">INSERT INTO member_cycle_policy(tenant_id,version,effective_from,policy_json) VALUES(#{tenant},#{p.version},#{p.effectiveFrom},#{json})</insert>
-  <select id="byVersion" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND version=#{version}</select>
-  <select id="effective" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
-  <select id="policies" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
-  <select id="contribution" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Contribution">SELECT member_id,occurred_at,contribution FROM member_cycle_contribution WHERE tenant_id=#{tenant} AND source_id=#{source}</select>
+  <select id="byVersion" resultType="com.lrj.commerce.member.infrastructure.persistence.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND version=#{version}</select>
+  <select id="effective" resultType="com.lrj.commerce.member.infrastructure.persistence.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND effective_from&lt;=#{at} ORDER BY effective_from DESC,version DESC LIMIT 1</select>
+  <select id="policies" resultType="com.lrj.commerce.member.infrastructure.persistence.CycleMapper$PolicyRow">SELECT version,CAST(policy_json AS CHAR) policy_json FROM member_cycle_policy WHERE tenant_id=#{tenant} AND version&gt;#{after} ORDER BY version LIMIT #{limit}</select>
+  <select id="contribution" resultType="com.lrj.commerce.member.infrastructure.persistence.CycleMapper$Contribution">SELECT member_id,occurred_at,contribution FROM member_cycle_contribution WHERE tenant_id=#{tenant} AND source_id=#{source}</select>
   <insert id="insertContribution">INSERT INTO member_cycle_contribution(tenant_id,source_id,member_id,occurred_at,contribution) VALUES(#{tenant},#{source},#{member},#{at},#{amount})</insert>
   <update id="updateContribution">UPDATE member_cycle_contribution SET contribution=#{amount} WHERE tenant_id=#{tenant} AND source_id=#{source}</update>
   <select id="sum" resultType="long">SELECT COALESCE(SUM(contribution),0) FROM member_cycle_contribution WHERE tenant_id=#{tenant} AND member_id=#{member} AND occurred_at&gt;=#{from} AND occurred_at&lt;#{to}</select>
@@ -17,7 +17,7 @@
     退避或隔离中的会员按主键排除。只有存在已生效策略的租户会被发现，未启用周期的租户的会员不被扫描。
   -->
   <sql id="notBlocked">(r.item_id IS NULL OR (r.quarantined_at IS NULL AND r.retry_at&lt;=#{at}))</sql>
-  <select id="due" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Due">
+  <select id="due" resultType="com.lrj.commerce.member.infrastructure.persistence.CycleMapper$Due">
     SELECT m.tenant_id,m.member_id,r.attempts,r.transient_attempts FROM member_record m FORCE INDEX(ix_member_cycle_due)
     LEFT JOIN member_work_retry r ON r.tenant_id=m.tenant_id AND r.lane='cycles' AND r.item_id=m.member_id
     WHERE m.tenant_id=#{tenant} AND m.cycle_due_at&lt;=#{at} AND <include refid="notBlocked"/>
@@ -41,12 +41,12 @@
   </select>
   <update id="schedule">UPDATE member_record SET cycle_due_at=#{due} WHERE tenant_id=#{tenant} AND member_id=#{member}</update>
   <select id="nextPolicyStart" resultType="java.time.Instant">SELECT MIN(effective_from) FROM member_cycle_policy WHERE tenant_id=#{tenant} AND effective_from&gt;#{at}</select>
-  <select id="pendingRollout" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Rollout">SELECT version,effective_from,rollout_cursor FROM member_cycle_policy WHERE tenant_id=#{tenant} AND rolled_out=FALSE ORDER BY effective_from,version LIMIT 1</select>
+  <select id="pendingRollout" resultType="com.lrj.commerce.member.infrastructure.persistence.CycleMapper$Rollout">SELECT version,effective_from,rollout_cursor FROM member_cycle_policy WHERE tenant_id=#{tenant} AND rolled_out=FALSE ORDER BY effective_from,version LIMIT 1</select>
   <select id="memberPage" resultType="string">SELECT member_id FROM member_record WHERE tenant_id=#{tenant} AND member_id&gt;#{after} ORDER BY member_id LIMIT #{limit}</select>
   <!-- 注销会员（9999-12-31）不拉回。 -->
   <update id="pullDue">UPDATE member_record SET cycle_due_at=#{due} WHERE tenant_id=#{tenant} AND member_id&gt;#{from} AND member_id&lt;=#{to} AND cycle_due_at&gt;#{due} AND cycle_due_at&lt;'9999-12-31 00:00:00.000'</update>
   <update id="rolloutProgress">UPDATE member_cycle_policy SET rollout_cursor=#{cursor},rolled_out=#{done} WHERE tenant_id=#{tenant} AND version=#{version} AND rolled_out=FALSE AND rollout_cursor&lt;=&gt;#{expected}</update>
-  <select id="backlog" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Backlog">
+  <select id="backlog" resultType="com.lrj.commerce.member.infrastructure.persistence.CycleMapper$Backlog">
     SELECT COUNT(*) due,MIN(m.cycle_due_at) oldest_due FROM (SELECT DISTINCT tenant_id FROM member_cycle_policy WHERE effective_from&lt;=#{at}) p
     JOIN member_record m FORCE INDEX(ix_member_cycle_due) ON m.tenant_id=p.tenant_id AND m.cycle_due_at&lt;=#{at}
     LEFT JOIN member_work_retry r ON r.tenant_id=m.tenant_id AND r.lane='cycles' AND r.item_id=m.member_id WHERE <include refid="notBlocked"/>

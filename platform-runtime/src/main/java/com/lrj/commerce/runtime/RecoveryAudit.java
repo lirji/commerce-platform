@@ -1,4 +1,5 @@
 package com.lrj.commerce.runtime;
+
 import com.lrj.commerce.runtime.api.Actor;
 import com.lrj.commerce.runtime.persistence.RecoveryMapper;
 import org.springframework.stereotype.Component;
@@ -10,11 +11,21 @@ import org.springframework.transaction.annotation.*;
  */
 @Component
 public class RecoveryAudit {
-    public static final String APPLIED="APPLIED",REJECTED="REJECTED";
-    private final RecoveryMapper mapper;
-    public RecoveryAudit(RecoveryMapper mapper){this.mapper=mapper;}
-    @Transactional(propagation=Propagation.MANDATORY)
-    public void record(Actor actor,String operation,String key,String workType,String workId,String action,String previousState,String newState,String failureClass,String reason,String result,String rejection) {
-        mapper.insert(new RecoveryMapper.Entry(actor.tenantId(),actor.actorId(),operation,key,workType,workId,action,previousState,newState,failureClass,reason,result,rejection));
-    }
+
+	public static final String APPLIED = "APPLIED", REJECTED = "REJECTED";
+
+	private final RecoveryMapper mapper;
+
+	public RecoveryAudit(RecoveryMapper mapper) {
+		this.mapper = mapper;
+	}
+
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void record(Actor actor, String operation, String key, String workType, String workId, String action,
+			String previousState, String newState, String failureClass, String reason, String result,
+			String rejection) {
+		mapper.insert(new RecoveryMapper.Entry(actor.tenantId(), actor.actorId(), operation, key, workType, workId,
+				action, previousState, newState, failureClass, reason, result, rejection));
+	}
+
 }
