@@ -33,7 +33,7 @@ public interface CampaignApi {
 	record PreviewItem(String skuId, int quantity) {
 	}
 
-	record Preview(String memberId, Instant at, List<PreviewItem> items) {
+	record Preview(String memberId, Instant at, List<PreviewItem> items, Boolean includePublishedCompetition) {
 	}
 
 	record PreviewLine(String skuId, String gross, String discount, String payable) {
@@ -41,7 +41,7 @@ public interface CampaignApi {
 
 	record PreviewResult(String gross, String discount, String payable, List<PreviewLine> lines,
 			List<com.lrj.commerce.marketing.api.DecisionModels.Trace> trace, List<MarketingAssets.Source> sources,
-			String notice) {
+			String notice, com.lrj.commerce.marketing.api.DecisionModels.Selection selected) {
 	}
 
 	record Policy(MarketingAssets.Ref audience, MarketingAssets.Ref rule,

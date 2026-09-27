@@ -28,6 +28,8 @@ class MarketingDecisionTest {
 		var offers = List.of(offer("z", 2), offer("a", 2), offer("b", 1));
 		var quote = service.decide(request(lines, offers, facts, now));
 		assertEquals(new Selection("a", 7), quote.selected());
+		assertEquals(List.of(Reason.ELIGIBLE, Reason.OUTRANKED_BEST_OF, Reason.OUTRANKED_BEST_OF),
+				quote.trace().stream().map(Trace::reason).toList());
 		assertEquals(298, quote.payable().minorUnits());
 		assertEquals(List.of(1L, 1L, 0L), quote.lines().stream().map(l -> l.discount().minorUnits()).toList());
 		var reversedLines = new ArrayList<>(lines);
@@ -35,6 +37,14 @@ class MarketingDecisionTest {
 		var reversedOffers = new ArrayList<>(offers);
 		Collections.reverse(reversedOffers);
 		assertEquals(quote, service.decide(request(reversedLines, reversedOffers, facts, now)));
+		// 解析器不能依赖上游排序；直接传逆序候选，移除破平局条件必须使此断言失败。
+		var resolver = new com.lrj.commerce.marketing.domain.CampaignConflictResolver();
+		var z = new com.lrj.commerce.marketing.domain.CampaignConflictResolver.Eligible(
+				new Selection("z", 7), Money.minor(2), lines);
+		var a = new com.lrj.commerce.marketing.domain.CampaignConflictResolver.Eligible(
+				new Selection("a", 7), Money.minor(2), lines);
+		assertEquals(a, resolver.bestOf(List.of(z, a)));
+		assertEquals(a, resolver.bestOf(List.of(a, z)));
 	}
 
 	@Test

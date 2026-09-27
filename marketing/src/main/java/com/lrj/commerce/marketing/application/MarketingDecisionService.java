@@ -5,6 +5,7 @@ import com.lrj.commerce.kernel.Money;
 import com.lrj.commerce.marketing.api.DecisionPort;
 import com.lrj.commerce.marketing.api.DecisionModels.*;
 import com.lrj.commerce.marketing.domain.RuleEvaluator;
+import com.lrj.commerce.marketing.domain.CampaignConflictResolver;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -15,6 +16,7 @@ import java.util.List;
 public final class MarketingDecisionService implements DecisionPort {
 
 	private final RuleEvaluator evaluator = new RuleEvaluator();
+	private final CampaignConflictResolver conflicts = new CampaignConflictResolver();
 
 	/** 输入必须由可信上游组成；此处只保证值约束、作用域及确定性，不替代授权。 */
 	@Override
@@ -40,9 +42,7 @@ public final class MarketingDecisionService implements DecisionPort {
 			}
 		}
 		var trace = new ArrayList<Trace>();
-		Selection selected = null;
-		List<Line> selectedLines = lines;
-		Money discount = Money.ZERO;
+		var eligibleCampaigns = new ArrayList<CampaignConflictResolver.Eligible>();
 		for (Offer offer : offers) {
 			var eligible = offer.pricing() == null ? lines
 					: lines.stream().filter(line -> offer.pricing().includes(line.skuId())).toList();
@@ -73,13 +73,20 @@ public final class MarketingDecisionService implements DecisionPort {
 			if (proposed.compareTo(offer.discount()) > 0)
 				proposed = offer.discount();
 			Money actual = proposed.compareTo(eligibleGross) > 0 ? eligibleGross : proposed;
-			// 已按活动标识排序；仅严格更优时替换，保证平局结果与输入顺序无关。
-			if (actual.compareTo(discount) > 0) {
-				discount = actual;
-				selected = new Selection(offer.campaignId(), offer.version());
-				selectedLines = eligible;
-			}
+			eligibleCampaigns.add(new CampaignConflictResolver.Eligible(
+				new Selection(offer.campaignId(), offer.version()), actual, eligible));
 		}
+		var winner = conflicts.bestOf(eligibleCampaigns);
+		Selection selected = winner == null ? null : winner.campaign();
+		List<Line> selectedLines = winner == null ? lines : winner.lines();
+		Money discount = winner == null ? Money.ZERO : winner.discount();
+		// 命中但落选与规则未命中不同；预览和真实报价共用此解释码。
+		if (winner != null)
+			for (int i = 0; i < trace.size(); i++) {
+				var item = trace.get(i);
+				if (item.reason() == Reason.ELIGIBLE && !item.campaignId().equals(selected.campaignId()))
+					trace.set(i, new Trace(item.campaignId(), item.version(), Reason.OUTRANKED_BEST_OF));
+			}
 		// 分摊只能作用在中选活动覆盖的行，未参加商品不能承担活动优惠。
 		var shares = new java.util.HashMap<String, PricedLine>();
 		for (var line : allocate(selectedLines, discount))

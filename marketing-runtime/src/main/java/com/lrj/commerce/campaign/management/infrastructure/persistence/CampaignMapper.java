@@ -28,6 +28,7 @@ public interface CampaignMapper {
 
 	List<Row> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
 
-	List<Row> published(@Param("tenant") String tenant, @Param("store") String store);
+	List<Row> published(@Param("tenant") String tenant, @Param("store") String store,
+			@Param("now") Instant now);
 
 }

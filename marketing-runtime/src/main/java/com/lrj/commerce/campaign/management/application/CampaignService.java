@@ -226,7 +226,7 @@ public class CampaignService implements CampaignApi {
 
 	/** 人群资格只影响对应活动，MISS/UNKNOWN不会被活动内部NOT反转。 */
 	public Candidates candidates(Actor actor, String storeId, String memberId, java.time.Instant now) {
-		return candidates(actor.tenantId(), memberId, mapper.published(actor.tenantId(), storeId), now);
+		return candidates(actor.tenantId(), memberId, mapper.published(actor.tenantId(), storeId, now), now);
 	}
 
 	private Candidates candidates(String tenant, String memberId, List<CampaignMapper.Row> rows,
@@ -284,7 +284,14 @@ public class CampaignService implements CampaignApi {
 			.map(sku -> new Line(sku.skuId(), sku.skuId(), money(sku.unitPrice()), quantities.get(sku.skuId())))
 			.toList();
 		var at = input.at() == null ? clock.instant() : input.at();
-		var candidates = candidates(actor.tenantId(), input.memberId(), List.of(row), at);
+		boolean comparePublished = Boolean.TRUE.equals(input.includePublishedCompetition());
+		var competition = comparePublished
+				? new java.util.ArrayList<>(mapper.published(actor.tenantId(), row.storeId(), at))
+				: new java.util.ArrayList<CampaignMapper.Row>();
+		// 预览的草稿将替换本活动的已发布版本，和未来发布时的单活跃版本语义相同。
+		competition.removeIf(candidate -> candidate.campaignId().equals(row.campaignId()));
+		competition.add(row);
+		var candidates = candidates(actor.tenantId(), input.memberId(), competition, at);
 		Money gross = lines.stream()
 			.map(line -> line.unitPrice().multiply(line.quantity()))
 			.reduce(Money.ZERO, Money::add);
@@ -299,7 +306,11 @@ public class CampaignService implements CampaignApi {
 					.map(line -> new PreviewLine(line.skuId(), line.gross().amount().toPlainString(),
 							line.discount().amount().toPlainString(), line.payable().amount().toPlainString()))
 					.toList(),
-				result.trace(), candidates.sources(), "仅模拟该活动版本；不含优惠券，不预占库存或预算，实际下单再次校验。模拟时间不回溯会员事实。");
+				result.trace(), candidates.sources(),
+				comparePublished
+						? "模拟此版本与当前已发布活动竞争；不含优惠券，不预占库存或预算，实际下单再次校验。模拟时间不回溯会员事实。"
+						: "仅模拟该活动版本；不含优惠券，不预占库存或预算，实际下单再次校验。模拟时间不回溯会员事实。",
+				result.selected());
 	}
 
 	private com.lrj.commerce.marketing.api.DecisionModels.Pricing pricing(CampaignApi.Pricing input) {

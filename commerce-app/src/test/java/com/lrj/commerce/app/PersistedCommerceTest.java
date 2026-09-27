@@ -40,6 +40,7 @@ class PersistedCommerceTest {
 		registry.add("spring.datasource.url", () -> url);
 		registry.add("commerce.sandbox-enabled", () -> true);
 		registry.add("commerce.workers-enabled", () -> false);
+		registry.add("commerce.marketing.extended-trace-enabled", () -> true);
 		registry.add("spring.datasource.username", () -> System.getenv("COMMERCE_DB_USER"));
 		registry.add("spring.datasource.password", () -> System.getenv("COMMERCE_DB_PASSWORD"));
 	}
@@ -140,6 +141,42 @@ class PersistedCommerceTest {
 
 	private Object basket(int quantity) {
 		return Map.of("storeId", "store1", "items", List.of(Map.of("skuId", "sku1", "quantity", quantity)));
+	}
+
+	@Test
+	void expiredPublishedCampaignsDoNotConsumeTheLiveCandidateBound() throws Exception {
+		seed();
+		post("/v1/admin/campaigns", admin, "live-create", draft("live", 1, "3.00"));
+		post("/v1/admin/campaigns/live/1/publish", admin, "live-publish", Map.of("expectedVersion", 0));
+		String rule = jdbc.queryForObject(
+				"SELECT rule_json FROM marketing_campaign WHERE tenant_id=? AND campaign_id='live'", String.class, tenant);
+		var old = new ArrayList<Object[]>();
+		for (int i = 0; i < 101; i++)
+			old.add(new Object[] { tenant, "expired-" + i, 1, "store1", "merchant1", "历史活动",
+					java.sql.Timestamp.from(Instant.now().minusSeconds(7200)),
+					java.sql.Timestamp.from(Instant.now().minusSeconds(3600)), "20.00", "1.00", rule,
+					"PUBLISHED" });
+		jdbc.batchUpdate("INSERT INTO marketing_campaign(tenant_id,campaign_id,version,store_id,merchant_id,name,"
+				+ "valid_from,valid_to,minimum_spend,discount_amount,rule_json,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+				old);
+		var quote = post("/v1/quotes", member, "filtered-quote", basket(2));
+		assertEquals("live", quote.path("campaign").path("campaignId").asString());
+	}
+
+	@Test
+	void competitivePreviewAndQuoteChooseTheSameBestOfWinner() throws Exception {
+		seed();
+		post("/v1/admin/campaigns", admin, "best-a-create", draft("best-a", 1, "3.00"));
+		post("/v1/admin/campaigns/best-a/1/publish", admin, "best-a-publish", Map.of("expectedVersion", 0));
+		post("/v1/admin/campaigns", admin, "best-b-create", draft("best-b", 1, "3.00"));
+		post("/v1/admin/campaigns/best-b/1/publish", admin, "best-b-publish", Map.of("expectedVersion", 0));
+		var preview = post("/v1/admin/campaigns/best-b/1/preview", admin, null,
+				Map.of("memberId", "m1", "items", List.of(Map.of("skuId", "sku1", "quantity", 1)),
+						"includePublishedCompetition", true));
+		var quote = post("/v1/quotes", member, "best-of-quote", basket(1));
+		assertEquals("best-a", preview.path("selected").path("campaignId").asString());
+		assertEquals(preview.path("selected"), quote.path("campaign"));
+		assertEquals("OUTRANKED_BEST_OF", preview.path("trace").get(1).path("reason").asString());
 	}
 
 	@Test

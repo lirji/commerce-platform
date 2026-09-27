@@ -21,6 +21,14 @@ import com.lrj.commerce.runtime.serialization.JsonCodec;
 /** 报价编排只消费各领域API，服务端快照与命令结果同事务提交。 */
 @Service
 public class QuoteService implements QuoteApi {
+	private static final org.slf4j.Logger PROFILE = org.slf4j.LoggerFactory.getLogger(QuoteService.class);
+
+	@org.springframework.beans.factory.annotation.Value("${commerce.marketing.profiling-enabled:false}")
+	private boolean profilingEnabled;
+
+	/** 旧节点无法解码新增枚举值，滚动期报价快照只写旧解释码；全部升级后再开启。 */
+	@org.springframework.beans.factory.annotation.Value("${commerce.marketing.extended-trace-enabled:false}")
+	private boolean extendedTraceEnabled;
 
 	private final com.lrj.commerce.member.points.spend.api.PointsSpendApi points;
 
@@ -86,6 +94,7 @@ public class QuoteService implements QuoteApi {
 		return commands.run(actor, "quote.create", key,
 				actor.channel() == Actor.Channel.WEB ? normalized : new Object[] { normalized, actor.channel() },
 				View.class, () -> {
+					long flowStarted = System.nanoTime();
 					var member = members.current(actor);
 					members.requireActive(actor, member.memberId());
 					var store = stores.requireActive(actor, input.storeId());
@@ -95,17 +104,21 @@ public class QuoteService implements QuoteApi {
 						.map(s -> new DecisionModels.Line(s.skuId(), s.skuId(),
 								new Money(new BigDecimal(s.unitPrice())), quantities.get(s.skuId())))
 						.toList();
+					long candidateStarted = System.nanoTime();
 					var candidates = campaigns.candidates(actor, store.storeId(), member.memberId(), now);
+					long candidateFinished = System.nanoTime();
 					var gross = lines.stream()
 						.map(l -> l.unitPrice().multiply(l.quantity()))
 						.reduce(Money.ZERO, Money::add);
+					long factsStarted = System.nanoTime();
+					var facts = com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(
+							memberGrowth.facts(actor.tenantId(), member.memberId()), gross.amount().toPlainString());
+					long factsFinished = System.nanoTime();
 					var priced = decisions.decide(new DecisionModels.Request(
 							new DecisionModels.Scope(actor.tenantId(), store.merchantId(), store.storeId()),
-							member.memberId(), now, lines,
-							com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(
-									memberGrowth.facts(actor.tenantId(), member.memberId()),
-									gross.amount().toPlainString()),
+							member.memberId(), now, lines, facts,
 							candidates.offers()));
+					long decisionFinished = System.nanoTime();
 					var selectedCampaign = priced.selected();
 					Money campaignDiscount = priced.discount();
 					Money couponDiscount = Money.ZERO;
@@ -212,12 +225,34 @@ public class QuoteService implements QuoteApi {
 							store.storeId(), "CNY", gross.amount().toPlainString(),
 							totalDiscount.amount().toPlainString(),
 							gross.subtract(totalDiscount).amount().toPlainString(), now, expires, resultLines,
-							selectedCampaign, priced.trace(), candidates.sources(), couponApplication,
+							selectedCampaign, rollingTrace(priced.trace(), extendedTraceEnabled), candidates.sources(), couponApplication,
 							campaignDiscount.amount().toPlainString(), couponStatus, promotion, fundingSnapshot,
 							pointApplication, actor.channel());
+					long persistenceStarted = System.nanoTime();
 					mapper.insert(actor.tenantId(), result, JsonCodec.write(result));
+					if (profilingEnabled) {
+						long finished = System.nanoTime();
+						// 仅输出固定阶段与候选数量，不记录租户、会员、订单或活动标识。
+						PROFILE.info("marketing_quote_profile prep_us={} candidate_us={} facts_us={} decision_us={} composition_us={} persistence_us={} total_us={} candidates={}",
+								(candidateStarted - flowStarted) / 1000,
+								(candidateFinished - candidateStarted) / 1000,
+								(factsFinished - factsStarted) / 1000,
+								(decisionFinished - factsFinished) / 1000,
+								(persistenceStarted - decisionFinished) / 1000,
+								(finished - persistenceStarted) / 1000,
+								(finished - flowStarted) / 1000, candidates.offers().size());
+					}
 					return result;
 				});
+	}
+
+	/** 只适配持久快照的解释字段，不改变选中结果或金额；旧ELIGIBLE仍表示命中而非授予。 */
+	public static List<DecisionModels.Trace> rollingTrace(List<DecisionModels.Trace> trace, boolean extended) {
+		if (extended)
+			return trace;
+		return trace.stream().map(item -> item.reason() == DecisionModels.Reason.OUTRANKED_BEST_OF
+				? new DecisionModels.Trace(item.campaignId(), item.version(), DecisionModels.Reason.ELIGIBLE)
+				: item).toList();
 	}
 
 	/** 历史快照不依赖当前价格/活动，冻结会员仍可查本人的历史报价。 */
