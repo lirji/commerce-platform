@@ -42,6 +42,7 @@ class WorkerResilienceTest {
     @BeforeEach void identities() {tenant="t-"+UUID.randomUUID();admin=token("admin","ADMIN");member=token("buyer","MEMBER");}
     @AfterEach void removePoison() {
         if(poisonTenant==null)return;
+        jdbc.update("DELETE FROM member_work_retry WHERE tenant_id=?",poisonTenant);
         jdbc.update("DELETE FROM member_cycle_policy WHERE tenant_id=?",poisonTenant);jdbc.update("DELETE FROM member_record WHERE tenant_id=?",poisonTenant);
     }
     private String token(String actor,String role) {

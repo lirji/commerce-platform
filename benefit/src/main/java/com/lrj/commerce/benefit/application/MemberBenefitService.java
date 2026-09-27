@@ -52,6 +52,8 @@ public class MemberBenefitService implements MemberBenefitApi,EventHandler {
         });
     }
     public String consumer(){return "member-cycle-benefit-v1";}
+    /** 重放分类见phase4重放安全矩阵。 */
+    @Override public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety(){return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable("来源摘要唯一键与当前周期校验使重复执行无效；发放等级权益属权益副作用",com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE,com.lrj.commerce.runtime.api.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);}
     public Set<String> types(){return Set.of("member.cycle.assessed.v1");}
     /** 迟到事件以最新周期为准，旧周期权益不能靠重试复活。 */
     public void handle(Event event) {

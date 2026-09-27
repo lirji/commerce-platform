@@ -37,6 +37,9 @@ public class CouponDeliveryService implements CouponDeliveryApi {
     public List<View> list(Actor actor,String store,String after,int limit){actor.requireAdmin();Inputs.page(after,limit);stores.requireActive(actor,store);return mapper.list(actor.tenantId(),store,after,limit).stream().map(this::view).toList();}
     /** 回执不会显示其他租户的人群信息。 */
     public List<Recipient> recipients(Actor actor,String id,String after,int limit){actor.requireAdmin();Identifiers.require(id);Inputs.page(after,limit);Inputs.found(mapper.find(actor.tenantId(),id));return mapper.recipients(actor.tenantId(),id,after,limit);}
+    /** 运维恢复审计：重试、取消等对停止工作的人工干预与状态变更同一事务记录。 */
+    private com.lrj.commerce.runtime.RecoveryAudit audit;
+    @org.springframework.beans.factory.annotation.Autowired void audit(com.lrj.commerce.runtime.RecoveryAudit audit){this.audit=audit;}
     /** 撤销与停止分别建模，失败恢复保留原执行方向。 */
     public View control(Actor actor,String key,String id,Control input){
         actor.requireAdmin();Identifiers.require(id);Inputs.require(input!=null && input.expectedVersion()>=0 && input.action()!=null && Set.of("CANCEL","RETRY","REVOKE").contains(input.action()),"任务控制参数无效");Inputs.text(input.reason(),256);
@@ -48,7 +51,9 @@ public class CouponDeliveryService implements CouponDeliveryApi {
                 case "REVOKE" -> {if(!Set.of("COMPLETED","CANCELLED","EXPIRED","ISOLATED").contains(row.status()))throw conflict("请先停止发放再撤销");mode="REVOKE";target="REVOKING";}
                 default -> throw conflict("未知操作");
             }
-            status(actor.tenantId(),id,row,target,mode);return view(mapper.lock(actor.tenantId(),id));
+            status(actor.tenantId(),id,row,target,mode);
+            audit.record(actor,"coupon.delivery.control",key,"coupon.delivery",id,input.action(),row.status(),target,null,input.reason(),com.lrj.commerce.runtime.RecoveryAudit.APPLIED,null);
+            return view(mapper.lock(actor.tenantId(),id));
         });
     }
     /** 单轮上限20个收件人，正常推进与错误重试使用相同预算。 */

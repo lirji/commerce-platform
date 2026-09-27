@@ -62,6 +62,8 @@ public class PaymentService implements PaymentApi,EventHandler {
         });
     }
     public String consumer(){return "order-payment-v1";}
+    /** 重放分类见phase4重放安全矩阵。 */
+    @Override public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety(){return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable("载荷须等于终态支付行、订单状态与版本条件使重复执行无效；确认或释放库存、券、积分与资金承担，属资金副作用",com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE,com.lrj.commerce.runtime.api.EventHandler.SideEffect.FINANCIAL_SIDE_EFFECT);}
     public Set<String> types(){return Set.of("payment.paid.v1","payment.closed.v1");}
     /** Inbox已在调度器事务中，支付事实和订单库存更新要么一起提交要么一起回滚。 */
     public void handle(Event event){

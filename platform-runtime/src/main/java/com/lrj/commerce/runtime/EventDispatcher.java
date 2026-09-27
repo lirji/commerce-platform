@@ -36,6 +36,9 @@ public class EventDispatcher {
     private final java.util.concurrent.atomic.LongAccumulator maxLatencyMillis=new java.util.concurrent.atomic.LongAccumulator(Math::max,0);
     private volatile Instant lastTickAt,lastDeliveredAt;
     private final EventHealthLog healthLog;
+    /** 旧的单项重试接口写恢复审计；测试中手工构造的调度器没有审计组件时只执行状态变更。 */
+    private RecoveryAudit audit;
+    @Autowired(required=false) void audit(RecoveryAudit audit){this.audit=audit;}
     @Autowired
     public EventDispatcher(EventMapper mapper,List<EventHandler> handlers,PlatformTransactionManager manager,Commands commands,List<UnconsumedEventType> unconsumed) {this(mapper,handlers,manager,commands,Budget.DEFAULT,unconsumed);}
     public EventDispatcher(EventMapper mapper,List<EventHandler> handlers,PlatformTransactionManager manager,Commands commands) {this(mapper,handlers,manager,commands,Budget.DEFAULT,List.of());}
@@ -122,9 +125,13 @@ public class EventDispatcher {
      * 隔离或跳过的事件需要显式命令和审计才重放：只重置状态、两类计数与到期时间，保留失败分类、首末失败时间和最后错误作为证据；
      * 重放只执行尚无Inbox的消费者。当前没有消费者的类型不能重放，否则只会变成永远无人处理的PENDING。
      */
-    public int retry(Actor actor,String key,String id){actor.requireAdmin();Identifiers.require(id);return commands.run(actor,"event.retry",key,id,Integer.class,()->{
-        var event=mapper.find(actor.tenantId(),id);if(event!=null&&!types.contains(event.eventType()))throw new DomainException(DomainException.Code.CONFLICT,"事件类型当前没有消费者");
-        if(mapper.retry(actor.tenantId(),id)!=1)throw new DomainException(DomainException.Code.CONFLICT,"事件不在可重放状态");return 1;});}
+    public int retry(Actor actor,String key,String id){actor.requireAdmin();actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);Identifiers.require(id);return commands.run(actor,"event.retry",key,id,Integer.class,()->{
+        var before=mapper.lockView(actor.tenantId(),id);var event=mapper.find(actor.tenantId(),id);if(event!=null&&!types.contains(event.eventType()))throw new DomainException(DomainException.Code.CONFLICT,"事件类型当前没有消费者");
+        if(mapper.retry(actor.tenantId(),id)!=1)throw new DomainException(DomainException.Code.CONFLICT,"事件不在可重放状态");
+        if(audit!=null)audit.record(actor,"event.retry",key,EventRecovery.WORK_TYPE,id,"RETRY",before.status(),"PENDING",before.failureClass(),null,RecoveryAudit.APPLIED,null);
+        return 1;});}
+    /** 该事件类型当前是否有消费者。 */
+    public boolean consumes(String type){return types.contains(type);}
     /** 本租户积压诊断：只统计有消费者的事件类型，不含载荷；租户标识不进入指标标签。 */
     public EventMapper.Health health(Actor actor){actor.requireAdmin();return health(actor.tenantId());}
     /** 全局积压健康，tenant为空表示全部租户；无消费者且未声明的类型单独计为unrouted，不计入积压与最老年龄。 */

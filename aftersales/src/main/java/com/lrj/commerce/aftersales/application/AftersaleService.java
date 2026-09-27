@@ -52,6 +52,8 @@ public class AftersaleService implements AftersaleApi,EventHandler {
     public View receiveReturn(Actor actor,String key,String id){actor.requireAdmin();return commands.run(actor,"aftersale.receive",key,id,View.class,()->{var row=Inputs.found(mapper.lock(actor.tenantId(),id));requireState(row,"WAIT_RETURN");startRefund(actor.tenantId(),row);return view(mapper.find(actor.tenantId(),id));});}
     private void startRefund(String tenant,AftersaleMapper.Row row){for(var line:view(row).items().stream().sorted(Comparator.comparing(Line::skuId)).toList())inventory.returnItems(tenant,row.orderId(),row.caseId(),line.skuId(),line.quantity());var refund=refunds.request(tenant,row.caseId(),row.orderId(),row.refundAmount());change(tenant,row,"REFUNDING",refund.refundId());}
     public String consumer(){return "aftersale-refund-v1";}
+    /** 重放分类见phase4重放安全矩阵。 */
+    @Override public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety(){return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable("售后单状态、版本与积分返还主键使重复执行无效；会返还积分并解除履约阻断，属积分副作用",com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE,com.lrj.commerce.runtime.api.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);}
     public Set<String> types(){return Set.of("refund.succeeded.v1");}
     /** 消费时再次验证支付域资金事实，完成后发布权益补偿事实。 */
     public void handle(Event event){

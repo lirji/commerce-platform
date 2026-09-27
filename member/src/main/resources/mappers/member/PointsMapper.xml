@@ -27,9 +27,17 @@
  <update id="changeLot">UPDATE member_point_lot SET remaining=#{remaining},held=#{held},expired=#{expired} WHERE tenant_id=#{tenant} AND lot_id=#{id}</update>
  <select id="availableLots" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE AND remaining&gt;0 AND expires_at&gt;#{at} ORDER BY expires_at,lot_id LIMIT #{limit} FOR UPDATE</select>
  <select id="expiredLots" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Lot">SELECT <include refid="lot"/> FROM member_point_lot WHERE tenant_id=#{tenant} AND member_id=#{member} AND active_balance=TRUE AND remaining&gt;0 AND expires_at&lt;=#{at} ORDER BY expires_at,lot_id LIMIT #{limit} FOR UPDATE</select>
- <select id="due" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Due">SELECT tenant_id,member_id,lot_id FROM member_point_lot WHERE tenant_id=#{tenant} AND active_balance=TRUE AND remaining&gt;0 AND expires_at&lt;=#{at} ORDER BY expires_at,lot_id LIMIT #{limit}</select>
- <!-- 沿(有余额,租户,到期)索引的租户顺序扫描、取满即停，不扫已过期清零批次的历史。 -->
- <select id="dueTenants" resultType="string">SELECT DISTINCT tenant_id FROM member_point_lot FORCE INDEX(ix_point_tenant_expiry) WHERE active_balance=TRUE AND remaining&gt;0 AND expires_at&lt;=#{at} AND tenant_id&gt;#{after} ORDER BY tenant_id LIMIT #{limit}</select>
+ <!-- 退避或隔离中的批次不参与到期：一个持续失败的批次只按自己的退避重试，不占用该租户后续批次的处理机会。 -->
+ <sql id="notBlocked">NOT EXISTS(SELECT 1 FROM member_work_retry r WHERE r.tenant_id=l.tenant_id AND r.lane='points' AND r.item_id=l.lot_id AND (r.quarantined_at IS NOT NULL OR r.retry_at&gt;#{at}))</sql>
+ <!-- 租户内取数固定走(有余额,租户,到期)索引：优化器在租户历史批次多或租户无数据时可能选主键，按主键会扫描该租户全部历史批次。 -->
+ <select id="due" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Due">SELECT l.tenant_id,l.member_id,l.lot_id,r.attempts,r.transient_attempts FROM member_point_lot l FORCE INDEX(ix_point_tenant_expiry)
+  LEFT JOIN member_work_retry r ON r.tenant_id=l.tenant_id AND r.lane='points' AND r.item_id=l.lot_id
+  WHERE l.tenant_id=#{tenant} AND l.active_balance=TRUE AND l.remaining&gt;0 AND l.expires_at&lt;=#{at} AND (r.item_id IS NULL OR (r.quarantined_at IS NULL AND r.retry_at&lt;=#{at}))
+  ORDER BY l.expires_at,l.lot_id LIMIT #{limit}</select>
+ <!-- 沿(有余额,租户,到期)索引的租户顺序扫描、取满即停，不扫已过期清零批次的历史；退避与隔离中的批次按主键排除。 -->
+ <select id="dueTenants" resultType="string">SELECT DISTINCT l.tenant_id FROM member_point_lot l FORCE INDEX(ix_point_tenant_expiry) WHERE l.active_balance=TRUE AND l.remaining&gt;0 AND l.expires_at&lt;=#{at} AND l.tenant_id&gt;#{after} AND <include refid="notBlocked"/> ORDER BY l.tenant_id LIMIT #{limit}</select>
+ <select id="backlog" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Backlog">SELECT COUNT(*) due,MIN(l.expires_at) oldest_due FROM member_point_lot l FORCE INDEX(idx_point_active_expiry) WHERE l.active_balance=TRUE AND l.remaining&gt;0 AND l.expires_at&lt;=#{at} AND <include refid="notBlocked"/></select>
+ <select id="expiryDue" resultType="boolean">SELECT COUNT(*)&gt;0 FROM member_point_lot WHERE tenant_id=#{tenant} AND lot_id=#{lot} AND remaining&gt;0 AND expires_at&lt;=#{at}</select>
  <insert id="entry">INSERT INTO member_point_ledger(tenant_id,member_id,action,source_id,delta,available,debt,policy_version,reason,created_at,held) VALUES(#{tenant},#{member},#{action},#{source},#{delta},#{wallet.available},#{wallet.debt},#{policy},#{reason},#{at},#{wallet.held})</insert>
  <select id="ledger" resultType="com.lrj.commerce.member.api.MemberPointsApi$Entry">SELECT sequence_id,action,source_id,delta,available,debt,policy_version,reason,created_at,held FROM member_point_ledger WHERE tenant_id=#{tenant} AND member_id=#{member} AND sequence_id&gt;#{after} ORDER BY sequence_id LIMIT #{limit}</select>
  <select id="exchange" resultType="com.lrj.commerce.member.infrastructure.PointsMapper$Exchange">SELECT member_id,points FROM member_point_exchange WHERE tenant_id=#{tenant} AND redemption_id=#{id} FOR UPDATE</select>

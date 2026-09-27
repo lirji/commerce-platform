@@ -20,6 +20,8 @@ public class MarketingEffectsService implements MarketingEffectsApi,EventHandler
  /** 有界UTC窗口由Controller生成，接口仍防止内部调用无界扫描。 */
  public List<Daily> daily(Actor actor,String store,Instant from,Instant to){check(actor,store,from,to,"",100);return mapper.daily(actor.tenantId(),store,from,to);}
  public String consumer(){return "marketing-effects-v1";}
+ /** 重放分类见phase4重放安全矩阵。 */
+ @Override public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety(){return new com.lrj.commerce.runtime.api.EventHandler.ReplaySafety(java.util.Set.of(com.lrj.commerce.runtime.api.EventHandler.SideEffect.PURE),true,true,"事件只是信号：从订单、报价与退款权威数据重算，按订单主键与GREATEST单调合并写投影，可重建且不叠加金额");}
  public Set<String> types(){return Set.of("order.created.v1","order.paid.v1","order.ready.v1","order.completed.v1","order.cancelled.v1","refund.succeeded.v1");}
  /** 事件只是核对信号，实际金额均通过权威领域API重新读取。 */
  public void handle(Event event){String id=event.aggregateId();if(event.eventType().equals("refund.succeeded.v1")){var signal=JsonCodec.read(event.payloadJson(),RefundApi.View.class);id=refunds.internalRead(event.tenantId(),signal.refundId()).orderId();}project(event.tenantId(),List.of(orders.internalRead(event.tenantId(),id)));}

@@ -132,11 +132,18 @@ public class OrderService implements OrderApi {
         if(policy.exhausted(failures))org.slf4j.LoggerFactory.getLogger(getClass()).warn("order expiry quarantined tenant={} order={} lastError={}",tenant,check.orderId(),error);
         else org.slf4j.LoggerFactory.getLogger(getClass()).warn("order expiry retry tenant={} order={} failureClass={} errorType={}",tenant,check.orderId(),type,failure.getClass().getSimpleName());
     }
-    /** 停止自动取消的订单修复数据后由管理员审计重试，只清计数与退避，保留最近失败证据。 */
+    /** 停止自动取消的订单修复数据后由管理员审计重试，只清计数与退避，保留最近失败证据；恢复审计记录前后状态与分类。 */
     public int retryExpiry(Actor actor,String key,String id) {
-        actor.requireAdmin();Identifiers.require(id);
-        return commands.run(actor,"order.expiry.retry",key,id,Integer.class,()->{if(mapper.expiryRetry(actor.tenantId(),id,RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget())!=1)throw new DomainException(DomainException.Code.CONFLICT,"订单不在停止自动到期状态");return 1;});
+        actor.requireAdmin();actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);Identifiers.require(id);
+        return commands.run(actor,"order.expiry.retry",key,id,Integer.class,()->{
+            var before=mapper.expiryStoppedOne(actor.tenantId(),id,RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget());
+            if(mapper.expiryRetry(actor.tenantId(),id,RetryPolicy.POISON.budget(),RetryPolicy.TRANSIENT.budget())!=1)throw new DomainException(DomainException.Code.CONFLICT,"订单不在停止自动到期状态");
+            if(audit!=null)audit.record(actor,"order.expiry.retry",key,OrderExpiryRecovery.WORK_TYPE,id,"RETRY",OrderExpiryRecovery.STOPPED,OrderExpiryRecovery.READY,OrderExpiryRecovery.failureClass(before.expiryError()),null,RecoveryAudit.APPLIED,null);
+            return 1;});
     }
+    /** 手工构造的实例（多实例测试）没有审计组件时只执行状态变更。 */
+    private RecoveryAudit audit;
+    @org.springframework.beans.factory.annotation.Autowired(required=false) void audit(RecoveryAudit audit){this.audit=audit;}
     private void expireRow(String tenant,OrderMapper.Row row) {
         var next=transition(tenant,row,OrderEvent.REQUEST_CANCEL);
         if(next.state()==OrderState.CANCELLED)settle(tenant,row.orderId(),row.memberId(),false);

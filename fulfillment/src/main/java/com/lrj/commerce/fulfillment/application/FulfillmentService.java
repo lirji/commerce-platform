@@ -39,6 +39,8 @@ public class FulfillmentService implements FulfillmentApi,EventHandler {
     @Transactional(propagation=Propagation.MANDATORY)
     public void finishAftersale(String tenant,String order,boolean refunded){var current=Inputs.found(mapper.lock(tenant,order));if(!current.blocked())throw conflict();String status=refunded&&current.status().equals("READY")?"CANCELLED":current.status();if(mapper.block(tenant,order,false,status,current.version())!=1)throw conflict();}
     public String consumer(){return "fulfillment-order-v1";}
+    /** 重放分类见phase4重放安全矩阵。 */
+    @Override public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety(){return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable("履约单主键ON DUPLICATE KEY使重复执行无效；但对历史已付订单会生成待发货履约单，进入发货队列",com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE);}
     public Set<String> types(){return Set.of("order.paid.v1","order.ready.v1");}
     /** 根据权威订单复核，迟到重复事件不能重建已取消履约。 */
     public void handle(Event event){ensurePaid(event.tenantId(),event.aggregateId());}

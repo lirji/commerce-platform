@@ -57,8 +57,15 @@ class EventRuntimeObservabilityTest {
             assertEquals(java.util.List.of("lane"),meter.getId().getTags().stream().map(io.micrometer.core.instrument.Tag::getKey).toList(),meter.getId().toString());
             lanes.add(meter.getId().getTag("lane"));
         }
-        assertEquals(new java.util.TreeSet<>(java.util.List.of("payments","refunds","orders","segments","journeys","cycles","points","deliveries","catalog-jobs","events")),lanes);
+        // 第四阶段新增固定车道：replay（历史重放）与retention（保留期清理，只有调度观测）。
+        assertEquals(new java.util.TreeSet<>(java.util.List.of("payments","refunds","orders","segments","journeys","cycles","points","deliveries","catalog-jobs","events","replay","retention")),lanes);
         assertTrue(registry.get("commerce.lanes.backlog.due").tag("lane","orders").gauge().value()>=0,"订单到期车道有积压查询");
+        // 积分与周期车道在第四阶段有了积压与隔离查询（逐项重试状态）。
+        assertTrue(registry.get("commerce.lanes.backlog.quarantined").tag("lane","points").gauge().value()>=0);
+        assertTrue(registry.get("commerce.lanes.backlog.quarantined").tag("lane","cycles").gauge().value()>=0);
+        // 保留期指标只带固定数据类别标签。
+        for(var meter:registry.getMeters())if(meter.getId().getName().startsWith("commerce.retention.")&&!meter.getId().getTags().isEmpty())
+            assertEquals(java.util.List.of("class"),meter.getId().getTags().stream().map(io.micrometer.core.instrument.Tag::getKey).toList(),meter.getId().toString());
     }
     private void insert(String tenant,String type,String status,int attempts,int dueInSeconds) {
         String id=UUID.randomUUID().toString();

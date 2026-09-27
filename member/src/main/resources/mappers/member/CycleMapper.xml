@@ -12,20 +12,44 @@
   <select id="view" resultType="com.lrj.commerce.member.api.MemberCycleApi$View">SELECT member_id,TRUE enabled,policy_version,cycle_start,cycle_end,current_growth,retention_growth,member_level,version FROM member_cycle_account WHERE tenant_id=#{tenant} AND member_id=#{member}</select>
   <insert id="insertView">INSERT INTO member_cycle_account(tenant_id,member_id,policy_version,cycle_start,cycle_end,current_growth,retention_growth,member_level,version) VALUES(#{tenant},#{v.memberId},#{v.policyVersion},#{v.cycleStart},#{v.cycleEnd},#{v.currentGrowth},#{v.retentionGrowth},#{v.memberLevel},#{v.version})</insert>
   <update id="updateView">UPDATE member_cycle_account SET policy_version=#{v.policyVersion},cycle_start=#{v.cycleStart},cycle_end=#{v.cycleEnd},current_growth=#{v.currentGrowth},retention_growth=#{v.retentionGrowth},member_level=#{v.memberLevel},version=#{v.version} WHERE tenant_id=#{tenant} AND member_id=#{v.memberId} AND version=#{expected}</update>
-  <!-- 到期会员：有生效策略的租户中未考核、周期已结束或策略版本已变的会员。 -->
-  <sql id="due">
-    FROM member_record m
-    JOIN member_cycle_policy p ON p.tenant_id=m.tenant_id AND p.effective_from&lt;=#{at}
-    LEFT JOIN member_cycle_account a ON a.tenant_id=m.tenant_id AND a.member_id=m.member_id
-    WHERE m.status&lt;&gt;'CLOSED'
-      AND NOT EXISTS(SELECT 1 FROM member_cycle_policy newer WHERE newer.tenant_id=p.tenant_id AND newer.effective_from&lt;=#{at} AND (newer.effective_from&gt;p.effective_from OR (newer.effective_from=p.effective_from AND newer.version&gt;p.version)))
-      AND (a.member_id IS NULL OR a.cycle_end&lt;=#{at} OR a.policy_version&lt;&gt;p.version)
-  </sql>
+  <!--
+    到期会员：沿(租户,到期时间)索引只取已到期的会员，行数与到期会员数成正比，不再随租户会员总数增长；
+    退避或隔离中的会员按主键排除。只有存在已生效策略的租户会被发现，未启用周期的租户的会员不被扫描。
+  -->
+  <sql id="notBlocked">(r.item_id IS NULL OR (r.quarantined_at IS NULL AND r.retry_at&lt;=#{at}))</sql>
   <select id="due" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Due">
-    SELECT m.tenant_id,m.member_id <include refid="due"/> AND m.tenant_id=#{tenant}
-    ORDER BY COALESCE(a.cycle_end,p.effective_from),m.member_id LIMIT #{limit}
+    SELECT m.tenant_id,m.member_id,r.attempts,r.transient_attempts FROM member_record m FORCE INDEX(ix_member_cycle_due)
+    LEFT JOIN member_work_retry r ON r.tenant_id=m.tenant_id AND r.lane='cycles' AND r.item_id=m.member_id
+    WHERE m.tenant_id=#{tenant} AND m.cycle_due_at&lt;=#{at} AND <include refid="notBlocked"/>
+    ORDER BY m.cycle_due_at,m.member_id LIMIT #{limit}
   </select>
+  <!--
+    租户发现：有已生效策略且有到期会员的租户，加上有待推进策略的租户；两路各自按租户序取前limit个再合并。
+    到期探测只读每个有策略租户在(租户,到期)索引上的第一项（最早到期时间），与会员数无关；ORDER BY必须写全索引前缀(tenant_id,cycle_due_at)，
+    只写cycle_due_at时优化器不认为索引已有序，会读取该租户全部会员再排序（证据见cycles-probe-variants）。
+    相关子查询里MySQL只按租户等值查找：EXISTS或带到期条件的探测会读取非到期租户的全部会员（10万会员约33到39毫秒，证据见cycles-query-after-exists-semijoin）。
+    最早到期会员正在退避或已隔离时该租户仍被发现，访问时按主键排除这些会员，代价与该租户被阻塞的会员数成正比。
+  -->
   <select id="dueTenants" resultType="string">
-    SELECT DISTINCT m.tenant_id <include refid="due"/> AND m.tenant_id&gt;#{after} ORDER BY m.tenant_id LIMIT #{limit}
+    SELECT tenant_id FROM (
+     (SELECT DISTINCT p.tenant_id FROM member_cycle_policy p WHERE p.tenant_id&gt;#{after} AND p.effective_from&lt;=#{at}
+       AND (SELECT m.cycle_due_at FROM member_record m FORCE INDEX(ix_member_cycle_due) WHERE m.tenant_id=p.tenant_id ORDER BY m.tenant_id,m.cycle_due_at LIMIT 1)&lt;=#{at}
+       ORDER BY p.tenant_id LIMIT #{limit})
+     UNION
+     (SELECT tenant_id FROM member_cycle_policy WHERE rolled_out=FALSE AND tenant_id&gt;#{after} ORDER BY tenant_id LIMIT #{limit})
+    ) t ORDER BY tenant_id LIMIT #{limit}
   </select>
+  <update id="schedule">UPDATE member_record SET cycle_due_at=#{due} WHERE tenant_id=#{tenant} AND member_id=#{member}</update>
+  <select id="nextPolicyStart" resultType="java.time.Instant">SELECT MIN(effective_from) FROM member_cycle_policy WHERE tenant_id=#{tenant} AND effective_from&gt;#{at}</select>
+  <select id="pendingRollout" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Rollout">SELECT version,effective_from,rollout_cursor FROM member_cycle_policy WHERE tenant_id=#{tenant} AND rolled_out=FALSE ORDER BY effective_from,version LIMIT 1</select>
+  <select id="memberPage" resultType="string">SELECT member_id FROM member_record WHERE tenant_id=#{tenant} AND member_id&gt;#{after} ORDER BY member_id LIMIT #{limit}</select>
+  <!-- 注销会员（9999-12-31）不拉回。 -->
+  <update id="pullDue">UPDATE member_record SET cycle_due_at=#{due} WHERE tenant_id=#{tenant} AND member_id&gt;#{from} AND member_id&lt;=#{to} AND cycle_due_at&gt;#{due} AND cycle_due_at&lt;'9999-12-31 00:00:00.000'</update>
+  <update id="rolloutProgress">UPDATE member_cycle_policy SET rollout_cursor=#{cursor},rolled_out=#{done} WHERE tenant_id=#{tenant} AND version=#{version} AND rolled_out=FALSE AND rollout_cursor&lt;=&gt;#{expected}</update>
+  <select id="backlog" resultType="com.lrj.commerce.member.infrastructure.CycleMapper$Backlog">
+    SELECT COUNT(*) due,MIN(m.cycle_due_at) oldest_due FROM (SELECT DISTINCT tenant_id FROM member_cycle_policy WHERE effective_from&lt;=#{at}) p
+    JOIN member_record m FORCE INDEX(ix_member_cycle_due) ON m.tenant_id=p.tenant_id AND m.cycle_due_at&lt;=#{at}
+    LEFT JOIN member_work_retry r ON r.tenant_id=m.tenant_id AND r.lane='cycles' AND r.item_id=m.member_id WHERE <include refid="notBlocked"/>
+  </select>
+  <select id="assessmentDue" resultType="boolean">SELECT COUNT(*)&gt;0 FROM member_record WHERE tenant_id=#{tenant} AND member_id=#{member} AND cycle_due_at&lt;=#{at}</select>
 </mapper>

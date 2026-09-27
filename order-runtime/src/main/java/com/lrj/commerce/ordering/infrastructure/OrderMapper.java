@@ -24,5 +24,9 @@ public interface OrderMapper {
     Row expiredLock(@Param("tenant") String tenant,@Param("id") String id,@Param("now") Instant now,@Param("max") int max,@Param("transientMax") int transientMax);
     int expiryFailed(@Param("tenant") String tenant,@Param("id") String id,@Param("transient") boolean transientFailure,@Param("retryAt") Instant retryAt,@Param("error") String error);
     int expiryRetry(@Param("tenant") String tenant,@Param("id") String id,@Param("max") int max,@Param("transientMax") int transientMax);
+    /** 停止自动到期的未支付订单与最近失败证据；failureClass非空时按证据前缀过滤。 */
+    record ExpiryStopped(String orderId,String status,int expiryAttempts,int expiryTransientAttempts,String expiryError) { }
+    List<ExpiryStopped> expiryStopped(@Param("tenant") String tenant,@Param("failureClass") String failureClass,@Param("after") String after,@Param("limit") int limit,@Param("max") int max,@Param("transientMax") int transientMax);
+    ExpiryStopped expiryStoppedOne(@Param("tenant") String tenant,@Param("id") String id,@Param("max") int max,@Param("transientMax") int transientMax);
     com.lrj.commerce.runtime.WorkLanes.Backlog expiryBacklog(@Param("now") Instant now,@Param("max") int max,@Param("transientMax") int transientMax);
 }

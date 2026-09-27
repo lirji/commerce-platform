@@ -27,13 +27,18 @@ public class MemberPointsService implements MemberPointsApi {
     private final Clock clock;
     private final TransactionTemplate tx;
     private final TenantRotation expiry;
+    private final ItemRetries retries;
     /** 积分过期车道：每次访问一个租户最多20个批次，每轮最多200个或500毫秒，租户轮转，不再按全局到期时间FIFO。 */
     public static final TenantRotation.Policy EXPIRY=new TenantRotation.Policy(20,50,Duration.ofMillis(500),200);
 
-    public MemberPointsService(PointsMapper mapper,GrowthMapper memberLocks,MemberMapper members,Commands commands,Clock clock,PlatformTransactionManager manager,WorkLanes lanes) {
-        this.mapper=mapper;this.memberLocks=memberLocks;this.members=members;this.commands=commands;this.clock=clock;
-        tx=new TransactionTemplate(manager);tx.setTimeout(10);expiry=lanes.rotation("points",EXPIRY,null);
+    public MemberPointsService(PointsMapper mapper,GrowthMapper memberLocks,MemberMapper members,Commands commands,Clock clock,PlatformTransactionManager manager,WorkLanes lanes,ItemRetries retries) {
+        this.mapper=mapper;this.memberLocks=memberLocks;this.members=members;this.commands=commands;this.clock=clock;this.retries=retries;
+        tx=new TransactionTemplate(manager);tx.setTimeout(10);
+        expiry=lanes.rotation(ItemRetries.POINTS,EXPIRY,()->{var now=clock.instant();var b=mapper.backlog(now);
+            return new WorkLanes.Backlog(b.due(),b.oldestDue()==null?null:Math.max(0,Duration.between(b.oldestDue(),now).getSeconds()),retries.quarantinedCount(ItemRetries.POINTS));});
     }
+    /** 已隔离批次的恢复入口：批次已由其他路径归档时只清除重试行。 */
+    RecoverableWork recoverable(){return retries.recoverable("member.points.expiry",ItemRetries.POINTS,(tenant,lot)->mapper.expiryDue(tenant,lot,clock.instant()));}
 
     /** 策略发布不赠送积分，未来规则也不会改变历史订单奖励。 */
     public Policy publish(Actor actor,String key,Policy input) {
@@ -159,7 +164,10 @@ public class MemberPointsService implements MemberPointsApi {
         entry(actor.tenantId(),member.memberId(),Action.EXCHANGE,redemptionId,-points,selected.version(),"兑换券或权益扣除积分");
     }
 
-    /** 每个批次独立提交；实例竞争在会员行锁后再次检查；单批失败不阻塞其余批次，一个租户的大量过期不推迟其他租户。 */
+    /**
+     * 每个批次独立提交；实例竞争在会员行锁后再次检查；一个租户的大量过期不推迟其他租户。
+     * 单批失败按逐项重试状态退避（5次非瞬时失败隔离），退避与隔离中的批次不再被选中，因此一个坏批次不会反复占用该租户的处理机会。
+     */
     public void tick() {
         expiry.run((after,limit)->mapper.dueTenants(after,clock.instant(),limit),(tenant,run)->{
             int count=0;
@@ -167,7 +175,7 @@ public class MemberPointsService implements MemberPointsApi {
                 if(run.exhausted())break;run.attempted();
                 try{tx.executeWithoutResult(status->{lock(due.tenantId(),due.memberId());expireLot(due.tenantId(),Inputs.found(mapper.lot(due.tenantId(),due.lotId())));});count++;run.succeeded();}
                 catch(RuntimeException failure){
-                    var type=FailureClass.of(failure);org.slf4j.LoggerFactory.getLogger(getClass()).warn("point expiry retry tenant={} lot={} failureClass={} errorType={}",due.tenantId(),due.lotId(),type,failure.getClass().getSimpleName());
+                    var type=FailureClass.of(failure);retries.failed(ItemRetries.POINTS,due.tenantId(),due.lotId(),due.attempts(),due.transientAttempts(),type,failure);
                     if(run.failed(type))break;
                 }
             }
@@ -200,6 +208,8 @@ public class MemberPointsService implements MemberPointsApi {
         changeLot(tenant,lot,0,lot.held(),Math.addExact(lot.expired(),lot.remaining()));
         var account=mapper.account(tenant,lot.memberId());changeAccount(tenant,lot.memberId(),account,account.debt());
         entry(tenant,lot.memberId(),Action.EXPIRE,lot.lotId(),-lot.remaining(),lot.policyVersion(),"积分原有效期届满，冻结部分保留供订单终态处理");
+        // 任一路径完成过期都结束该批次的重试状态，不留下永远不再到期的重试行。
+        retries.cleared(ItemRetries.POINTS,tenant,lot.lotId());
     }
     void changeLot(String tenant,PointsMapper.Lot lot,long remaining,long held,long expired) {
         if(mapper.changeLot(tenant,lot.lotId(),remaining,held,expired)!=1)throw conflict("积分批次更新冲突");

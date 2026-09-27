@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.runtime.persistence.RetentionMapper">
+ <!-- available_at是最后一次可投递时间，是终态时间的安全上界；创建时间同样须早于截止时间。 -->
+ <select id="terminalEvents" resultType="string">SELECT event_id FROM platform_event FORCE INDEX(ix_event_delivery) WHERE status=#{status} AND available_at&lt;#{cutoff} AND created_at&lt;#{cutoff}
+  ORDER BY available_at,event_id LIMIT #{limit} FOR UPDATE SKIP LOCKED</select>
+ <delete id="deleteInbox">DELETE FROM platform_inbox WHERE event_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></delete>
+ <delete id="deleteEvents">DELETE FROM platform_event WHERE status IN ('DELIVERED','SKIPPED') AND event_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></delete>
+ <delete id="deleteCommands">DELETE FROM platform_command WHERE created_at&lt;#{cutoff} AND response_json IS NOT NULL ORDER BY created_at LIMIT #{limit}</delete>
+ <select id="oldestTerminal" resultType="java.time.Instant">SELECT MIN(available_at) FROM platform_event FORCE INDEX(ix_event_delivery) WHERE status=#{status}</select>
+ <select id="oldestCommand" resultType="java.time.Instant">SELECT MIN(created_at) FROM platform_command</select>
+ <select id="earliestActiveReplay" resultType="java.time.Instant">SELECT MIN(from_at) FROM platform_replay WHERE status IN ('RUNNING','PAUSED')</select>
+ <select id="liveDue" resultType="int">SELECT COUNT(*) FROM (SELECT 1 FROM platform_event FORCE INDEX(ix_event_delivery) WHERE status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) AND event_type IN <foreach collection="types" item="t" open="(" separator="," close=")">#{t}</foreach> LIMIT #{cap}) d</select>
+</mapper>

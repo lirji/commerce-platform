@@ -13,6 +13,8 @@ public class MemberGrowthHandler implements EventHandler {
  private final com.lrj.commerce.member.api.MemberBehaviorApi behavior;private final com.lrj.commerce.member.api.MemberPointsApi points;private final MemberGrowthApi growth;private final OrderApi orders;private final RefundApi refunds;
  public MemberGrowthHandler(MemberGrowthApi growth,OrderApi orders,RefundApi refunds,com.lrj.commerce.member.api.MemberPointsApi points,com.lrj.commerce.member.api.MemberBehaviorApi behavior){this.behavior=behavior;this.points=points;this.growth=growth;this.orders=orders;this.refunds=refunds;}
  public String consumer(){return "member-growth-v1";}
+ /** 重放分类见phase4重放安全矩阵。 */
+ @Override public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety(){return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable("来源订单/退款主键与净贡献差额使重复执行无效；但对从未处理过的历史订单会按当前时间入账成长与积分、可能改变等级并触发旅程，历史重放不安全",com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE,com.lrj.commerce.runtime.api.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);}
  public Set<String> types(){return Set.of("order.completed.v1","refund.succeeded.v1");}
  /** 只消费已持久化真实状态，不信任事件载荷自报金额。 */
  public void handle(Event event){

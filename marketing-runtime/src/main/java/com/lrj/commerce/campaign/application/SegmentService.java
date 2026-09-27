@@ -45,6 +45,9 @@ public class SegmentService implements SegmentApi {
  public Run refresh(Actor actor,String key,String id){actor.requireAdmin();Identifiers.require(id);return commands.run(actor,"segment.refresh",key,id,Run.class,()->start(actor.tenantId(),Inputs.found(mapper.lockRoot(actor.tenantId(),id))));}
  /** 任务元信息不包含完整会员列表。 */
  public List<Run> runs(Actor actor,String id,String after,int limit){actor.requireAdmin();Identifiers.require(id);Inputs.page(after,limit);Inputs.found(mapper.find(actor.tenantId(),id));return mapper.runs(actor.tenantId(),id,after,limit);}
+ /** 运维恢复审计：重试、取消等对停止工作的人工干预与状态变更同一事务记录。 */
+    private com.lrj.commerce.runtime.RecoveryAudit audit;
+    @org.springframework.beans.factory.annotation.Autowired void audit(com.lrj.commerce.runtime.RecoveryAudit audit){this.audit=audit;}
  /** 取消保留已扫描但不可见的投影；重试从最后提交检查点继续。 */
  public Run control(Actor actor,String key,String id,String action){
   actor.requireAdmin();Identifiers.require(id);Inputs.require(Set.of("cancel","retry","retry-announcement").contains(action),"任务操作无效");
@@ -53,6 +56,8 @@ public class SegmentService implements SegmentApi {
    if(action.equals("retry-announcement")){if(mapper.retryAnnouncement(actor.tenantId(),id,now())!=1)throw new DomainException(DomainException.Code.CONFLICT,"入组事件未处于隔离状态");}
    else if(action.equals("cancel")){if(!Set.of("RUNNING","ISOLATED").contains(run.status()))throw new DomainException(DomainException.Code.CONFLICT,"任务已终结");mapper.status(actor.tenantId(),id,"CANCELLED",null);}
    else {if(!run.status().equals("ISOLATED")||!clock.instant().isBefore(run.validUntil()))throw new DomainException(DomainException.Code.CONFLICT,"仅可重试未过期隔离任务，过期请取消后重新刷新");mapper.status(actor.tenantId(),id,"RUNNING",null);}
+   boolean announcement=action.equals("retry-announcement");
+   audit.record(actor,"segment."+action,key,announcement?"segment.announcement":"segment.run",id,action.equals("cancel")?"CANCEL":"RETRY",announcement?"ANNOUNCEMENT_ISOLATED":run.status(),announcement?"ANNOUNCEMENT_PENDING":action.equals("cancel")?"CANCELLED":"RUNNING",null,null,com.lrj.commerce.runtime.RecoveryAudit.APPLIED,null);
    return mapper.runFind(actor.tenantId(),id);
   });
  }

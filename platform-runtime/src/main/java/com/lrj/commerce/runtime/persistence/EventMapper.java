@@ -17,6 +17,13 @@ public interface EventMapper {
     java.util.List<String> freshTenants(@Param("types") java.util.Set<String> types,@Param("windowMillis") long windowMillis,@Param("limit") int limit);
     java.util.List<EventView> list(@Param("tenant") String tenant,@Param("after") String after,@Param("limit") int limit);
     int retry(@Param("tenant") String tenant,@Param("id") String id);
+    /** 本租户隔离事件，按事件标识游标分页；failureClass非空时只返回该分类。 */
+    java.util.List<EventView> isolated(@Param("tenant") String tenant,@Param("failureClass") String failureClass,@Param("after") String after,@Param("limit") int limit);
+    EventView view(@Param("tenant") String tenant,@Param("id") String id);
+    /** 恢复前加行锁读取：并发的恢复命令串行化，审计记录的前状态就是被改变的状态。 */
+    EventView lockView(@Param("tenant") String tenant,@Param("id") String id);
+    /** 运维终止隔离事件：ISOLATED→SKIPPED(OPERATOR_SKIPPED)，未完成的消费者不再执行，失败证据与Inbox保留。 */
+    int skip(@Param("tenant") String tenant,@Param("id") String id);
     Health health(@Param("tenant") String tenant,@Param("types") java.util.Set<String> types);
     /** 失败证据：分类、两类计数、首末失败时间、最近错误（消费者与异常类型）、跳过原因与人工重放次数，不含载荷。 */
     record EventView(String eventId,String eventType,String aggregateId,String status,int attempts,java.time.Instant availableAt,String lastError,int transientAttempts,String failureClass,java.time.Instant firstFailedAt,java.time.Instant lastFailedAt,String skipReason,int manualRetries) { }

@@ -14,6 +14,17 @@ commerce:
   # 后台车道共享调度线程数（1..6）；每线程同时最多占用一个数据库连接，需给请求线程保留连接池余量。
   worker-threads: ${COMMERCE_WORKER_THREADS:3}
   address-key: ${COMMERCE_ADDRESS_KEY}
+  # 历史重放车道：有消费者的实时到期事件达到此数时本轮让路，重放不挤占实时工作。
+  replay:
+    live-yield: ${COMMERCE_REPLAY_LIVE_YIELD:200}
+  # 保留期清理：保留时长属于产品/法务决定，默认关闭；开启时每类时长须显式配置（P30D或30d）且不低于下限
+  # （事件7天、命令30天），否则启动失败。空值表示该类不清理；审计与恢复审计从不由此清理。
+  retention:
+    enabled: ${COMMERCE_RETENTION_ENABLED:false}
+    delivered-events: ${COMMERCE_RETENTION_DELIVERED_EVENTS:}
+    skipped-events: ${COMMERCE_RETENTION_SKIPPED_EVENTS:}
+    commands: ${COMMERCE_RETENTION_COMMANDS:}
+    live-yield: ${COMMERCE_RETENTION_LIVE_YIELD:200}
 spring:
   application:
     name: commerce-platform

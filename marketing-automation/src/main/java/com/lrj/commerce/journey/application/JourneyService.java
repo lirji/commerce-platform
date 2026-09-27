@@ -135,6 +135,9 @@ public class JourneyService implements JourneyApi, EventHandler {
     private long window(int seconds){long at=now().getEpochSecond();return at/seconds*seconds;}
     /** 按认证身份限制实例列表，不开放任意memberId过滤。 */
     public List<Instance> instances(Actor actor,String after,int limit){Inputs.page(after,limit);String member=actor.role()==Actor.Role.ADMIN?null:members.current(actor).memberId();return mapper.instances(actor.tenantId(),member,after,limit);}
+    /** 运维恢复审计：重试、取消等对停止工作的人工干预与状态变更同一事务记录。 */
+    private com.lrj.commerce.runtime.RecoveryAudit audit;
+    @org.springframework.beans.factory.annotation.Autowired void audit(com.lrj.commerce.runtime.RecoveryAudit audit){this.audit=audit;}
     /** 取消不逆转已执行效果；隔离重试必须仍在截止时间内。 */
     public Instance control(Actor actor,String key,String id,String action) {
         actor.requireAdmin();Identifiers.require(id);Inputs.require(Set.of("cancel","retry").contains(action),"实例动作无效");
@@ -142,12 +145,16 @@ public class JourneyService implements JourneyApi, EventHandler {
             var old=Inputs.found(mapper.lock(actor.tenantId(),id));
             if(action.equals("retry")){if(old.status()!=State.ISOLATED||!now().isBefore(old.deadline()))throw conflict("实例不允许重试");}
             else if(!active(old))throw conflict("实例已终止");
-            if(mapper.control(actor.tenantId(),id,old.version(),action.equals("retry")?"RUNNING":"CANCELLED",now())!=1)throw conflict("实例并发修改");return mapper.findInstance(actor.tenantId(),id);
+            if(mapper.control(actor.tenantId(),id,old.version(),action.equals("retry")?"RUNNING":"CANCELLED",now())!=1)throw conflict("实例并发修改");
+            audit.record(actor,"journey."+action,key,"journey.instance",id,action.equals("retry")?"RETRY":"CANCEL",old.status().name(),action.equals("retry")?"RUNNING":"CANCELLED",null,null,com.lrj.commerce.runtime.RecoveryAudit.APPLIED,null);
+            return mapper.findInstance(actor.tenantId(),id);
         });
     }
     /** 站内信是持久化的业务触达，不调用外部消息系统。 */
     public List<Notification> notifications(Actor actor,String after,int limit){Inputs.page(after,limit);return mapper.notifications(actor.tenantId(),members.current(actor).memberId(),after,limit);}
     public String consumer(){return "journey-order-paid-v1";}
+    /** 重放分类见phase4重放安全矩阵。 */
+    @Override public com.lrj.commerce.runtime.api.EventHandler.ReplaySafety replaySafety(){return com.lrj.commerce.runtime.api.EventHandler.ReplaySafety.notReplayable("入组唯一键与发生时间窗口使重复执行无效；但迟到入组会继续发放券、权益与站内通知",com.lrj.commerce.runtime.api.EventHandler.SideEffect.IDEMPOTENT_WRITE,com.lrj.commerce.runtime.api.EventHandler.SideEffect.COMPENSATABLE_SIDE_EFFECT);}
     public Set<String> types(){return Set.of("order.paid.v1","member.registered.v1","member.level.changed.v1","segment.member.entered.v1");}
     /** 事件触发只读当前可信事实，发布之前的事件不追溯执行。 */
     public void handle(Event event) {
@@ -281,7 +288,10 @@ public class JourneyService implements JourneyApi, EventHandler {
     public Scan retryScan(Actor actor,String key,String id,long version,ScanRetry input){actor.requireAdmin();Identifiers.require(id);Inputs.require(version>0&&input!=null&&input.expectedVersion()>=0,"扫描恢复参数无效");Inputs.text(input.reason(),256);
         return commands.run(actor,"journey.scan.retry",key,new Object[]{id,version,input},Scan.class,()->{var scan=Inputs.found(mapper.scanLock(actor.tenantId(),id,version));
             if(!scan.status().equals("ISOLATED")||scan.version()!=input.expectedVersion())throw conflict("扫描状态或版本已变化");var definition=Inputs.found(mapper.find(actor.tenantId(),id,version));if(!definition.status().equals("PUBLISHED"))throw conflict("请先发布旅程");requireWindow(view(definition).content());
-            if(mapper.scanRetry(actor.tenantId(),scan,now())!=1)throw conflict("扫描并发修改");return mapper.scanLock(actor.tenantId(),id,version);
+            if(mapper.scanRetry(actor.tenantId(),scan,now())!=1)throw conflict("扫描并发修改");
+            var after=mapper.scanLock(actor.tenantId(),id,version);
+            audit.record(actor,"journey.scan.retry",key,"journey.scan",id+"/"+version,"RETRY",scan.status(),after.status(),null,input.reason(),com.lrj.commerce.runtime.RecoveryAudit.APPLIED,null);
+            return after;
         });
     }
     /** 执行计数与商业收入分析分开，避免将触达次数伪装为营销增量效果。 */
