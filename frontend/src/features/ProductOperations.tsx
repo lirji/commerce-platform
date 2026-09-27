@@ -21,7 +21,9 @@ export function ProductOperations({store}:{store:string}) {
  const products=useResource<Product[]>(store?`/operations/products?storeId=${encode(store)}&after=${encode(productAfter)}`:null);
  const skus=useResource<Sku[]>(store?`/operations/catalog-search?storeId=${encode(store)}&after=${encode(skuAfter)}&${filters}`:null);
  const history=useResource<Revision[]>(selected?`/operations/skus/${encode(selected.skuId)}/history?storeId=${encode(store)}&after=${historyAfter}`:null);
- const refresh=()=>{products.refresh();skus.refresh();history.refresh();categories.refresh();};
+ // 列表重新读取后，旧行的版本和当前筛选范围都可能失效，批量计划必须重新勾选。
+ const refresh=()=>{setBatch([]);products.refresh();skus.refresh();history.refresh();categories.refresh();};
+ const changeSkuPage=(cursor:string)=>{setBatch([]);setSkuAfter(cursor);};
  if(!store)return <Alert type="info" title="请先选择有经营权限的门店"/>;
  return <Workbench>
   <PageHead eyebrow="商品与门店" title="商品经营" description="商品、规格、价格与上下架。历史报价保留原价格，修订需填写原因。"/>
@@ -29,15 +31,15 @@ export function ProductOperations({store}:{store:string}) {
   <Tabs items={[
    {key:"sku",label:"销售规格与上下架",children:<ListPanel toolbar={<><Space wrap>
      <VariantCreator store={store} onDone={refresh}/>
-     <BatchCatalogAction store={store} rows={batch} onDone={()=>{setBatch([]);refresh();}}/>
+     <BatchCatalogAction store={store} rows={batch} onDone={refresh}/>
      <Button onClick={refresh}>刷新</Button>
-    </Space><CatalogFilters categories={categories.data??[]} operations onSearch={query=>{setFilters(query);setSkuAfter("");}}/></>} count={skus.data?.length??0} after={skuAfter} onHome={()=>setSkuAfter("")} onNext={()=>setSkuAfter(skus.data!.at(-1)!.skuId)} homeLabel="回到首页">
+    </Space><CatalogFilters categories={categories.data??[]} operations onSearch={query=>{setBatch([]);setFilters(query);setSkuAfter("");}}/></>} count={skus.data?.length??0} after={skuAfter} onHome={()=>changeSkuPage("")} onNext={()=>changeSkuPage(skus.data!.at(-1)!.skuId)} homeLabel="回到首页">
     <Table<Sku> rowSelection={{selectedRowKeys:batch.map(r=>r.skuId),onChange:(_,rows)=>setBatch(rows)}} rowKey="skuId" dataSource={skus.data} loading={skus.loading} pagination={false} scroll={{x:900}} columns={[
      {title:"商品",render:(_,r)=><PrimaryCell title={r.title} subtitle={r.skuId}/>},{title:"SPU",render:(_,r)=>r.productId??"历史商品"},
      {title:"规格",render:(_,r)=>r.specifications.map(s=>`${s.name}：${s.value}`).join(" / ")||"—"},
      {title:"售价",dataIndex:"unitPrice",render:money},{title:"状态",dataIndex:"status",render:v=><Status value={v}/>},{title:"版本",dataIndex:"revision"},
      {title:"操作",render:(_,r)=><Space wrap>
-      <CommandModal title="调价 / 上下架" path={"/operations/skus/"+encode(r.skuId)} buttonType="link"
+      <CommandModal key={`${r.skuId}:${r.revision}`} title="调价 / 上下架" path={"/operations/skus/"+encode(r.skuId)} buttonType="link"
        fields={[...skuFields,{name:"status",label:"销售状态",type:"select",options:[{label:"上架",value:"ACTIVE"},{label:"下架",value:"FROZEN"}]},{name:"reason",label:"修订原因"}]}
        initialValues={{title:r.title,unitPrice:r.unitPrice,status:r.status}} build={v=>({...v,storeId:store,expectedVersion:r.revision})} onDone={refresh}/>
       <Button type="link" onClick={()=>setChannelSku(r)}>渠道价</Button>
@@ -49,7 +51,7 @@ export function ProductOperations({store}:{store:string}) {
    {key:"product",label:"商品资料（SPU）",children:<ListPanel toolbar={<CommandModal title="创建商品" path="/operations/products" fields={[{name:"productId",label:"商品标识"},...metadata]} build={v=>({...v,storeId:store})} onDone={refresh}/>} count={products.data?.length??0} after={productAfter} onHome={()=>setProductAfter("")} onNext={()=>setProductAfter(products.data!.at(-1)!.productId)} homeLabel="回到首页">
     <Table<Product> rowKey="productId" dataSource={products.data} loading={products.loading} pagination={false} columns={[
      {title:"商品",render:(_,r)=><PrimaryCell title={r.title} subtitle={r.productId}/>},{title:"分类",dataIndex:"category"},{title:"品牌",dataIndex:"brand"},
-     {title:"操作",render:(_,r)=><Space><Button type="link" onClick={()=>setPresentation(r)}>展示资料</Button><CommandModal title="编辑资料" path={"/operations/products/"+encode(r.productId)} buttonType="link" fields={metadata} initialValues={{title:r.title,category:r.category,brand:r.brand}} build={v=>({...v,storeId:store,expectedVersion:r.version})} onDone={refresh}/></Space>}
+     {title:"操作",render:(_,r)=><Space><Button type="link" onClick={()=>setPresentation(r)}>展示资料</Button><CommandModal key={`${r.productId}:${r.version}`} title="编辑资料" path={"/operations/products/"+encode(r.productId)} buttonType="link" fields={metadata} initialValues={{title:r.title,category:r.category,brand:r.brand}} build={v=>({...v,storeId:store,expectedVersion:r.version})} onDone={refresh}/></Space>}
     ]}/>
    </ListPanel>},
    {key:"jobs",label:"批量定时计划",children:<CatalogJobs store={store}/>},

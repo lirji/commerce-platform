@@ -10,7 +10,7 @@ import {
   Table,
   Tabs,
 } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Governed, PageDefinition, PageRender } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
@@ -19,6 +19,7 @@ import {
   ErrorNotice,
   Fields,
   PageHead,
+  Pager,
   Status,
   Detail,
   type Values,
@@ -241,7 +242,8 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
   );
 }
 export function OpsPages({ store }: { store: string }) {
-  const r = useResource<Governed<PageDefinition>[]>("/admin/ops-pages");
+  const [after, setAfter] = useState("");
+  const r = useResource<Governed<PageDefinition>[]>(`/admin/ops-pages?after=${encode(after)}`);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<PageDefinition>();
   const [selected, setSelected] = useState<string>();
@@ -249,6 +251,10 @@ export function OpsPages({ store }: { store: string }) {
   const [form] = Form.useForm();
   const command = useCommand();
   const body = (v: Values) => ({ ...v, storeId: store }) as PageDefinition;
+  // 抽屉复用同一个表单实例；切换草稿或新建时须从当前版本重新初始化。
+  useEffect(() => {
+    if (editing) form.resetFields();
+  }, [draft, editing, form]);
   return (
     <>
       <PageHead
@@ -327,6 +333,9 @@ export function OpsPages({ store }: { store: string }) {
             },
           ]}
         />
+        <Pager after={after} count={r.data?.length ?? 0}
+          onHome={() => setAfter("")}
+          onNext={() => setAfter(r.data!.at(-1)!.content.pageId)} />
       </Card>
       <Drawer
         title="运营页面"

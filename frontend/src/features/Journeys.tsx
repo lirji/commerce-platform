@@ -11,7 +11,7 @@ import {
 } from "antd";
 import { useState } from "react";
 import type { Governed, Journey, JourneyNode } from "../shared/contracts";
-import { useCommand, useResource } from "../shared/api";
+import { encode, useCommand, useResource } from "../shared/api";
 import {
   Detail,
   ErrorNotice,
@@ -220,7 +220,8 @@ function NodesEditor({
 const lifecycleTriggers=["BIRTHDAY","DORMANT","REPURCHASE","CART_ABANDONED"];
 const triggerLabels:Record<Journey["trigger"],string>={MANUAL:"手工入组",ORDER_PAID:"支付后",MEMBER_REGISTERED:"会员注册",LEVEL_CHANGED:"等级变化",SEGMENT_ENTERED:"人群入组",BIRTHDAY:"生日关怀",DORMANT:"沉睡唤醒",REPURCHASE:"复购提醒",CART_ABANDONED:"加购挽回"};
 export function Journeys({ store }: { store: string }) {
-  const resource = useResource<Governed<Journey>[]>("/admin/journeys");
+  const [after, setAfter] = useState("");
+  const resource = useResource<Governed<Journey>[]>(`/admin/journeys?after=${encode(after)}`);
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<Governed<Journey>>();
   const [draft, setDraft] = useState<Journey>();
@@ -249,7 +250,9 @@ export function Journeys({ store }: { store: string }) {
         }
       />
       <ErrorNotice error={resource.error} />
-      <ListPanel>
+      <ListPanel count={resource.data?.length ?? 0} after={after}
+        onHome={() => setAfter("")}
+        onNext={() => setAfter(resource.data!.at(-1)!.content.journeyId)}>
         <Table<Governed<Journey>>
           rowKey={(r) => r.content.journeyId}
           dataSource={resource.data}

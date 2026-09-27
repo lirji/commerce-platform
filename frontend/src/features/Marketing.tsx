@@ -26,13 +26,15 @@ import {
 import { CampaignPreview } from "./CampaignPreview";
 import { CampaignEditor, Governance, RuleEditor } from "../shared/marketing";
 export function Marketing({ kind, store }: { kind: string; store: string }) {
+  const [after, setAfter] = useState("");
   const path = kind === "rules" ? "/admin/rules" : "/admin/campaigns";
   const resource =
     useResource<
       Governed<
         Campaign | { ruleId: string; version: number; name: string; rule: Rule }
       >[]
-    >(path);
+    >(`${path}?after=${encode(after)}`);
+  const last = resource.data?.at(-1)?.content;
   const [detail, setDetail] = useState<unknown>();
   const [open, setOpen] = useState(false);
   const command = useCommand();
@@ -60,7 +62,11 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
         }
       />
       <ErrorNotice error={resource.error} />
-      <ListPanel>
+      <ListPanel count={resource.data?.length ?? 0} after={after}
+        onHome={() => setAfter("")}
+        onNext={() => {
+          if (last) setAfter("campaignId" in last ? last.campaignId : last.ruleId);
+        }}>
         <Table
           rowKey={(r) =>
             "campaignId" in r.content ? r.content.campaignId : r.content.ruleId
