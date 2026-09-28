@@ -19,7 +19,8 @@
 
 ## 未完成
 
-- 正常本地提交、main合并推送及远程CI确认，完成后写最终交付记录并暂停。
+- 商城无剩余实施；55578e0/525bc7a正常合并推送main dceeb5a，CI36440692582成功。
+- 本轮文档提交后检查其自动CI；整体P3最终收尾由auth权威进度记录，完成后暂停。
 
 ## 当前问题
 
@@ -28,9 +29,9 @@
 
 ## 下一步建议
 
-1. 确认两仓任务提交完整并正常合并推送main，监测精确SHA的CI。
-2. 更新交付状态后停止，不自动进入P4。
+1. 商城只剩最终文档提交的适用CI确认；auth正在修复首轮Linux测试时间精度差异，不能提前声称其CI通过。
+2. 读取auth P3_DELIVERY_RESULT完成整体收尾后停止，不自动进入P4。
 
 ## 恢复 Prompt
 
-读取本文件及auth docs/design/oa-auth-unification/PROGRESS_STATE.md，从P3 Git交付/CI未完成部分继续，不重做已通过的P3，不进入P4。
+读取本文件及auth docs/design/oa-auth-unification/PROGRESS_STATE.md，从auth整体P3 CI/交付未完成部分继续，不重做已通过的P3，不进入P4。

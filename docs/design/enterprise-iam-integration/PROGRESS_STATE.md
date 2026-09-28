@@ -1,4 +1,4 @@
-> **当前实施状态（2026-09-28）**：本文以下保留早期候选方案历史。权威计划在[auth 63节点DAG](https://github.com/lirji/auth-platform/tree/main/docs/design/oa-auth-unification)。P1/P2已交付；用户新授权P3后，全部P3实现与本地验证通过，正在正常Git交付和远程CI确认。[商城P3验收](../../implementation/oa-auth/phase-3/P3-02_TEST_RESULT.md)及[运行契约](../../implementation/oa-auth/phase-3/RUNTIME_AND_CONTRACTS.md)为本轮事实来源。交付完成后停在P4之前；下方历史TODO及授权描述不覆盖本段当前状态。
+> **当前实施状态（2026-09-28）**：本文以下保留早期候选方案历史。权威计划在[auth 63节点DAG](https://github.com/lirji/auth-platform/tree/main/docs/design/oa-auth-unification)。P1/P2已交付；用户新授权P3后，全部P3实现与本地验证通过，商城代码已正常合并推送main dceeb5a且完整CI通过；auth最终CI与整个阶段交付以其P3_DELIVERY_RESULT为准。[商城P3验收](../../implementation/oa-auth/phase-3/P3-02_TEST_RESULT.md)及[运行契约](../../implementation/oa-auth/phase-3/RUNTIME_AND_CONTRACTS.md)为本轮事实来源。本仓实施已完成；整体交付确认后停在P4之前；下方历史TODO及授权描述不覆盖本段当前状态。
 
 # 企业 IAM 整体接入计划进度
 
