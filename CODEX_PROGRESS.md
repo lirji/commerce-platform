@@ -2,34 +2,35 @@
 
 ## 任务目标
 
-完成企业IAM P2后暂停。auth-platform/docs/design/oa-auth-unification是主计划；本仓承担P2-06商城只读接入。用户已授权正常提交、合并和推送main。
+用户授权完成IAM P3，正常合并推送main并验证CI后暂停，不进入P4，不生产部署。
 
 ## 已完成
 
-- auth P2全部9节点实现和本地验收完成，实现及本地验收完成；两仓已正常推送main，远程CI结论以auth阶段报告为准；不进入P3。
-- 商城中央门店读取、显式身份映射、V46迁移及真实SQL过滤完成；旧Actor/memberId/回执及其他路由保留。
-- 真实跨进程13项PASS，非HTTP直调用例2项PASS，全量mvn verify 377项退出0。SDK最终固定ac4c5b2，含响应体总超时修复，真实13项已复跑。
-- 本任务分支feat/oa-auth-p2-commerce；原前端进度保存在.local/oa-auth-p2/PREVIOUS_CODEX_PROGRESS.md。
+- auth P3全部10节点实现与本地验收；商城P3-02门店/商品ScopePlan、Owner SQL、游标、详情、分批导出与下载复查。
+- 真实MySQL六项新增测试；全仓383项零失败（5既有条件跳过）；最终范围定向复核通过。
+- 双auth节点/Casdoor PKCE/图/MySQL真实HTTP48项通过；真实商城SIGKILL后50+5行恢复及撤权后下载拒绝。
+- SDK源码固定auth637385b，安装、Boot4兼容通过。具体证据见docs/implementation/oa-auth/phase-3。
 
 ## 已修改文件
 
-- commerce-app/iam、StoreAccessController、V46与Mapper、SDK依赖、固定源码安装、真实链路脚本、CI和P2文档；以任务commit为准。
+- runtime/api/scope、store/access、catalog/product的范围Owner接口及Mapper。
+- commerce-app/iam、http/store、V47中央范围检查点迁移及真实MySQL测试。
+- scripts/auth-sdk-source.ref、scripts/iam-scope-smoke.py、P3契约/运行/验收文档。
 
 ## 未完成
 
-- 无待实施功能。远程CI若出现本次变更相关失败，按auth阶段报告继续有界修复；完成后暂停，不进入P3。
+- 正常本地提交、main合并推送及远程CI确认，完成后写最终交付记录并暂停。
 
 ## 当前问题
 
-- 无新阻塞。旧共享Casdoor升级HOLD保留，无生产部署或OA用户文件修改。
-- 未引入细粒度范围、多实例投影或跨请求ALLOW缓存，这些属于P3。
+- 无用户输入阻塞。生产容量/保留清理未承诺，共享Casdoor升级HOLD仍保留。
+- OA已有用户改动未动；.local私密证据、自有隔离数据库和图保留，不自动清理。
 
 ## 下一步建议
 
-1. 最终CI与交付记录见auth-platform/docs/implementation/oa-auth/phase-2/P2_DELIVERY_RESULT.md。
-2. P2结束后暂停；只有用户新指令才开始P3。
-3. 保留.local中的私密配置/隔离资源，不清库、不强制删除、不覆盖共享图。
+1. 确认两仓任务提交完整并正常合并推送main，监测精确SHA的CI。
+2. 更新交付状态后停止，不自动进入P4。
 
 ## 恢复 Prompt
 
-读取本文件及auth的CODEX_PROGRESS和P2_DELIVERY_RESULT，只完成尚未结束的P2交付观察；P2完成后暂停。只有用户新授权才能开始P3。
+读取本文件及auth docs/design/oa-auth-unification/PROGRESS_STATE.md，从P3 Git交付/CI未完成部分继续，不重做已通过的P3，不进入P4。

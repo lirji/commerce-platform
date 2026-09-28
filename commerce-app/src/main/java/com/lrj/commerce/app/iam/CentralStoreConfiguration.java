@@ -43,8 +43,8 @@ public class CentralStoreConfiguration {
                 p.getProperty("central.application"), p.getProperty("central.environment"), Duration.ofSeconds(1), Duration.ofSeconds(8));
     }
     /** 公开门店业务API保持原有所有权和数据映射。 */
-    @Bean CentralStoreReadService centralStoreRead(CentralAccessClient client, CentralStoreBindingMapper bindings, StoreApi stores) {
-        return new CentralStoreReadService(client, bindings, stores);
+    @Bean CentralStoreReadService centralStoreRead(CentralAccessClient client, CentralStoreBindingMapper bindings, StoreApi stores, Optional<CentralScopeService> scoped) {
+        return new CentralStoreReadService(client, bindings, stores,scoped.orElse(null));
     }
     /** 无OR回退；中央失败不会使用旧管理员凭据继续该试点路径。 */
     @Bean @Order(0)
@@ -67,6 +67,7 @@ public class CentralStoreConfiguration {
         CentralFilter(CentralStoreReadService service) { this.service = service; }
         @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
             SecurityContextHolder.clearContext();
+            response.setHeader("Cache-Control","no-store");
             try {
                 String header = single(request, "Authorization"), tenant = single(request, "X-Tenant-Id");
                 if (!header.startsWith("Bearer ")) throw new CentralAccessException(401);
