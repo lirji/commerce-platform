@@ -1,0 +1,90 @@
+{
+  "faultBoundary": "1500 ms delay before forwarding the real publish POST; no mock response",
+  "before": {
+    "stats": {
+      "startTime": "2026-09-28T04:36:56.151Z",
+      "duration": 9684.617,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "network": [
+      {
+        "path": "/v1/admin/ops-pages/preview",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570219983
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/1/submit",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570220484
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/1/approve",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570220595
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/render",
+        "method": "GET",
+        "status": 404,
+        "at": 1790570220777
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/1/publish",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570222232
+      }
+    ],
+    "expectedReproductionFailure": true
+  },
+  "after": {
+    "stats": {
+      "startTime": "2026-09-28T04:37:44.956Z",
+      "duration": 7332.681,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "network": [
+      {
+        "path": "/v1/admin/ops-pages/preview",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570268883
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/1/submit",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570269323
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/1/approve",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570269440
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/1/publish",
+        "method": "POST",
+        "status": 200,
+        "at": 1790570271075
+      },
+      {
+        "path": "/v1/admin/ops-pages/browser-page/render",
+        "method": "GET",
+        "status": 200,
+        "at": 1790570271417
+      }
+    ],
+    "gate": "PASS"
+  },
+  "retainedAssertion": "Published page heading and original mobile assertions retained; actual row publication state added"
+}

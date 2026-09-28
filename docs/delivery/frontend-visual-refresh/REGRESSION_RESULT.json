@@ -2,8 +2,8 @@
   "sliceId": "S-VR-01",
   "uiFingerprint": "3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876",
   "stats": {
-    "startTime": "2026-09-28T04:09:04.653Z",
-    "duration": 96752.93,
+    "startTime": "2026-09-28T04:38:37.043Z",
+    "duration": 99532.654,
     "expected": 26,
     "skipped": 0,
     "unexpected": 0,
@@ -14,154 +14,154 @@
       "file": "b-console-regression.spec.ts",
       "title": "商品经营切页和筛选后不保留旧批量选择，刷新后编辑显示新版本",
       "status": "passed",
-      "durationMs": 3506,
+      "durationMs": 3553,
       "attempts": 1
     },
     {
       "file": "b-console-regression.spec.ts",
       "title": "旅程超过五十条时可以访问下一页",
       "status": "passed",
-      "durationMs": 1743,
+      "durationMs": 1797,
       "attempts": 1
     },
     {
       "file": "b-console-regression.spec.ts",
       "title": "活动、规则和运营页面可以翻页，运营页面新建不沿用上一草稿",
       "status": "passed",
-      "durationMs": 3038,
+      "durationMs": 3171,
       "attempts": 1
     },
     {
       "file": "catalog-merchandising.spec.ts",
       "title": "商品经营：类目模板、固定规格、展示图片条码及会员筛选",
       "status": "passed",
-      "durationMs": 5053,
+      "durationMs": 4906,
       "attempts": 1
     },
     {
       "file": "catalog-scheduling.spec.ts",
       "title": "经营计划：固定版本调价、逐项回执和渠道价历史",
       "status": "passed",
-      "durationMs": 3061,
+      "durationMs": 3356,
       "attempts": 1
     },
     {
       "file": "commerce.spec.ts",
       "title": "真实浏览器：会员下单、沙箱收款、履约、售后退款与权益冲正",
       "status": "passed",
-      "durationMs": 9029,
+      "durationMs": 11635,
       "attempts": 1
     },
     {
       "file": "commerce.spec.ts",
       "title": "可视规则与低代码页面预览、审批、发布及窄屏",
       "status": "passed",
-      "durationMs": 4566,
+      "durationMs": 4544,
       "attempts": 1
     },
     {
       "file": "commerce.spec.ts",
       "title": "无效凭据不会进入应用，退出后清除会话",
       "status": "passed",
-      "durationMs": 893,
+      "durationMs": 876,
       "attempts": 1
     },
     {
       "file": "commerce.spec.ts",
       "title": "旅程可视编排、手工入组与会员站内触达",
       "status": "passed",
-      "durationMs": 5498,
+      "durationMs": 6066,
       "attempts": 1
     },
     {
       "file": "coupon-deliveries.spec.ts",
       "title": "定向发券：固定人群、相对期限、真实钱包与撤销回执",
       "status": "passed",
-      "durationMs": 4717,
+      "durationMs": 4601,
       "attempts": 1
     },
     {
       "file": "dashboard.spec.ts",
       "title": "经营总览：真实汇总、每日趋势、导航搜索与手机布局",
       "status": "passed",
-      "durationMs": 1852,
+      "durationMs": 1832,
       "attempts": 1
     },
     {
       "file": "lifecycle-journey.spec.ts",
       "title": "生命周期：生日模板、审批、持久扫描、旅程券到账与效果比较",
       "status": "passed",
-      "durationMs": 6405,
+      "durationMs": 6090,
       "attempts": 1
     },
     {
       "file": "member-behavior.spec.ts",
       "title": "行为经营：真实商品交互、本人偏好、会员详情与行为圈选",
       "status": "passed",
-      "durationMs": 5765,
+      "durationMs": 5994,
       "attempts": 1
     },
     {
       "file": "member-cycles.spec.ts",
       "title": "周期经营：查询考核、礼包绑定与幂等补发",
       "status": "passed",
-      "durationMs": 2332,
+      "durationMs": 2314,
       "attempts": 1
     },
     {
       "file": "member-cycles.spec.ts",
       "title": "会员周期与权益钱包展示真实已发余额",
       "status": "passed",
-      "durationMs": 2954,
+      "durationMs": 2733,
       "attempts": 1
     },
     {
       "file": "member-points.spec.ts",
       "title": "积分经营与会员账本：真实余额、版本校准和无管理越权入口",
       "status": "passed",
-      "durationMs": 4062,
+      "durationMs": 4002,
       "attempts": 1
     },
     {
       "file": "operations.spec.ts",
       "title": "会员生命周期：资料、冻结恢复、终态及审计记录",
       "status": "passed",
-      "durationMs": 3067,
+      "durationMs": 3272,
       "attempts": 1
     },
     {
       "file": "operations.spec.ts",
       "title": "门店运营：商品规格、调价上下架与当前会话即时撤权",
       "status": "passed",
-      "durationMs": 3189,
+      "durationMs": 2944,
       "attempts": 1
     },
     {
       "file": "operations.spec.ts",
       "title": "成长经营：真实账本、升级与标签撤销恢复",
       "status": "passed",
-      "durationMs": 2501,
+      "durationMs": 2527,
       "attempts": 1
     },
     {
       "file": "operations.spec.ts",
       "title": "人群与促销：复制圈选版本、检查刷新、只读预览与活动复用",
       "status": "passed",
-      "durationMs": 3988,
+      "durationMs": 3887,
       "attempts": 1
     },
     {
       "file": "operations.spec.ts",
       "title": "旅程与效果：升级通知、成交退款和历史补齐",
       "status": "passed",
-      "durationMs": 4996,
+      "durationMs": 4705,
       "attempts": 1
     },
     {
       "file": "operations.spec.ts",
       "title": "旅程运营：配置注册触发与频控、审批发布及真实入组",
       "status": "passed",
-      "durationMs": 3873,
+      "durationMs": 3917,
       "attempts": 1
     },
     {
@@ -175,26 +175,56 @@
       "file": "points-checkout.spec.ts",
       "title": "积分结算：报价不占用、下单冻结、取消原路释放",
       "status": "passed",
-      "durationMs": 2302,
+      "durationMs": 2401,
       "attempts": 1
     },
     {
       "file": "visual-refresh.spec.ts",
       "title": "窄屏商品表格内部滚动，字段错误可见且关闭弹层归还焦点",
       "status": "passed",
-      "durationMs": 1787,
+      "durationMs": 1802,
       "attempts": 1
     },
     {
       "file": "visual-refresh.spec.ts",
       "title": "手机商城图片、缺图提示和触达尺寸，购物袋展示真实报价",
       "status": "passed",
-      "durationMs": 991,
+      "durationMs": 1042,
       "attempts": 1
     }
   ],
-  "sourceReportSha256": "09449a1783edec83bc5a2a6b24a41345a7efd40b2c24a984dab62b2103433d79",
-  "privateFixtureAdapter": "Original assertions unchanged; only fixture URLs redirected to task-specific credentials",
+  "sourceReportSha256": "128eb9cfb1f4fed2c96752aade4b63b1e1eee0a9b8180052a2e859d7f11f160b",
+  "privateFixtureAdapter": "Exact current source assertions, including publication precondition; only fixture URLs redirected",
   "backend": "http://127.0.0.1:8602",
-  "preview": "http://127.0.0.1:8601"
+  "preview": "http://127.0.0.1:8601",
+  "previousRun": {
+    "stats": {
+      "startTime": "2026-09-28T04:09:04.653Z",
+      "duration": 96752.93,
+      "expected": 26,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "sourceReportSha256": "09449a1783edec83bc5a2a6b24a41345a7efd40b2c24a984dab62b2103433d79"
+  },
+  "testSourceSha256": {
+    "b-console-regression.spec.ts": "9c30b9c6183eb765111a8c2457fd0c5905205f7bfbfd01910571a8c4f211baeb",
+    "catalog-merchandising.spec.ts": "c448c627c3471530d172c71e31a8f9203ae7f32b6912325f5e5ba9f012bb91e9",
+    "catalog-scheduling.spec.ts": "2048a3fe28436f26905fba33cadd52daf938aa8cc7ce6bfec6e5b71615ef16a3",
+    "commerce.spec.ts": "aef0da34e11f91b52a34b8eb537bf10e848a4120540b0fcb22334761bc38e185",
+    "coupon-deliveries.spec.ts": "c48b3695107dd4c4b5c9f36572144a9c17956db91960492417d0a720dde43799",
+    "dashboard.spec.ts": "8adb25c7e7c5244200cf29ad09fb465bc8a9dd62e1f09fedc735b9d8f73287f9",
+    "lifecycle-journey.spec.ts": "fb9ef7d00c6af6ff5ff161ffb4c9414d58962f4a039fe1bd658410b0b364909b",
+    "member-behavior.spec.ts": "0b34d6e1be30083e94b6edcba0ff3a31f8bb034349ff45ef588f340a7982be14",
+    "member-cycles.spec.ts": "231cbca457934cea03f7552c2393d0773a7536ff6479147925e8c8990f0f9e1d",
+    "member-points.spec.ts": "3e3c4975cf049f344c7623ab6fa81687799c29327bbdc3e350f568121ed30a0a",
+    "navigation.ts": "92175894ee2311b56dcde6ab81caa7b54a9aa59f0e4d56e18d426a8e6e6ef6f1",
+    "operations.spec.ts": "a238b7032afaaddba693fe8734d74153ec2da95e6e8d86fbaa1136254770583a",
+    "point-offers.spec.ts": "eb1842eeaa4fff9f13605d9686aa329cb8914ef93226980dc48dbf0a758198a4",
+    "points-checkout.spec.ts": "7e347d88df541b283ba5beaea2c4cd71ece43986e0d4a656d33c9d813cd193cc",
+    "visual-refresh.spec.ts": "ebb4d13abc51a6eb71981e1e870155466e3f29e7f42254786d423e4cffa865ca"
+  },
+  "ciRemediation": "CI_REMEDIATION.md",
+  "raceVerification": "RACE_VERIFICATION.json"
 }

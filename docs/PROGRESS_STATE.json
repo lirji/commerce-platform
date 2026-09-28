@@ -1,6 +1,6 @@
 {
   "task": "frontend-visual-refresh",
-  "status": "COMPLETE",
+  "status": "IN_PROGRESS",
   "baseline": "f170e317f12006d8559ac41d1858b00c42998890",
   "priorState": "docs/delivery/frontend-visual-refresh/PREVIOUS_PROGRESS_STATE.json",
   "slices": {
@@ -8,7 +8,7 @@
   },
   "verification": "docs/delivery/frontend-visual-refresh/TEST_RESULT.md",
   "uiFingerprint": "3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876",
-  "delivery": "PUBLISHED_TO_MAIN",
+  "delivery": "PUBLISHED_CI_REMEDIATION_PENDING",
   "git": {
     "branch": "feat/frontend-visual-refresh",
     "target": "origin/main",
@@ -19,13 +19,19 @@
   },
   "previousMigration": "UNCHANGED",
   "productionDeployment": "NOT_IN_SCOPE",
-  "next": "NONE",
+  "next": "WAIT_FIXED_REF_CI",
   "deliveryEvidence": "docs/delivery/frontend-visual-refresh/DELIVERY_RESULT.json",
   "ci": {
-    "gate": "PASS",
-    "commit": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
-    "evidence": "docs/delivery/frontend-visual-refresh/CI_RESULT.json",
-    "url": "https://github.com/lirji/commerce-platform/actions/runs/36377172720"
+    "gate": "HOLD",
+    "commit": "823d2005fe88fa419b1314c60e14e233b1770666",
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36377797418",
+    "reason": "25 passed; lowcode publish/open test did not wait for publication state"
   },
-  "updatedAt": "2026-09-28T04:25:48.060021+00:00"
+  "updatedAt": "2026-09-28T04:25:48.060021+00:00",
+  "localRemediation": {
+    "gate": "PASS",
+    "regression": "docs/delivery/frontend-visual-refresh/REGRESSION_RESULT.json",
+    "reproduction": "docs/delivery/frontend-visual-refresh/RACE_VERIFICATION.json",
+    "productSourceChanged": false
+  }
 }
