@@ -6,7 +6,7 @@
 
 ## 已完成
 
-- auth P2全部9节点实现和本地验收完成，正在Git/CI交付；不进入P3。
+- auth P2全部9节点实现和本地验收完成，实现及本地验收完成；两仓已正常推送main，远程CI结论以auth阶段报告为准；不进入P3。
 - 商城中央门店读取、显式身份映射、V46迁移及真实SQL过滤完成；旧Actor/memberId/回执及其他路由保留。
 - 真实跨进程13项PASS，非HTTP直调用例2项PASS，全量mvn verify 377项退出0。SDK最终固定ac4c5b2，含响应体总超时修复，真实13项已复跑。
 - 本任务分支feat/oa-auth-p2-commerce；原前端进度保存在.local/oa-auth-p2/PREVIOUS_CODEX_PROGRESS.md。
@@ -17,7 +17,7 @@
 
 ## 未完成
 
-- 正常合并推送及远程CI最终观察、auth阶段报告同步。
+- 无待实施功能。远程CI若出现本次变更相关失败，按auth阶段报告继续有界修复；完成后暂停，不进入P3。
 
 ## 当前问题
 
@@ -26,8 +26,8 @@
 
 ## 下一步建议
 
-1. 完成两仓Git/CI收口；失败只修复本任务问题。
-2. 更新最终交付证据，然后暂停；不得自动启动P3。
+1. 最终CI与交付记录见auth-platform/docs/implementation/oa-auth/phase-2/P2_DELIVERY_RESULT.md。
+2. P2结束后暂停；只有用户新指令才开始P3。
 3. 保留.local中的私密配置/隔离资源，不清库、不强制删除、不覆盖共享图。
 
 ## 恢复 Prompt

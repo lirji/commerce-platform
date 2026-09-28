@@ -15,3 +15,8 @@ P2只认证单投影执行者、直接成员与当前企业全部范围；不宣
 最终本地 `mvn -q -nsu verify` 退出0，含新增CentralStoreReadTest 2项非HTTP/非代理绕过拒绝测试；旧业务全量回归通过。SDK源码最终固定ae56c9c（仅在d98b918基础上收口协议常量/错误状态命名，无授权行为扩大）。Code Hygiene在本次基线04567b2上通过WITH_LIMITATIONS，未配置Java formatter/静态分析器；旧文件沿用Tab缩进。
 
 最终SDK修订为ac4c5b2：补齐响应头后body卡住的总超时与取消。商城按该完整源码SHA重新安装/打包并复跑13项真实链路全部通过，证据 `.local/oa-auth-p2/smoke-0b387c35203e/result.json`。此前ae56c9c记录保留为验证历史；最终制品来源以scripts/auth-sdk-source.ref为准。
+
+
+Git交付：原目录任务分支feat/oa-auth-p2-commerce，主实现d3b0831、SDK修复固定281814d，已正常快进合并并推送main。最终CI按本仓main工作流与[auth阶段交付报告](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/phase-2/P2_DELIVERY_RESULT.md)绑定实际SHA记录；未强推或部署。
+
+目录审计：本轮未创建worktree；已有auth .local/p0-baselines/commerce detached工作树保留作为P0证据。target、frontend/node_modules与dist是可再生成产物；.local/oa-auth-p2含私密配置、隔离资源定位和日志，保留以便复验，不自动删除。未跟踪产品文件均已纳入任务提交，OA用户修改未动。
