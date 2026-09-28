@@ -1,0 +1,15 @@
+{
+  "protocol": "router-context/v1",
+  "target_stage": "IMPLEMENT",
+  "requested_tracks": [
+    "backend"
+  ],
+  "artifacts": {
+    "BRIEF": "docs/delivery/phase8-marketing-journey/DELIVERY_PLAN.md"
+  },
+  "grants": [
+    "read_repo",
+    "write_design_docs"
+  ],
+  "parallel_allowed": false
+}

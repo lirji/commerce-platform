@@ -36,6 +36,8 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	private final JourneyMapper mapper;
 
+	private final JourneyActions actions;
+
 	private final com.lrj.commerce.campaign.asset.api.MarketingAssets assets;
 
 	private final Commands commands;
@@ -75,6 +77,7 @@ public class JourneyService implements JourneyApi, EventHandler {
 		this.assets = assets;
 		this.memberGrowth = memberGrowth;
 		this.mapper = mapper;
+		this.actions = new JourneyActions(mapper, benefits, coupons);
 		this.commands = commands;
 		this.members = members;
 		this.stores = stores;
@@ -86,7 +89,7 @@ public class JourneyService implements JourneyApi, EventHandler {
 		tx = new TransactionTemplate(manager);
 		tx.setTimeout(10);
 		tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
-		journeys = lanes.rotation("journeys", JOURNEYS, null);
+		journeys = lanes.rotation("journeys", JOURNEYS, () -> mapper.backlog(now()));
 	}
 
 	/** 图必须有界、无环、可达且所有分支收敛到终止节点。 */
@@ -95,97 +98,90 @@ public class JourneyService implements JourneyApi, EventHandler {
 		validate(input);
 		return commands.run(actor, "journey.create", key, input, View.class, () -> {
 			stores.requireActive(actor, input.storeId());
-			for (var node : input.nodes())
-				if (node.kind() == Kind.GRANT)
-					benefits.validateBinding(actor.tenantId(), input.storeId(), node.benefit(), input.validFrom(),
-							input.validTo().plusSeconds(input.maxDurationSeconds()));
-			for (var node : input.nodes())
-				if (node.kind() == Kind.COUPON)
-					coupons.validateExchange(actor.tenantId(), input.storeId(), node.coupon().definitionId(),
-							node.coupon().version(), input.validFrom(),
-							input.validTo().plusSeconds(input.maxDurationSeconds()));
+			validateBindings(actor, input);
+			if (mapper.find(actor.tenantId(), input.journeyId(), input.version()) != null)
+				throw conflict("旅程内容版本已存在，修改必须创建新版本");
 			mapper.definition(actor.tenantId(), input, JsonCodec.write(input));
 			return view(mapper.find(actor.tenantId(), input.journeyId(), input.version()));
 		});
 	}
 
-	private void validate(Definition d) {
-		Inputs.require(d != null && d.version() > 0 && d.trigger() != null && d.validFrom() != null
-				&& d.validTo() != null && d.validTo().isAfter(d.validFrom()), "旅程版本或生效窗口无效");
-		Identifiers.require(d.journeyId());
-		Identifiers.require(d.storeId());
-		Inputs.text(d.name(), 128);
-		Inputs.require(d.maxDurationSeconds() >= 1 && d.maxDurationSeconds() <= 2592000 && d.nodes() != null
-				&& !d.nodes().isEmpty() && d.nodes().size() <= 32, "旅程节点或执行期限超限");
-		Inputs.require(Set.of(Trigger.MANUAL, Trigger.ORDER_PAID).contains(d.trigger()) || d.controls() != null,
-				"会员事件旅程必须配置频控");
-		if (d.controls() != null) {
-			var c = d.controls();
-			Inputs.require(c.maxEntries() >= 1 && c.maxEntries() <= 100 && c.notificationLimit() >= 1
-					&& c.notificationLimit() <= 100 && c.entryWindowSeconds() >= 60 && c.entryWindowSeconds() <= 2592000
-					&& c.notificationWindowSeconds() >= 60 && c.notificationWindowSeconds() <= 2592000, "旅程频控参数无效");
-			if (c.entryRule() != null)
-				c.entryRule().requireTrustedFields();
-			if (d.trigger() == Trigger.SEGMENT_ENTERED)
-				Identifiers.require(c.segmentId());
-			else
-				Inputs.require(c.segmentId() == null, "只有人群触发可绑定segmentId");
-		}
-		if (lifecycle(d.trigger())) {
-			var l = d.lifecycle();
-			Inputs.require(l != null && l.thresholdDays() >= 1 && l.thresholdDays() <= 365 && l.cartDelaySeconds() >= 60
-					&& l.cartDelaySeconds() <= 604800 && l.scanIntervalSeconds() >= 300
-					&& l.scanIntervalSeconds() <= 86400 && l.conversionWindowDays() >= 1
-					&& l.conversionWindowDays() <= 30, "生命周期阈值/扫描/观察窗无效");
-		}
-		else
-			Inputs.require(d.lifecycle() == null, "普通触发不接受生命周期参数");
-		var graph = new HashMap<String, Node>();
-		for (var n : d.nodes()) {
-			Inputs.require(n != null && n.kind() != null, "节点类型缺失");
-			Identifiers.require(n.id());
-			Inputs.require(graph.put(n.id(), n) == null, "节点标识重复");
-			Inputs.require(n.kind() == Kind.WAIT ? n.seconds() != null && n.seconds() >= 1 && n.seconds() <= 604800
-					: n.seconds() == null, "等待参数无效");
-			Inputs.require(n.kind() == Kind.DECIDE ? n.rule() != null && n.yesNext() != null && n.noNext() != null
-					: n.rule() == null && n.yesNext() == null && n.noNext() == null, "分支参数无效");
-			Inputs.require(n.kind() == Kind.GRANT ? n.benefit() != null : n.benefit() == null, "权益参数无效");
-			Inputs.require(
-					n.kind() == Kind.COUPON ? n.coupon() != null && n.coupon().version() > 0 : n.coupon() == null,
-					"券节点引用无效");
-			if (n.coupon() != null)
-				Identifiers.require(n.coupon().definitionId());
-			if (n.kind() == Kind.NOTIFY) {
-				Inputs.text(n.title(), 128);
-				Inputs.text(n.body(), 1000);
-			}
-			else
-				Inputs.require(n.title() == null && n.body() == null, "非触达节点不能携带内容");
-			if (n.kind() == Kind.DECIDE)
-				n.rule().requireTrustedFields();
-			Inputs.require(n.kind() == Kind.END || n.kind() == Kind.DECIDE ? n.next() == null : n.next() != null,
-					"后继节点无效");
-		}
-		var visiting = new HashSet<String>();
-		var visited = new HashSet<String>();
-		walk(d.entry(), graph, visiting, visited);
-		Inputs.require(visited.size() == graph.size(), "存在不可达节点");
+	/** 固定权益引用在创建与发布时都核对，审批不授权过期或跨店铺绑定。 */
+	private void validateBindings(Actor actor, Definition definition) {
+		for (var node : definition.nodes())
+			if (node.kind() == Kind.GRANT)
+				benefits.validateBinding(actor.tenantId(), definition.storeId(), node.benefit(), definition.validFrom(),
+						definition.validTo().plusSeconds(definition.maxDurationSeconds()));
+		for (var node : definition.nodes())
+			if (node.kind() == Kind.COUPON)
+				coupons.validateExchange(actor.tenantId(), definition.storeId(), node.coupon().definitionId(),
+						node.coupon().version(), definition.validFrom(),
+						definition.validTo().plusSeconds(definition.maxDurationSeconds()));
 	}
 
-	private void walk(String id, Map<String, Node> graph, Set<String> visiting, Set<String> visited) {
-		Inputs.require(id != null && graph.containsKey(id), "引用节点不存在");
-		if (visited.contains(id))
-			return;
-		Inputs.require(visiting.add(id), "旅程不能存在循环");
-		var n = graph.get(id);
-		if (n.kind() == Kind.DECIDE) {
-			walk(n.yesNext(), graph, visiting, visited);
-			walk(n.noNext(), graph, visiting, visited);
+	private void validate(Definition definition) {
+		com.lrj.commerce.journey.domain.JourneyGraph.requireValid(definition);
+	}
+
+	/** 不产生草稿、命令或权益效果；无效结构以稳定配置码返回。 */
+	@Override
+	public Validation validate(Actor actor, Definition definition) {
+		actor.requireAdmin();
+		var result = com.lrj.commerce.journey.domain.JourneyGraph.validate(definition);
+		if (result.valid()) {
+			stores.requireActive(actor, definition.storeId());
+			validateBindings(actor, definition);
 		}
-		else if (n.kind() != Kind.END)
-			walk(n.next(), graph, visiting, visited);
-		visiting.remove(id);
-		visited.add(id);
+		return result;
+	}
+
+	/** 与运行时共用图、可信事实和规则判定；WAIT后的可变事实不能在预览时预测。 */
+	@Override
+	public PreviewResult preview(Actor actor, String id, long version, Preview input) {
+		actor.requireAdmin();
+		Identifiers.require(id);
+		Inputs.require(version > 0 && input != null, "预览参数无效");
+		Identifiers.require(input.memberId());
+		var definition = view(Inputs.found(mapper.find(actor.tenantId(), id, version))).content();
+		validate(definition);
+		members.requireActive(actor, input.memberId());
+		String amount = null;
+		if (input.orderId() != null) {
+			Identifiers.require(input.orderId());
+			var order = orders.internalRead(actor.tenantId(), input.orderId());
+			if (!order.memberId().equals(input.memberId()) || !order.storeId().equals(definition.storeId()))
+				throw new DomainException(DomainException.Code.NOT_FOUND, "来源订单不存在");
+			amount = order.payable();
+		}
+		var facts = com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(
+				memberGrowth.facts(actor.tenantId(), input.memberId()), amount);
+		var at = input.at() == null ? now() : input.at();
+		var path = new ArrayList<PreviewStep>();
+		String current = definition.entry();
+		for (int ordinal = 0; ordinal < definition.nodes().size(); ordinal++) {
+			String nodeId = current;
+			var node = definition.nodes().stream().filter(n -> n.id().equals(nodeId)).findFirst().orElseThrow();
+			String decision = null;
+			String next = node.next();
+			String stop = null;
+			switch (node.kind()) {
+				case WAIT -> stop = "FUTURE_DEPENDENT";
+				case END -> stop = "COMPLETED";
+				case DECIDE -> {
+					var truth = rules.evaluate(node.rule().toCondition(), facts);
+					decision = truth.name();
+					next = com.lrj.commerce.journey.domain.JourneyGraph.branch(node, truth);
+					if (truth == Condition.Truth.UNKNOWN)
+						stop = "RULE_UNKNOWN";
+				}
+				case GRANT, COUPON, NOTIFY -> decision = "ACTION_NOT_EXECUTED";
+			}
+			path.add(new PreviewStep(node.id(), node.kind(), decision, next));
+			if (stop != null)
+				return new PreviewResult(id, version, at, List.copyOf(path), stop);
+			current = next;
+		}
+		throw conflict("旅程预览超过图上限");
 	}
 
 	/** 查询每个旅程的最新内容版本，实例仍保留自己的旧版本。 */
@@ -225,6 +221,8 @@ public class JourneyService implements JourneyApi, EventHandler {
 			};
 			if (action.equals("publish")) {
 				var d = view(row).content();
+				validate(d);
+				validateBindings(actor, d);
 				if (!now().isBefore(d.validTo()))
 					throw conflict("旅程入组窗口已结束");
 				stores.requireActive(actor, d.storeId());
@@ -315,6 +313,22 @@ public class JourneyService implements JourneyApi, EventHandler {
 		Inputs.page(after, limit);
 		String member = actor.role() == Actor.Role.ADMIN ? null : members.current(actor).memberId();
 		return mapper.instances(actor.tenantId(), member, after, limit);
+	}
+
+	/** 一个短只读快照同时读取检查点和历史，避免推进期间误报历史覆盖缺口。 */
+	@Override
+	@Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ, timeout = 10)
+	public History history(Actor actor, String id, long afterVersion, int limit) {
+		Identifiers.require(id);
+		Inputs.require(afterVersion >= -1 && limit >= 1 && limit <= 50, "历史分页参数无效");
+		var row = Inputs.found(mapper.findInstance(actor.tenantId(), id));
+		if (actor.role() != Actor.Role.ADMIN && !members.current(actor).memberId().equals(row.memberId()))
+			throw new DomainException(DomainException.Code.NOT_FOUND, "旅程实例不存在");
+		var definition = view(Inputs.found(mapper.find(actor.tenantId(), row.journeyId(), row.journeyVersion()))).content();
+		String coverage = mapper.traceOrigin(actor.tenantId(), id) == null ? "LEGACY_PARTIAL"
+				: mapper.recordedSteps(actor.tenantId(), id) == row.steps() ? "COMPLETE" : "PARTIAL";
+		return new History(row, definition, mapper.triggerKey(actor.tenantId(), id), coverage,
+				mapper.history(actor.tenantId(), id, afterVersion, limit));
 	}
 
 	/** 运维恢复审计：重试、取消等对停止工作的人工干预与状态变更同一事务记录。 */
@@ -490,8 +504,14 @@ public class JourneyService implements JourneyApi, EventHandler {
 						? (1L << Math.min(attempted.get().attempts() + 1, 5)) * 1000
 								+ java.util.concurrent.ThreadLocalRandom.current().nextInt(1000)
 						: RetryPolicy.deferralMillis(java.util.concurrent.ThreadLocalRandom.current().nextDouble()));
-				tx.executeWithoutResult(s -> mapper.failed(tenant, candidate.instanceId(), attempted.get().version(),
-						counted, retryAt));
+				tx.executeWithoutResult(s -> {
+					var current = mapper.lock(tenant, candidate.instanceId());
+					if (current != null && current.version() == attempted.get().version()
+							&& mapper.failed(tenant, current.instanceId(), current.version(), counted, retryAt) == 1) {
+						String state = !counted ? "DEFERRED" : current.attempts() + 1 >= 5 ? "ISOLATED" : "FAILED";
+						mapper.stepFailure(tenant, current, state, retryAt, type.name(), now());
+					}
+				});
 				org.slf4j.LoggerFactory.getLogger(getClass())
 					.warn("journey retry id={} failureClass={} errorType={}", candidate.instanceId(), type,
 							failure.getClass().getSimpleName());
@@ -504,6 +524,7 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	private void execute(String tenant, Instance row) {
 		var now = now();
+		mapper.stepStart(tenant, row, now);
 		if (!now.isBefore(row.deadline())) {
 			advance(tenant, row, row.currentNode(), State.TIMED_OUT, now, "DEADLINE");
 			return;
@@ -535,63 +556,46 @@ public class JourneyService implements JourneyApi, EventHandler {
 		State state = State.RUNNING;
 		Instant due = now;
 		String result = null;
+		String decision = null;
+		String outcome = null;
+		String actionRef = null;
 		switch (node.kind()) {
 			case END -> {
 				next = node.id();
 				state = State.COMPLETED;
 				result = "FINISHED";
+				outcome = "FINISHED";
 				mapper.effect(tenant, JsonCodec.hash("complete/" + row.instanceId()), d, row.memberId(), "COMPLETED",
 						now);
 			}
 			case WAIT -> {
 				state = State.WAITING;
 				due = now.plusSeconds(node.seconds());
+				outcome = "WAIT_SCHEDULED";
 			}
 			case DECIDE -> {
 				Map<String, Fact> facts = com.lrj.commerce.campaign.rule.api.MemberRuleFacts.from(
-						memberGrowth.facts(tenant, member.memberId()),
+						member,
 						row.orderId() == null ? null : orders.internalRead(tenant, row.orderId()).payable());
 				var truth = rules.evaluate(node.rule().toCondition(), facts);
+				decision = truth.name();
+				outcome = "DECIDED";
 				if (truth == Condition.Truth.UNKNOWN) {
 					next = node.id();
 					state = State.COMPLETED;
 					result = "RULE_UNKNOWN";
+					outcome = "RULE_UNKNOWN";
 				}
 				else
-					next = truth == Condition.Truth.MATCH ? node.yesNext() : node.noNext();
+					next = com.lrj.commerce.journey.domain.JourneyGraph.branch(node, truth);
 			}
-			case GRANT -> {
-				benefits.grantFromJourney(tenant, row.memberId(), d.storeId(),
-						JsonCodec.hash(row.instanceId() + "/" + node.id()), row.orderId(), node.benefit());
-				mapper.effect(tenant, JsonCodec.hash("grant/" + row.instanceId() + "/" + node.id()), d, row.memberId(),
-						"BENEFIT_GRANTED", now);
-			}
-			case COUPON -> {
-				coupons.grantFromJourney(tenant, row.memberId(), d.storeId(),
-						JsonCodec.hash(row.instanceId() + "/" + node.id()), node.coupon().definitionId(),
-						node.coupon().version());
-				mapper.effect(tenant, JsonCodec.hash("coupon/" + row.instanceId() + "/" + node.id()), d, row.memberId(),
-						"COUPON_GRANTED", now);
-			}
-			case NOTIFY -> {
-				boolean allowed = true;
-				if (d.controls() != null) {
-					mapper.ensureCap(tenant, d.journeyId(), row.memberId());
-					var cap = mapper.lockCap(tenant, d.journeyId(), row.memberId());
-					long bucket = window(d.controls().notificationWindowSeconds());
-					int count = cap.notificationWindow() == bucket ? cap.notifications() : 0;
-					allowed = count < d.controls().notificationLimit();
-					mapper.cap(tenant, d.journeyId(), row.memberId(), true, bucket, allowed ? count + 1 : count,
-							!allowed);
-				}
-				if (allowed)
-					mapper.notify(tenant, UUID.randomUUID().toString(), row.instanceId(), node.id(), row.memberId(),
-							node.title(), node.body());
-				mapper.effect(tenant, JsonCodec.hash("notify/" + row.instanceId() + "/" + node.id()), d, row.memberId(),
-						allowed ? "NOTIFIED" : "NOTIFY_SUPPRESSED", now);
+			case GRANT, COUPON, NOTIFY -> {
+				var action = actions.execute(tenant, row, d, node, now);
+				outcome = action.outcome();
+				actionRef = action.actionRef();
 			}
 		}
-		advance(tenant, row, next, state, due, result);
+		advance(tenant, row, next, state, due, result, node.kind(), decision, outcome, actionRef);
 	}
 
 	private Instant now() {
@@ -744,7 +748,16 @@ public class JourneyService implements JourneyApi, EventHandler {
 	}
 
 	private void advance(String tenant, Instance old, String node, State status, Instant due, String result) {
-		if (mapper.advance(tenant, old, node, status.name(), due, result) != 1)
+		advance(tenant, old, node, status, due, result, null, null, result, null);
+	}
+
+	/** 动作、完成记录与版本推进共用事务，任一条件更新失败都回滚业务效果。 */
+	private void advance(String tenant, Instance old, String node, State status, Instant due, String result,
+			Kind kind, String decision, String outcome, String actionRef) {
+		String stepState = status == State.WAITING ? "WAITING"
+				: status == State.CANCELLED || status == State.TIMED_OUT ? "STOPPED" : "COMPLETED";
+		if (mapper.stepFinish(tenant, old, kind, stepState, node, due, decision, outcome, actionRef, now()) != 1
+				|| mapper.advance(tenant, old, node, status.name(), due, result) != 1)
 			throw conflict("旅程检查点并发冲突");
 	}
 

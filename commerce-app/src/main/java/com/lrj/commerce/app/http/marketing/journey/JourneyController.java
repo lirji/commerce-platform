@@ -33,6 +33,19 @@ public class JourneyController {
 		return journeys.definitions(actor, after, limit);
 	}
 
+	/** 无副作用校验，机器码用于运营定位无效节点配置。 */
+	@PostMapping("/admin/journeys/validate")
+	public Object validate(@AuthenticationPrincipal Actor actor, @RequestBody JourneyApi.Definition input) {
+		return journeys.validate(actor, input);
+	}
+
+	/** 预览不会入组或调用真实发放；等待节点明确标记未来依赖。 */
+	@PostMapping("/admin/journeys/{id}/{version}/preview")
+	public Object preview(@AuthenticationPrincipal Actor actor, @PathVariable String id, @PathVariable long version,
+			@RequestBody JourneyApi.Preview input) {
+		return journeys.preview(actor, id, version, input);
+	}
+
 	/** 明确动作和预期版本，不能任意指定新状态。 */
 	@PostMapping("/admin/journeys/{id}/{version}/{action}")
 	public Object change(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
@@ -53,6 +66,13 @@ public class JourneyController {
 	public Object instances(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit) {
 		return journeys.instances(actor, after, limit);
+	}
+
+	/** 只读取固定版本和真实执行记录，不以当前定义补写历史。 */
+	@GetMapping({ "/admin/journey-instances/{id}/history", "/journey-instances/{id}/history" })
+	public Object history(@AuthenticationPrincipal Actor actor, @PathVariable String id,
+			@RequestParam(defaultValue = "-1") long afterVersion, @RequestParam(defaultValue = "50") int limit) {
+		return journeys.history(actor, id, afterVersion, limit);
 	}
 
 	/** 取消或重试均写命令审计。 */

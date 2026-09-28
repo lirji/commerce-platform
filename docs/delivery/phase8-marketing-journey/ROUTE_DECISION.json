@@ -1,0 +1,14 @@
+{
+  "ROUTE_DECISION": {
+    "status": "ROUTE",
+    "next": [
+      {
+        "skill": "backend-architecture-design",
+        "reason": "requested design track missing"
+      }
+    ],
+    "reason": "next requested architecture track",
+    "missing": [],
+    "blockers": []
+  }
+}

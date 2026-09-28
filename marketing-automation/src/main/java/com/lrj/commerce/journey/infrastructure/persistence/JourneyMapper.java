@@ -80,6 +80,9 @@ public interface JourneyMapper {
 
 	List<String> tenants(String after, Instant now, int limit);
 
+	/** 全局低基数观测，不携带租户标签；由共享健康快照缓存。 */
+	com.lrj.commerce.runtime.work.WorkLanes.Backlog backlog(Instant now);
+
 	List<Instance> due(String tenant, Instant now);
 
 	int advance(String tenant, Instance previous, String node, String status, Instant due, String result);
@@ -92,5 +95,21 @@ public interface JourneyMapper {
 	void notify(String tenant, String id, String instance, String node, String member, String title, String body);
 
 	List<Notification> notifications(String tenant, String member, String after, int limit);
+
+	/** 领取事务内的执行标记，未提交进程崩溃与业务效果一同回滚。 */
+	void stepStart(String tenant, Instance instance, Instant at);
+
+	int stepFinish(String tenant, Instance instance, Kind kind, String state, String next, Instant due,
+			String decision, String outcome, String actionRef, Instant at);
+
+	void stepFailure(String tenant, Instance instance, String state, Instant due, String failureClass, Instant at);
+
+	List<Step> history(String tenant, String id, long afterVersion, int limit);
+
+	Long traceOrigin(String tenant, String id);
+
+	String triggerKey(String tenant, String id);
+
+	int recordedSteps(String tenant, String id);
 
 }

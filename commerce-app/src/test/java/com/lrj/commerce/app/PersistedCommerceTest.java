@@ -74,6 +74,9 @@ class PersistedCommerceTest {
 	com.lrj.commerce.benefit.coupon.api.CouponApi campaignCoupons;
 
 	@Autowired
+	com.lrj.commerce.journey.application.JourneyService journeyService;
+
+	@Autowired
 	org.springframework.transaction.PlatformTransactionManager transactions;
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
@@ -2323,6 +2326,59 @@ class PersistedCommerceTest {
 				tenant));
 	}
 
+	/** 预览走真实规则与历史图，但不会入组、发放或消耗额度。 */
+	@Test
+	void journeyValidationAndPreviewAreTenantScopedAndHaveNoSideEffects() throws Exception {
+		seed();
+		journeyBenefit(1);
+		var rule = Map.of("kind", "COMPARE", "field", "memberLevel", "operator", "EQ", "valueType", "TEXT", "value", "VIP");
+		var definition = journey("preview", "MANUAL", 120, List.of(
+				Map.of("id", "check", "kind", "DECIDE", "rule", rule, "yesNext", "grant", "noNext", "end"),
+				grantNode("end"), endNode()));
+		var checked = post("/v1/admin/journeys/validate", admin, null, definition);
+		assertTrue(checked.path("valid").asBoolean());
+		var invalid = post("/v1/admin/journeys/validate", admin, null,
+				journey("bad-preview", "MANUAL", 120, List.of(Map.of("id", "wait", "kind", "WAIT", "seconds", 1, "next", "wait"))));
+		assertEquals("CYCLE_NOT_SUPPORTED", invalid.path("issues").get(0).path("code").asString());
+		publishJourney(definition);
+		var preview = post("/v1/admin/journeys/preview/1/preview", admin, null, Map.of("memberId", "m1"));
+		assertEquals("COMPLETED", preview.path("stopReason").asString());
+		assertEquals("MATCH", preview.path("path").get(0).path("decision").asString());
+		assertEquals("ACTION_NOT_EXECUTED", preview.path("path").get(1).path("decision").asString());
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM journey_instance WHERE tenant_id=?", Integer.class, tenant));
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?", Integer.class, tenant));
+		assertEquals(403, call("POST", "/v1/admin/journeys/preview/1/preview", member, null, Map.of("memberId", "m1")).status());
+		assertEquals(404, call("POST", "/v1/admin/journeys/preview/1/preview", token("foreign-" + tenant, "admin", "ADMIN"), null, Map.of("memberId", "m1")).status());
+	}
+
+	/** 未来的会员事实不在当前预览中假装可预测，未知enum也不能写成定义。 */
+	@Test
+	void journeyPreviewStopsAtDurableWaitAndRejectsUnknownNode() throws Exception {
+		seed();
+		publishJourney(journey("future-preview", "MANUAL", 120, List.of(
+				Map.of("id", "wait", "kind", "WAIT", "seconds", 30, "next", "notice"), noticeNode("end"), endNode())));
+		var preview = post("/v1/admin/journeys/future-preview/1/preview", admin, null, Map.of("memberId", "m1"));
+		assertEquals("FUTURE_DEPENDENT", preview.path("stopReason").asString());
+		assertEquals(1, preview.path("path").size());
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM journey_notification WHERE tenant_id=?", Integer.class, tenant));
+		assertEquals(400, call("POST", "/v1/admin/journeys", admin, "unknown-node",
+				journey("unknown-node", "MANUAL", 120, List.of(Map.of("id", "unknown", "kind", "SCRIPT")))).status());
+	}
+
+	/** 依赖在审批后发生异常，发布必须重检而非沿用创建时资格。 */
+	@Test
+	void journeyPublicationRechecksFixedBenefitReferences() throws Exception {
+		seed();
+		journeyBenefit(1);
+		post("/v1/admin/journeys", admin, "create-stale-reference",
+				journey("stale-reference", "MANUAL", 120, List.of(grantNode("end"), endNode())));
+		post("/v1/admin/journeys/stale-reference/1/submit", admin, "submit-stale-reference", Map.of("expectedVersion", 0));
+		post("/v1/admin/journeys/stale-reference/1/approve", admin, "approve-stale-reference", Map.of("expectedVersion", 1));
+		jdbc.update("UPDATE benefit_definition SET valid_to=UTC_TIMESTAMP(6) WHERE tenant_id=? AND benefit_id='journey-credit'", tenant);
+		assertEquals(409, call("POST", "/v1/admin/journeys/stale-reference/1/publish", admin, "publish-stale-reference", Map.of("expectedVersion", 2)).status());
+		assertEquals("APPROVED", jdbc.queryForObject("SELECT status FROM journey_definition WHERE tenant_id=?", String.class, tenant));
+	}
+
 	@Test
 	void journeyRequiresApprovalAndPersistsWaitBeforeExactlyOneNotification() throws Exception {
 		seed();
@@ -2390,6 +2446,74 @@ class PersistedCommerceTest {
 		assertEquals(0, call("GET", "/v1/notifications", member, null, null).body().size());
 	}
 
+	/** WAIT后读取当前会员事实；成功历史、固定版本与真实权益来源能够相互核对。 */
+	@Test
+	void journeyHistoryRecordsWaitDecisionAndAcceptedActionWithStablePagination() throws Exception {
+		seed();
+		journeyBenefit(1);
+		var rule = Map.of("kind", "COMPARE", "field", "memberLevel", "operator", "EQ", "valueType", "TEXT", "value", "VIP");
+		publishJourney(journey("history", "MANUAL", 120, List.of(
+				Map.of("id", "wait", "kind", "WAIT", "seconds", 30, "next", "decide"),
+				Map.of("id", "decide", "kind", "DECIDE", "rule", rule, "yesNext", "grant", "noNext", "end"),
+				grantNode("end"), endNode())));
+		String id = enroll("history", "source").path("instanceId").asString();
+		assertEquals(id, enroll("history", "source").path("instanceId").asString());
+		journeyPump();
+		var wait = postlessHistory(id, admin);
+		assertEquals("COMPLETE", wait.path("traceCoverage").asString());
+		assertEquals("source", wait.path("triggerKey").asString());
+		assertEquals("WAITING", wait.path("steps").get(0).path("status").asString());
+		assertEquals("wait", wait.path("steps").get(0).path("nodeId").asString());
+		assertEquals("decide", wait.path("instance").path("currentNode").asString());
+		assertNotEquals("", wait.path("steps").get(0).path("wakeAt").asString());
+		journeyPump();
+		assertEquals(1, postlessHistory(id, member).path("steps").size());
+		jdbc.update("UPDATE journey_instance SET due_at=UTC_TIMESTAMP(3) WHERE tenant_id=? AND instance_id=?", tenant, id);
+		journeyPump();
+		journeyPump();
+		journeyPump();
+		var history = postlessHistory(id, member);
+		assertEquals("COMPLETED", history.path("instance").path("status").asString());
+		assertEquals(4, history.path("steps").size());
+		assertEquals("MATCH", history.path("steps").get(1).path("decision").asString());
+		assertEquals("BENEFIT_ACCEPTED", history.path("steps").get(2).path("outcome").asString());
+		assertEquals(jdbc.queryForObject("SELECT grant_id FROM benefit_grant WHERE tenant_id=?", String.class, tenant),
+				history.path("steps").get(2).path("actionRef").asString());
+		assertEquals("FINISHED", history.path("steps").get(3).path("outcome").asString());
+		var page = call("GET", "/v1/journey-instances/" + id + "/history?afterVersion=0&limit=1", member, null, null);
+		assertEquals(200, page.status());
+		assertEquals("COMPLETE", page.body().path("traceCoverage").asString());
+		assertEquals(1, page.body().path("steps").size());
+		assertEquals(1, page.body().path("steps").get(0).path("transitionVersion").asLong());
+		assertEquals(404, call("GET", "/v1/admin/journey-instances/" + id + "/history", token("foreign-" + tenant, "admin", "ADMIN"), null, null).status());
+		assertEquals(400, call("GET", "/v1/admin/journey-instances/" + id + "/history?limit=51", admin, null, null).status());
+		assertEquals(401, call("GET", "/v1/journey-instances/" + id + "/history", null, null, null).status());
+		pump();
+		assertEquals("AVAILABLE", jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?", String.class, tenant));
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'", Integer.class, tenant));
+	}
+
+	private JsonNode postlessHistory(String id, String token) throws Exception {
+		var reply = call("GET", (token.equals(admin) ? "/v1/admin/journey-instances/" : "/v1/journey-instances/") + id + "/history", token, null, null);
+		assertEquals(200, reply.status(), reply.body().toString());
+		return reply.body();
+	}
+
+	/** 旧写入没有完整证据，扩展迁移不推测或回填历史。 */
+	@Test
+	void legacyJourneyHistoryExplicitlyReportsPartialCoverage() throws Exception {
+		seed();
+		publishJourney(journey("legacy-history", "MANUAL", 120, List.of(noticeNode("end"), endNode())));
+		String id = enroll("legacy-history", "old").path("instanceId").asString();
+		jdbc.update("UPDATE journey_instance SET trace_origin_version=NULL WHERE tenant_id=? AND instance_id=?", tenant, id);
+		journeyPump();
+		var history = postlessHistory(id, admin);
+		assertEquals("LEGACY_PARTIAL", history.path("traceCoverage").asString());
+		assertEquals(1, history.path("steps").size());
+		assertEquals("NOTIFIED", history.path("steps").get(0).path("outcome").asString());
+		assertFalse(history.path("steps").get(0).path("actionRef").asString().isBlank());
+	}
+
 	@Test
 	void concurrentJourneyWorkersCommitOneGrantAndResumeNextNode() throws Exception {
 		seed();
@@ -2436,6 +2560,15 @@ class PersistedCommerceTest {
 			journeyPump();
 		}
 		assertEquals("ISOLATED", journeyState(id));
+		var failures = postlessHistory(id, admin).path("steps");
+		assertEquals(5, failures.size());
+		for (int i = 0; i < 5; i++) {
+			assertEquals(i, failures.get(i).path("transitionVersion").asLong());
+			assertEquals(1, failures.get(i).path("ordinal").asInt());
+			assertEquals("grant", failures.get(i).path("nodeId").asString());
+			assertEquals(i == 4 ? "ISOLATED" : "FAILED", failures.get(i).path("status").asString());
+			assertTrue(failures.get(i).path("actionRef").isNull());
+		}
 		assertEquals(0, jdbc.queryForObject("SELECT steps FROM journey_instance WHERE tenant_id=? AND instance_id=?",
 				Integer.class, tenant, id));
 		assertEquals(1,
@@ -2446,6 +2579,67 @@ class PersistedCommerceTest {
 				tenant, id);
 		journeyPump();
 		assertEquals("TIMED_OUT", journeyState(id));
+	}
+
+	/** 真支付事件进入固定WAIT，再按当前事实分支，权益受理和最终台账均核对。 */
+	@Test
+	void paidJourneyCompletesTriggerWaitCurrentDecisionCreditAndHistoryExactlyOnce() throws Exception {
+		var order = pendingOrder();
+		journeyBenefit(1);
+		var rule = Map.of("kind", "COMPARE", "field", "memberLevel", "operator", "EQ", "valueType", "TEXT", "value", "VIP");
+		publishJourney(journey("paid-full", "ORDER_PAID", 120, List.of(
+				Map.of("id", "wait", "kind", "WAIT", "seconds", 30, "next", "decide"),
+				Map.of("id", "decide", "kind", "DECIDE", "rule", rule, "yesNext", "grant", "noNext", "end"),
+				grantNode("end"), endNode())));
+		payOrder(order);
+		pump();
+		String eventId = jdbc.queryForObject("SELECT event_id FROM platform_event WHERE tenant_id=? AND event_type='order.paid.v1'", String.class, tenant);
+		var event = eventMapper.find(tenant, eventId);
+		var redelivery = new com.lrj.commerce.runtime.api.event.EventHandler.Event(UUID.randomUUID().toString(),
+				event.tenantId(), event.eventType(), event.aggregateId(), event.aggregateVersion(), event.payloadJson(), event.createdAt(), 0, 0);
+		new org.springframework.transaction.support.TransactionTemplate(transactions).executeWithoutResult(s -> journeyService.handle(redelivery));
+		assertFalse(journeyService.replaySafety().historicalReplay());
+		String id = jdbc.queryForObject("SELECT instance_id FROM journey_instance WHERE tenant_id=?", String.class, tenant);
+		journeyPump();
+		assertEquals("WAITING", journeyState(id));
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?", Integer.class, tenant));
+		pump();
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM journey_instance WHERE tenant_id=?", Integer.class, tenant));
+		jdbc.update("UPDATE journey_instance SET due_at=UTC_TIMESTAMP(3) WHERE tenant_id=? AND instance_id=?", tenant, id);
+		for (int step = 0; step < 3; step++)
+			journeyPump();
+		pump();
+		assertEquals("COMPLETED", journeyState(id));
+		var trace = postlessHistory(id, admin);
+		assertEquals(order.path("orderId").asString(), trace.path("triggerKey").asString());
+		assertEquals("MATCH", trace.path("steps").get(1).path("decision").asString());
+		assertEquals(4, trace.path("steps").size());
+		assertEquals("AVAILABLE", jdbc.queryForObject("SELECT status FROM benefit_grant WHERE tenant_id=?", String.class, tenant));
+		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'", Integer.class, tenant));
+	}
+
+	@Test
+	void waitBranchUsesCurrentTagsInsteadOfEnrollmentFacts() throws Exception {
+		seed();
+		journeyBenefit(1);
+		post("/v1/admin/member-tags", admin, "tag", Map.of("tagId", "loyal", "name", "忠诚会员"));
+		post("/v1/admin/member-tags/m1/assign", admin, "assign", Map.of("tagId", "loyal", "active", true, "expectedVersion", 0, "reason", "等待前"));
+		var rule = Map.of("kind", "COMPARE", "field", "memberTags", "operator", "CONTAINS", "valueType", "TEXT", "value", "loyal");
+		publishJourney(journey("current-facts", "MANUAL", 120, List.of(
+				Map.of("id", "wait", "kind", "WAIT", "seconds", 30, "next", "decide"),
+				Map.of("id", "decide", "kind", "DECIDE", "rule", rule, "yesNext", "grant", "noNext", "end"),
+				grantNode("end"), endNode())));
+		String id = enroll("current-facts", "tagged").path("instanceId").asString();
+		journeyPump();
+		post("/v1/admin/member-tags/m1/assign", admin, "remove", Map.of("tagId", "loyal", "active", false, "expectedVersion", 1, "reason", "等待中撤销"));
+		jdbc.update("UPDATE journey_instance SET due_at=UTC_TIMESTAMP(3) WHERE tenant_id=? AND instance_id=?", tenant, id);
+		journeyPump();
+		journeyPump();
+		var trace = postlessHistory(id, admin);
+		assertEquals("NO_MATCH", trace.path("steps").get(1).path("decision").asString());
+		assertEquals("end", trace.path("steps").get(1).path("nextNode").asString());
+		assertEquals("COMPLETED", journeyState(id));
+		assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM benefit_grant WHERE tenant_id=?", Integer.class, tenant));
 	}
 
 	@Test

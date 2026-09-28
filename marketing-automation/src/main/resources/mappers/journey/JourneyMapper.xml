@@ -17,7 +17,7 @@
   <select id="published" resultType="com.lrj.commerce.journey.infrastructure.persistence.JourneyMapper$Row">SELECT <include refid="definitionColumns"/> FROM journey_definition WHERE tenant_id=#{tenant} AND store_id=#{store} AND status='PUBLISHED' AND trigger_type='ORDER_PAID' AND valid_from &lt;= #{now} AND valid_to &gt; #{now} ORDER BY journey_id LIMIT 11</select>
   <update id="pauseOthers">UPDATE journey_definition SET status='PAUSED',lock_version=lock_version+1 WHERE tenant_id=#{tenant} AND journey_id=#{id} AND status='PUBLISHED'</update>
   <update id="change">UPDATE journey_definition SET status=#{status},lock_version=lock_version+1,published_at=IF(#{status}='PUBLISHED',UTC_TIMESTAMP(3),published_at) WHERE tenant_id=#{tenant} AND journey_id=#{id} AND version=#{version} AND lock_version=#{expected}</update>
-  <insert id="instance">INSERT INTO journey_instance(tenant_id,instance_id,journey_id,journey_version,member_id,order_id,event_key,current_node,due_at,deadline) VALUES(#{tenant},#{id},#{definition.journeyId},#{definition.version},#{member},#{order},#{event},#{definition.entry},#{now},#{deadline}) ON DUPLICATE KEY UPDATE instance_id=instance_id</insert>
+  <insert id="instance">INSERT INTO journey_instance(tenant_id,instance_id,journey_id,journey_version,member_id,order_id,event_key,current_node,due_at,deadline,trace_origin_version) VALUES(#{tenant},#{id},#{definition.journeyId},#{definition.version},#{member},#{order},#{event},#{definition.entry},#{now},#{deadline},0) ON DUPLICATE KEY UPDATE instance_id=instance_id</insert>
   <select id="byEvent" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">SELECT <include refid="instanceColumns"/> FROM journey_instance WHERE tenant_id=#{tenant} AND journey_id=#{journey} AND journey_version=#{version} AND event_key=#{event} FOR UPDATE</select>
   <select id="findInstance" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">SELECT <include refid="instanceColumns"/> FROM journey_instance WHERE tenant_id=#{tenant} AND instance_id=#{id}</select>
   <select id="lock" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">SELECT <include refid="instanceColumns"/> FROM journey_instance WHERE tenant_id=#{tenant} AND instance_id=#{id} FOR UPDATE</select>
@@ -25,8 +25,29 @@
   <select id="dueLock" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">SELECT <include refid="instanceColumns"/> FROM journey_instance WHERE tenant_id=#{tenant} AND instance_id=#{id} AND <include refid="eligible"/> FOR UPDATE SKIP LOCKED</select>
   <select id="instances" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">SELECT <include refid="instanceColumns"/> FROM journey_instance WHERE tenant_id=#{tenant} <if test="member != null">AND member_id=#{member}</if> AND instance_id &gt; #{after} ORDER BY instance_id LIMIT #{limit}</select>
   <select id="orderInstances" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">SELECT <include refid="instanceColumns"/> FROM journey_instance WHERE tenant_id=#{tenant} AND order_id=#{order} ORDER BY instance_id LIMIT 11 FOR UPDATE</select>
-  <select id="tenants" resultType="string">SELECT tenant_id FROM (SELECT DISTINCT tenant_id FROM journey_instance WHERE tenant_id &gt; #{after} AND <include refid="eligible"/> UNION SELECT s.tenant_id FROM journey_lifecycle_scan s JOIN journey_definition d ON d.tenant_id=s.tenant_id AND d.journey_id=s.journey_id AND d.version=s.journey_version WHERE s.tenant_id&gt;#{after} AND s.status&lt;&gt;'ISOLATED' AND s.next_due&lt;=#{now} AND d.status='PUBLISHED' AND d.valid_from&lt;=#{now} AND d.valid_to&gt;#{now}) t ORDER BY tenant_id LIMIT #{limit}</select>
-  <select id="due" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">SELECT <include refid="instanceColumns"/> FROM journey_instance WHERE tenant_id=#{tenant} AND <include refid="eligible"/> ORDER BY due_at,instance_id LIMIT 5</select>
+  <select id="tenants" resultType="string">
+    SELECT tenant_id FROM (
+      SELECT DISTINCT tenant_id FROM journey_instance FORCE INDEX(idx_journey_global_due) WHERE tenant_id&gt;#{after} AND status IN ('RUNNING','WAITING') AND due_at&lt;=#{now}
+      UNION
+      SELECT DISTINCT tenant_id FROM journey_instance FORCE INDEX(idx_journey_global_deadline) WHERE tenant_id&gt;#{after} AND status IN ('RUNNING','WAITING','ISOLATED') AND deadline&lt;=#{now}
+      UNION
+      SELECT s.tenant_id FROM journey_lifecycle_scan s JOIN journey_definition d ON d.tenant_id=s.tenant_id AND d.journey_id=s.journey_id AND d.version=s.journey_version WHERE s.tenant_id&gt;#{after} AND s.status&lt;&gt;'ISOLATED' AND s.next_due&lt;=#{now} AND d.status='PUBLISHED' AND d.valid_from&lt;=#{now} AND d.valid_to&gt;#{now}
+    ) t ORDER BY tenant_id LIMIT #{limit}
+  </select>
+  <!-- 每个状态/时间范围只返回5个候选，再去重稳定合并；未来WAIT不参与全租户扫描。 -->
+  <select id="due" resultType="com.lrj.commerce.journey.api.JourneyApi$Instance">
+    SELECT * FROM (
+      (SELECT <include refid="instanceColumns"/> FROM journey_instance FORCE INDEX(idx_journey_due) WHERE tenant_id=#{tenant} AND status='RUNNING' AND due_at&lt;=#{now} ORDER BY due_at,instance_id LIMIT 5)
+      UNION
+      (SELECT <include refid="instanceColumns"/> FROM journey_instance FORCE INDEX(idx_journey_due) WHERE tenant_id=#{tenant} AND status='WAITING' AND due_at&lt;=#{now} ORDER BY due_at,instance_id LIMIT 5)
+      UNION
+      (SELECT <include refid="instanceColumns"/> FROM journey_instance FORCE INDEX(idx_journey_deadline) WHERE tenant_id=#{tenant} AND status='RUNNING' AND deadline&lt;=#{now} ORDER BY due_at,instance_id LIMIT 5)
+      UNION
+      (SELECT <include refid="instanceColumns"/> FROM journey_instance FORCE INDEX(idx_journey_deadline) WHERE tenant_id=#{tenant} AND status='WAITING' AND deadline&lt;=#{now} ORDER BY due_at,instance_id LIMIT 5)
+      UNION
+      (SELECT <include refid="instanceColumns"/> FROM journey_instance FORCE INDEX(idx_journey_deadline) WHERE tenant_id=#{tenant} AND status='ISOLATED' AND deadline&lt;=#{now} ORDER BY due_at,instance_id LIMIT 5)
+    ) candidates ORDER BY due_at,instance_id LIMIT 5
+  </select>
   <update id="advance">UPDATE journey_instance SET current_node=#{node},status=#{status},due_at=#{due},result=#{result},steps=steps+1,attempts=0,version=version+1 WHERE tenant_id=#{tenant} AND instance_id=#{previous.instanceId} AND version=#{previous.version}</update>
   <update id="failed">UPDATE journey_instance SET status=IF(#{counted} AND attempts+1 &gt;= 5,'ISOLATED','RUNNING'),attempts=attempts+IF(#{counted},1,0),due_at=#{due},result=IF(#{counted},'NODE_FAILED','NODE_DEFERRED'),version=version+1 WHERE tenant_id=#{tenant} AND instance_id=#{id} AND version=#{version} AND status IN ('RUNNING','WAITING')</update>
   <update id="control">UPDATE journey_instance SET status=#{status},attempts=0,due_at=#{now},version=version+1 WHERE tenant_id=#{tenant} AND instance_id=#{id} AND version=#{version}</update>
@@ -42,4 +63,24 @@
   <update id="scanRetry">UPDATE journey_lifecycle_scan SET status=IF(member_cursor='','IDLE','RUNNING'),attempts=0,error_code=NULL,next_due=#{now},version=version+1 WHERE tenant_id=#{tenant} AND journey_id=#{previous.journeyId} AND journey_version=#{previous.journeyVersion} AND version=#{previous.version}</update>
   <select id="anchor" resultType="java.time.Instant">SELECT lifecycle_anchor FROM journey_instance WHERE tenant_id=#{tenant} AND instance_id=#{id}</select>
   <update id="setAnchor">UPDATE journey_instance SET lifecycle_anchor=#{at} WHERE tenant_id=#{tenant} AND instance_id=#{id}</update>
+  <insert id="stepStart">INSERT INTO journey_step_execution(tenant_id,instance_id,transition_version,ordinal,node_id,status,started_at) VALUES(#{tenant},#{instance.instanceId},#{instance.version},#{instance.steps}+1,#{instance.currentNode},'EXECUTING',#{at})</insert>
+  <update id="stepFinish">UPDATE journey_step_execution SET node_kind=#{kind},status=#{state},completed_at=#{at},next_node=#{next},wake_at=#{due},decision=#{decision},outcome=#{outcome},action_ref=#{actionRef} WHERE tenant_id=#{tenant} AND instance_id=#{instance.instanceId} AND transition_version=#{instance.version} AND status='EXECUTING'</update>
+  <insert id="stepFailure">INSERT INTO journey_step_execution(tenant_id,instance_id,transition_version,ordinal,node_id,status,started_at,completed_at,wake_at,outcome,failure_class) VALUES(#{tenant},#{instance.instanceId},#{instance.version},#{instance.steps}+1,#{instance.currentNode},#{state},#{at},#{at},#{due},IF(#{state}='DEFERRED','NODE_DEFERRED','NODE_FAILED'),#{failureClass})</insert>
+  <select id="history" resultType="com.lrj.commerce.journey.api.JourneyApi$Step">SELECT transition_version,ordinal,node_id,node_kind kind,status,started_at,completed_at,next_node,wake_at,decision,outcome,action_ref,failure_class FROM journey_step_execution WHERE tenant_id=#{tenant} AND instance_id=#{id} AND transition_version&gt;#{afterVersion} ORDER BY transition_version LIMIT #{limit}</select>
+  <select id="traceOrigin" resultType="java.lang.Long">SELECT trace_origin_version FROM journey_instance WHERE tenant_id=#{tenant} AND instance_id=#{id}</select>
+  <select id="triggerKey" resultType="string">SELECT event_key FROM journey_instance WHERE tenant_id=#{tenant} AND instance_id=#{id}</select>
+  <select id="recordedSteps" resultType="int">SELECT COUNT(*) FROM journey_step_execution WHERE tenant_id=#{tenant} AND instance_id=#{id} AND status IN ('COMPLETED','WAITING','STOPPED')</select>
+  <select id="backlog" resultType="com.lrj.commerce.runtime.work.WorkLanes$Backlog">
+    SELECT COALESCE(SUM(due),0) due,MAX(oldest) oldest_due_age_seconds,COALESCE(SUM(quarantined),0) quarantined FROM (
+      SELECT SUM(<include refid="eligible"/>) due,
+        TIMESTAMPDIFF(SECOND,MIN(CASE WHEN <include refid="eligible"/> THEN LEAST(due_at,deadline) END),#{now}) oldest,
+        SUM(status='ISOLATED' AND deadline&gt;#{now}) quarantined
+      FROM journey_instance WHERE status IN ('RUNNING','WAITING','ISOLATED')
+      UNION ALL
+      SELECT SUM(s.status&lt;&gt;'ISOLATED' AND s.next_due&lt;=#{now} AND d.status='PUBLISHED' AND d.valid_from&lt;=#{now} AND d.valid_to&gt;#{now}) due,
+        TIMESTAMPDIFF(SECOND,MIN(CASE WHEN s.status&lt;&gt;'ISOLATED' AND s.next_due&lt;=#{now} AND d.status='PUBLISHED' AND d.valid_from&lt;=#{now} AND d.valid_to&gt;#{now} THEN s.next_due END),#{now}) oldest,
+        SUM(s.status='ISOLATED') quarantined
+      FROM journey_lifecycle_scan s JOIN journey_definition d ON d.tenant_id=s.tenant_id AND d.journey_id=s.journey_id AND d.version=s.journey_version
+    ) observed
+  </select>
 </mapper>

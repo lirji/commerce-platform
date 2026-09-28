@@ -28,6 +28,29 @@ public interface JourneyApi {
 
 	}
 
+	/** 图错误是配置协议码，与业务规则不命中及运行故障分开。 */
+	enum ValidationCode {
+		INVALID_DEFINITION, MISSING_START_NODE, DUPLICATE_NODE, UNKNOWN_NODE_TYPE, INVALID_WAIT,
+		INVALID_CONDITION, UNSUPPORTED_ACTION, INVALID_EDGE, MISSING_TARGET, UNREACHABLE_NODE, CYCLE_NOT_SUPPORTED
+	}
+
+	record ValidationIssue(ValidationCode code, String nodeId) {
+	}
+	record Validation(boolean valid, List<ValidationIssue> issues) {
+	}
+	record Preview(String memberId, String orderId, Instant at) {
+	}
+	record PreviewStep(String nodeId, Kind kind, String decision, String nextNode) {
+	}
+	record PreviewResult(String journeyId, long version, Instant evaluatedAt, List<PreviewStep> path, String stopReason) {
+	}
+
+	/** 结构有效后再核对本租户固定权益引用，无数据库写入。 */
+	Validation validate(Actor actor, Definition definition);
+
+	/** 只模拟当前事实，遇WAIT明确返回未来依赖，不执行任何真实动作。 */
+	PreviewResult preview(Actor actor, String id, long version, Preview input);
+
 	record CouponRef(String definitionId, long version) {
 	}
 
@@ -94,6 +117,22 @@ public interface JourneyApi {
 
 	record Notification(String notificationId, String title, String body, Instant createdAt) {
 	}
+
+	/** 成功和等待为已提交证据，失败仍保留原逻辑序号，不重放已完成节点。 */
+	enum StepState {
+		EXECUTING, COMPLETED, WAITING, FAILED, DEFERRED, ISOLATED, STOPPED
+	}
+
+	record Step(long transitionVersion, int ordinal, String nodeId, Kind kind, StepState status, Instant startedAt,
+			Instant completedAt, String nextNode, Instant wakeAt, String decision, String outcome, String actionRef,
+			String failureClass) {
+	}
+
+	record History(Instance instance, Definition definition, String triggerKey, String traceCoverage, List<Step> steps) {
+	}
+
+	/** 固定历史版本与本人/租户范围；游标按执行前实例版本稳定排序。 */
+	History history(Actor actor, String id, long afterVersion, int limit);
 
 	/** 创建不可变草稿并检查DAG和权益引用。 */
 	View create(Actor actor, String key, Definition input);

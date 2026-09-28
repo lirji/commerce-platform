@@ -22,7 +22,8 @@ public class SecurityConfiguration {
 
 	/** 会员端显式放行清单；新增接口默认拒绝，必须在此登记，防止管理能力被默认暴露给会员。 */
 	static final String[] MEMBER_PATHS = { "/v1/aftersales/**", "/v1/catalog/**", "/v1/coupon-definitions",
-			"/v1/coupons/**", "/v1/entitlements/**", "/v1/journey-instances", "/v1/members/me/**", "/v1/notifications",
+			"/v1/coupons/**", "/v1/entitlements/**", "/v1/journey-instances", "/v1/journey-instances/*/history",
+			"/v1/members/me/**", "/v1/notifications",
 			"/v1/orders/**", "/v1/point-offers/**", "/v1/point-redemptions", "/v1/quotes/**", "/v1/stores" };
 
 	@Bean
