@@ -1716,3 +1716,28 @@ textarea {
     max-height: calc(100dvh - 235px);
   }
 }
+
+.record-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 180px;
+  color: var(--muted);
+}
+.order-workspace {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.order-workspace > .record-hero {
+  background: var(--surface);
+}
+.order-workspace > .ant-descriptions {
+  padding: 18px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.order-workspace > .section-actions {
+  margin-block: 20px;
+}

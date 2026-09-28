@@ -27,6 +27,7 @@ import type { Coupon, Order, Quote } from "../shared/contracts";
 import { encode, post, useCommand, useResource } from "../shared/api";
 import { Blank, ErrorNotice, Status, money } from "../shared/ui";
 import { Icon } from "../shared/Icon";
+import { PagerActions } from "../shared/interactions";
 
 export function Shop({
   store,
@@ -356,15 +357,17 @@ export function Shop({
                 ? "正在刷新商品"
                 : `本页 ${products.data?.length ?? 0} 件`}
             </span>
-            <Button disabled={!after} onClick={() => setAfter("")}>
-              商品首页
-            </Button>
-            <Button
-              disabled={products.data?.length !== 50}
-              onClick={() => setAfter(products.data!.at(-1)!.skuId)}
-            >
-              下一页商品
-            </Button>
+            <PagerActions>
+              <Button disabled={!after} onClick={() => setAfter("")}>
+                商品首页
+              </Button>
+              <Button
+                disabled={products.data?.length !== 50}
+                onClick={() => setAfter(products.data!.at(-1)!.skuId)}
+              >
+                下一页商品
+              </Button>
+            </PagerActions>
           </Space>
           <section className="shop-promises" aria-label="服务说明">
             <div>

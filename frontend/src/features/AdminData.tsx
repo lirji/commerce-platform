@@ -1,5 +1,5 @@
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
-import { Button, Space, Table, Typography } from "antd";
+import { Button, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";

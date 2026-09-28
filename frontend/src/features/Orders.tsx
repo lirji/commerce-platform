@@ -2,14 +2,13 @@ import {
   Button,
   Card,
   Descriptions,
-  Drawer,
-  Form,
+  Spin,
   InputNumber,
   Space,
   Table,
   Typography,
 } from "antd";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Order,
   Payment,
@@ -26,11 +25,19 @@ import {
   PageHead,
   PrimaryCell,
   RecordHero,
+  RecordDrawer as Drawer,
+  RowActions,
+  formatField,
   Status,
   Workbench,
   money,
   time,
 } from "../shared/ui";
+function workspaceOrder() {
+  return (
+    new URLSearchParams(location.hash.split("?")[1]).get("order") ?? undefined
+  );
+}
 export function Orders({
   admin,
   capabilities,
@@ -40,74 +47,162 @@ export function Orders({
 }) {
   const [after, setAfter] = useState("");
   const [selected, setSelected] = useState<string>();
+  const [workspaceId, setWorkspaceId] = useState(workspaceOrder);
+  const listRef = useRef<HTMLDivElement>(null);
+  const lastOpener = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const sync = () => {
+      setWorkspaceId(workspaceOrder());
+      setSelected(undefined);
+    };
+    addEventListener("hashchange", sync);
+    return () => removeEventListener("hashchange", sync);
+  }, []);
+  const previewOrder = (id: string) => {
+    lastOpener.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    setSelected(id);
+  };
+  const openWorkspace = (id: string) => {
+    if (!selected)
+      lastOpener.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+    setSelected(undefined);
+    const query = new URLSearchParams(location.hash.split("?")[1]);
+    query.set("order", id);
+    location.hash = "orders?" + query.toString();
+  };
+  const returnToList = () => {
+    const query = new URLSearchParams(location.hash.split("?")[1]);
+    query.delete("order");
+    history.replaceState(
+      null,
+      "",
+      "#orders" + (query.size ? "?" + query.toString() : ""),
+    );
+    setWorkspaceId(undefined);
+    dispatchEvent(new Event("hashchange"));
+    requestAnimationFrame(() => {
+      const opener = lastOpener.current;
+      if (opener?.isConnected && opener.getClientRects().length) opener.focus();
+      else listRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    });
+  };
   const resource = useResource<Order[]>(
     (admin ? "/admin/orders" : "/orders") + `?after=${encode(after)}`,
   );
   return (
     <Workbench>
-      <PageHead
-        eyebrow={admin ? "交易与交付" : undefined}
-        title={admin ? "订单工作台" : "我的订单"}
-        description={
-          admin
-            ? "查看真实交易状态，跟进支付与履约。"
-            : "报价在下单时锁定，支付结果以渠道核对为准。"
-        }
-        extra={
-          <Button onClick={resource.refresh}>
-            {admin ? "刷新队列" : "刷新订单"}
-          </Button>
-        }
-      />
-      <ErrorNotice error={resource.error} />
-      <ListPanel
-        count={resource.data?.length ?? 0}
-        after={after}
-        onHome={() => setAfter("")}
-        onNext={() => setAfter(resource.data!.at(-1)!.orderId)}
-      >
-        <Table<Order>
-          rowKey="orderId"
-          dataSource={resource.data}
-          loading={resource.loading}
-          pagination={false}
-          locale={{
-            emptyText: <Blank text="还没有订单，完成报价后即可下单" />,
-          }}
-          scroll={{ x: 720 }}
-          columns={[
-            {
-              title: "订单编号",
-              dataIndex: "orderId",
-              render: (v: string) => (
-                <Button type="link" onClick={() => setSelected(v)}>
-                  <PrimaryCell title={v.slice(0, 8) + "…"} subtitle={v} />
-                </Button>
-              ),
-            },
-            { title: "店铺", dataIndex: "storeId" },
-            { title: "应付金额", dataIndex: "payable", render: money },
-            {
-              title: "订单状态",
-              dataIndex: "status",
-              render: (v: string) => <Status value={v} />,
-            },
-            { title: "创建时间", dataIndex: "createdAt", render: time },
-            {
-              title: "操作",
-              render: (_, r) => (
-                <Button onClick={() => setSelected(r.orderId)}>查看详情</Button>
-              ),
-            },
-          ]}
+      {workspaceId && (
+        <div className="order-workspace">
+          <PageHead
+            eyebrow={admin ? "交易与交付 / 订单" : "我的订单"}
+            title="订单完整详情"
+            description="集中查看商品、支付和售后处理。"
+            extra={<Button onClick={returnToList}>返回订单列表</Button>}
+          />
+          <OrderDetails
+            key={workspaceId}
+            id={workspaceId}
+            admin={admin}
+            capabilities={capabilities}
+            onUpdate={resource.refresh}
+          />
+        </div>
+      )}
+      <div ref={listRef} hidden={!!workspaceId}>
+        <PageHead
+          eyebrow={admin ? "交易与交付" : undefined}
+          title={admin ? "订单工作台" : "我的订单"}
+          description={
+            admin
+              ? "查看真实交易状态，跟进支付与履约。"
+              : "报价在下单时锁定，支付结果以渠道核对为准。"
+          }
+          extra={
+            <Button onClick={resource.refresh}>
+              {admin ? "刷新队列" : "刷新订单"}
+            </Button>
+          }
         />
-      </ListPanel>
+        <ErrorNotice error={resource.error} />
+        <ListPanel
+          count={resource.data?.length ?? 0}
+          after={after}
+          onHome={() => setAfter("")}
+          onNext={() => setAfter(resource.data!.at(-1)!.orderId)}
+        >
+          <Table<Order>
+            rowKey="orderId"
+            dataSource={resource.data}
+            loading={resource.loading}
+            pagination={false}
+            locale={{
+              emptyText: <Blank text="还没有订单，完成报价后即可下单" />,
+            }}
+            scroll={{ x: 720 }}
+            columns={[
+              {
+                title: "订单编号",
+                dataIndex: "orderId",
+                render: (v: string) => (
+                  <Button type="link" onClick={() => previewOrder(v)}>
+                    <PrimaryCell title={v.slice(0, 8) + "…"} subtitle={v} />
+                  </Button>
+                ),
+              },
+              { title: "店铺", dataIndex: "storeId" },
+              { title: "应付金额", dataIndex: "payable", render: money },
+              {
+                title: "订单状态",
+                dataIndex: "status",
+                render: (v: string) => <Status value={v} />,
+              },
+              { title: "创建时间", dataIndex: "createdAt", render: time },
+              {
+                title: "操作",
+                className: "row-actions-cell",
+                width: 180,
+                render: (_, r) => (
+                  <RowActions>
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={() => previewOrder(r.orderId)}
+                    >
+                      查看详情
+                    </Button>
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={() => openWorkspace(r.orderId)}
+                    >
+                      完整详情
+                    </Button>
+                  </RowActions>
+                ),
+              },
+            ]}
+          />
+        </ListPanel>
+      </div>
       <Drawer
         className="record-drawer"
         size={760}
         open={!!selected}
         onClose={() => setSelected(undefined)}
         title="订单详情"
+        extra={
+          selected && (
+            <Button type="link" onClick={() => openWorkspace(selected)}>
+              打开完整详情
+            </Button>
+          )
+        }
         destroyOnHidden
       >
         {selected && (
@@ -153,6 +248,15 @@ function OrderDetails({
     <>
       <ErrorNotice error={order.error} />
       <ErrorNotice error={command.error} />
+      {order.loading && !value && (
+        <div className="record-loading" role="status">
+          <Spin />
+          <span>正在读取订单详情</span>
+        </div>
+      )}
+      {order.error && !value && (
+        <Button onClick={order.refresh}>重新加载详情</Button>
+      )}
       {value && (
         <>
           <RecordHero
@@ -172,7 +276,7 @@ function OrderDetails({
               {
                 key: "kind",
                 label: "支付方式",
-                children: value.paymentKind || "—",
+                children: formatField("paymentKind", value.paymentKind),
               },
               {
                 key: "expires",
@@ -188,6 +292,7 @@ function OrderDetails({
               rowKey="skuId"
               dataSource={value.items}
               pagination={false}
+              scroll={{ x: 560 }}
               columns={[
                 { title: "商品", dataIndex: "title" },
                 { title: "数量", dataIndex: "quantity" },
@@ -234,6 +339,12 @@ function OrderDetails({
               ) && (
                 <ActionButton
                   label="取消订单"
+                  danger
+                  confirm={{
+                    title: "确认取消这笔订单？",
+                    description:
+                      "取消请求会交由服务端核对支付结果，处理中的订单可稍后刷新查看。",
+                  }}
                   path={"/orders/" + encode(id) + "/cancel"}
                   onDone={refresh}
                 />
@@ -251,6 +362,12 @@ function OrderDetails({
               extra={<Button onClick={payment.refresh}>刷新支付</Button>}
             >
               <ErrorNotice error={payment.error} />
+              {payment.loading && !payment.data && (
+                <div className="record-loading" role="status">
+                  <Spin />
+                  <span>正在读取支付结果</span>
+                </div>
+              )}
               {payment.data && (
                 <>
                   <p>

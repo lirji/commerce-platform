@@ -407,8 +407,11 @@ export function MemberGrowth({
                           },
                         ]}
                       />
-                      <Space>
-                        <Button onClick={() => setPolicyAfter(0)}>
+                      <PagerActions>
+                        <Button
+                          disabled={!policyAfter}
+                          onClick={() => setPolicyAfter(0)}
+                        >
                           最早版本
                         </Button>
                         <Button
@@ -419,7 +422,7 @@ export function MemberGrowth({
                         >
                           下一页
                         </Button>
-                      </Space>
+                      </PagerActions>
                     </Card>
                   ),
                 },

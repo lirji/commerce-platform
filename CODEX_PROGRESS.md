@@ -2,44 +2,43 @@
 
 ## 任务目标
 
-使用优化后的前端架构与实施 Skill，再次优化 commerce-platform 整个项目前端，重点包括按钮、详情、表单、弹层及体验。持续授权正常提交、合并、推送main；本轮无新部署授权。
+使用优化后的前端架构/实施Skill，再次优化commerce-platform整个项目前端：按钮层级、业务详情、编辑/弹层、返回和手机体验。用户持续授权本任务独立分支、逻辑提交、正常合并并推送main。本轮不重新部署Docker、不实施IAM。
 
 ## 已完成
 
-- S-UX-01：营销代表完整路径、行按钮一致、业务规则摘要、固定底部操作与脏关闭保护；6/6浏览器通过。
-- S-UX-02：共享规范应用到各模块，中文字段分组、库存数量正确、主/子列表无用分页收起；10/10隔离租户回归与最终6/6布局回归通过，57张当前截图通过联系表全部实际查看。
-- 独立分支feat/frontend-interaction-refresh，基线1cabf40；S1提交aacb45b。S2待提交。已有部署8602仍为上一轮919081b资源；当前Vite8601接现有API8602。
-- 原三套.local根凭据指向另一个环境8609，未覆盖；当前任务使用.local/frontend-interaction-refresh/fixtures新租户。COMMERCE_ACCESS_DIR支持隔离测试数据，真实写仅在当前任务测试租户。
+- S-UX-01（aacb45b）：统一营销行按钮、业务资格/优惠详情、固定编辑/预览底部动作、脏关闭/字段错误和版本号范围。
+- S-UX-02（b5ee8a8）：全项目共享消费者的轻量行操作、业务字段分组、详情抽屉展开/返回、长编辑和子列表分页。
+- S-UX-03：订单快速预览与可恢复完整工作区、深链接/重新登录、列表游标/焦点/后退、加载/403/重试、取消确认及商城/成长规则无用分页。
+- 最终构建、类型/未用导入、现有Prettier、差异卫生及Code Hygiene通过；31/31浏览器通过，取消展示补充回归1/1通过。前端未配置单元套件/规范格式脚本，门禁为COMPLETE_WITH_LIMITATIONS。
+- 当前after64、associated22、confirmation2共88张截图已实际查看，指纹9863a6921c415bfda0990bed8c8a0255755c8704f8827205d0777971a9ec3be8；页面族与关联入口记录在COVERAGE。
+- 当前预览http://127.0.0.1:8601连接真实API8602；原.local三个凭据及兄弟工作树未覆盖，新演示/回归数据在独立租户。旧Docker8602静态资源仍是上一轮版本。
 
 ## 已修改文件
 
-- frontend/src/shared/{ui,interactions,marketing}.tsx、style.css；营销、会员、商品、人群、运营、旅程及分页消费者。
-- frontend/tests/access.ts与对应读取路径、interaction-refresh.spec.ts；三套种子脚本支持独立私密目录。
-- docs/design/frontend-interaction-refresh/*、FRONTEND_ARCHITECTURE、docs/PROGRESS_STATE.json；当前截图before/representative/shared及清单。
+- frontend/src的共享ui/interactions/marketing、各业务消费者、App/Orders与style.css。
+- frontend/tests、截图/联系表脚本；三套种子脚本支持COMMERCE_ACCESS_DIR，默认路径兼容。
+- docs/design/frontend-interaction-refresh/*、唯一FRONTEND_ARCHITECTURE、docs/PROGRESS_STATE.json；docs/evidence/frontend-interaction-refresh的阶段及最终证据。
 
 ## 未完成
 
-- S-UX-03订单快速预览/完整工作区、URL与列表返回；当前尚未改Orders/App。
-- 补充商品子页/长编辑器/会员子模块与operator的实际截图，最终完整浏览器回归和质量门禁。
-- 同步最终Review/TEST_RESULT/COVERAGE/交付证据，正常提交、远程CI、合并推送main。
+- 无前端产品实施待办。Git提交、推送、main合并和远程CI的最终状态以.local/frontend-interaction-refresh/DELIVERY_RESULT.json为准：该文件缺失或未完成时继续已授权交付，不将计划当成已执行事实。
 
 ## 当前问题
 
-- 无产品阻塞。重复固定名称的真实用例需fresh新租户，不能用已有运行后的租户冒充干净数据；原数据保留。
-- 先前一次失败登录工具日志包含凭据，后续capture已脱敏，只打印摘要。不要打印或提交凭据/失败原始快照。
-- 不派子Agent，不做IAM实施、不更新共享Skill、不碰已有其他worktree。IAM业务Q01–Q07仍待决。
-- API8602正常，Vite会话36143运行。当前构建/直接浏览器通过，完整质量门禁尚待完成；自审不等于用户审美确认。
+- 无产品阻断问题。测试单元套件/自动格式命令未配置的验证限制见TEST_RESULT，E2E不能充当单元测试。
+- 共享Skill本轮未改，IAM Q01–Q07仍未决；保护所有既有工作树，不清理旧数据库租户。
+- 根目录原三套测试凭据属于8609，当前回归使用.local/frontend-interaction-refresh/final-fixtures；只读截图使用fixtures/demo-access。不要打印或提交凭据/原始失败日志。
 
 ## 下一步建议
 
-1. 将当前S2完整逻辑与已验证证据提交。
-2. 实施S3，补充浏览器行为测试与实际截图，所有生产修改先格式化再捕获。
-3. 使用本任务新隔离租户跑全量用例，Code Hygiene Gate，文档/进度同步，按持续授权Git交付。
+1. 读取本轮DELIVERY_RESULT；若尚无最终提交/远程main/CI成功，按task-git-delivery连续完成，必要时先核对当前Git状态恢复。
+2. 正常交付复用既有main工作树.local/capability-gap-main-integration；不得强推、重置、夹带其他任务或重复新建工作树。
+3. 如果DELIVERY_RESULT完成，则本任务已闭环；用户可在8601查看新版。后续外部部署需要相应明确授权，保留当前预览与私密验证资料。
 
 ## 重要上下文
 
-旧完整进度与正式状态保存在.local/frontend-interaction-refresh/PREVIOUS_*，上一轮验收见docs/design/frontend-visual-refresh，Docker部署结果见docs/delivery/frontend-visual-refresh。当前计划见docs/design/frontend-interaction-refresh。既有main工作树在.local/capability-gap-main-integration，交付前核对清洁状态后复用，保护全部兄弟工作树。新建工作树只在用户规定的~/.local/share/git-worktrees目录且确需隔离时使用。
+旧状态保存在.local/frontend-interaction-refresh/PREVIOUS_*。当前完整设计/覆盖/实施/审查/验证位于docs/design/frontend-interaction-refresh；源摘要与最终88张图位于docs/evidence/frontend-interaction-refresh。本轮没有新增依赖或后端契约，未使用子Agent。新工作树仅在确需隔离时放入用户规定的~/.local/share/git-worktrees。
 
 ## 恢复 Prompt
 
-请读取CODEX_PROGRESS.md与本轮IMPLEMENTATION_SLICES/TEST_RESULT，从S-UX-03继续完成订单与全项目验证和正常Git交付。不要重新改主题/共享Skill，不重复完成的S1/S2、不打印凭据、不覆盖原测试租户或推进IAM，不等待反复“继续”。
+请先读CODEX_PROGRESS.md和.local/frontend-interaction-refresh/DELIVERY_RESULT.json，按实际未完成Git/CI继续本轮前端交付。不要重新规划主题/共享Skill、重复S1–S3、推进IAM、打印凭据、覆盖原测试租户、另建无必要worktree或等待反复“继续”。

@@ -874,6 +874,7 @@ export function ActionButton({
   onDone,
   danger = false,
   disabled = false,
+  confirm,
 }: {
   path: string;
   body?: unknown;
@@ -881,11 +882,14 @@ export function ActionButton({
   onDone: () => void;
   danger?: boolean;
   disabled?: boolean;
+  confirm?: { title: string; description: string };
 }) {
   const c = useCommand();
+  const [modal, contextHolder] = Modal.useModal();
   const rowAction = useRowAction();
   return (
     <span>
+      {contextHolder}
       <Button
         size="small"
         type={rowAction ? "link" : "default"}
@@ -893,6 +897,17 @@ export function ActionButton({
         disabled={disabled}
         loading={c.busy}
         onClick={async () => {
+          if (
+            confirm &&
+            !(await modal.confirm({
+              title: confirm.title,
+              content: confirm.description,
+              okText: "确认取消",
+              cancelText: "保留订单",
+              okButtonProps: { danger: true },
+            }))
+          )
+            return;
           if ((await c.run(path, body)) !== undefined) onDone();
         }}
       >

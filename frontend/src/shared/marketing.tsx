@@ -1,17 +1,13 @@
-import { Button, Card, Form, Input, Modal, Select, Space, Table } from "antd";
+import { Button, Form, Input, Select, Space } from "antd";
 import { useState } from "react";
-import type { Campaign, Governed, Rule } from "./contracts";
-import { encode, useCommand, useResource } from "./api";
+import type { Campaign, Rule } from "./contracts";
+import { encode, useCommand } from "./api";
 import {
   ActionButton,
-  Detail,
   ErrorNotice,
   Fields,
-  PageHead,
-  Status,
   initialDate,
   instant,
-  money,
   localDateTime,
   type Values,
   RecordDrawer as Drawer,
@@ -233,10 +229,11 @@ export function RuleEditor({
     </div>
   );
 }
+const COMPARISON_KIND = "COMPARE" satisfies Rule["kind"];
 /** 条件以业务语言展示，嵌套逻辑保留原树的全部/任一/取反语义。 */
 export function RuleSummary({ rule }: { rule: Rule | null }) {
   if (!rule) return <p className="muted">未配置独立资格条件</p>;
-  if (rule.kind === "COMPARE") {
+  if (rule.kind === COMPARISON_KIND) {
     const operators: Record<string, string> = {
       EQ: "等于",
       GT: "大于",

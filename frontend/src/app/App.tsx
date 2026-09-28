@@ -166,7 +166,22 @@ export function App() {
     location.hash = page + (store ? "?store=" + encodeURIComponent(store) : "");
   };
   useEffect(() => {
-    if (actor && stores.data?.length && !locationState.store)
+    if (actor && stores.data?.length && !locationState.store) {
+      const orderId = new URLSearchParams(location.hash.split("?")[1]).get(
+        "order",
+      );
+      if (
+        locationState.page === "orders" &&
+        orderId &&
+        actor.role !== "OPERATOR"
+      ) {
+        const query = new URLSearchParams({
+          store: stores.data[0].storeId,
+          order: orderId,
+        });
+        location.hash = "orders?" + query.toString();
+        return;
+      }
       navigate(
         locationState.page ||
           (actor.role === "ADMIN"
@@ -176,6 +191,7 @@ export function App() {
               : "shop"),
         stores.data[0].storeId,
       );
+    }
   }, [actor, stores.data, locationState.store]);
   const logout = () => {
     setAccessToken("");
@@ -231,15 +247,30 @@ export function App() {
                   setAccessToken(v.token.trim());
                   try {
                     const identity = await request<Actor>("/me");
+                    const requested = route();
+                    const orderId = new URLSearchParams(
+                      location.hash.split("?")[1],
+                    ).get("order");
                     setActor(identity);
-                    navigate(
-                      identity.role === "ADMIN"
-                        ? "dashboard"
-                        : identity.role === "OPERATOR"
-                          ? "skus"
-                          : "shop",
-                      "",
-                    );
+                    if (
+                      requested.page === "orders" &&
+                      orderId &&
+                      identity.role !== "OPERATOR"
+                    ) {
+                      // 登录后保留订单深链接，实际数据仍由角色对应API校验。
+                      const query = new URLSearchParams();
+                      query.set("order", orderId);
+                      if (requested.store) query.set("store", requested.store);
+                      location.hash = "orders?" + query.toString();
+                    } else
+                      navigate(
+                        identity.role === "ADMIN"
+                          ? "dashboard"
+                          : identity.role === "OPERATOR"
+                            ? "skus"
+                            : "shop",
+                        "",
+                      );
                   } catch (e) {
                     setAccessToken("");
                     setLoginError(

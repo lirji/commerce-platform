@@ -5,8 +5,14 @@ import { fileURLToPath } from "node:url";
 import { chromium, expect } from "@playwright/test";
 
 const root = path.resolve(fileURLToPath(new URL("../../", import.meta.url)));
-const stage = process.argv[2] ?? "after";
-if (!["before", "representative", "shared", "after"].includes(stage))
+const CAPTURE_STAGES = {
+  BEFORE: "before",
+  REPRESENTATIVE: "representative",
+  SHARED: "shared",
+  AFTER: "after",
+};
+const stage = process.argv[2] ?? CAPTURE_STAGES.AFTER;
+if (!Object.values(CAPTURE_STAGES).includes(stage))
   throw new Error("Invalid capture stage");
 const folder = path.join(
   root,
@@ -36,6 +42,7 @@ function hashSources(dir) {
 hashSources(path.join(root, "frontend/src"));
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const RUNNING_ANIMATION = "running";
 const results = [],
   errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
@@ -43,7 +50,16 @@ async function settled() {
   await page.waitForLoadState("networkidle");
   await page.locator(".page-loading").waitFor({ state: "hidden" });
   await page.locator(".ant-spin-spinning").first().waitFor({ state: "hidden" });
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async (runningState) => {
+    await document.fonts.ready;
+    const transitions = document.getAnimations().filter((animation) => {
+      const end = animation.effect?.getComputedTiming().endTime;
+      return animation.playState === runningState && Number.isFinite(end);
+    });
+    await Promise.allSettled(
+      transitions.map((animation) => animation.finished),
+    );
+  }, RUNNING_ANIMATION);
   await page.evaluate(
     () =>
       new Promise((resolve) =>
@@ -58,12 +74,15 @@ async function capture(name, state) {
     viewport: { width: innerWidth, height: innerHeight },
     documentWidth: document.documentElement.scrollWidth,
     rows: document.querySelectorAll(".ant-table-tbody .ant-table-row").length,
-    dialogs: [...document.querySelectorAll('[role="dialog"]')].map(
-      (el) => el.getAttribute("aria-label") || el.textContent?.slice(0, 80),
-    ),
+    dialogs: [...document.querySelectorAll('[role="dialog"]')]
+      .filter((el) => el.checkVisibility())
+      .map(
+        (el) => el.getAttribute("aria-label") || el.textContent?.slice(0, 80),
+      ),
   }));
   const file = name + ".png";
   await page.screenshot({
+    animations: "disabled",
     path: path.join(folder, file),
     fullPage: !observation.dialogs.length,
   });
@@ -132,7 +151,7 @@ try {
     .click();
   await capture("campaign-preview", "真实预览入口与表单，未执行业务写");
   await close();
-  if (stage !== "before") {
+  if (stage !== CAPTURE_STAGES.BEFORE) {
     const routes = [
       "dashboard",
       "members",
@@ -161,7 +180,7 @@ try {
       "pages",
       "events",
     ];
-    for (const name of stage === "representative"
+    for (const name of stage === CAPTURE_STAGES.REPRESENTATIVE
       ? ["rules", "members"]
       : routes) {
       await route(name);
@@ -175,6 +194,31 @@ try {
       if (await opener.isVisible()) {
         await opener.click();
         await capture("admin-" + name + "-detail", "实际打开的关联详情");
+        if (stage === CAPTURE_STAGES.AFTER && name === "orders") {
+          await page
+            .getByRole("button", { name: "打开完整详情", exact: true })
+            .click();
+          await expect(page.getByRole("dialog")).toHaveCount(0);
+          await capture("admin-order-workspace", "真实订单完整工作区");
+          await page
+            .getByRole("button", { name: "返回订单列表", exact: true })
+            .click();
+        } else await close();
+      }
+      if (
+        stage === CAPTURE_STAGES.AFTER &&
+        ["journeys", "pages", "segments"].includes(name)
+      ) {
+        const label = {
+          journeys: "创建旅程",
+          pages: "创建运营页面",
+          segments: "发布人群定义",
+        }[name];
+        await page.getByRole("button", { name: label, exact: true }).click();
+        await capture(
+          "admin-" + name + "-editor",
+          "实际长编辑器及固定底部操作，未提交",
+        );
         await close();
       }
     }
@@ -198,6 +242,39 @@ try {
       await capture("member-shop-mobile", "既有会员窄屏");
       await page.locator(".product-title").first().click();
       await capture("member-product-mobile", "真实商品详情");
+      await close();
+      await page
+        .locator(".product-card")
+        .first()
+        .getByRole("button", { name: "加入购物袋", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "购物袋 · 1", exact: true })
+        .click();
+      await capture("member-cart-mobile", "真实购物袋，未创建订单");
+      await page
+        .getByRole("button", { name: "计算优惠并结算", exact: true })
+        .click();
+      await expect(page.getByLabel("收件人", { exact: true })).toBeVisible();
+      await page.locator(".ant-drawer-body").evaluate((body) => {
+        body.scrollTop = body.scrollHeight;
+      });
+      await capture("member-checkout-mobile", "实际只读报价与收货表单，未下单");
+      await close();
+      await route("orders");
+      const order = page
+        .getByRole("button", { name: "完整详情", exact: true })
+        .first();
+      if (await order.isVisible()) {
+        await order.click();
+        await capture(
+          "member-order-workspace-mobile",
+          "真实会员订单完整详情/手机布局",
+        );
+        await page
+          .getByRole("button", { name: "返回订单列表", exact: true })
+          .click();
+      }
     }
   }
   for (const [file, hash] of Object.entries(hashes)) {
@@ -224,7 +301,7 @@ try {
       2,
     ) + "\n",
   );
-  console.log(
+  process.stdout.write(
     JSON.stringify({ stage, screenshots: results.length, errors, folder }),
   );
 } catch (error) {
@@ -234,7 +311,7 @@ try {
     if (/token|secret|key/i.test(key) && typeof value === "string")
       message = message.replaceAll(value, "[REDACTED]");
   }
-  console.error(message.slice(0, 1200));
+  process.stderr.write(message.slice(0, 1200) + "\n");
   process.exitCode = 1;
 } finally {
   await browser.close();

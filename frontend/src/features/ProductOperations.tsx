@@ -295,34 +295,30 @@ export function ProductOperations({ store }: { store: string }) {
                       className: "row-actions-cell",
                       render: (_, r) => (
                         <RowActions>
-                          <Space>
-                            <Button
-                              type="link"
-                              onClick={() => setPresentation(r)}
-                            >
-                              展示资料
-                            </Button>
-                            <CommandModal
-                              key={`${r.productId}:${r.version}`}
-                              title="编辑资料"
-                              path={
-                                "/operations/products/" + encode(r.productId)
-                              }
-                              buttonType="link"
-                              fields={metadata}
-                              initialValues={{
-                                title: r.title,
-                                category: r.category,
-                                brand: r.brand,
-                              }}
-                              build={(v) => ({
-                                ...v,
-                                storeId: store,
-                                expectedVersion: r.version,
-                              })}
-                              onDone={refresh}
-                            />
-                          </Space>
+                          <Button
+                            type="link"
+                            onClick={() => setPresentation(r)}
+                          >
+                            展示资料
+                          </Button>
+                          <CommandModal
+                            key={`${r.productId}:${r.version}`}
+                            title="编辑资料"
+                            path={"/operations/products/" + encode(r.productId)}
+                            buttonType="link"
+                            fields={metadata}
+                            initialValues={{
+                              title: r.title,
+                              category: r.category,
+                              brand: r.brand,
+                            }}
+                            build={(v) => ({
+                              ...v,
+                              storeId: store,
+                              expectedVersion: r.version,
+                            })}
+                            onDone={refresh}
+                          />
                         </RowActions>
                       ),
                     },

@@ -1,0 +1,65 @@
+{
+  "hashes": {
+    "frontend/src/app/App.tsx": "4029d4d72b2185b6360a593b0f8020a5d5ecf8019f3bed017c2a5d6ce7cdbe8c",
+    "frontend/src/features/AdminData.tsx": "d44b52a12175bdc9885fcc1fab2c2e32185f6e03453f5b91f1efecea18c95f54",
+    "frontend/src/features/CampaignPreview.tsx": "112202a615f4b649ef5f772e149700dbfaa0b9fb16d9eeb541e6aa0b6dddb695",
+    "frontend/src/features/CatalogMerchandising.tsx": "60fc0f50853dc6a60486ff87d8b2b78a4ecf60595ba3730e6a42ce7bfaa303e9",
+    "frontend/src/features/CatalogScheduling.tsx": "46d6010084b8a2683580b7b60eae7fc90238bfa231c0a47a83f6e9828ec8b4a2",
+    "frontend/src/features/CouponDeliveries.tsx": "7f44d2ab2803f76777a818304d3bfe7c491260aeadebfb9b0240bb9ce817ef00",
+    "frontend/src/features/Dashboard.tsx": "d89ac97e642b71e0a3c8e249e96d6887840303aeb4581f159647fceea6d3e1e8",
+    "frontend/src/features/JourneyScans.tsx": "f8acbb2230efb010b8b55b0a2c07a0482d62e390905fc7a795590585ce416ffe",
+    "frontend/src/features/Journeys.tsx": "fed92ae6a6a7799d8099602d3126bd3fc9e25d38acfe79e608eb45694d0aee80",
+    "frontend/src/features/LifecycleEffects.tsx": "fad396e153ddf6f7d2fcc96de1766e74a7658668ccea022cd1646ddc7e640478",
+    "frontend/src/features/Marketing.tsx": "7ef46ee3c88b789fa17430429b9c33f92611b4895668f37e1f0464c37b08a79d",
+    "frontend/src/features/MarketingDetails.tsx": "0b09235f1fb5d17cd4c84e9968676cb4d76ea5cd425c89a7161cb2d59e6d448c",
+    "frontend/src/features/MarketingEffects.tsx": "b119c50d6d5b087ff192da818281b4f16e66fd09fc5b8f03bf72705842d19af5",
+    "frontend/src/features/MemberActions.tsx": "d234f1ca729c460d34d05ee2f2f523764c4ebc9e7f4ff3cf57d4491f5f1ca72d",
+    "frontend/src/features/MemberBehavior.tsx": "ae58101ebb679dd3253432ca842350b57051c7847042074a15e6a25bc775143d",
+    "frontend/src/features/MemberCycles.tsx": "7fcd8122c60705aae1859296944c8129ab497b6acec33e91c7da83bfc4f13c4f",
+    "frontend/src/features/MemberGrowth.tsx": "f7b3c9d72a32c8e6c09a32c2e059a99e9eb8c7b9f97024115227a3682b249a45",
+    "frontend/src/features/MemberPoints.tsx": "12205fec2705bd05ae224db24843ded2540bc1ff82e7bf81ad1267cebf062b33",
+    "frontend/src/features/MemberWallet.tsx": "cd08875ee00c9a3e0049c3563f1ea03fef118f34976df4b4d4aa67d66e47f848",
+    "frontend/src/features/OpsPages.tsx": "dd56bc468ac07426eec3fa1afdc35d5eb6a694545e3222c674a8e2f16eca687d",
+    "frontend/src/features/Orders.tsx": "cf04fea14ccde5e836fc6c7b761e5ce7c9f1c3cace31af096ec599d651a8aa4d",
+    "frontend/src/features/PointOffers.tsx": "d636fa7a0e1e00bdac782c2ac6ff56e9ba41a929c3c20b093098fafb4064b74c",
+    "frontend/src/features/ProductOperations.tsx": "d1c53448fc4af41ee16616d69a5cf8203c2d34a13c246e092071088869669b67",
+    "frontend/src/features/Segments.tsx": "7f88fbcedc197aed69ffcc21ce9e15266cde2aff9c369fb87097543fbbe27936",
+    "frontend/src/features/Shop.tsx": "0fb50dcb2d7959e4e4dde90c0ad5af55a5937858b950e542d0e15ddc486b574d",
+    "frontend/src/main.tsx": "fe571ee1edde36dbf252984cd032f7af77b72bf358701756caef41b05338a7c0",
+    "frontend/src/shared/Icon.tsx": "2b8aebbe0a18f9410634e26875d676ff522abfb719f0f8d8f87b26768893d37a",
+    "frontend/src/shared/api.ts": "b96afee197208fd1a72240857ae8f90736d273d2ce8651cb32df2a3f95040390",
+    "frontend/src/shared/contracts.ts": "8837b4338ee0c8585184fd8e76efa6b649eca02c674dedb973a941f50cd2c5af",
+    "frontend/src/shared/formSchemas.ts": "339a57b76b5642a298450ed6b86ec50fa9e1da94c9af8b4f027ff46acd802b7b",
+    "frontend/src/shared/interactions.tsx": "4f4e087c05ffb611c1b1c6db05e95f28abada35896cfeb0168e311d143693e35",
+    "frontend/src/shared/marketing.tsx": "8bdaa1a6df2205b7024197f3eafc1f06dd84b73b82af87da75c52dd3be34fac8",
+    "frontend/src/shared/ui.tsx": "91e761126c5b1c9e47c5cb9fe667ac9df51a703fdb223e6f213f14631d28727f",
+    "frontend/src/style.css": "507db93cbd6f4f8e8037ccdf879847d0bbf6741ed396a43ff4403d0a3037b61d",
+    "frontend/src/theme.ts": "2b76c9306cd79b3b99f7e6a6bc95294819e0fc770fe7ad63dc1397aa2faccaed"
+  },
+  "capturedAt": "2026-09-28T06:44:11.823034+00:00",
+  "results": [
+    {
+      "file": "order-cancellation.png",
+      "state": "真实取消确认；取消关闭未写入，确认取消由API核对并释放积分",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "order-cancellation-context.png",
+      "state": "真实取消确认；取消关闭未写入，确认取消由API核对并释放积分",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    }
+  ],
+  "errors": [],
+  "sourceTest": "frontend/tests/points-checkout.spec.ts",
+  "testResult": {
+    "expected": 1,
+    "unexpected": 0
+  },
+  "source": "Persisted isolated test tenant; credentials excluded"
+}

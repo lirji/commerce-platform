@@ -1,6 +1,6 @@
 import { PagerActions } from "../shared/interactions";
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
-import { Button, Dropdown, Space, Table } from "antd";
+import { Button, Dropdown, Table } from "antd";
 import { MemberBehavior } from "./MemberBehavior";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";

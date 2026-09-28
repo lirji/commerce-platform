@@ -53,6 +53,23 @@ test("积分结算：报价不占用、下单冻结、取消原路释放", async
     page.getByRole("columnheader", { name: "抵扣积分", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "取消订单", exact: true }).click();
+  const cancellation = page.getByRole("dialog", {
+    name: "确认取消这笔订单？",
+    exact: true,
+  });
+  await expect(cancellation).toBeVisible();
+  await cancellation.screenshot({
+    animations: "disabled",
+    path: `${evidence}/order-cancellation.png`,
+  });
+  await page.screenshot({
+    path: `${evidence}/order-cancellation-context.png`,
+    animations: "disabled",
+  });
+  await page.getByRole("button", { name: "保留订单", exact: true }).click();
+  await expect(cancellation).toHaveCount(0);
+  await page.getByRole("button", { name: "取消订单", exact: true }).click();
+  await page.getByRole("button", { name: "确认取消", exact: true }).click();
   await expect.poll(async () => (await wallet()).held).toBe(0);
   expect((await wallet()).available).toBe(2000);
 });

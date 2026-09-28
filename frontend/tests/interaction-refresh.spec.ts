@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import type { Order } from "../src/shared/contracts";
 
 // 仅在测试边界返回正式 DTO；产品页面始终读取真实接口。
 async function openCampaign(page: Page) {
@@ -138,4 +139,113 @@ test("预览的帮助与校验同时可见，非法清单不会发送请求", as
     page.getByText("每行填写 SKU标识,正整数数量", { exact: true }),
   ).toBeVisible();
   expect(writes).toBe(0);
+});
+
+function orderFixture(n: number): Order {
+  return {
+    orderId: `order-${n}`,
+    memberId: "member-ui",
+    storeId: "store-ui",
+    payable: "59.00",
+    status: "PAID",
+    paymentKind: "CHANNEL_REQUIRED",
+    version: 1,
+    createdAt: "2026-01-01T00:00:00Z",
+    expiresAt: "2026-01-01T00:15:00Z",
+    items: [
+      {
+        skuId: "sku-ui",
+        title: "精品咖啡",
+        quantity: 1,
+        unitPrice: "59.00",
+        gross: "59.00",
+        discount: "0.00",
+        payable: "59.00",
+      },
+    ],
+  };
+}
+
+test("订单完整详情保留翻页位置、焦点与深链接，浏览器后退回到列表", async ({
+  page,
+}) => {
+  await openCampaign(page);
+  await page.route("**/v1/admin/orders**", async (route) => {
+    const url = new URL(route.request().url());
+    const body =
+      url.pathname === "/v1/admin/orders"
+        ? url.searchParams.get("after")
+          ? [orderFixture(51)]
+          : Array.from({ length: 50 }, (_, i) => orderFixture(i + 1))
+        : orderFixture(Number(url.pathname.split("order-")[1]));
+    await route.fulfill({ json: body });
+  });
+  await page.evaluate(() => {
+    location.hash = "orders?store=store-ui";
+  });
+  await page.getByRole("button", { name: "下一页", exact: true }).click();
+  const row = page.getByRole("row").filter({ hasText: "order-51" });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "完整详情", exact: true }).click();
+  await expect(page).toHaveURL(/order=order-51/);
+  await expect(
+    page.getByRole("heading", { name: "订单完整详情", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".order-workspace")).toContainText("精品咖啡");
+  await page.getByRole("button", { name: "返回订单列表", exact: true }).click();
+  await expect(row).toBeVisible();
+  await expect(
+    row.getByRole("button", { name: "完整详情", exact: true }),
+  ).toBeFocused();
+  await row.getByRole("button", { name: "完整详情", exact: true }).click();
+  await expect(page).toHaveURL(/order=order-51/);
+  await page.goBack();
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "完整详情", exact: true }).click();
+  await page.reload();
+  await page.getByLabel("访问凭据", { exact: true }).fill("ui-test-credential");
+  await page.getByRole("button", { name: "进入平台", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "订单完整详情", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".order-workspace")).toContainText("order-51");
+});
+
+test("完整订单详情显式显示加载与无权错误，可重试并返回列表", async ({
+  page,
+}) => {
+  await openCampaign(page);
+  let release = () => {};
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let deny = true;
+  await page.route("**/v1/admin/orders**", async (route) => {
+    if (new URL(route.request().url()).pathname === "/v1/admin/orders")
+      return route.fulfill({ json: [orderFixture(1)] });
+    await ready;
+    await route.fulfill(
+      deny
+        ? { status: 403, json: { message: "无权查看这笔订单" } }
+        : { json: orderFixture(1) },
+    );
+  });
+  await page.evaluate(() => {
+    location.hash = "orders?store=store-ui";
+  });
+  await page.getByRole("button", { name: "完整详情", exact: true }).click();
+  await expect(
+    page.getByText("正在读取订单详情", { exact: true }),
+  ).toBeVisible();
+  release();
+  await expect(
+    page.getByText("无权查看这笔订单", { exact: true }),
+  ).toBeVisible();
+  deny = false;
+  await page.getByRole("button", { name: "重新加载详情", exact: true }).click();
+  await expect(page.locator(".order-workspace")).toContainText("精品咖啡");
+  await page.getByRole("button", { name: "返回订单列表", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "查看详情", exact: true }),
+  ).toBeVisible();
 });

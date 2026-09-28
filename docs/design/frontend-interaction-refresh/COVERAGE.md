@@ -22,3 +22,19 @@
 共享变更直接影响 `RowActions`、`Detail/RecordFields`、`CommandModal/Fields`、`Pager/ListPanel` 与采用共同 Drawer 的消费者。每个入口都检查正常或真实空态；不同布局的代表详情/编辑/预览分别打开并截图查看。现有 E2E 覆盖非法状态与真实隔离数据的写流程；新增行为验证专注未保存保护、关闭/焦点、分页边界和完整订单返回，不复制实现做空洞测试。
 
 桌面 1440/1280、既有 390 窄屏；管理宽表内部滚动，会员触控原要求继续适用。没有真实数据或权限的界面如实记录缺口/等价 fixture 边界，不将未打开的详情或未执行行为写 PASS。
+
+## 当前版本完成记录
+
+最终源指纹见TEST_RESULT；以下所有页面族均已通过对应主入口/关联状态展示检查和适用行为回归，不表示每个组件与每种错误做笛卡尔组合。
+
+| 已检查部分 | 当前证据 | 行为 |
+|---|---|---|
+| 管理27个入口、会员7个入口及通用记录详情 | after64；真实正常或空态 | 原业务回归、导航/角色/店铺和错误/重试 |
+| 活动/规则/预览、旅程/实例、人群、运营页面详情与长编辑 | after内对应detail/editor/preview | 复制初值、脏关闭、校验、分页与保存/发布 |
+| SKU/SPU、渠道/条码/图文、规格创建、类目与作业 | associated的channel/barcode/product/variant/catalog | catalog-merchandising、catalog-scheduling和经营撤权恢复 |
+| 成长/行为/积分/周期/兑换/规则六个子模块 | associated的growth-0到5 | 真实会员账本、权益与兑换/领取/停启 |
+| 成交退款/营销比较/执行/补齐四个效果子页 | associated的effects-0到3 | operations、lifecycle-journey及报表口径 |
+| ADMIN/MEMBER完整订单、手机明细、支付/取消确认 | after workspace、associated手机content、confirmation | 深链/重登录/返回游标焦点/后退、读取失败重试、真实取消释放 |
+| OPERATOR手机短表单与会员商品/购物袋/收货报价 | associated operator、after member mobile/checkout | 390内部滚动、表单动作与校验/焦点、真实报价 |
+
+共享短命令消费者使用同一CommandModal与字段校验/底部动作；通用详情族使用RecordDrawer和字段分组，以已打开的各数据类型及真实原用例验证兼容。空态入口未虚构有数据截图；其真实写流程由专用种子租户与原E2E验证。缺少前端单元套件及没有外部/用户审美确认的边界见TEST_RESULT/REVIEW。

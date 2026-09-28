@@ -12,6 +12,8 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import type { Governed, PageDefinition, PageRender } from "../shared/contracts";
+// 已发布页面暂停后才允许回退，沿用既有治理状态码。
+const ROLLBACK_ELIGIBLE_STATUS: Governed<PageDefinition>["status"] = "PAUSED";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
   ActionButton,
@@ -219,7 +221,7 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
                       onDone();
                     }}
                   />
-                  {v.status === "PAUSED" && (
+                  {v.status === ROLLBACK_ELIGIBLE_STATUS && (
                     <ActionButton
                       label="回退到此版本"
                       path={
