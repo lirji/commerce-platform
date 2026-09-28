@@ -26,6 +26,7 @@ import {
 import type { Coupon, Order, Quote } from "../shared/contracts";
 import { encode, post, useCommand, useResource } from "../shared/api";
 import { Blank, ErrorNotice, Status, money } from "../shared/ui";
+import { Icon } from "../shared/Icon";
 
 export function Shop({
   store,
@@ -120,10 +121,15 @@ export function Shop({
     <div className="shop-page">
       <div className="shop-masthead">
         <div>
+          <span className="shop-kicker">日常好物 · 当前店铺</span>
           <h1>店铺商品</h1>
-          <p className="muted">目录价原样展示，优惠在结算报价时确认。</p>
+          <p className="muted">慢慢挑选，优惠券与积分可在结算时使用。</p>
         </div>
-        <Button type="primary" onClick={() => setBag(true)}>
+        <Button
+          type="primary"
+          icon={<Icon name="bag" />}
+          onClick={() => setBag(true)}
+        >
           购物袋 · {count}
         </Button>
       </div>
@@ -162,13 +168,13 @@ export function Shop({
                 {money(shown.unitPrice)}
               </div>
               <p className="muted">
-                结算优惠以服务端报价为准，不在页面自行改价。
+                优惠券与积分抵扣后，最终金额将在结算时确认。
               </p>
               <Space wrap>
                 <Status value={shown.status} />
                 {shown.categoryName && <Tag>{shown.categoryName}</Tag>}
                 {(basket[shown.skuId] ?? 0) > 0 && (
-                  <Tag color="blue">已选 {basket[shown.skuId]} 件</Tag>
+                  <Tag>已选 {basket[shown.skuId]} 件</Tag>
                 )}
               </Space>
               <Descriptions
@@ -286,13 +292,14 @@ export function Shop({
           {products.loading && !products.data ? (
             <ProductGridSkeleton />
           ) : (
-            <Row gutter={[12, 12]}>
+            <Row gutter={[20, 24]}>
               {products.data?.map((sku) => (
-                <Col xs={12} sm={8} md={6} key={sku.skuId}>
+                <Col xs={12} sm={8} lg={6} key={sku.skuId}>
                   <article className="product-card">
                     <button
                       type="button"
                       className="product-media"
+                      aria-label={`查看${sku.title}详情`}
                       onClick={() => openProduct(sku)}
                     >
                       <div className="product-art">
@@ -321,7 +328,6 @@ export function Shop({
                           {money(sku.unitPrice)}
                         </strong>
                         <Button
-                          size="small"
                           disabled={sku.status !== "ACTIVE"}
                           onClick={() => addToBag(sku)}
                         >
@@ -362,20 +368,16 @@ export function Shop({
           </Space>
           <section className="shop-promises" aria-label="服务说明">
             <div>
-              <strong>正品经营</strong>
-              <p>商品来自当前店铺真实目录，不展示演示假货。</p>
+              <strong>结算前确认优惠</strong>
+              <p>选好商品，再查看优惠券与积分的实际抵扣。</p>
             </div>
             <div>
-              <strong>优惠透明</strong>
-              <p>券与积分在报价中确认，不以页面估算为准。</p>
+              <strong>订单进度随时可查</strong>
+              <p>在「我的订单」中查看支付、发货与签收进度。</p>
             </div>
             <div>
-              <strong>下单可追</strong>
-              <p>提交后进入订单中心查看支付与履约进度。</p>
-            </div>
-            <div>
-              <strong>售后可申请</strong>
-              <p>完成后可在订单详情发起售后，结果以审批为准。</p>
+              <strong>售后进度清楚可见</strong>
+              <p>订单完成后可申请售后，并查看处理结果。</p>
             </div>
           </section>
         </>
@@ -443,7 +445,7 @@ export function Shop({
               <Form.Item
                 label="使用积分上限"
                 htmlFor="checkout-points"
-                help={`可用积分 ${pointWallet.data?.available ?? "—"}，实际抵扣以服务端报价为准。`}
+                help={`可用积分 ${pointWallet.data?.available ?? "—"}，实际抵扣将在报价中确认。`}
               >
                 <InputNumber
                   id="checkout-points"
@@ -535,21 +537,21 @@ export function Shop({
               <Form.Item
                 label="收件人"
                 name="recipient"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "请填写收件人" }]}
               >
                 <Input maxLength={64} />
               </Form.Item>
               <Form.Item
                 label="联系电话"
                 name="phone"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "请填写联系电话" }]}
               >
                 <Input type="tel" maxLength={32} />
               </Form.Item>
               <Form.Item
                 label="收货地址"
                 name="detail"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "请填写收货地址" }]}
               >
                 <Input.TextArea maxLength={512} />
               </Form.Item>
@@ -572,9 +574,9 @@ export function Shop({
 
 function ProductGridSkeleton() {
   return (
-    <Row gutter={[12, 12]}>
+    <Row gutter={[20, 24]}>
       {Array.from({ length: 8 }, (_, index) => (
-        <Col xs={12} sm={8} md={6} key={index}>
+        <Col xs={12} sm={8} lg={6} key={index}>
           <div className="product-card product-skeleton">
             <Skeleton.Image active style={{ width: "100%", height: 210 }} />
             <div className="product-body">
@@ -608,8 +610,13 @@ function ProductImage({
       onError={() => setFailed(true)}
     />
   ) : (
-    <span className="product-fallback" aria-hidden="true">
-      {title.slice(0, 1)}
+    <span
+      className="product-fallback"
+      role="img"
+      aria-label={`${title}：暂无商品图片`}
+    >
+      <Icon name="image" />
+      图片待补充
     </span>
   );
 }

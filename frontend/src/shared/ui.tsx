@@ -69,7 +69,7 @@ const labels: Record<string, string> = {
 };
 export function Status({ value }: { value?: string }) {
   const v = value ?? "UNKNOWN";
-  const color = [
+  const tone = [
     "PAID",
     "COMPLETED",
     "SUCCEEDED",
@@ -79,11 +79,11 @@ export function Status({ value }: { value?: string }) {
     "ACTIVE",
     "DELIVERED",
   ].includes(v)
-    ? palette.ok
+    ? "ok"
     : ["ISOLATED", "COMPENSATION_REQUIRED", "REJECTED", "TIMED_OUT"].includes(v)
-      ? palette.error
+      ? "error"
       : ["UNKNOWN", "CLOSING", "WAIT_RETURN", "EXPIRED"].includes(v)
-        ? palette.warn
+        ? "warn"
         : [
               "RUNNING",
               "WAITING",
@@ -94,12 +94,16 @@ export function Status({ value }: { value?: string }) {
               "REQUESTED",
               "PENDING",
             ].includes(v)
-          ? palette.pending
-          : palette.idle;
+          ? "pending"
+          : "idle";
   return (
     <Tag
-      color={color}
-      style={{ background: color, color: "#fff", borderColor: color }}
+      className="status-tag"
+      style={{
+        background: palette[`${tone}Soft`],
+        color: palette[tone],
+        borderColor: "transparent",
+      }}
     >
       {labels[v] ?? v}
     </Tag>

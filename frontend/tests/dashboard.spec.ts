@@ -9,9 +9,7 @@ const access = JSON.parse(
 );
 const evidence =
   process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/member-suite-evidence";
-test("深色经营总览：真实汇总、每日趋势、导航搜索与手机布局", async ({
-  page,
-}) => {
+test("经营总览：真实汇总、每日趋势、导航搜索与手机布局", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");

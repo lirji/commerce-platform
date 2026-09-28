@@ -159,16 +159,18 @@ export function ProductOperations({ store }: { store: string }) {
                   dataSource={skus.data}
                   loading={skus.loading}
                   pagination={false}
-                  scroll={{ x: 900 }}
+                  scroll={{ x: 1080 }}
                   columns={[
                     {
                       title: "商品",
+                      width: 190,
                       render: (_, r) => (
                         <PrimaryCell title={r.title} subtitle={r.skuId} />
                       ),
                     },
                     {
                       title: "SPU",
+                      width: 130,
                       render: (_, r) => r.productId ?? "历史商品",
                     },
                     {
@@ -178,17 +180,25 @@ export function ProductOperations({ store }: { store: string }) {
                           .map((s) => `${s.name}：${s.value}`)
                           .join(" / ") || "—",
                     },
-                    { title: "售价", dataIndex: "unitPrice", render: money },
+                    {
+                      title: "售价",
+                      dataIndex: "unitPrice",
+                      render: money,
+                      width: 100,
+                    },
                     {
                       title: "状态",
+                      width: 90,
                       dataIndex: "status",
                       render: (v) => <Status value={v} />,
                     },
-                    { title: "版本", dataIndex: "revision" },
+                    { title: "版本", dataIndex: "revision", width: 64 },
                     {
                       title: "操作",
+                      width: 320,
+                      className: "row-actions-cell",
                       render: (_, r) => (
-                        <Space wrap>
+                        <div className="row-actions">
                           <CommandModal
                             key={`${r.skuId}:${r.revision}`}
                             title="调价 / 上下架"
@@ -234,7 +244,7 @@ export function ProductOperations({ store }: { store: string }) {
                           >
                             修订记录
                           </Button>
-                        </Space>
+                        </div>
                       ),
                     },
                   ]}

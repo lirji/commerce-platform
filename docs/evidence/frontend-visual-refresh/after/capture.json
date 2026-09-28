@@ -1,0 +1,440 @@
+{
+  "stage": "after",
+  "hashes": {
+    "frontend/src/shared/Icon.tsx": "2b8aebbe0a18f9410634e26875d676ff522abfb719f0f8d8f87b26768893d37a",
+    "frontend/src/features/ProductOperations.tsx": "0ffc284869ca78c44cf58327a5f3f32ad14f1ead04035b569fa05fac155836c2",
+    "frontend/src/theme.ts": "2b76c9306cd79b3b99f7e6a6bc95294819e0fc770fe7ad63dc1397aa2faccaed",
+    "frontend/src/style.css": "85c594868dd064d4885a789536c8b788871f56a9ae40a4c4e09e70f56d14b1c9",
+    "frontend/src/app/App.tsx": "4fc44a44509427d0e3221698279c30a675d3b763fc61a09111f057467313a5df",
+    "frontend/src/shared/ui.tsx": "9d42c4b55fd789a1f0f8e7dd79eb275fad3b246d337d61f8a6ad6f53e65ce374",
+    "frontend/src/features/Dashboard.tsx": "d89ac97e642b71e0a3c8e249e96d6887840303aeb4581f159647fceea6d3e1e8",
+    "frontend/src/features/Shop.tsx": "ee5614676f0460fd25021d88b26fbff8cd888f2d4a8de26bba8fe652aec23b8b"
+  },
+  "results": [
+    {
+      "file": "login-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:34.305Z",
+      "route": "",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "连接每一次交易，经营每一份关系。",
+        "进入业务空间"
+      ]
+    },
+    {
+      "file": "dashboard-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:34.859Z",
+      "route": "#dashboard?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "经营总览"
+      ]
+    },
+    {
+      "file": "dashboard-1280.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:34.990Z",
+      "route": "#dashboard?store=brand-store",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "documentWidth": 1280,
+      "images": [],
+      "headings": [
+        "经营总览"
+      ]
+    },
+    {
+      "file": "dashboard-mobile.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:35.120Z",
+      "route": "#dashboard?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [],
+      "headings": [
+        "经营总览"
+      ]
+    },
+    {
+      "file": "catalog-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:36.308Z",
+      "route": "#skus?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "商品经营"
+      ]
+    },
+    {
+      "file": "catalog-form-errors.png",
+      "state": "normal",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:36.558Z",
+      "route": "#skus?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "商品经营"
+      ]
+    },
+    {
+      "file": "orders-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:37.736Z",
+      "route": "#orders?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "订单工作台"
+      ]
+    },
+    {
+      "file": "shop-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:38.313Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "shop-mobile.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:38.463Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "product-detail.png",
+      "state": "normal",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:38.660Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "product-detail-mobile.png",
+      "state": "真实商品详情",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:38.865Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "product-detail-mobile-actions.png",
+      "state": "固定弹层滚动后可达返回动作",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:38.966Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "checkout-mobile.png",
+      "state": "真实API报价，未提交订单",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:39.319Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "checkout-quote-mobile.png",
+      "state": "抽屉内部滚动，真实报价与收货表单",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:39.439Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "checkout-errors-mobile.png",
+      "state": "收货表单必填校验",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:39.588Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "shop-empty-mobile.png",
+      "state": "真实API无匹配搜索",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:39.824Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "catalog-mobile.png",
+      "state": "宽表在容器内滚动",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:41.068Z",
+      "route": "#skus?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [],
+      "headings": [
+        "商品经营"
+      ]
+    },
+    {
+      "file": "catalog-form-mobile.png",
+      "state": "必填错误及键盘焦点",
+      "screenshotMode": "viewport",
+      "timestamp": "2026-09-28T04:12:41.315Z",
+      "route": "#skus?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [],
+      "headings": [
+        "商品经营"
+      ]
+    },
+    {
+      "file": "dashboard-data-mobile.png",
+      "state": "每日数据表展开",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:41.649Z",
+      "route": "#dashboard?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [],
+      "headings": [
+        "经营总览"
+      ]
+    },
+    {
+      "file": "dashboard-loading.png",
+      "state": "真实API请求暂缓的加载边界",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:41.993Z",
+      "route": "#dashboard?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "经营总览"
+      ]
+    },
+    {
+      "file": "dashboard-error.png",
+      "state": "声明的503测试边界，不是后端真实故障",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T04:12:42.325Z",
+      "route": "#dashboard?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "经营总览"
+      ]
+    }
+  ],
+  "errors": [],
+  "preview": "http://127.0.0.1:8601",
+  "api": "http://127.0.0.1:8602",
+  "fixture": "Dedicated persisted member-suite tenant; credentials excluded"
+}

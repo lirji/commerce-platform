@@ -17,6 +17,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import type { Actor, Capabilities, Store } from "../shared/contracts";
 import { request, setAccessToken, useResource } from "../shared/api";
 import { ErrorNotice } from "../shared/ui";
+import { Icon, type IconName } from "../shared/Icon";
 import { memberTheme } from "../theme";
 // 按业务页面加载，登录和总览不下载所有经营表单。
 const Orders = lazy(() =>
@@ -188,7 +189,9 @@ export function App() {
         <div className="login-page">
           <div className="login-story">
             <div className="brand brand-light">
-              <span className="brand-mark">商</span>
+              <span className="brand-mark">
+                <Icon name="overview" />
+              </span>
               <span>
                 统一电商<span className="brand-sub">COMMERCE PLATFORM</span>
               </span>
@@ -292,10 +295,15 @@ export function App() {
     ? [{ key: "skus", label: "授权商品经营" }]
     : admin
       ? [
-          { key: "dashboard", label: "经营总览" },
+          {
+            key: "dashboard",
+            label: "经营总览",
+            icon: <Icon name="overview" />,
+          },
           ...groups.map((g) => ({
             key: g.key,
             label: g.label,
+            icon: <Icon name={g.key as IconName} />,
             children: g.children.map(([key, label]) => ({ key, label })),
           })),
         ]
@@ -351,9 +359,11 @@ export function App() {
   const shell = (
     <Layout className={admin ? "app admin-app" : "app member-app"}>
       {admin && !compact && (
-        <Layout.Sider width={224} theme="light" className="sidebar">
+        <Layout.Sider width={236} theme="light" className="sidebar">
           <div className="brand">
-            <span className="brand-mark">商</span>
+            <span className="brand-mark">
+              <Icon name="overview" />
+            </span>
             <span>
               日常经营<span className="brand-sub">COMMERCE WORKSPACE</span>
             </span>
@@ -416,11 +426,13 @@ export function App() {
 
           {!admin && (
             <div className="brand">
-              <span className="brand-mark">商</span>
+              <span className="brand-mark">
+                <Icon name="bag" />
+              </span>
               <span>日常好物</span>
             </div>
           )}
-          <Space>
+          <Space className="store-context">
             {admin && <span className="context-label">店铺</span>}
             <Select
               aria-label="当前店铺"
@@ -438,8 +450,11 @@ export function App() {
               <span className="environment-badge">本地沙箱</span>
             )}
           </Space>
-          <Space>
-            <Avatar size="small" style={{ background: "var(--accent)" }}>
+          <Space className="account-context">
+            <Avatar
+              size="small"
+              style={{ background: "var(--selected)", color: "var(--accent)" }}
+            >
               {actor.actorId.slice(0, 1).toUpperCase()}
             </Avatar>
             <span className="actor-name">{actor.actorId}</span>
@@ -475,27 +490,9 @@ export function App() {
         <Layout.Footer className="footer">
           {!admin ? (
             <div className="member-footer">
-              <div className="member-footer-grid">
-                <section>
-                  <strong>购物指南</strong>
-                  <p>浏览店铺目录、查看商品详情、加入购物袋后计算报价。</p>
-                </section>
-                <section>
-                  <strong>支付与配送</strong>
-                  <p>应付金额以服务端报价为准；支付结果以渠道核对后展示。</p>
-                </section>
-                <section>
-                  <strong>售后服务</strong>
-                  <p>订单完成后可申请售后，审批与退款进度在售后页查看。</p>
-                </section>
-                <section>
-                  <strong>账户与权益</strong>
-                  <p>优惠券、积分和内部权益均来自真实账户记录。</p>
-                </section>
-              </div>
               <div className="member-footer-legal">
-                <span>统一电商业务平台</span>
-                <span>会员服务 · 用户协议 · 隐私政策</span>
+                <span className="footer-brand">日常好物</span>
+                <span>订单、优惠券和积分，可在会员导航中查看。</span>
               </div>
             </div>
           ) : (

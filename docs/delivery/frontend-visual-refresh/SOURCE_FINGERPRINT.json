@@ -1,0 +1,13 @@
+{
+  "sha256": "3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876",
+  "files": {
+    "frontend/src/shared/Icon.tsx": "2b8aebbe0a18f9410634e26875d676ff522abfb719f0f8d8f87b26768893d37a",
+    "frontend/src/features/ProductOperations.tsx": "0ffc284869ca78c44cf58327a5f3f32ad14f1ead04035b569fa05fac155836c2",
+    "frontend/src/theme.ts": "2b76c9306cd79b3b99f7e6a6bc95294819e0fc770fe7ad63dc1397aa2faccaed",
+    "frontend/src/style.css": "85c594868dd064d4885a789536c8b788871f56a9ae40a4c4e09e70f56d14b1c9",
+    "frontend/src/app/App.tsx": "4fc44a44509427d0e3221698279c30a675d3b763fc61a09111f057467313a5df",
+    "frontend/src/shared/ui.tsx": "9d42c4b55fd789a1f0f8e7dd79eb275fad3b246d337d61f8a6ad6f53e65ce374",
+    "frontend/src/features/Dashboard.tsx": "d89ac97e642b71e0a3c8e249e96d6887840303aeb4581f159647fceea6d3e1e8",
+    "frontend/src/features/Shop.tsx": "ee5614676f0460fd25021d88b26fbff8cd888f2d4a8de26bba8fe652aec23b8b"
+  }
+}

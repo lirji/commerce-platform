@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
 import { ErrorNotice, PageHead, money, time } from "../shared/ui";
+import { Icon, type IconName } from "../shared/Icon";
 type Daily = {
   day: string;
   orders: number;
@@ -46,25 +47,25 @@ const shortcuts = [
     page: "growth",
     label: "会员成长",
     text: "等级、周期权益与积分",
-    mark: "会",
+    mark: "member",
   },
   {
     page: "segments",
     label: "动态人群",
     text: "把真实行为转为经营对象",
-    mark: "群",
+    mark: "member",
   },
   {
     page: "journeys",
     label: "营销旅程",
     text: "生日、复购与流失关怀",
-    mark: "旅",
+    mark: "marketing",
   },
   {
     page: "skus",
     label: "商品管理",
     text: "规格、渠道价与经营计划",
-    mark: "品",
+    mark: "catalog",
   },
 ];
 /** 所有经营数字来自后端域聚合，空值和失败不会生成虚构趋势。 */
@@ -284,16 +285,19 @@ export function Dashboard({
                   key={s.page}
                   onClick={() => navigate(s.page)}
                 >
-                  <span>{s.mark}</span>
+                  <span>
+                    <Icon name={s.mark as IconName} />
+                  </span>
                   <div>
                     <strong>{s.label}</strong>
                     <small>{s.text}</small>
                   </div>
-                  <b aria-hidden="true">↗</b>
+                  <Icon name="arrow" className="shortcut-arrow" />
                 </button>
               ))}
             </div>
-            <Card size="small" className="dashboard-basis">
+            <details className="dashboard-basis">
+              <summary>数据口径与说明</summary>
               <Typography.Text type="secondary">
                 {summary.coverage}{" "}
                 成交优惠不扣减退款，不含货品、支付或渠道成本；净收不等于利润。
@@ -306,7 +310,7 @@ export function Dashboard({
                   查看事件处理
                 </Button>
               </Space>
-            </Card>
+            </details>
           </>
         )}
       </Spin>

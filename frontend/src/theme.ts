@@ -2,20 +2,26 @@ import { theme, type ThemeConfig } from "antd";
 
 /** 全站共用统一架构浅色 token，经营台与会员端不再各走一套色板。 */
 export const palette = {
-  canvas: "#EEF1F5",
+  canvas: "#F6F8FB",
   surface: "#FFFFFF",
   raised: "#F8FAFC",
-  ink: "#111827",
-  muted: "#4B5563",
-  line: "#CBD5E1",
-  accent: "#1D4ED8",
-  hover: "#1E40AF",
-  focus: "#1D4ED8",
-  ok: "#047857",
-  warn: "#B45309",
-  error: "#B91C1C",
-  pending: "#4338CA",
-  idle: "#374151",
+  ink: "#172238",
+  muted: "#5B677B",
+  line: "#E3E8F0",
+  accent: "#3455DB",
+  hover: "#2944B4",
+  focus: "#3455DB",
+  selected: "#EEF2FF",
+  ok: "#18704F",
+  okSoft: "#EDF8F2",
+  warn: "#8B5415",
+  warnSoft: "#FFF6E8",
+  error: "#B23B43",
+  errorSoft: "#FFF0F1",
+  pending: "#5C49AF",
+  pendingSoft: "#F3F0FC",
+  idle: "#5B677B",
+  idleSoft: "#F0F3F7",
 };
 export const memberPalette = palette;
 for (const [name, value] of Object.entries(palette))
@@ -38,17 +44,18 @@ function tokens(radius: number): ThemeConfig["token"] {
     colorBorderSecondary: palette.line,
     colorBgLayout: palette.canvas,
     colorBgContainer: palette.surface,
-    colorBgElevated: palette.raised,
+    colorBgElevated: palette.surface,
     colorLink: palette.focus,
     colorLinkHover: palette.hover,
     borderRadius: radius,
-    controlHeight: 36,
+    controlHeight: 38,
+    fontSize: 14,
     fontFamily,
   };
 }
 export const consoleTheme: ThemeConfig = {
   algorithm: theme.defaultAlgorithm,
-  token: tokens(6),
+  token: tokens(8),
   components: {
     Layout: {
       siderBg: palette.surface,
@@ -58,7 +65,7 @@ export const consoleTheme: ThemeConfig = {
     },
     Menu: {
       itemBg: palette.surface,
-      itemSelectedBg: "#DBEAFE",
+      itemSelectedBg: palette.selected,
       itemSelectedColor: palette.accent,
       itemHoverBg: palette.raised,
       groupTitleColor: palette.muted,
@@ -67,16 +74,18 @@ export const consoleTheme: ThemeConfig = {
       primaryShadow: "none",
       colorPrimary: palette.accent,
       colorPrimaryHover: palette.hover,
-      primaryColor: "#FFFFFF",
+      primaryColor: palette.surface,
       defaultHoverColor: palette.accent,
       defaultHoverBorderColor: palette.accent,
     },
     Table: {
       headerBg: palette.raised,
-      rowHoverBg: "#F8FAFC",
+      rowHoverBg: palette.raised,
       headerColor: palette.muted,
     },
-    Card: { headerFontSize: 16 },
+    Card: { headerFontSize: 15, borderRadiusLG: 12, headerHeight: 56 },
+    Modal: { borderRadiusLG: 16, paddingContentHorizontalLG: 24 },
+    Drawer: { footerPaddingBlock: 16 },
     Tabs: {
       itemSelectedColor: palette.accent,
       itemHoverColor: palette.ink,
