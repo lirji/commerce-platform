@@ -71,7 +71,12 @@ test("定向发券：固定人群、相对期限、真实钱包与撤销回执",
   await page.getByRole("button", { name: "推进一批发券", exact: true }).click();
   await expect(row).toContainText("撤销处理完成");
   await row.getByRole("button", { name: "发券回执", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("撤销 2");
+  await expect(
+    page
+      .getByRole("dialog")
+      .locator(".record-metric")
+      .filter({ hasText: "撤销 / 保留" }),
+  ).toContainText("2 / 0");
   await expect(
     page
       .getByRole("dialog")
