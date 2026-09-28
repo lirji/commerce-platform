@@ -2,53 +2,51 @@
 
 ## 任务目标
 
-先提交推送阶段7到远程main（已完成），再按用户确认方案完成阶段8持久营销Journey。用户最新AGENTS#8持续授权：必要验证通过后，独立分支、完整逻辑提交、正常合并推main，无需重复确认。原方案未明确授权不commit/push条款已由此满足；无生产部署授权。
+读取并使用Claude中的项目分析技能，基于阶段8后的当前仓库重新分析欠缺能力，更新有证据、优先级、触发条件和依赖路线的报告。仅分析，不实现候选功能。
+
+用户AGENTS Git规则8持续授权本任务报告变更按独立分支提交、正常合并并推送远程main；没有生产部署授权。
 
 ## 已完成
 
-- Phase7四提交11c7f37/a6b3b8d/40376b3/aa8bef1，实际remote main aa8bef17343c9722b3d2f19a4f9d9a006d694ae1；不要重复。
-- 当前feat/phase8-marketing-journey。S1–S5实现/本地验收全部DONE：图稳定校验/发布固定引用重检/纯preview、V44逐步历史、显式动作registry、失败原版本保护、history tenant/本人权限、V45有界到期查询与真实backlog。
-- 真实支付事件→WAIT→当前事实→CREDIT→END→AVAILABLE/ledger1；不同eventId同order来源去重；WAIT后真实标签撤销false无grant；v1/v2/pause固定历史通过。
-- 实际25秒WAIT SIGKILL重启、两个新JVM到期竞争；动作write/stepFinish前真实kill+owned MySQL连接释放，全部回滚、另一JVM恢复唯一grant/ledger。隔离recovery schema，所有临时trigger/owned进程已清理。
-- OLD远程main aa8bef1与NEW共享V44/V45互读、去重、恢复PASS；旧trace明确PARTIAL/LEGACY_PARTIAL，不伪造。
-- 最终clean scripts/build.sh PASS：app297/0/5 configured skips、architecture3、marketing27/order45/kernel3；前端tsc/Vite/UI入jar。jar SHA256 74a16e41e86ff98928fc00ef09444dca097cb845bc735a535c4e2113b6c9baa9。
-- 三项mutation被具体断言捕获，源hash恢复后上述clean通过。hygiene无BLOCKING，npm audit零漏洞，diff check PASS。
-- 规模10000=469.990s；干净新tenant复测100=6.127s、1000=48.759s；50k future无推进；hot5000/normal5=0.726s正常租户先完成，真实payment/event同时推进。
-- affected browser4/4；修复四项旧UI断言后最终jar全browser24/24（1.2min）。旧main CI20/24四项失败为陈旧按钮/统计/主题断言，不是新Journey故障。
-- 独立worktree.local/phase8-ci-fix分支fix/ci-browser-contracts提交bdc2af712b7e76639cab4ac8e43c65398ea764c1已推远程，CI run36362758041已SUCCESS。无前端产品变化。
-- 正式设计/契约/切片、TEST_RESULT S1–S5、Review/QA、00–16证据、矩阵、容量/SQL计划、可复跑脚本、PHASE8_REPORT已归档。报告严格PHASE_8_COMPLETE_WITH_LIMITATIONS，本地容量/历史Facts/保留期等限制明示。
+- CE-20260927：读取Claude入口的project-capability-exploration及其references/output-schema；读取discovery/deep-analysis/architecture-reviewer及扫描清单，只复用相邻技能方法。
+- 分析基线7dda31ed017617f3701480f8a2d1620656c843cc，起始main与origin/main一致、工作树干净。基线main CI36363560873 completed/success已实际核实。
+- 静态清单19 Maven模块、205主Java、54测试Java、41 Mapper XML、45迁移；复核会员/商品/营销/交易及公共运行链路、配置、前端和既有阶段证据。
+- 再生五份.engineering/exploration产物：9维成熟度、15项缺口、四分类候选、触发/依赖路线、37个证据索引和Not Recommended Now。
+- 撤销旧的无积分/动态人群/批量任务/观测/保留机制/多进程恢复等结论；现有能力边界与尚缺治理明确区分。
+- 产物验证PASS：五文件非空、必需章节、四分类及候选模板、所有本地链接/证据ID有效、Mermaid围栏、git diff --check。未更改生产代码、测试、配置、依赖或数据库。
+- 未重跑业务测试/压测/真实渠道，报告明确标UNVERIFIED/NEEDS_VERIFICATION；历史CI不继承为新ref。
 
 ## 已修改文件
 
-- JourneyApi、JourneyGraph/Actions（新）、JourneyService、JourneyMapper/XML。
-- V44/V45、JourneyController、精确SecurityConfiguration路径。
-- JourneyGraphTest/JourneyRecoveryTest（新）、PersistedCommerceTest。
-- docs/delivery/phase8-marketing-journey、docs/evidence/phase8-marketing-journey、doc-map、CODEX_PROGRESS。
-- 独立fix分支frontend/tests四个陈旧契约断言和自身DELIVERY_RESULT；待正常merge到本任务。
+- .engineering/exploration/CAPABILITY_MAP.md
+- .engineering/exploration/CAPABILITY_GAPS.md
+- .engineering/exploration/OPPORTUNITIES.md
+- .engineering/exploration/EVOLUTION_ROADMAP.md
+- .engineering/exploration/EVIDENCE_INDEX.md
+- CODEX_PROGRESS.md（update-progress-docs负责的当前摘要）
 
 ## 未完成
 
-- 无未完必需产品实现；源码交付已完成。
-- 本文件与最终DELIVERY/CI记录作为文档checkpoint在原分支正常提交推main后，核实新HEAD远程CI，并记录ignored.local/phase8-final-observation.md。恢复先核对Git实际状态，若已完成勿重复提交/验证。
-
+- 报告已完成；当前feat/capability-gap-reassessment，待按任务Git交付完成文档提交、正常合入远程main，并核实本次ref的CI实际状态。恢复先核对Git，不重复分析。
+- 这些候选功能未获本轮实施授权，不属于本任务未完工作。
 
 ## 当前问题
 
-- 无必需验证阻断。源码cac9810cab0d1e63570d271a385a992892a93d56 CI36363137541 SUCCESS，已main push与ls-remote核对；后续文档HEAD单独核对。
-- 原首轮1000容量受故障trigger/DDL互扰，保留原始结果但不用作主容量；已隔离recovery并干净复测，不重置/replay成功数据。
-- 生产SLO/保留期无产品依据；无百万timer认证；历史不存完整Facts，OLD覆盖partial。
+- 本轮分析/文档检查没有阻塞。
+- 后续业务输入尚未确定：第二应用与共享授权、配送/运费、运营职责/奖励承诺、数据保留、SLO/RTO/RPO和值班告警目标。未知不阻塞分析。
 
 ## 下一步建议
 
-1. 本轮功能0b7d6f1、证据b389d65、独立UI测试bdc2af7、正常merge cac9810已交付main，源码CI36363137541 SUCCESS。
-2. 仅收口最终文档checkpoint：提交原任务分支→main正常fast-forward push→核实对应GitHub新HEAD CI。禁止强推/生产部署。
-3. 最终报告docs/evidence/phase8-marketing-journey/PHASE8_REPORT.md；Git/CI记录docs/delivery/phase8-marketing-journey/；最终观察ignored.local/phase8-final-observation.md。
+1. 仅暂存上述六份文件，核对差异并提交；按持续授权正常推任务分支、合入远程main。禁止强推/绕过保护/生产部署。
+2. 记录实际提交/远程/CI结果；如Git已完成，勿重复。最新观察可记录.local/capability-gap-reassessment-delivery.md，不含机密。
+3. 报告建议：自营主线先选持久购物车/地址纵向闭环；中台主线先选第二项目边界与契约发现。需用户选定具体建设目标后再实施。
 
 ## 重要上下文
 
-原方案/Users/liruijun/Downloads/phase-8-marketing-journey-workflow-orchestration.md。用户已确认DELIVERY_PLAN并要求连续执行；最新AGENTS#8是Phase8 Git持续授权来源。不派子Agent。
-.local/runtime.env/tokens私密不提交不打印。使用既有dev_infra MySQL8.4，commerce_test_20260923/commerce_phase8_bench/commerce_phase8_recovery均隔离本地schema，无生产部署。初始ROUTER_CONTEXT仅保留启动历史，不代表当前缺实现；后续权威formal TEST_RESULT已PASS。
+上一任务Phase8已交付源码0b7d6f1、证据b389d65、独立CI修复bdc2af7、合并cac9810、文档checkpoint7dda31e；当前基线main7dda31e CI36363560873 success。旧CODEX“仅剩最终文档checkpoint”的状态已过时，不要恢复已完成的Git交付或重跑规模测试。完整历史在docs/delivery/phase8-marketing-journey与docs/evidence/phase8-marketing-journey。
+
+外部IdP/支付/权益/WMS联调仍按既有要求后置；旧规则迁移仍是独立BLOCKED工作。Claude技能是指向.cursor共享技能的入口；本轮没有调用Claude模型或修改全局技能。.local凭据不可打印/提交。不派子Agent。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS、阶段8DELIVERY_STATUS与git实际状态，从未完成Git/远程CI继续。阶段7已推main，阶段8全部实现/验收及源码main交付完成，源码CI36363137541 SUCCESS；仅最终文档checkpoint与新HEAD CI观察需核实。不要重跑大规模测试或重规划，不等待继续，不把旧refPASS继承给新HEAD。最终CI/remote核对后简短汇报，禁止强推/生产部署。
+请读取CODEX_PROGRESS.md和Git实际状态，完成CE-20260927报告的尚未完成Git交付及实际CI观察。分析和文档必要检查已完成，只处理本任务六份文档，不重新规划、不重跑产品测试、不开始候选实现、不等待“继续”。若远程main已包含报告提交，记录实际结果后交付即可；历史Phase8已经交付，勿重复。遇到权限或不可确定的冲突时记录具体阻塞。

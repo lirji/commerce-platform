@@ -1,134 +1,118 @@
-# 企业级能力地图
+# 当前能力地图：阶段 8 后复核
 
-- 日期：2026-09-23
-- 项目：`/Users/liruijun/personal/LLM/commerce-platform`
-- 协议：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
-- 分析基线：HEAD `fb7adf6278ed98c49d8851102031b061bcbb68bf` 加当前工作树。开始时已有 `CommerceController.java`、`CampaignService.java` 两处未提交修改，属于既有内容。
-- 范围：源码、接口、Mapper、V1–V15迁移、前端、测试源码、CI配置与既有验收证据；只生成本目录分析产物。不执行产品修改、数据库写入、真实外部联调或生产操作。
-- 结论边界：源码已有能力标 `FACT`；“未发现完整能力”及建设建议标 `INFERRED`；运行可用性、生产规模和本次测试结果标 `NEEDS_VERIFICATION`。未查询实时数据库、未重跑测试或远程CI。
-- 已确认产品方向（用户，2026-09-23）：长期建设可供多个项目复用的会员、商品、营销能力中台，同时包含品牌自营商城＋会员运营。自营商城是实际业务应用，不仅是演示验证壳；第二接入项目及具体业务政策仍待设计。
+- generated_at：2026-09-27（America/Los_Angeles）
+- workspace：`/Users/liruijun/personal/LLM/commerce-platform`
+- baseline：`7dda31ed017617f3701480f8a2d1620656c843cc`，分析开始时工作树干净。
+- protocol：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
+- skill：实际读取 `~/.claude/skills/project-capability-exploration/SKILL.md`、references 与 output-schema；这些 Claude 入口链接至 `~/.cursor/skills` 共享技能。复用 Claude 中 discovery、deep-analysis、architecture-reviewer 的扫描方法，不声称调用了 Claude 模型。
+- scope：源码、HTTP/API、41 份 Mapper XML、45 份迁移、测试源码、前端、CI、阶段 2–8 证据。19 个 Maven 模块、205 个主 Java 文件、54 个测试 Java 文件为静态清单数量，不等于逐文件完整审计。
+- confidence：直接源码/配置为 FACT；未发现完整能力及建议为 INFERRED；业务政策为 UNKNOWN；未经本轮实测的运行/容量为 NEEDS_VERIFICATION。源码优先于旧报告。
 
 ## Exploration Summary
 
-当前是**具备本地交易闭环、部分营销治理和一致性机制的业务基础版本**，尚不能按“完整企业级经营平台”评价。此前S0–S10完成表示批准切片已交付，不表示所有企业业务能力都已覆盖。会员和商品主要处在BASIC，营销处在PARTIAL；工程机制的完整程度高于业务功能广度。
+现在是具有会员经营、商品经营、营销决策、持久旅程和交易闭环的模块化单体，已有可恢复机制明显强于 9 月 23 日基线。最该补的三件事：多项目能力接入边界、自营商城持久购物链路、运营治理与持续运行保障。最不该做的事：没有新业务和容量证据就继续建设通用 BPM/微服务平台。
 
-产品定位是“共享能力中台＋品牌自营商城应用”。会员、商品、营销负责可复用业务能力；自营商城承载消费者购物、订单、支付、配送、售后及品牌运营。建设同时补齐共享主数据与实际购物闭环，再深化会员营销，最终由第二独立应用验证复用。独立商家入驻、佣金结算和完整仓内作业仍按需建设。
-
-## Confirmed Direction & Proposed Ownership
-
-用户确认的是中台长期方向（U01，FACT）和包含品牌自营商城＋会员运营（U02，FACT）。以下具体职责划分与建设顺序是分析建议（INFERRED），不替代正式架构和业务契约。
-
-| 能力域 | 建议中台负责 | 与接入项目的边界 |
-|---|---|---|
-| 会员 | 会员标识/映射、档案生命周期、等级、积分、权益、标签与偏好 | 外部身份平台负责登录身份验证；不同项目会员是否共享须有归属与授权规则，禁止只凭同手机号自动合并 |
-| 商品 | 商品主档、类目/品牌/规格属性、媒体、版本与发布；按需要管理渠道目录/价格 | 商品主档与渠道售卖信息分清；店铺价格、可售范围与库存来源不得混成一份任意覆盖的数据 |
-| 营销 | 活动、人群、规则决策、券/权益、预算分摊、旅程、频控和效果口径 | 接入方提供可信业务事实；不能让浏览器或任意调用方自行声明支付成功/会员资格 |
-| 接入治理 | 应用身份、权限范围、主体/资源映射、接口/事件版本、幂等、交付跟踪 | 租户、应用、商家、门店不是同一个概念；跨应用复用不意味着自动跨租户共享 |
-| 品牌自营商城应用 | 复用中台，建设实际商品展示/搜索、持久购物车、地址与配送计价、订单支付、履约售后 | 共享会员/商品/营销不重复实现；现有交易域继续承载自营业务，其他项目可接自己的交易系统 |
-| 商家财务与仓内作业 | 按业务所有权提供必要协作接口 | 商家入驻出款、佣金结算、仓内盘点调拨不作为三大核心中台的默认扩张范围 |
-
-### 多项目复用的检验方式
-
-建议分别验收两件事：①品牌自营商城能支撑实际经营；②第二独立应用能复用中台。第二应用由实际业务选定；测试接入方只能验证契约，不能被称为真实第二业务项目上线。
-
-- 调用方通过契约消费能力，无需复制核心业务代码或直连其他模块业务表。
-- 身份和外部标识映射可追溯；相同外部编号在不同应用作用域中不会误合并。
-- 经授权共享的同一张券/权益跨应用核销仍守恒；不允许共享的项目保持隔离。
-- 一方重试、重复/乱序事件不造成重复积分、发券或扣减；接入方可查询未知结果。
-- 新旧接口/事件版本在明确兼容窗口内共存；一个应用的扩展不迫使所有应用同步升级。
-
-“中台”是复用与治理目标，不预设部署为多个微服务。现有模块化单体可继续作为演进基础，具体边界由后续设计确认。
-
-### 双重目标的业务验收
-
-- **自营经营**：运营可维护真实商品和会员，消费者能完成浏览→购物车→报价→下单→支付→配送→售后；营销成本和退款可核对。当前沙箱结果仍不能视为真实收款/发货。
-- **能力复用**：其他项目能够按授权使用会员、商品、券/权益和营销决策；不需要采用本商城的全部订单和前端实现。
-- **范围控制**：自营多店可以有店铺库存、价格和数据范围，但不会因此自动要求独立商家入驻、抽佣和结算平台。
+沿用已有记录的“会员/商品/营销共享中台＋品牌自营商城”定位；第二接入项目和数据共享政策仍未知。外部 IdP、支付、权益、WMS 联调维持后置安排。
 
 ## Current Capability Overview
 
-工程结构：19个Maven模块，101个主Java源码文件，15个版本迁移，React管理端/会员端；一个Spring Boot应用、MySQL权威持久化。文件数只是扫描范围，不是成熟度依据。
+### Repository & Module Map
 
-| 模块组 | 模块 | 实际职责 |
+| 模块 | 真实职责与关键入口 | 证据 |
 |---|---|---|
-| 主数据 | member / merchant / store / catalog | 会员主体绑定、商家店铺归属、SKU基本目录 |
-| 营销 | marketing / marketing-runtime / benefit / marketing-automation | AST决策、活动人群规则、券/预算/权益、旅程、受控运营页面 |
-| 交易履约 | trade / order / order-runtime / inventory / payment / fulfillment / aftersales | 报价快照、状态机、预占、沙箱支付退款、履约退货 |
-| 公共与装配 | shared-kernel / platform-runtime / commerce-app | 金额标识、事务命令、事件、认证与HTTP装配 |
-| 验证 | architecture-tests；各模块测试；frontend/tests | 模块边界、领域/数据库/浏览器验收 |
+| shared-kernel | 金额、标识、领域异常 | E01 |
+| marketing / order | 纯规则决策、确定性活动选择；订单合法状态迁移 | E02 |
+| platform-runtime | 身份、事务命令/审计、Outbox/Inbox、消费隔离、公平轮转、恢复/重放/保留 | E03/E04/E16/E18 |
+| member | 档案状态、成长/标签、周期等级、积分、行为事实、逐项恢复 | E05–E07 |
+| merchant / store | 商家/门店主数据，商品运营范围授权 | E08 |
+| catalog | 商品/SKU、类目/规格/图文/条码、检索、定时经营、渠道价 | E09–E11 |
+| marketing-runtime | 活动/人群/规则资产/动态分群、预算、营销执行 | E12/E13 |
+| benefit | 券钱包、额度预留、权益台账/补偿、等级礼包、积分兑换 | E14/E15 |
+| trade / inventory / order-runtime | 可信报价与成交快照、库存额度、订单及到期恢复 | E19/E20 |
+| payment / fulfillment / aftersales | 持久支付退款沙箱、未知查单、履约、部分退货退款 | E21/E22 |
+| marketing-automation | 持久旅程/生命周期扫描、批量发券、站内通知、低代码、效果投影 | E23–E27 |
+| commerce-app / architecture-tests | HTTP/安全/装配、共享有界调度、指标告警；编译依赖约束 | E17/E28/E29/E32 |
+| frontend（非 Maven 模块） | 管理台、商品经营、购物/订单、会员运营、营销工作台 | E30/E31 |
+
+运行是一个 Spring Boot 应用和 MySQL，不是 19 个独立服务；未发现 Redis、独立 Broker、ES、配置中心或 LLM 的业务调用。
+
+### 本轮撤销的旧缺口
+
+| 旧结论 | 当前复核 | 新边界 |
+|---|---|---|
+| 会员不能冻结/注销 | 已有 ACTIVE/FROZEN/CLOSED、版本校验和历史，E05 | 注销不等于敏感数据删除 |
+| 没有等级成长/周期/积分 | 已有成长、保级考核、周期权益、积分来源批次/到期/退款/兑换/订单抵扣，E06/E15 | 跨项目共享和政策治理仍不完整 |
+| 没有标签、行为、动态人群 | 已有标签与行为事实、持久分群刷新、快照完整发布，E07/E13 | 大名单导入和真实大租户持续容量未认证 |
+| 没有类目规格、图文、渠道价格或批量经营 | 已有这些能力，E09–E11 | 图片 URL 不等于文件资产中心；商品仍属于店铺 |
+| 后台任务全串行、一个坏事件阻塞全部消费者 | 已有独立车道、有界线程池、消费者事务隔离和逐项恢复，E04/E17/E18 | 仍共享进程、连接池和 MySQL |
+| 没有指标、告警、保留期机制 | 已有指标、告警代码、受控清理机制，E16/E28/E29 | 告警默认写日志；保留政策未定，清理默认关闭 |
+| Journey 没有多进程/崩溃证据 | 阶段 8 已有实际 kill/restart、两个 JVM、旧新版本和规模证据，E24 | 历史 Facts、生产 SLO、Journey 保留期仍缺 |
+| 浏览器仍有四项已知契约断言失败 | 阶段 8 记录全 24 项通过；基线 main 的 CI 也已核实 success，E33 | 本轮没有重跑业务测试 |
+
+9 月 25 日 `.project-analysis/` 和 9 月 23 日架构审查也是历史输入，其中串行调度、无观测、无恢复等结论不能覆盖当前源码。本轮只再生本目录五份分析产物。
 
 ## Business
 
-| 能力 | 成熟度 | 已有事实 | 主要边界 | 证据 |
-|---|---|---|---|---|
-| 会员 | BASIC | 会员创建、主体绑定、租户隔离、等级字段、本人查询 | 无完整档案维护/生命周期、等级成长和积分体系 | E01–E02、E05 |
-| 商家/店铺 | BASIC | 创建和查询、商家店铺归属 | 无完整入驻、商家账号范围和结算 | E18–E19、E16 |
-| 商品 | BASIC | SKU创建、店铺目录、可信价格/版本读取 | 无SPU规格类目媒体、日常编辑/上下架/调价流程 | E03–E04 |
-| 营销活动 | PARTIAL | 不可变版本、增强活动审批、发布暂停、人群/规则/预算/权益引用 | 并非所有活动都强制审批；旧无policy活动允许兼容发布；优惠不是任意组合 | E08–E10 |
-| 人群和规则 | PARTIAL | 固定名单快照和过期UNKNOWN、受限AST、规则资产版本 | 500人输入限制、24小时窗口；两种可信事实；非动态标签/CDP | E06–E07、E35 |
-| 券/权益/预算 | PARTIAL | 领券/占用/核销/返还；权益授予/消费/冲正/补偿；资方分摊 | 内部整数权益不是积分账户或现金；没有外部权益履约 | E10–E12、E38 |
-| 旅程 | PARTIAL | 持久检查点、五类节点、等待/重试/隔离/取消 | 只有手工与支付触发、站内通知；无站外触达闭环 | E13–E14 |
-| 交易 | PARTIAL | 同店报价→库存券预算权益预占→订单→支付事实→事件 | 单店、CNY；前端内存购物袋；缺运费/持久地址簿 | E10、E21、E25 |
-| 履约售后 | PARTIAL | 发货/签收、售后审核、按行部分退货退款、权益冲正 | 单订单物流号，沙箱WMS，未接真实逆向物流 | E22–E24 |
-| 财务经营 | BASIC | 营销成本分摊、预算和支付/退款状态 | 无商家结算、渠道日账单差异工单和经营分析闭环 | E10、E24 |
-
-### 已有核心调用链
-
-| 场景 | 入口→服务→数据/效果 | 真实性与边界 |
-|---|---|---|
-| 会员/商品维护 | CommerceController→MemberService/CatalogService→各域Mapper | 真数据库API；当前维护动作以创建/查询为主 |
-| 优惠报价 | CommerceController→QuoteService→Member/Catalog/Campaign/Decision/Coupon→trade_quote | 可信事实、单活动择优、单券、金额分摊；无Drools |
-| 下单 | OrderController→OrderService→Quote/Inventory/Coupon/Funding/Entitlement→order_record+Outbox | 同库事务和幂等，不是远程微服务事务 |
-| 支付确认 | PaymentController/worker→PaymentService→沙箱查单→订单支付事实→Outbox/Inbox | UNKNOWN与查单已有；真实渠道未验收 |
-| 售后 | AftersaleController→AftersaleService→履约阻拦/退货/RefundService→补偿处理 | 部分退货退款已有；不应重复列为完全缺失 |
-| 营销旅程 | JourneyController或订单支付事件→JourneyService→检查点/权益/站内消息 | 数据库恢复机制已有；不是全渠道营销平台 |
-| 运营页面 | OpsPageController→OpsPageService→受控领域API | 五类数据源、三种动作，非任意页面开发平台 |
+| 能力 | maturity | 真实性/证据 | 剩余边界 |
+|---|---|---|---|
+| 会员基础与生命周期 | PARTIAL | USED；E05/E07，FACT | 单一主体绑定；无接入应用会员映射、验证联系方式/合并政策 |
+| 成长、周期等级、积分 | MATURE（现有本地政策内） | CRITICAL；E06/E15，FACT | 不据此宣称储值、付费会员或跨应用资产共享已实现 |
+| 商品经营 | PARTIAL | USED；E09–E11，FACT | 主档随店铺；媒体为 URL；单经营任务最多 100 SKU |
+| 活动/规则/人群/预算 | PARTIAL | CRITICAL；E12/E13/E14，FACT | BEST_OF 单活动＋既有券；非任意叠加/多类型礼包 |
+| Journey 与生命周期营销 | MATURE（有界本地模型） | CRITICAL；E23/E24，FACT | 32 节点 DAG、单路径；站内通知；无历史全 Facts |
+| 报价、订单、退货退款 | MATURE（单店 CNY/沙箱范围） | CRITICAL；E19–E22，FACT | 无持久购物车、地址簿、配送费用；外部资金/物流后置 |
+| 营销经营分析 | PARTIAL | USED；E26，FACT | 描述性队列与净收款，不是增量因果 ROI 或全成本利润 |
 
 ## Platform
 
-PARTIAL：共享幂等命令、审计、Outbox/Inbox已用于多个业务模块；规则用于报价和旅程；活动/旅程/运营页面均有治理状态。已有复用应保留。缺细粒度权限、审计查询、真实多渠道通知及批量运营任务体验；平台化要由重复场景触发（E15–E17、E27–E28）。
+已有 Commands、事件处理、WorkLanes/TenantRotation、Recovery/ReplayGate、规则 API、JourneyActions 和 Ops 白名单组件，多个业务已消费（E03/E04/E17/E18/E23/E27）。公共运行机制为 MATURE（当前本地范围）。
+
+能力中台对外复用为 PARTIAL：有 Java API 和登录态 HTTP，但 Actor 没有接入应用身份；会员/商品没有外部映射；成长/营销/效果仍消费本地订单事实。开放凭据、合作方交付记录、第二独立应用验收在仓库中未发现完整闭环（G01/G02，INFERRED）。
 
 ## Engineering
 
-PARTIAL：有Flyway、真实MySQL集成测试源码、前端浏览器用例、模块依赖检查和CI。历史S10b报告记载145后端测试与4浏览器场景通过（E31–E37），本次未重跑，不能覆盖当前未提交改动。后端全依赖安全/SBOM、生产容量、真实渠道契约与恢复演练未有充分证据；新能力需各自验证。
+- MATURE（已有验证范围）：Flyway V1–V45、真实 MySQL 集成验证、jdeps 边界检查、Chromium API 驱动验收、隔离测试租户与种子、构建 UI 入 jar、CI，E32/E33。
+- PARTIAL：依赖供应链检查。CI 可见 npm audit；未发现等价的后端完整依赖扫描、SBOM 或制品签名门禁，E33。未据此推断存在某个具体漏洞。
+- PARTIAL：发布证据。阶段 7/8 有旧新二进制兼容与激活点限制；部署仍是本地 Compose，不等于生产灰度/灾备验收，E24/E34。
 
 ## Reliability
 
-PARTIAL：事务幂等、库存/额度条件更新、支付UNKNOWN、退款补偿、Outbox/Inbox、有界重试隔离、旅程检查点已有（E20–E23、E27–E30）。不是“缺所有可靠性机制”。真实远程渠道故障、多实例恢复、公平资源预算及数据库恢复目标仍待验证。
+事务命令、数据库唯一/CHECK/条件更新、固定快照、UNKNOWN 保守处理、Outbox/Inbox、退避/隔离、原节点恢复已经 USED/CRITICAL（E03/E04/E14/E18/E19/E21/E23）。有限模型下成熟度 MATURE。
+
+生产可用性为 PARTIAL：只有单数据源/单应用部署声明；真实备份恢复、数据库切换、网络分区和外部副作用故障尚未认证（E34/E35）。真实退款拒绝的终态与额度处理在当前仅 UNKNOWN/SUCCEEDED 模型之外（E21；G13）。
 
 ## Observability
 
-BASIC：traceId、日志、health、业务状态/隔离列表可定位部分异常；缺面向支付未知、退款延迟、权益补偿、旅程积压的持续指标、告警与处置闭环（E28–E30、E34）。不能由health通过推导业务正常。
+PARTIAL。已有低基数事件/车道/重放/保留指标、平台运维聚合 API、调度延迟/隔离/年龄告警及手册（E28/E29）。默认 OperationalAlertPublisher 仅 WARN 日志；application.yml 仅暴露 health，未发现远程指标导出/告警送达验收。缺的是持续采集、值班送达、清除/升级以及真实 SLO，不是“没有监控”。
 
 ## Data
 
-PARTIAL：关系型权威库、版本迁移、唯一/检查约束、账本/快照、游标查询和域数据所有权已有。缺会员标签/行为指标、营销经营报表、数据质量/保留/归档流程（E05、E07、E10–E12、E34）。无规模证据支持先建数仓、分库分表。
+PARTIAL。权威关系库、不可变业务版本、资产引用、可重建效果投影、索引与迁移已具备（E03/E09/E12/E19/E26）。终态事件/命令清理机制默认关闭，Journey 步骤、行为和敏感资料没有完整生命周期政策；CLOSED 只改变状态（E05/E16/E23）。
 
 ## Security
 
-PARTIAL：摘要Bearer、ADMIN/MEMBER、租户过滤、服务端授权、收货地址加密、输入边界已有。缺真实账号治理、商家/门店数据范围、职责分离、触达偏好/退订、密钥轮换和可执行的数据治理（E05、E16–E17、E34）。同租户ADMIN权限广是当前能力边界；本报告未做渗透测试，不将其凭空判定为已发生越权漏洞。
+PARTIAL。摘要 Bearer、租户/本人检查、默认拒绝 HTTP 清单、OPERATOR 商品门店范围、独立 PLATFORM_OPERATOR、地址 AES-GCM/AAD 已具备（E08/E29/E30/E35）。营销编辑/审批/发布全部由 ADMIN 获得，未形成可配置职责分离；调用应用权限、密钥轮换和真实 IdP 后置。
 
 ## Integration
 
-PARTIAL：支付退款/WMS端口和沙箱，外部权益预留接口已有；真实IdP/支付/权益/WMS联调后置。无证据表明与同工作区其他业务仓库已互通。开放API应用授权、Webhook签名/投递记录需在合作方明确后建设（E24、E38）。
+PARTIAL。支付/退款/WMS/权益有适配端口，但真实身份、资金、仓储尚未验收；无合作方事实摄取和事件可靠交付闭环（E21/E22/E30/E36）。WEB/MINI_APP 是受认证控制的销售渠道，不能当作第三方接入应用。
 
 ## AI
 
-ABSENT：本仓未发现生产LLM/RAG/Agent调用。当前优先级不支持为了企业级标签添加AI。待业务数据和反馈成熟，再单独评估可审阅的内容辅助或解释功能；涉及资金、库存、会员资格的确定性规则仍须受控。
+ABSENT，FACT（依赖、配置和业务调用扫描）。当前无已确认的模型调用场景；没有必要为“中台”添加 Agent、RAG 或 NL2SQL。以后若选定运营辅助场景，应先解决事实口径、权限和效果评估（X01）。
 
 ## Capability Maturity Summary
 
-- BASIC：会员、商品、商家主数据、经营分析、可观测性。
-- PARTIAL：营销、交易/履约、公共运行能力、工程验证、数据/安全治理、外部集成。
-- ABSENT：本报告列明的完整积分、动态标签分群、外部触达、营销实验/归因、商家结算等子能力；未检出结论是仓库范围INFERRED，不能推断公司其他系统也没有。
-- 不给全平台MATURE评级：缺正式业务定位、规模目标、真实运行和用户工作验收。
+| dimension | maturity | 评价范围 |
+|---|---|---|
+| BUSINESS | PARTIAL | 本地会员/营销/交易深度较足，持续购物和共享主数据仍缺 |
+| PLATFORM | PARTIAL | 公共运行机制成熟，对外业务复用尚未形成 |
+| ENGINEERING | MATURE（本地验证） | 后端供应链及生产发布认证另列缺口 |
+| RELIABILITY | PARTIAL | 本地一致性/恢复有证据，生产 HA 和真实渠道仍未认证 |
+| OBSERVABILITY | PARTIAL | 有指标/代码，缺持续采集和送达 |
+| DATA | PARTIAL | 有治理机制，缺完整政策和生命周期 |
+| SECURITY | PARTIAL | 租户和部分资源权限完善，组织/应用/密钥治理待补 |
+| INTEGRATION | PARTIAL | 端口已留，真实合作方与渠道闭环后置 |
+| AI | ABSENT | 当前不建议启动 |
 
-## 企业能力对照来源
-
-以下仅提供已公开的产品能力参照，不作为统一强制标准或采购建议，检索日期2026-09-23。
-
-- Salesforce的会员体系区分等级、可兑换积分、等级资格积分、权益与积分到期，说明单个等级字段不能代表完整忠诚度运营。[官方资料](https://trailhead.salesforce.com/content/learn/modules/loyalty-management-basics/set-up-loyalty-program)
-- Shopify商品管理覆盖规格、媒体、分类集合、批量修改和导入导出，可用于检视当前SKU目录的运营边界。[官方资料](https://help.shopify.com/en/manual/products)
-- Adobe Journey Optimizer提供消息频次和旅程进入规则，作为跨旅程触达治理的能力参照。[官方资料](https://experienceleague.adobe.com/en/docs/journey-optimizer/using/conflict-prioritization/capping-rules/capping-rules-landing-page)
-
-详细缺口：[CAPABILITY_GAPS.md](CAPABILITY_GAPS.md)。建设候选：[OPPORTUNITIES.md](OPPORTUNITIES.md)。
+全部候选见 [缺口](CAPABILITY_GAPS.md)、[机会](OPPORTUNITIES.md)、[路线](EVOLUTION_ROADMAP.md)。证据见 [索引](EVIDENCE_INDEX.md)。MATURE 不表示生产认证或所有企业场景均已支持。

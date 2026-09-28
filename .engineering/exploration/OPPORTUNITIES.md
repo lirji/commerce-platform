@@ -1,390 +1,208 @@
-# 候选建设项与暂缓项
+# 候选建设项与当前不建议的事项
 
-- 日期：2026-09-23
-- 项目：`/Users/liruijun/personal/LLM/commerce-platform`
-- 协议：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
-- 分析基线：HEAD `fb7adf6278ed98c49d8851102031b061bcbb68bf` 加当前工作树。开始时已有 `CommerceController.java`、`CampaignService.java` 两处未提交修改，属于既有内容。
-- 范围：源码、接口、Mapper、V1–V15迁移、前端、测试源码、CI配置与既有验收证据；只生成本目录分析产物。不执行产品修改、数据库写入、真实外部联调或生产操作。
-- 结论边界：源码已有能力标 `FACT`；“未发现完整能力”及建设建议标 `INFERRED`；运行可用性、生产规模和本次测试结果标 `NEEDS_VERIFICATION`。未查询实时数据库、未重跑测试或远程CI。
-- 已确认产品方向（用户，2026-09-23）：长期建设可供多个项目复用的会员、商品、营销能力中台，同时包含品牌自营商城＋会员运营。自营商城是实际业务应用，不仅是演示验证壳；第二接入项目及具体业务政策仍待设计。
+- generated_at：2026-09-27；baseline：`7dda31ed017617f3701480f8a2d1620656c843cc`
+- protocol：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
+- 来源：Claude `project-capability-exploration`，遵循 Evidence → Observation → Gap → Opportunity → Recommendation。
+- 目标边界：这里只回答 WHAT TO BUILD；下面不是已批准需求或技术选型。分类/priority 是建设优先级，不等同已发生事故严重度。
 
 ## Exploration Summary
 
-当前是**具备本地交易闭环、部分营销治理和一致性机制的业务基础版本**，尚不能按“完整企业级经营平台”评价。此前S0–S10完成表示批准切片已交付，不表示所有企业业务能力都已覆盖。会员和商品主要处在BASIC，营销处在PARTIAL；工程机制的完整程度高于业务功能广度。
-
-产品定位是“共享能力中台＋品牌自营商城应用”。会员、商品、营销负责可复用业务能力；自营商城承载消费者购物、订单、支付、配送、售后及品牌运营。建设同时补齐共享主数据与实际购物闭环，再深化会员营销，最终由第二独立应用验证复用。独立商家入驻、佣金结算和完整仓内作业仍按需建设。
-
-## 中台方向下的候选调整
-
-- **前移**：P03开放接入契约提升为P1，与S01应用/租户/资源权限、M01身份映射、C01主档与售卖信息边界一起进入第一阶段。先形成可验证契约，真实系统联调继续遵循后置安排。
-- **核心建设**：M01/M02/M04、C01/C02/C03、K01/K02/K03/K04/K06形成会员、商品、营销主线；M03积分保留在长期能力图中，具体积分政策确认后实施。
-- **自营商城主线**：T01购物车/地址/配送计价、T02基础履约售后与T05支付退款/对账共同支撑实际经营。基础能力建设前移，真实联调依旧后置；T02的多包裹/换货等扩展按场景选择。
-- **继续按需**：T03完整仓内作业、T04独立商家入驻和结算不因自营多店自动纳入；保留已有库存和交易闭环。
-- **治理贯穿**：S02审计审批、S03数据治理、K07奖励防滥用、O01可观测与恢复；不因选择中台而降低真实副作用门槛。
-- **复用验收**：P03必须包含第二独立应用接入、共享授权/隔离、外部标识不误合并、事件重复/乱序和版本兼容。
-
-## 优先级和估算口径
-
-P0（条件）表示在进入真实业务/多商家开放/生产运行前必须补齐，不表示当前演示已发生P0事故。P1是本定位下优先的业务基础；P2是需求明确后的增强；P3是证据不足的探索。复杂度为相对规模且有不确定性，未给人日、费用或交付承诺。
-
-共28个能力候选，**不是28个可直接编码的小任务**。跨子系统项已注明子成果，选定后仍需需求和实施切片。候选状态默认RECOMMENDED（条件成立时）；EXPLORATION为NEEDS_MORE_EVIDENCE。不把建议写成已批准计划。
+最有价值的后续工作是验证多项目中台复用、补齐自营持续购物、收口运营及长期运行治理。业务入口继续增长前，应把已有机制接成可运营的流程。通用BPM、全量微服务、Kafka/Redis/ES或AI不因“企业级”自动成为建设项。
 
 ## Must Fix
 
-### K07 领券/发奖滥用防护
+这里指满足触发条件前必须补的已有边界；没有触发时不把条件风险判为当前生产事故。
 
-- **分类/优先级/状态**：MUST_FIX / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：已有每版本单券、配额、幂等、租户校验；未发现跨账号业务风控和操作频率限制。幂等只防重复命令，不能阻止不同身份或不同键合法重复薅取奖励。
-- **Evidence / Why Needed**：[E11](EVIDENCE_INDEX.md)、[E12](EVIDENCE_INDEX.md)、[E16](EVIDENCE_INDEX.md)、[E27](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：按风险加入账号/活动频率、参与限额、异常处置、业务黑名单及申诉审计。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中；误杀真实会员；不得仅凭IP判定身份；不宣称已有确定漏洞。
-- **Dependency**：S01、明确奖励规则及损失容忍；设备信号按权限必要性取用。
-- **Trigger Condition**：公开领券/激励或发放有真实成本的权益之前。
-- **Observable Acceptance**：不同幂等键仍受业务限额；拒绝原因和人工复核可见；正常用户不被全局配额误伤。
+### MF01 持续告警、容量目标与恢复验收（G06/G07）
 
-### S01 真实身份与商家/门店数据权限
+- capability / currentState：PARTIAL；有指标、告警代码、平台视图、多进程恢复和本地压测。
+- problem / evidence：默认告警仅写日志；1万到期节点排空469.990s；生产等待目标及DB/密钥恢复证据未齐，E24/E28/E29/E34/E35。
+- whyNeeded：无人值守、持续运营或集中营销窗口要求可发现、可响应并可恢复。
+- proposedCapability / expectedBenefit：持续采集与告警送达/清除/升级；真实峰值/等待目标、混合持续负载与隔离恢复验收；异常可及时处置，容量取舍有依据。
+- businessValue / engineeringValue：降低营销延迟和业务中断成本；沿用已有告警/恢复端口，形成运行证据。
+- complexity / risk：中；主要成本为真实负载、环境与负责人协调；不得把共享库故障操作当演练目标。
+- dependency：运行负责人、真实峰值/租户分布、SLO/RTO/RPO、隔离恢复环境；地址密钥治理依赖MF02。
+- class / priority / triggerCondition / status：MUST_FIX / P1 / 无人值守或承诺生产保障前 / RECOMMENDED。
+- confidence：现状FACT；生产达标NEEDS_VERIFICATION。
 
-- **分类/优先级/状态**：MUST_FIX / P0（条件） / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：可信租户+ADMIN/MEMBER；无商家/门店身份范围；演示摘要Bearer。当前租户隔离不能替代同租户多商家隔离，不能直接分发ADMIN给商家。
-- **Evidence / Why Needed**：[E16](EVIDENCE_INDEX.md)、[E17](EVIDENCE_INDEX.md)、[E18](EVIDENCE_INDEX.md)、[E19](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：真实身份生命周期、权限角色、商家/门店数据范围、客服/运营/财务职责；租户开通及成员管理按平台定位。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；权限扩大和撤销不及时；不可把前端菜单控制当授权。
-- **Dependency**：确认租户与商家的关系、身份平台和职责矩阵；外部联调仍后置。
-- **Trigger Condition**：对外开放真实账号或同租户多个商家独立运营之前。
-- **Observable Acceptance**：商家A不能访问B的订单/商品/权益；客服不能审批资金操作；撤权后服务端拒绝。
+### MF02 数据生命周期与密钥治理（G08）
 
-### S03 数据保留、敏感信息访问与密钥恢复
+- capability / currentState：PARTIAL；终态事件/命令清理机制完成，默认关闭；新Journey步骤/会员行为持续增长。
+- problem / evidence：会员CLOSED不删除资料；地址密钥单一、写入版本1；保留依据未批准，E05/E16/E23/E35。
+- whyNeeded：长期增长、注销/删除请求和密钥轮换要求可以解释与执行。
+- proposedCapability / expectedBenefit：逐类保留/归档/删除与恢复传播；明确幂等及重放窗口；受控密钥版本与历史密文恢复。降低存储成本并保留必要账本证据。
+- businessValue / engineeringValue：客户资料处理可执行；不破坏业务防重与恢复。
+- complexity / risk：中至高；提前删账本/防重记录或丢密钥可能造成不可恢复影响。
+- dependency：业务保留依据和权限、MF01的隔离恢复验证；不能自行设统一期限。
+- class / priority / triggerCondition / status：MUST_FIX / P1 / 长期运行、敏感删除或密钥轮换前 / NEEDS_MORE_EVIDENCE（政策UNKNOWN）。
+- confidence：机制FACT；目标政策UNKNOWN。
 
-- **分类/优先级/状态**：MUST_FIX / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：地址加密已有；保留/删除传播、密钥轮换和授权解密未形成完整闭环。长期运营和真实发货缺少可执行的数据治理与恢复边界。
-- **Evidence / Why Needed**：[E05](EVIDENCE_INDEX.md)、[E21](EVIDENCE_INDEX.md)、[E24](EVIDENCE_INDEX.md)、[E34](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：明确各类数据保留依据、注销处理、授权解密审计、密钥版本轮换与隔离恢复验证。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中至大；删除破坏账本或密钥丢失导致历史地址不可恢复。
-- **Dependency**：业务/安全负责人确认期限与访问用途；不编造统一期限。
-- **Trigger Condition**：存储真实个人资料、WMS取得地址或开始长期运营之前。
-- **Observable Acceptance**：授权范围可验证；旧密文轮换后可读；恢复不复活应删除的在线数据。
+### MF03 运营分工与激励承诺（G05/G12）
 
-### T05 真实渠道接入与差异对账
+- capability / currentState：PARTIAL；商品范围授权、审批状态和审计已具备；营销能力全由ADMIN取得；赠券和礼包有明确现行行为。
+- problem / evidence：未建立编辑/审核/发布组织分工；赠券退款保留，多权益受理后分别到账，E08/E12/E14/E15/E23/E27/E30/E37。
+- whyNeeded：多人经营、高成本奖励或退款撤奖励/全礼包承诺必须有对应权限和处置口径。
+- proposedCapability / expectedBenefit：业务定义的权限/范围与职责分离；赠券/已消费奖励及礼包部分失败政策和可见处置；防止客户承诺与系统结果不一致。
+- businessValue / engineeringValue：运营可分工，激励成本可解释；策略验收锁定具体失败场景。
+- complexity / risk：中；未确认就禁止自批/回收资产会改变现有业务。
+- dependency：组织职责、奖品成本、退款与礼包兑现政策；现有台账/钱包/状态机继续作为权威。
+- class / priority / triggerCondition / status：MUST_FIX / P1 / 多运营团队或发布相关奖励承诺前 / NEEDS_MORE_EVIDENCE。
+- confidence：当前实现FACT；目标政策UNKNOWN；不是既有越权/错账判定。
 
-- **分类/优先级/状态**：MUST_FIX / P0（条件） / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：沙箱支付退款、未知状态查单和后台核对已有；无真实渠道账单导入与差错工单。本地订单支付成功不能作为真实收款证据；逐单查单不等于财务账单对账。
-- **Evidence / Why Needed**：[E24](EVIDENCE_INDEX.md)、[E28](EVIDENCE_INDEX.md)、[E32](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：保留现有状态机，分步完成支付退款适配、验签查单；再做日账单核对、差异处理与修复审计。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大，拆渠道适配验收、账单核对两个子成果；回调验签/金额不匹配、超时重复扣款、渠道账和业务账不一致。
-- **Dependency**：渠道、商户主体、凭据、S01及资金操作权限；不含实际付款授权。
-- **Trigger Condition**：真实收款/退款前；依用户此前要求，联调仍保持后置。
-- **Observable Acceptance**：重复/乱序/未知结果联调通过；每笔差异有状态、责任人和不可重复的处置。
+### MF04 真渠道明确拒绝与财务差错闭环（G13）
 
-### O01 业务指标、告警与故障恢复验收
-
-- **分类/优先级/状态**：MUST_FIX / P0（条件） / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：日志/traceId/health、事件隔离列表已有；无本次生产指标和恢复实测证据。异常可能长时间无人发现；不能承诺生产可用性或恢复时间。
-- **Evidence / Why Needed**：[E28](EVIDENCE_INDEX.md)、[E29](EVIDENCE_INDEX.md)、[E30](EVIDENCE_INDEX.md)、[E31](EVIDENCE_INDEX.md)、[E34](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：订单/支付未知/权益补偿/旅程积压告警和处置入口；明确SLO/RTO/RPO后做容量及隔离恢复演练。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中至大，拆业务监测、隔离恢复和容量验收；监控高基数、演练污染共享数据、只恢复DB却丢地址密钥。
-- **Dependency**：环境授权、业务目标、真实负载分布；不触碰共享/生产恢复目标。
-- **Trigger Condition**：无人值守真实运行或承诺生产服务之前。
-- **Observable Acceptance**：故障注入触发可处置告警；隔离恢复可读业务数据并续跑任务；记录实测而非估算。
+- capability / currentState：PARTIAL；持久UNKNOWN/SUCCEEDED退款、查单和总额约束已具备。
+- problem / evidence：RefundService.reconcileInternal只将SUCCEEDED推进，其他proof保留UNKNOWN；尚无确定拒绝后的额度/售后处置及账单差错闭环，E21。
+- whyNeeded：真实渠道可能明确拒绝；必须区分仍未知和权威确定失败。
+- proposedCapability / expectedBenefit：按真实合同建模确定拒绝、金额额度处理、重发或人工处置及账单核对；保留UNKNOWN安全语义。避免真拒绝长期卡住且不发生重复退款。
+- businessValue / engineeringValue：资金事实和客服处置可闭环；验证未知/拒绝/迟到结果的相容性。
+- complexity / risk：高；失败终态和重发政策涉及资金不变量，不能只添加枚举。
+- dependency：NE05真实渠道合同、售后政策、渠道账单和幂等范围。
+- class / priority / triggerCondition / status：MUST_FIX / P1 / 按既定后置安排开展真实资金联调前 / DISCOVERED。
+- confidence：当前分支FACT；真实渠道行为NEEDS_VERIFICATION。
 
 ## Natural Evolution
 
-### M01 会员档案与生命周期
+### NE01 接入应用、主体与商品共享边界（G01）
 
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：BASIC：管理员创建、主体绑定、查询；状态有ACTIVE/FROZEN，但无对应管理迁移入口。运营无法正常维护会员；冻结仅有数据模型，不能形成受控业务操作。
-- **Evidence / Why Needed**：[E01](EVIDENCE_INDEX.md)、[E02](EVIDENCE_INDEX.md)、[E05](EVIDENCE_INDEX.md)、[E26](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：可维护档案、联系方式验证、冻结/解冻、注销受理、状态历史；明确注销后的订单和账本保留边界。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中；冻结不能破坏历史查询；注销不能抹除仍需保留的业务事实。
-- **Dependency**：身份归属和资料所有权确认；与S01协同。
-- **Trigger Condition**：真实会员持续入驻、资料维护或客服介入。
-- **Observable Acceptance**：修改可审计；冻结后拒绝新交易；本人能查询允许保留的历史；注销流程有明确终态。
+- capability / currentState：PARTIAL；已有租户/主体/角色/销售渠道与本地会员/店铺商品。
+- problem / evidence：无调用应用和外部ID映射，商品主档随店铺，E05/E09/E30/E36。
+- whyNeeded：这是“多个项目复用会员/商品/营销”的业务目标仍未兑现的部分。
+- proposedCapability / expectedBenefit：明确租户/应用/组织、平台会员与外部主体、商品主档与可售关系、授权共享与退出政策；第二项目接入不复制权威业务。
+- businessValue / engineeringValue：可真实复用数据/资产；契约和数据所有权清楚。
+- complexity / risk：高；错误合并会员或隐式共享数据不可接受。
+- dependency：第二接入项目、主数据权威、共享授权政策；不依赖先拆服务。
+- class / priority / triggerCondition / status：NATURAL_EVOLUTION / P1 / 选定第二项目或同主档多渠道经营 / RECOMMENDED（先发现/明确边界）。
+- confidence：现状FACT；完整目标INFERRED，具体接入范围UNKNOWN。
 
-### M02 等级、成长值与等级权益
+### NE02 合作方可信事实与结果交付（G02）
 
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：BASIC：memberLevel是创建时传入的字符串；券/权益钱包已有，但不是等级成长体系。无法根据消费持续运营会员，等级事实依赖人工输入。
-- **Evidence / Why Needed**：[E01](EVIDENCE_INDEX.md)、[E02](EVIDENCE_INDEX.md)、[E12](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：等级定义、成长规则、评定周期、升级/保级/降级、变更历史、等级权益绑定。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中至大；退款冲正和跨周期重评不能重复计入；等级权益不等同现金。
-- **Dependency**：M01；确认支付、完成订单或售后期后的成长口径。
-- **Trigger Condition**：业务确认要按消费或行为做等级运营。
-- **Observable Acceptance**：同一交易重复到达只计一次成长；退款与跨期规则有例子；等级变化及权益可追溯。
+- capability / currentState：PARTIAL；内部可靠事件和本地订单API已有。
+- problem / evidence：成长、旅程和效果仍依赖本地订单事实，无外部事实/交付完整链，E04/E06/E23/E26/E36。
+- whyNeeded：接入方应可保留自己的交易系统。
+- proposedCapability / expectedBenefit：应用范围下的外部订单/退款/行为事实、版本/幂等/乱序/核对和可靠结果交付；以第二应用完成积分或营销纵向复用验收。
+- businessValue / engineeringValue：中台可供独立业务使用；内外契约的保障范围可测试。
+- complexity / risk：高；不可信来源会污染账本/资格，不能接收任意自报金额。
+- dependency：NE01；外部事实来源、接口/事件合同和授权；不预设Webhook、Broker或新服务为最终技术。
+- class / priority / triggerCondition / status：NATURAL_EVOLUTION / P1 / 第二项目继续自持订单或其他权威事实 / RECOMMENDED。
+- confidence：仓库缺口INFERRED。
 
-### M03 积分账户与积分生命周期
+### NE03 自营持久购物闭环（G03/G04）
 
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P2 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：ABSENT：未发现积分账户、积分来源批次和到期作业；现有内部权益units不能直接当积分。无法开展可核算的积分奖励和积分消费。
-- **Evidence / Why Needed**：[E05](EVIDENCE_INDEX.md)、[E12](EVIDENCE_INDEX.md)、[E23](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：积分获取、冻结/解冻、抵扣/兑换、来源账本、到期、退款返还/冲正和人工调整审批。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；重复奖励、过期积分返还和消费后退款产生损失；不引入储值现金语义。
-- **Dependency**：M01、S03；确认有效期、退款和负余额政策。
-- **Trigger Condition**：有明确积分计划、兑换政策和成本承担方。
-- **Observable Acceptance**：余额与流水守恒；并发兑换不超额；到期与退款重试不重记。
+- capability / currentState：BASIC/PARTIAL；已能搜索/加购物袋/报价/下单/支付/履约/售后。
+- problem / evidence：购物袋仅React状态；每单重填地址；报价无配送费用，E19/E20/E22/E31。
+- whyNeeded：自营商城是实际应用，跨会话续购和配送是自然购物需求。
+- proposedCapability / expectedBenefit：数据库购物车、地址簿、配送范围/运费与快照、失效商品处理；物流/售后必要资料按实际政策加入。会员能持续购物，订单金额可核对。
+- businessValue / engineeringValue：减少中断购物和手工客服；复用现有可信报价/事务预占。
+- complexity / risk：中；新增运费影响退款分摊与历史兼容，需明确政策。
+- dependency：商品类型、配送/运费/退款政策；地址资料保护；不要求立刻真实WMS联调。
+- class / priority / triggerCondition / status：NATURAL_EVOLUTION / P1 / 自营商城继续建设为实际购物应用 / RECOMMENDED。
+- confidence：现状FACT；目标INFERRED。
 
-### M04 会员标签、行为摘要与360视图
+### NE04 运营导入、媒体与资料质量（G09/G10）
 
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：ABSENT：未发现标签定义、行为采集或累计消费特征；目前只读取等级与本单金额。运营难以识别新客、复购客、沉睡客和高价值会员。
-- **Evidence / Why Needed**：[E01](EVIDENCE_INDEX.md)、[E06](EVIDENCE_INDEX.md)、[E10](EVIDENCE_INDEX.md)、[E13](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：先形成受治理标签和订单行为摘要，再汇总会员交易、券、权益、旅程、售后视图。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中至大；退款后指标口径错误；过时画像不能承担强一致资格判断。
-- **Dependency**：M01；标签口径、更新时间、来源权限明确。
-- **Trigger Condition**：需要按历史行为做分群或客服需要会员全景。
-- **Observable Acceptance**：标签能回溯来源和时间；订单退款后累计指标按口径修正；只展示授权范围。
+- capability / currentState：PARTIAL；定时经营、动态分群、批量发券可恢复；图片URL/固定名单单批500/商品任务100。
+- problem / evidence：缺文件/合作方建档和媒体上传完整任务链，E09–E11/E13/E25。
+- whyNeeded：实际运营需要持续上新或批量维护。
+- proposedCapability / expectedBenefit：首个明确导入场景的校验/预览/逐项结果/检查点/取消恢复；运营媒体引用和资料质量检查；提高维护效率且可核对部分成功。
+- businessValue / engineeringValue：减少人工重复操作；避免盲目扩大请求及事务边界。
+- complexity / risk：中；导入不能默默覆盖运营版本或把脏输入当权威。
+- dependency：真实文件样本、更新/冲突规则、输入版本和配额；任务查询复用PL01。
+- class / priority / triggerCondition / status：NATURAL_EVOLUTION / P2 / 出现真实文件维护或超过单批的需求 / DISCOVERED。
+- confidence：INFERRED。
 
-### C01 商品主数据与SPU/SKU规格体系
+### NE05 外部身份和渠道适配验收（G13）
 
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：BASIC：SKU只有店铺、标题、单价、版本和状态。无法完整表达多规格、分类检索和可展示的商品内容。
-- **Evidence / Why Needed**：[E03](EVIDENCE_INDEX.md)、[E04](EVIDENCE_INDEX.md)、[E05](EVIDENCE_INDEX.md)、[E26](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：类目、品牌、属性、规格组合、商品与SKU关系、条码、图文媒体、销售单位和必要扩展属性。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；规格变更不能重写历史SKU含义；避免无约束属性JSON。
-- **Dependency**：业务确认商品类型、类目所有权和销售单位；媒体治理边界。
-- **Trigger Condition**：真实商品目录上线或出现规格/类目管理需求。
-- **Observable Acceptance**：同商品多规格独立定价与库存；类目属性可验证；历史订单名称与规格快照保留。
+- capability / currentState：PARTIAL；本地身份、沙箱和领域端口已经建设。
+- problem / evidence：真实IdP、支付/退款、权益和WMS尚未验收，E21/E22/E30/E35/E36。
+- whyNeeded：真实收款、发货和身份认证必须依赖可验证外部事实。
+- proposedCapability / expectedBenefit：主体合同、验真/查单、幂等/重复乱序/超时、授权地址披露、对账和故障恢复；验证生产外部保障范围。
+- businessValue / engineeringValue：允许真实业务经营；保持当前本地一致性设计的有效边界。
+- complexity / risk：高；需真实权限/密钥/沙箱及业务政策。
+- dependency：MF01–MF04相关门槛与外部合同；地址密钥轮换归MF02。
+- class / priority / triggerCondition / status：NATURAL_EVOLUTION / P1 / 遵守用户“整体建设后联调”的既有安排 / DISCOVERED（明确后置）。
+- confidence：现有端口FACT；外部认证NEEDS_VERIFICATION。
 
-### C02 商品编辑、上下架和价格版本治理
+### NE06 规则判定证据与发布前样本比较（G11）
 
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：BASIC：创建即ACTIVE且revision=1；未发现更新、审核、上架/下架及调价用例。运营无法正常修订价格、纠错商品或停止新销售。
-- **Evidence / Why Needed**：[E03](EVIDENCE_INDEX.md)、[E04](EVIDENCE_INDEX.md)、[E10](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：草稿编辑、审核、发布/下架、变更历史、基础价格生效时间；明确在途报价兼容规则。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中；下架后旧报价是否可成交需明确，不能随意改历史价格。
-- **Dependency**：C01边界；复用现有报价/订单快照。
-- **Trigger Condition**：商品和价格需要日常维护。
-- **Observable Acceptance**：新报价读取当前发布价；旧成交快照不变；并发发布只有一个合法版本。
+- capability / currentState：PARTIAL；纯预览、固定版本、Truth/actionRef/步骤历史已具备。
+- problem / evidence：历史无完整Facts；重预览当前状态不能复现过去输入，E12/E23/E24。
+- whyNeeded：高成本规则、决策申诉或运营需要评估版本差异。
+- proposedCapability / expectedBenefit：按最小必要范围保留事实版本/判定摘要，治理样例和版本差异，支持历史样本验证；在隐私/存储成本可接受时提升解释能力。
+- businessValue / engineeringValue：运营可解释误命中；规则演进可核对；不等同自动全程replay。
+- complexity / risk：中；增加敏感快照和保留成本，不能默认全量复制个人数据。
+- dependency：事实口径、MF02生命周期、明确的解释/仿真用例。
+- class / priority / triggerCondition / status：NATURAL_EVOLUTION / P2 / 真实决策申诉或复杂高成本发布 / DISCOVERED。
+- confidence：FACT＋INFERRED。
 
-### C03 商品查找、筛选与有界批量维护
+### NE07 后端供应链证据与有用的边界门禁（G14）
 
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：BASIC：按店铺与SKU游标列表；未发现商品搜索、类目筛选和批量导入结果管理。目录增长后运营难以找到和批量维护商品。
-- **Evidence / Why Needed**：[E03](EVIDENCE_INDEX.md)、[E04](EVIDENCE_INDEX.md)、[E25](EVIDENCE_INDEX.md)、[E26](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：关键词/类目/状态筛选、商品详情、批量导入校验/错误报告/重试；多价格表另按需求启动。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中；重复导入和部分成功造成脏数据；搜索结果不可作为库存权威。
-- **Dependency**：C01、C02；大批次时依赖P01。
-- **Trigger Condition**：已有目录规模使逐条创建/首批列表不能满足工作。
-- **Observable Acceptance**：筛选稳定分页；同文件重试不重复建SKU；逐行失败可修复且可追踪。
-
-### K01 动态分群与人群刷新
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：上传固定memberIds，单批最多500；最长24小时的新鲜度窗口；非动态人群计算。人工名单难以持续执行新客、复购、沉睡唤醒等运营。
-- **Evidence / Why Needed**：[E06](EVIDENCE_INDEX.md)、[E07](EVIDENCE_INDEX.md)、[E26](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：基于受治理标签/交易行为定义分群，预估规模、周期/事件刷新、版本血缘和过期策略。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；重复/迟到事件与标签过期使人群不准确；不能直接取消现有限额。
-- **Dependency**：M04；稳定事件/特征口径；明确快照与实时资格语义。
-- **Trigger Condition**：活动需要持续按行为识别会员，或名单维护超过人工能力。
-- **Observable Acceptance**：相同输入版本可解释同一名单；历史活动可回溯人群；刷新失败有可见陈旧状态。
-
-### K02 促销范围与组合策略
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：单活动择优；满额固定减免/百分比封顶；一张券可叠加或择优。无法覆盖常见指定商品促销和多种优惠共存政策。
-- **Evidence / Why Needed**：[E08](EVIDENCE_INDEX.md)、[E09](EVIDENCE_INDEX.md)、[E10](EVIDENCE_INDEX.md)、[E11](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：SKU/类目适用范围、排除品、阶梯门槛、活动互斥组/优先级；按确认需求扩展组合，先明确退款分摊。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；组合爆炸、最优价解释困难、退款分摊不守恒。
-- **Dependency**：C01；优惠口径、资方和售后规则。
-- **Trigger Condition**：出现现有单活动加单券无法表达的真实活动。
-- **Observable Acceptance**：给定活动组合有确定报价及排除原因；订单和部分退款每分金额可核对。
-
-### K03 优惠券运营生命周期
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P2 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：店铺满减券、固定有效期、配额、每会员每版本一张及预占/退回已有。无法方便执行生日券、补偿券、批量召回和多次奖励等运营。
-- **Evidence / Why Needed**：[E11](EVIDENCE_INDEX.md)、[E07](EVIDENCE_INDEX.md)、[E23](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：按人群定向发券、发券批次、领取窗口与使用窗口分离、相对有效期、领取次数策略、停发/撤销及影响审计。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中至大；已使用/预占券不能强制回收；批量失败不能重复发券。
-- **Dependency**：M01、K01或明确名单、S03；大批量依赖P01。
-- **Trigger Condition**：活动确认需要当前领取模式之外的发券方式。
-- **Observable Acceptance**：可追踪每批每会员结果；取消批次不抹去已使用事实；重试不超配额。
-
-### K04 事件触发与可恢复旅程扩展
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：已有持久DAG、等待/判断/权益/站内通知/结束；仅手工和支付触发。现有旅程无法直接覆盖常规获客、留存和召回场景。
-- **Evidence / Why Needed**：[E13](EVIDENCE_INDEX.md)、[E14](EVIDENCE_INDEX.md)、[E28](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：按场景增加注册、生日、复购、弃购触发；重复入组/再入组、等待事件、退出条件和业务频控。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；同会员多旅程竞争、重复事件重复激励、退款后继续触达。
-- **Dependency**：M01/M04/K01中所需事实；T01支持弃购时。
-- **Trigger Condition**：至少一个具体生命周期运营旅程获得业务确认。
-- **Observable Acceptance**：事件重复仅产生允许的实例；全局退出与活动频控生效；暂停/恢复可解释。
-
-### K05 多渠道触达与偏好治理
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：NOTIFY仅写journey_notification；未发现短信/邮件/Push渠道、退订和跨旅程频控。站内消息无法覆盖离站触达，也无法证明外部发送效果。
-- **Evidence / Why Needed**：[E13](EVIDENCE_INDEX.md)、[E14](EVIDENCE_INDEX.md)、[E17](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：先选择一种真实渠道，建立模板、发送任务、回执、失败恢复、会员偏好/退订、静默时段和统一频控。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；退订后仍发送、重试重复发送、已受理结果未知；外部发送需另行授权。
-- **Dependency**：会员有效联系方式、业务确认的触达依据/偏好；S01；渠道合同。
-- **Trigger Condition**：需要真实站外触达；此前只维护站内体验。
-- **Observable Acceptance**：发送前执行偏好/频控；回执重复不重记；退订后拦截后续发送；未知结果可查询。
-
-### K06 营销经营指标与效果归因
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：ABSENT：已有报价trace、预算用量和旅程状态，未发现曝光点击转化漏斗、ROI或实验归因模型。能执行活动但难以判断净收益、复购改善及浪费。
-- **Evidence / Why Needed**：[E09](EVIDENCE_INDEX.md)、[E10](EVIDENCE_INDEX.md)、[E11](EVIDENCE_INDEX.md)、[E13](EVIDENCE_INDEX.md)、[E15](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：先定义活动参与/领用券/支付/退款/成本口径及汇总；再按采集条件建设触达转化链和归因窗口。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中至大；把相关交易都归因活动、漏扣退款、重复事件夸大效果。
-- **Dependency**：稳定活动版本、交易/退款/成本事实；渠道指标依赖K05。
-- **Trigger Condition**：运营需要比较活动或管理营销投入。
-- **Observable Acceptance**：仪表盘指标可追溯订单和成本；退款回冲一致；缺采集数据明确展示未知。
-
-### T01 购物车、地址簿与配送计价
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：前端内存购物袋、单店报价和下单地址；无持久购物车/地址簿/运费模型。刷新丢购物袋，重复填地址，实物订单难以完整计算应付。
-- **Evidence / Why Needed**：[E10](EVIDENCE_INDEX.md)、[E21](EVIDENCE_INDEX.md)、[E25](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：持久购物车、地址簿、配送地区/方式、运费模板及报价分项；税费/发票按经营地区确认。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；运费与优惠顺序、部分退款退运费规则不明确。
-- **Dependency**：C01/C02、地址治理、配送政策；与当前支付/退款金额契约兼容。
-- **Trigger Condition**：需要可持续使用的消费者购物流程或真实实物配送。
-- **Observable Acceptance**：跨会话恢复购物车；运费计入应付与退款快照；不可配送地址在支付前拒绝。
-
-### T02 包裹、逆向物流和售后运营
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：单订单物流号、发货/签收、按行部分退货退款已有。真实履约异常和复杂售后仍需系统外处理。
-- **Evidence / Why Needed**：[E22](EVIDENCE_INDEX.md)、[E23](EVIDENCE_INDEX.md)、[E24](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：按实际需求补包裹拆分、物流轨迹/异常、退货单号、售后证据、处理时限和客服沟通；换货另立完整流程。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；发货退款竞争、重复收货和包裹汇总状态冲突。
-- **Dependency**：S01/S03、WMS/物流契约；不要遗漏已有部分退款能力。
-- **Trigger Condition**：真实物流接入；部分发货或售后争议成为实际需求。
-- **Observable Acceptance**：多包裹状态可追溯；重复物流回执幂等；退款与真实退货数量一致。
-
-### T03 多仓库存与作业协同
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P2 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：店铺SKU可售额度已有；非实物仓储系统。仅可售额度不能承担仓内作业和多仓分配。
-- **Evidence / Why Needed**：[E20](EVIDENCE_INDEX.md)、[E22](EVIDENCE_INDEX.md)、[E24](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：明确库存权威归属；必要时增加仓库维度、调拨/盘点/调整、库存流水、预警及WMS差异对账。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；平台和WMS双重扣减、调拨途中的可售计算错误。
-- **Dependency**：C01、库存所有权与单位；T02。
-- **Trigger Condition**：确实有多仓/实物作业；若由WMS承担则优先只接契约和投影。
-- **Observable Acceptance**：每笔调整有原因和流水；同一实物只有一个写入权威；差异可定位。
-
-### T04 商家入驻、合同与结算
-
-- **分类/优先级/状态**：NATURAL_EVOLUTION / P1（条件） / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：BASIC：商家名称、店铺归属；营销资方分摊已有，但无商家应付/结算账单。不能仅凭营销分摊快照给商家出具应收应付及结算。
-- **Evidence / Why Needed**：[E18](EVIDENCE_INDEX.md)、[E19](EVIDENCE_INDEX.md)、[E10](EVIDENCE_INDEX.md)、[E23](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：多商家场景增加入驻审核、合同/费率/账户、佣金、结算周期、冻结款、账单及退款调整；分账按收款模式单独确认。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大，至少拆入驻、账单、出款三个子成果；退款跨账期、重复出款、把平台补贴等同结算。
-- **Dependency**：S01、真实收款主体与合同、T05；依次入驻→账单→出款。
-- **Trigger Condition**：平台实际管理独立商家和代收/结算；自营场景可延后。
-- **Observable Acceptance**：账单可追溯交易/佣金/退款；跨期调整独立记账；出款重试不重复。
+- capability / currentState：PARTIAL；真实DB/E2E/jdeps CI与npm audit已运行。
+- problem / evidence：工作流未包含后端完整依赖风险/SBOM门禁；jdeps不检查SQL语义，E32/E33。
+- whyNeeded：发布治理需要知道交付了什么依赖，并拦截真实所有权回归。
+- proposedCapability / expectedBenefit：后端依赖风险和制品清单证据、必要例外治理；按实际越界风险补SQL写入/契约兼容检查。可评估发布风险，减少手工查漏。
+- businessValue / engineeringValue：发布证据更完整；不依赖堆覆盖率或引入完整质量平台。
+- complexity / risk：低至中；误报/失效数据库需要治理，不应静默忽略或顺手全仓升级。
+- dependency：现有CI与依赖管理，实际边界/契约约束。
+- class / priority / triggerCondition / status：NATURAL_EVOLUTION / P2 / 明确供应链发布要求或出现真实边界回归 / DISCOVERED。
+- confidence：配置FACT；未认定具体漏洞。
 
 ## Platformization Opportunities
 
-### S02 审计查询与审批职责分离
+### PL01 统一运营任务查询与恢复入口（G09）
 
-- **分类/优先级/状态**：PLATFORMIZATION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：命令审计和活动/旅程/页面审批状态已有；审计字段少，角色统一ADMIN。能记录命令不等于运营可追责，也不等于真正的复核控制。
-- **Evidence / Why Needed**：[E05](EVIDENCE_INDEX.md)、[E08](EVIDENCE_INDEX.md)、[E13](EVIDENCE_INDEX.md)、[E15](EVIDENCE_INDEX.md)、[E16](EVIDENCE_INDEX.md)、[E27](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：审计查询/导出、资源与变更摘要、敏感操作理由、审批人约束及必要的创建/审批职责分离。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中；记录敏感原文泄漏；公共审批改造误改现有状态机。
-- **Dependency**：S01；先统一权限/审计契约，不预设通用BPM引擎。
-- **Trigger Condition**：多运营人员协作、需要敏感变更复核；相似审批已存在三个模块。
-- **Observable Acceptance**：可查谁在何时改了哪个资源；按政策阻止自审；审批记录对应发布版本。
-
-### P01 可恢复批量运营任务
-
-- **分类/优先级/状态**：PLATFORMIZATION / P2 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：旅程/事件有检查点；商品导入、人群刷新、批量发券尚无统一运营任务结果。大批运营操作没有可追踪部分失败与安全重试入口。
-- **Evidence / Why Needed**：[E07](EVIDENCE_INDEX.md)、[E13](EVIDENCE_INDEX.md)、[E28](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：按首个真实批量场景抽取任务状态、进度、逐项结果、暂停/取消、重试、输入版本和租户配额。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中至大；取消被误解为撤销已提交效果；重试重复发奖。
-- **Dependency**：C03/K01/K03中被选中的实际需求。
-- **Trigger Condition**：至少两个已确认批量用例出现共性；首个用例先有界实现。
-- **Observable Acceptance**：任务中断恢复无遗漏/重复效果；可查逐项结果；单租户任务不饿死其他租户。
-
-### P02 规则模拟、解释与版本治理
-
-- **分类/优先级/状态**：PLATFORMIZATION / P2 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：AST、规则资产版本、可视编辑、报价命中trace已有；未发现运营批量仿真与新旧版本比较。扩展规则前难以量化误命中与优惠成本变化。
-- **Evidence / Why Needed**：[E06](EVIDENCE_INDEX.md)、[E09](EVIDENCE_INDEX.md)、[E35](EVIDENCE_INDEX.md)、[E37](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：可信事实目录、测试样例、历史样本回放、发布前效果差异、规则审批与回退适用边界。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：中；模拟误发权益、把历史回放当真实实验效果。
-- **Dependency**：M04/C01中真正所需事实；脱敏样本和稳定版本。
-- **Trigger Condition**：规则被营销/旅程共同维护，且变更风险超出人工样例检查。
-- **Observable Acceptance**：仿真无业务副作用；输入版本和命中解释可重现；版本差异可审查。
-
-### P03 外部业务接入契约与交付事件
-
-- **分类/优先级/状态**：PLATFORMIZATION / P1 / RECOMMENDED（条件成立时）；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：PARTIAL：内部Java边界和登录态HTTP接口已有；未发现面向合作方的应用凭据、Webhook订阅和交付记录。当前接口不能直接等同可供第三方集成的开放平台。
-- **Evidence / Why Needed**：[E16](EVIDENCE_INDEX.md)、[E17](EVIDENCE_INDEX.md)、[E24](EVIDENCE_INDEX.md)、[E28](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：按中台核心场景定义稳定接口/事件版本、接入应用授权、外部主体/商品/业务单据标识映射、幂等、配额和交付追踪；Webhook在消费方需要推送时补签名/重放。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：大；把内部事件直接外发泄漏数据；对方失败造成无限重试。
-- **Dependency**：S01/S02；消费方合同；保留外部联调后置安排。
-- **Trigger Condition**：长期多项目复用目标已由用户确认，契约与应用隔离规划现在前移；真实第二项目接入仍需选定项目与接口合同。
-- **Observable Acceptance**：第二独立应用无需复制核心代码或直连表；共享能力按授权生效、非共享数据隔离；外部编号不误合并；重复/乱序不重发奖励；契约版本可共存。
+- capability / currentState：PARTIAL；商品job、人群run、发券batch、Journey scan都有持久进度/结果/控制，公共调度和恢复机制已有。
+- problem / evidence：四类任务各有API/页面和结果字段，运营需在多个入口判断进度与部分失败，E10/E13/E23/E25/E18。
+- whyNeeded：重复“查进度/定位失败/核对取消或恢复”需求已出现，适合复用操作体验。
+- proposedCapability / expectedBenefit：统一有界任务查询、状态说明、来源链接和受权限约束的恢复入口；业务状态/重试仍由原owner处理，减少运营跳转。
+- businessValue / engineeringValue：操作效率和恢复可见性提高；不重新发明共享调度器或统一所有业务状态机。
+- complexity / risk：中；统一取消不能误称撤销已提交效果，不能让公共中心绕过领域权限。
+- dependency：现有领域端口/WorkLanes/Recovery与组织权限MF03，明确运营使用场景。
+- class / priority / triggerCondition / status：PLATFORMIZATION / P2 / 运营频繁跨任务排障，或首个新导入场景接入 / DISCOVERED。
+- confidence：重复能力FACT；统一入口收益INFERRED。
 
 ## Exploration Opportunities
 
-### X01 拼团、秒杀、邀请裂变、订阅/付费会员
+### X01 经营实验与完整成本评估（G11）
 
-- **分类/优先级/状态**：EXPLORATION / P3 / NEEDS_MORE_EVIDENCE；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：ABSENT：当前无相关业务状态机与退款/奖励规则。可能带来增长，也显著增加库存、资金和奖励的失败场景。
-- **Evidence / Why Needed**：[E01](EVIDENCE_INDEX.md)、[E08](EVIDENCE_INDEX.md)、[E09](EVIDENCE_INDEX.md)、[E21](EVIDENCE_INDEX.md)、[E23](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：从一个有获客/留存目标的玩法开始，每种独立确认成团、超时、资格、成本与退款政策。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：每种中至大，不能算一个小功能；无需求堆玩法、补贴滥用、取消后奖励难追回。
-- **Dependency**：C02、K02、K07、T05、K06中相关能力。
-- **Trigger Condition**：明确玩法负责人、目标指标、投入上限和试点样本。
-- **Observable Acceptance**：试点有基线、停用条件与成本核算；非法状态、超时退款、重复奖励有验收。
+- capability / currentState：PARTIAL；已有描述性活动/旅程/发券队列、净收款和优惠承担。
+- problem / evidence：接口明确不提供因果提升、全成本利润/ROI，E26。
+- whyNeeded：只有业务真的要按增量收益选策略时需要。
+- proposedCapability / expectedBenefit：经业务接受的分组/观察窗口、样本与指标口径、完整成本数据；能回答策略增量效果而不是只比较成交量。
+- businessValue / engineeringValue：可能提高奖励预算效率；评估结果可解释。
+- complexity / risk：高；样本偏差/跨组干扰及成本数据缺失会制造虚假结论。
+- dependency：明确的经营问题、可接受实验方案、成本权威、可信事实和MF02。
+- class / priority / triggerCondition / status：EXPLORATION / P3 / 确定经营优化目标且数据足够 / NEEDS_MORE_EVIDENCE。
+- confidence：现接口边界FACT；收益INFERRED。
 
-### X02 Drools接入或旧规则迁移
+### X02 多仓、商家结算或特殊玩法（G15）
 
-- **分类/优先级/状态**：EXPLORATION / P3 / NEEDS_MORE_EVIDENCE；confidence：INFERRED（建议），现状证据FACT。
-- **Current State / Problem**：ABSENT：当前明确使用受限AST；旧规则未迁入，另有历史迁移门禁。更换引擎不自动获得会员画像、优惠组合、触达或归因能力。
-- **Evidence / Why Needed**：[E06](EVIDENCE_INDEX.md)、[E09](EVIDENCE_INDEX.md)、[E35](EVIDENCE_INDEX.md)；上述边界使本项触发场景无法形成完整工作闭环。
-- **Proposed Capability**：仅在现有规则表达受阻或必须兼容旧规则时评估引擎接入和规则语义验证。
-- **Value**：业务价值是消除上述运营/接入阻碍；工程价值是把该场景的状态、来源、失败和恢复转为可验证契约。
-- **Complexity / Risk**：未知至大，取决于存量规则语义；金额舍入、执行顺序和副作用语义变化；双引擎并存增加维护成本。
-- **Dependency**：P02；旧规则证据/授权；不继承本次分析为迁移许可。
-- **Trigger Condition**：有具体AST无法表达的规则清单，或批准的旧规则兼容任务。
-- **Observable Acceptance**：新旧规则样本差异可解释；资源有界；引擎失效不默认放行。
+- capability / currentState：BASIC/ABSENT；当前库存为店铺SKU可售额度，商家为基础资料。
+- problem / evidence：未发现仓内作业、应付结算或特殊玩法生命周期，E08/E20/E22。
+- whyNeeded：仅在对应业务明确进入范围时。
+- proposedCapability / expectedBenefit：一次选择一个已确认业务，定义权威、状态、资金/库存及退款恢复；支持该经营场景。
+- businessValue / engineeringValue：潜在业务扩展；不会把营销分摊冒充商家财务。
+- complexity / risk：高；新增资金/实物权威和多个失败边界。
+- dependency：合同/收款主体/库存权威/具体玩法政策，可能依赖NE05。
+- class / priority / triggerCondition / status：EXPLORATION / P3 / 第三方商家、多仓或玩法有明确业务目标 / NEEDS_MORE_EVIDENCE。
+- confidence：仓库缺失INFERRED，业务需求UNKNOWN。
 
 ## Not Recommended Now
 
-| 项目 | 状态 | 当前不做的理由 | 重启条件 |
-|---|---|---|---|
-| 因“企业级”直接拆微服务/Kubernetes | NOT_RECOMMENDED_NOW | 已有模块化单体与同库事务；当前主要缺业务功能 | 独立团队/发布/扩容/故障隔离有真实收益证据 |
-| 立即替换AST为Drools或复制旧引擎 | NOT_RECOMMENDED_NOW | 缺字段、人群、玩法和经营闭环，换引擎不自动补功能；旧迁移独立受控 | X02触发且语义回归证据充分 |
-| 同时建设Kafka、RabbitMQ、Redis、ES | NOT_RECOMMENDED_NOW | 当前Outbox与MySQL可支撑已知流程，没有规模测量支持全套引入 | 具体查询/吞吐/重放/延迟问题被证实 |
-| 先做CDP、数据湖、数仓、实时推荐 | NOT_RECOMMENDED_NOW | 行为口径、身份和基础数据尚不完整 | 稳定多源数据、分析需求、规模及延迟目标明确 |
-| 一次补齐所有促销玩法 | NOT_RECOMMENDED_NOW | 每种有独立资金库存与退款状态，不是几个前端开关 | X01选择具体玩法且可衡量收益 |
-| 先建万能低代码/BPM/规则平台 | NOT_RECOMMENDED_NOW | 已有受控页面与有限审批，不需要任意代码执行和全行业流程 | 多个真实业务确实需要共同扩展能力 |
-| 直接建AI运营自动决策 | NOT_RECOMMENDED_NOW | 缺经营反馈和数据口径；资金/资格错误成本高 | 数据/权限/评测成熟，选可审阅且有业务收益的场景 |
-| 自建完整WMS/ERP替代外部系统 | NOT_RECOMMENDED_NOW | 可售额度不等于仓内管理；同工作区其他仓库不代表已集成 | 所有权确认后仍有明确缺口且复用/接入不能满足 |
-| 默认加入储值、多币种、跨境税务 | NOT_RECOMMENDED_NOW | 当前CNY且无这些业务要求；显著扩大责任与复杂度 | 明确经营范围、政策和支付/财务合同 |
+以下统一status=NOT_RECOMMENDED_NOW。
 
-评估结论：先选实际工作流补齐，保留现有幂等、快照、状态机、预算和补偿，避免通过替换架构重做已有能力。
+| 项目 | 现在不做的原因 | 重新评估触发 |
+|---|---|---|
+| 全量拆微服务/K8s | 当前同库事务承担库存/预算/积分/权益等不变量；没有独立扩容/团队边界实证 | 经容量/故障隔离/团队证据证明某边界抽取收益 |
+| 通用BPM、fan-out/in、子流程、人工任务/任意脚本 | 当前32节点单路径模型满足已批准旅程；新增语义带来新的失败/补偿成本 | 有不可由当前节点表达的真实流程和验收政策 |
+| 重建规则、权益或公共调度器 | RuleDecisionPort、领域API、WorkLanes和显式动作registry已使用 | 现有边界无法满足已确认场景，先证明缺口 |
+| 默认加Redis或两级缓存 | 当前事实/库存/资金依赖权威库；没有本轮命中收益及一致性容忍度证据 | 实测热点读取且可定义陈旧窗口和故障回源预算 |
+| 为替代可靠性直接上Kafka/RabbitMQ | 当前Outbox/Inbox及恢复有证据；Broker不会自动解决外部副作用 | 有独立消费/吞吐/保留/重放需求及端到端语义 |
+| 直接上ES、分库分表、Flink/数仓 | 搜索和报表有明确SQL边界；缺真实规模/业务功能驱动 | 执行计划与负载证明最小充分方案需要新组件 |
+| 无治理地提高人群500/任务100/候选100上限 | 输入大小不是唯一瓶颈；任务截止、版本、配额与同步扇出仍需验收 | 实际大名单/运营量，并完成有界导入及容量验证 |
+| 全Facts复制、Journey全程replay、自动重发资金动作 | 敏感数据、存储和副作用边界尚未授权；已有原节点恢复/查单 | 明确历史证据需求和领域安全合同 |
+| AI Agent/RAG/NL2SQL自动运营 | 无已确认场景；授权、事实口径、效果评估优先 | 有明确人工任务与可衡量价值，先从受权限的辅助场景评估 |
+| 默认上付费会员/储值/拼团/商家结算 | 不在已确认业务范围；不能因为“企业级”造需求 | 对应用户价值、成本与生命周期政策确认 |
+| 无门禁迁移旧规则 | README与既有记录仍为独立BLOCKED工作 | 原迁移门禁解除，规则语义和样本齐备 |
+
+候选选择交给用户业务目标；选定后进入相应设计/实现技能。本轮不把分析通过当作功能建设已获批准。

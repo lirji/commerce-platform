@@ -1,160 +1,117 @@
-# 能力探索证据索引
+# 能力缺口复核证据索引
 
-- 日期：2026-09-23
-- 项目：`/Users/liruijun/personal/LLM/commerce-platform`
-- 协议：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
-- 分析基线：HEAD `fb7adf6278ed98c49d8851102031b061bcbb68bf` 加当前工作树。开始时已有 `CommerceController.java`、`CampaignService.java` 两处未提交修改，属于既有内容。
-- 范围：源码、接口、Mapper、V1–V15迁移、前端、测试源码、CI配置与既有验收证据；只生成本目录分析产物。不执行产品修改、数据库写入、真实外部联调或生产操作。
-- 结论边界：源码已有能力标 `FACT`；“未发现完整能力”及建设建议标 `INFERRED`；运行可用性、生产规模和本次测试结果标 `NEEDS_VERIFICATION`。未查询实时数据库、未重跑测试或远程CI。
-- 已确认产品方向（用户，2026-09-23）：长期建设可供多个项目复用的会员、商品、营销能力中台，同时包含品牌自营商城＋会员运营。自营商城是实际业务应用，不仅是演示验证壳；第二接入项目及具体业务政策仍待设计。
+- generated_at：2026-09-27；workspace：`/Users/liruijun/personal/LLM/commerce-platform`
+- baseline：`7dda31ed017617f3701480f8a2d1620656c843cc`；开始时main与origin/main一致、无已有脏改动。
+- protocol：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
+- artifact：CAPABILITY_EXPLORATION_REPORT；task：CE-20260927。
+- scope：源码/配置/SQL与测试源码交叉检查；历史验收只归入历史证据。本轮未启动应用、写业务库、重跑产品测试/压测或联调渠道。
 
 ## Exploration Summary
 
-当前是**具备本地交易闭环、部分营销治理和一致性机制的业务基础版本**，尚不能按“完整企业级经营平台”评价。此前S0–S10完成表示批准切片已交付，不表示所有企业业务能力都已覆盖。会员和商品主要处在BASIC，营销处在PARTIAL；工程机制的完整程度高于业务功能广度。
+现有本地会员/商品/营销与交易能力已明显完善；主要剩余是中台复用、持续购物、运营及长期运行治理。先补这些目标，当前不建议通用BPM、全量拆服务或无依据新中间件。五份报告为本次唯一业务分析产物，正式设计/契约/旧证据不变。
 
-产品定位是“共享能力中台＋品牌自营商城应用”。会员、商品、营销负责可复用业务能力；自营商城承载消费者购物、订单、支付、配送、售后及品牌运营。建设同时补齐共享主数据与实际购物闭环，再深化会员营销，最终由第二独立应用验证复用。独立商家入驻、佣金结算和完整仓内作业仍按需建设。
+## Skill Sources
 
-## Finding / Capability / Evidence Index
+| 实际读取入口 | 本轮用途 |
+|---|---|
+| `~/.claude/skills/project-capability-exploration/SKILL.md`、`references.md`、`output-schema.md` | 主流程Phase 0–17、9维能力、四分类候选、触发条件、五份产物 |
+| `~/.claude/skills/project-capability-discovery/SKILL.md`、`references.md` | 业务/平台/技术真实性、模块与链路扫描方法 |
+| `~/.claude/skills/project-deep-analysis/SKILL.md`、`scan-checklist.md` | 事务、幂等、状态、失败恢复与数据模型的证据扫描 |
+| `~/.claude/skills/architecture-reviewer/SKILL.md`、`checklist.md` | 条件风险/故障维度；只复用方法，不重新写其历史风险报告 |
 
-表内行号对应本次读取的工作树；文件后续变化时按类/方法重新定位。SQL字段保存状态不等于状态迁移功能已实现。以下FACT仅说明代码/文档内容，不能推导生产已启用。
+这些Claude技能入口是指向`~/.cursor/skills`的链接；已经从Claude入口实际读取内容，不是复制名称，也不声称调用了Claude模型。目录中没有`~/.claude/dev-standards.md`；本轮按用户提供的AGENTS规范执行，未修改全局规范或技能。
 
-| ID | Finding / Capability | Evidence Type | File | Class | Method | Configuration / SQL·Table | Confidence |
-|---|---|---|---|---|---|---|---|
-| E01 | 会员仅创建、查询、主体绑定，等级为输入字段 | Source | [member/src/main/java/com/lrj/commerce/member/api/MemberApi.java:5](../../member/src/main/java/com/lrj/commerce/member/api/MemberApi.java#L5) | MemberApi | create/current/list | member_record | FACT |
-| E02 | 会员创建ACTIVE；无修改、冻结、注销公开用例 | Source | [member/src/main/java/com/lrj/commerce/member/application/MemberService.java:16](../../member/src/main/java/com/lrj/commerce/member/application/MemberService.java#L16) | MemberService | create/requireActive | member_record | FACT |
-| E03 | 商品创建只有SKU、店铺、标题、单价 | Source | [catalog/src/main/java/com/lrj/commerce/catalog/api/CatalogApi.java:6](../../catalog/src/main/java/com/lrj/commerce/catalog/api/CatalogApi.java#L6) | CatalogApi | create/list/published | catalog_sku | FACT |
-| E04 | 商品插入ACTIVE revision=1，Mapper仅插入和读取 | Mapper | [catalog/src/main/resources/mappers/catalog/CatalogMapper.xml:5](../../catalog/src/main/resources/mappers/catalog/CatalogMapper.xml#L5) | CatalogMapper | insert/list/batch | catalog_sku | FACT |
-| E05 | 主数据、凭据、审计表边界 | Migration | [commerce-app/src/main/resources/db/migration/V1__commerce_foundation.sql:12](../../commerce-app/src/main/resources/db/migration/V1__commerce_foundation.sql#L12) | — | — | platform_audit/platform_credential/member_record/catalog_sku | FACT |
-| E06 | 可信规则资产字段仅memberLevel和orderAmount | Source | [marketing-runtime/src/main/java/com/lrj/commerce/campaign/api/MarketingAssets.java:7](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/api/MarketingAssets.java#L7) | MarketingAssets | TRUSTED_FIELDS | marketing_rule_asset | FACT |
-| E07 | 人群为固定成员快照；最多500人；新鲜窗口最长24小时 | Source | [marketing-runtime/src/main/java/com/lrj/commerce/campaign/application/MarketingAssetService.java:15](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/application/MarketingAssetService.java#L15) | MarketingAssetService | createAudience/sources/requireFresh | marketing_audience_snapshot/marketing_audience_member | FACT |
-| E08 | 活动支持固定减免、百分比、预算和权益绑定及审批 | Source | [marketing-runtime/src/main/java/com/lrj/commerce/campaign/api/CampaignApi.java:9](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/api/CampaignApi.java#L9) | CampaignApi | Draft/Terms/Policy/review | marketing_campaign/marketing_budget | FACT |
-| E09 | 决策在活动间单一择优，稳定平局和金额分摊 | Source | [marketing/src/main/java/com/lrj/commerce/marketing/application/MarketingDecisionService.java:38](../../marketing/src/main/java/com/lrj/commerce/marketing/application/MarketingDecisionService.java#L38) | MarketingDecisionService | decide/allocate | — | FACT |
-| E10 | 同店报价、两种可信事实、一张券与活动叠加/择优、资方分摊 | Source | [trade/src/main/java/com/lrj/commerce/trade/application/QuoteService.java:27](../../trade/src/main/java/com/lrj/commerce/trade/application/QuoteService.java#L27) | QuoteService | create | trade_quote | FACT |
-| E11 | 优惠券限定店铺、固定优惠/有效期；每会员每版本至多一张 | Source | [benefit/src/main/java/com/lrj/commerce/benefit/application/CouponService.java:20](../../benefit/src/main/java/com/lrj/commerce/benefit/application/CouponService.java#L20) | CouponService | create/claim/reserve/refund | benefit_coupon_definition/benefit_coupon/benefit_coupon_hold | FACT |
-| E12 | 内部整数权益有账本、核销、冲正及补偿 | Source | [benefit/src/main/java/com/lrj/commerce/benefit/api/EntitlementApi.java:5](../../benefit/src/main/java/com/lrj/commerce/benefit/api/EntitlementApi.java#L5) | EntitlementApi | reserveOrder/consume/resolve | benefit_definition/benefit_grant/benefit_ledger | FACT |
-| E13 | 旅程仅MANUAL/ORDER_PAID触发和五种节点 | Source | [marketing-automation/src/main/java/com/lrj/commerce/journey/api/JourneyApi.java:9](../../marketing-automation/src/main/java/com/lrj/commerce/journey/api/JourneyApi.java#L9) | JourneyApi | Kind/Trigger/State | journey_definition/journey_instance | FACT |
-| E14 | 旅程条件取等级/订单额，NOTIFY仅写站内消息 | Source | [marketing-automation/src/main/java/com/lrj/commerce/journey/application/JourneyService.java:148](../../marketing-automation/src/main/java/com/lrj/commerce/journey/application/JourneyService.java#L148) | JourneyService | execute | journey_notification | FACT |
-| E15 | 低代码为五类数据源和三种业务动作 | Source | [marketing-automation/src/main/java/com/lrj/commerce/ops/api/OpsPageApi.java:9](../../marketing-automation/src/main/java/com/lrj/commerce/ops/api/OpsPageApi.java#L9) | OpsPageApi | Source/ActionKind | ops_page | FACT |
-| E16 | 仅ADMIN/MEMBER角色，无商家/门店数据范围字段 | Source | [platform-runtime/src/main/java/com/lrj/commerce/runtime/api/Actor.java:7](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/api/Actor.java#L7) | Actor | Role/requireAdmin | — | FACT |
-| E17 | 本地摘要Bearer认证与租户身份 | Source | [commerce-app/src/main/java/com/lrj/commerce/app/SecurityConfiguration.java:18](../../commerce-app/src/main/java/com/lrj/commerce/app/SecurityConfiguration.java#L18) | SecurityConfiguration | security/TokenFilter | platform_credential | FACT |
-| E18 | 商家主数据仅标识名称状态 | Source | [merchant/src/main/java/com/lrj/commerce/merchant/api/MerchantApi.java:5](../../merchant/src/main/java/com/lrj/commerce/merchant/api/MerchantApi.java#L5) | MerchantApi | Create/View | merchant_record | FACT |
-| E19 | 店铺与商家绑定及查询 | Source | [store/src/main/java/com/lrj/commerce/store/api/StoreApi.java:5](../../store/src/main/java/com/lrj/commerce/store/api/StoreApi.java#L5) | StoreApi | Create/View/browse | store_record | FACT |
-| E20 | 库存是店铺SKU可售额度，支持预占确认释放退回 | Source | [inventory/src/main/java/com/lrj/commerce/inventory/api/InventoryApi.java:5](../../inventory/src/main/java/com/lrj/commerce/inventory/api/InventoryApi.java#L5) | InventoryApi | reserve/confirm/release/returnItems | inventory_stock/inventory_hold/inventory_return | FACT |
-| E21 | 订单创建串起会员报价库存券预算权益与事件 | Source | [order-runtime/src/main/java/com/lrj/commerce/ordering/application/OrderService.java:28](../../order-runtime/src/main/java/com/lrj/commerce/ordering/application/OrderService.java#L28) | OrderService | create | order_record/platform_event | FACT |
-| E22 | 履约单一订单物流号；沙箱WMS | Source | [fulfillment/src/main/java/com/lrj/commerce/fulfillment/api/FulfillmentApi.java:5](../../fulfillment/src/main/java/com/lrj/commerce/fulfillment/api/FulfillmentApi.java#L5) | FulfillmentApi | ship/deliver | fulfillment_record | FACT |
-| E23 | 已有按行部分退货、审批、收货和退款 | Source | [aftersales/src/main/java/com/lrj/commerce/aftersales/api/AftersaleApi.java:5](../../aftersales/src/main/java/com/lrj/commerce/aftersales/api/AftersaleApi.java#L5) | AftersaleApi | request/approve/receiveReturn | aftersales_case/aftersales_line | FACT |
-| E24 | 真实身份支付权益WMS接入后置 | Historical document | [deploy/README.md:40](../../deploy/README.md#L40) | — | — | 外部适配后置清单 | FACT |
-| E25 | 购物袋只在组件useState中；前端真实读API | Source | [frontend/src/features/Shop.tsx:27](../../frontend/src/features/Shop.tsx#L27) | Shop | useResource/useState | — | FACT |
-| E26 | 会员/商品/人群管理表单与后端最小模型一致 | Source | [frontend/src/features/AdminData.tsx:40](../../frontend/src/features/AdminData.tsx#L40) | specs | members/skus/audiences | — | FACT |
-| E27 | 事务命令幂等与基本审计 | Source | [platform-runtime/src/main/java/com/lrj/commerce/runtime/Commands.java:23](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/Commands.java#L23) | Commands | run | platform_command/platform_audit | FACT |
-| E28 | 数据库Outbox/Inbox，有界轮转、失败隔离 | Source | [platform-runtime/src/main/java/com/lrj/commerce/runtime/EventDispatcher.java:19](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/EventDispatcher.java#L19) | EventDispatcher | tick/pumpTenant | platform_event/platform_inbox | FACT |
-| E29 | 健康暴露、DB池8、沙箱和worker默认关闭 | Configuration | [commerce-app/src/main/resources/application.yml:11](../../commerce-app/src/main/resources/application.yml#L11) | — | — | commerce.* / spring.datasource.hikari / management.* | FACT |
-| E30 | 四类任务由单Scheduled方法顺序调用 | Source | [commerce-app/src/main/java/com/lrj/commerce/app/EventWorker.java:13](../../commerce-app/src/main/java/com/lrj/commerce/app/EventWorker.java#L13) | EventWorker | deliver | — | FACT |
-| E31 | CI声明真实DB构建、前端审计和浏览器验收 | Configuration | [.github/workflows/verify.yml:36](../../.github/workflows/verify.yml#L36) | — | verify | — | FACT |
-| E32 | 历史验收145后端测试和4浏览器场景，非本次重跑 | Historical document | [docs/evidence/s10b/TEST_RESULT.md:1](../../docs/evidence/s10b/TEST_RESULT.md#L1) | — | — | — | FACT |
-| E33 | 集成测试包含库存并发、退款、券预算权益、旅程恢复 | Test source | [commerce-app/src/test/java/com/lrj/commerce/app/PersistedCommerceTest.java:163](../../commerce-app/src/test/java/com/lrj/commerce/app/PersistedCommerceTest.java#L163) | PersistedCommerceTest | simultaneousOrdersCannotOversellOrConsumeOneQuoteTwice等 | 真实MySQL测试代码 | FACT |
-| E34 | 历史架构风险：恢复、容量、保留、密钥、监测缺口 | Historical document | [.cursor/project-analysis/architecture-risks.md:1](../../.cursor/project-analysis/architecture-risks.md#L1) | — | — | 既有审查文档，本次非重新审查 | FACT |
-| E35 | 明确受限AST选型，不迁移旧Drools | Historical document | [docs/design/unified-commerce/TECH_SELECTION.md:5](../../docs/design/unified-commerce/TECH_SELECTION.md#L5) | — | — | — | FACT |
-| E36 | 模块边界测试源文件 | Test source | [architecture-tests/src/test/java/com/lrj/commerce/architecture/ModuleBoundaryTest.java:1](../../architecture-tests/src/test/java/com/lrj/commerce/architecture/ModuleBoundaryTest.java#L1) | ModuleBoundaryTest | — | — | FACT |
-| E37 | 报价/售后浏览器验收及规则低代码旅程用例 | Test source | [frontend/tests/commerce.spec.ts:34](../../frontend/tests/commerce.spec.ts#L34) | — | test | — | FACT |
-| E38 | 外部权益仅预留接口，无实现声明 | Source | [benefit/src/main/java/com/lrj/commerce/benefit/api/ExternalEntitlementPort.java:2](../../benefit/src/main/java/com/lrj/commerce/benefit/api/ExternalEntitlementPort.java#L2) | ExternalEntitlementPort | grant/query/revoke | — | FACT |
+报告同步进度及Git交付分别由`~/.claude/skills/update-progress-docs`与用户指定的`~/.codex/skills/task-git-delivery`负责，授权来源为本会话AGENTS Git规则8。分析技能本身没有扩大为产品实施或生产部署。
 
-## 用户确认与建议的边界
+## Evidence Index
 
-| 编号 | 类型 | 内容 | Confidence |
-|---|---|---|---|
-| U01 | USER_REQUEST，2026-09-23 | 用户倾向会员、商品、营销较完整、可被多个项目复用的能力中台长期方向 | FACT |
-| U02 | USER_REQUEST，2026-09-23 | 用户补充同时包含品牌自营商城＋会员运营 | FACT |
-| U03 | 分析建议 | 共享能力中台与自营业务应用分清职责；第二独立应用检验复用；开放契约和数据所有权前移 | INFERRED，尚非已批准架构/实施切片 |
+表中Finding是由该证据支持的结论；Class/Method、Configuration、SQL·Table按实际类型填写，`—`表示不适用。链接相对当前报告目录。
 
-本轮据U01与U02修订五份探索文档的目标、候选优先级和路线。源码能力证据仍沿用本次已采集基线，没有把新方向写成已实现能力。
+| ID | Finding / Capability | Evidence Type / File | Class / Method | Configuration / SQL·Table | Confidence |
+|---|---|---|---|---|---|
+| E01 | 模块化单体基线/精确金额 | build/domain：[pom](../../pom.xml)、[Money](../../shared-kernel/src/main/java/com/lrj/commerce/kernel/Money.java) | Money | 19 Maven modules；单Boot启动 | FACT |
+| E02 | 三值规则、确定性竞争、合法订单迁移已有 | domain：[RuleEvaluator](../../marketing/src/main/java/com/lrj/commerce/marketing/domain/RuleEvaluator.java)、[CampaignConflictResolver](../../marketing/src/main/java/com/lrj/commerce/marketing/domain/CampaignConflictResolver.java)、[OrderLifecycle](../../order/src/main/java/com/lrj/commerce/order/domain/OrderLifecycle.java) | evaluate / bestOf / apply | — | FACT |
+| E03 | 命令、防重回执/审计与业务共事务 | Java/SQL：[Commands](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/command/Commands.java)、[CommandMapper](../../platform-runtime/src/main/resources/mappers/runtime/CommandMapper.xml) | Commands.run | platform_command/request_hash/response_json；platform_audit | FACT |
+| E04 | 内部Outbox/Inbox、消费者事务隔离与失败分类已有 | Java/SQL/test：[EventDispatcher](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/event/EventDispatcher.java)、[EventMapper](../../platform-runtime/src/main/resources/mappers/runtime/EventMapper.xml)、[隔离测试源码](../../commerce-app/src/test/java/com/lrj/commerce/app/EventConsumerIsolationTest.java) | tick/pump与消费者逐项事务（实现） | platform_event/platform_inbox；非独立Broker | FACT（源码），本轮执行UNVERIFIED |
+| E05 | 会员绑定与状态历史已有；关闭不删除资料 | API/Java/SQL：[MemberApi](../../member/src/main/java/com/lrj/commerce/member/profile/api/MemberApi.java)、[MemberService](../../member/src/main/java/com/lrj/commerce/member/profile/application/MemberService.java)、[MemberMapper](../../member/src/main/resources/mappers/member/MemberMapper.xml)、[V16](../../commerce-app/src/main/resources/db/migration/V16__member_lifecycle.sql) | create/current/change/history | member_record、member_change；ACTIVE/FROZEN/CLOSED | FACT |
+| E06 | 本地成长、周期、积分有实现，不是缺失 | Java/API：[MemberGrowthService](../../member/src/main/java/com/lrj/commerce/member/growth/application/MemberGrowthService.java)、[MemberCycleApi](../../member/src/main/java/com/lrj/commerce/member/cycle/api/MemberCycleApi.java)、[MemberPointsApi](../../member/src/main/java/com/lrj/commerce/member/points/api/MemberPointsApi.java)、[PointsSpendService](../../member/src/main/java/com/lrj/commerce/member/points/application/PointsSpendService.java) | observe/contribute/assess/reserve/refund | member_growth_*、member_cycle_*、member_point_*；本地订单事实 | FACT |
+| E07 | 标签/行为和会员偏好已有；非完整身份平台 | API/Java：[MemberBehaviorApi](../../member/src/main/java/com/lrj/commerce/member/behavior/api/MemberBehaviorApi.java)、[MemberBehaviorService](../../member/src/main/java/com/lrj/commerce/member/behavior/application/MemberBehaviorService.java)、[MemberTagService](../../member/src/main/java/com/lrj/commerce/member/tag/application/MemberTagService.java) | record/projectOrder/facts/profile/assign | BROWSE/ADD_TO_CART；birthday/journeyEnabled | FACT |
+| E08 | 商品门店/商家资源授权已有，商家只有基础资料 | API/Java：[StoreAccessService](../../store/src/main/java/com/lrj/commerce/store/access/application/StoreAccessService.java)、[MerchantApi](../../merchant/src/main/java/com/lrj/commerce/merchant/api/MerchantApi.java) | requireCatalog/create/change | store_operator_grant；permission=CATALOG | FACT |
+| E09 | 商品主档/SKU与店铺绑定，已支持规格版本 | API/SQL：[ProductOperationsApi](../../catalog/src/main/java/com/lrj/commerce/catalog/product/api/ProductOperationsApi.java)、[ProductMapper](../../catalog/src/main/resources/mappers/catalog/ProductMapper.xml)、[V18](../../commerce-app/src/main/resources/db/migration/V18__product_specifications_and_revisions.sql) | create/variant/change/history | catalog_product/store_id、catalog_sku、catalog_revision | FACT；共享主档缺口INFERRED |
+| E10 | 定时上下架/调价可恢复，单job≤100目标 | API/Java：[CatalogJobApi](../../catalog/src/main/java/com/lrj/commerce/catalog/job/api/CatalogJobApi.java)、[CatalogJobService](../../catalog/src/main/java/com/lrj/commerce/catalog/job/application/CatalogJobService.java) | create/control/tick | PRICE/PUBLISH/UNPUBLISH；catalog_operation_job/item | FACT |
+| E11 | 类目模板、图片URL、条码和渠道检索已有 | API/Java/SQL：[CatalogMerchandisingApi](../../catalog/src/main/java/com/lrj/commerce/catalog/merchandising/api/CatalogMerchandisingApi.java)、[CatalogMerchandisingService](../../catalog/src/main/java/com/lrj/commerce/catalog/merchandising/application/CatalogMerchandisingService.java)、[MerchandisingMapper](../../catalog/src/main/resources/mappers/catalog/MerchandisingMapper.xml)、[ChannelPriceApi](../../catalog/src/main/java/com/lrj/commerce/catalog/pricing/api/ChannelPriceApi.java) | changeProfile/picture/search/change | picture HTTPS或/media；LOCATE检索；channel认证决定 | FACT；文件中心缺口INFERRED |
+| E12 | 活动固定引用、预览、审批/发布及单权益门禁 | Java/API：[CampaignService](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/management/application/CampaignService.java)、[MarketingAssetService](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/asset/application/MarketingAssetService.java) | create/review/publish/preview/candidates | CREDIT/COUPON互斥；同时有效候选≤100；审批能力 | FACT |
+| E13 | 动态人群持久刷新已有；固定名单单批≤500 | API/Java：[SegmentApi](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/segment/api/SegmentApi.java)、[SegmentService](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/segment/application/SegmentService.java)、[MarketingAssetService](../../marketing-runtime/src/main/java/com/lrj/commerce/campaign/asset/application/MarketingAssetService.java) | create/batch/checkpoint/refresh/control/createAudience | 每批100；maxMembers预算≤100000；TTL；未完成不发布 | FACT；真实大租户持续容量NEEDS_VERIFICATION |
+| E14 | 券/权益钱包、预留和退款补偿已有 | Java：[CouponService](../../benefit/src/main/java/com/lrj/commerce/benefit/coupon/application/CouponService.java)、[EntitlementService](../../benefit/src/main/java/com/lrj/commerce/benefit/entitlement/application/EntitlementService.java) | reserve/confirm/refund/confirmCampaign/reverseOrder | benefit_coupon/hold、benefit_campaign_coupon_hold、benefit_grant/ledger | FACT |
+| E15 | 等级礼包受理与兑换已有，到账按原权益事件逐项推进 | Java/API：[MemberBenefitService](../../benefit/src/main/java/com/lrj/commerce/benefit/memberbenefit/application/MemberBenefitService.java)、[PointOfferService](../../benefit/src/main/java/com/lrj/commerce/benefit/pointoffer/application/PointOfferService.java)、[MemberPointsApi](../../member/src/main/java/com/lrj/commerce/member/points/api/MemberPointsApi.java) | award/grant/handle/redeem/exchange | 礼包1–8项；来源唯一；受理事务与异步可用分开 | FACT；客户全礼包承诺UNKNOWN |
+| E16 | 保留机制完成、默认关闭，仅指定数据类 | Java/SQL/config：[RetentionLane](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/retention/RetentionLane.java)、[RetentionMapper](../../platform-runtime/src/main/resources/mappers/runtime/RetentionMapper.xml)、[application](../../commerce-app/src/main/resources/application.yml) | tick/events/lag | DELIVERED_EVENTS/SKIPPED_EVENTS/COMMANDS；保护active replay；enabled=false | FACT；具体保留政策UNKNOWN |
+| E17 | 独立业务车道共享有界池，非全部串行 | Java/config：[EventWorker](../../commerce-app/src/main/java/com/lrj/commerce/app/runtime/scheduling/EventWorker.java)、[application](../../commerce-app/src/main/resources/application.yml) | configureTasks/taskScheduler | 10业务车道＋replay/retention；默认3后台线程/8连接；workers默认false、compose明确true | FACT |
+| E18 | 逐项恢复、审计、受控历史重放与公平轮转已有 | Java：[RuntimeRecovery](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/recovery/RuntimeRecovery.java)、[ReplayGate](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/replay/ReplayGate.java)、[WorkLanes](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/work/WorkLanes.java)、[TenantRotation](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/work/TenantRotation.java) | recover/recoverOne及安全门 | platform_recovery/platform_replay；领域原项恢复，不全程副作用replay | FACT |
+| E19 | 报价/成交快照与事务预占已有；没有运费模型 | API/Java：[QuoteApi](../../trade/src/main/java/com/lrj/commerce/trade/api/QuoteApi.java)、[QuoteService](../../trade/src/main/java/com/lrj/commerce/trade/application/QuoteService.java)、[OrderService](../../order-runtime/src/main/java/com/lrj/commerce/ordering/order/application/OrderService.java) | create/consume/settle | 商品、优惠、积分分摊；单店CNY；事务库存/预算/券/积分预留 | FACT；运费完整能力缺失INFERRED |
+| E20 | 库存为可售额度，非多仓实物权威 | API/SQL：[InventoryApi](../../inventory/src/main/java/com/lrj/commerce/inventory/api/InventoryApi.java)、[InventoryMapper](../../inventory/src/main/resources/mappers/inventory/InventoryMapper.xml) | receive/reserve/confirm/release/returnItems | store/sku；available/held/sold，条件更新 | FACT |
+| E21 | 退款保留UNKNOWN与额度；缺真拒绝生命周期 | API/Java/SQL：[RefundApi](../../payment/src/main/java/com/lrj/commerce/payment/refund/api/RefundApi.java)、[RefundService](../../payment/src/main/java/com/lrj/commerce/payment/refund/application/RefundService.java)、[RefundChannel](../../payment/src/main/java/com/lrj/commerce/payment/refund/application/port/RefundChannel.java)、[V5](../../commerce-app/src/main/resources/db/migration/V5__fulfillment_returns_refunds.sql) | request/reconcileInternal/tick | UNKNOWN/SUCCEEDED；非成功proof保持UNKNOWN；payment退款预留 | FACT；真拒绝业务处理INFERRED/政策UNKNOWN |
+| E22 | 单履约单号、部分退货退款已有，真实仓储后置 | API/Java：[FulfillmentApi](../../fulfillment/src/main/java/com/lrj/commerce/fulfillment/api/FulfillmentApi.java)、[SandboxWms](../../fulfillment/src/main/java/com/lrj/commerce/fulfillment/infrastructure/adapter/SandboxWms.java)、[AftersaleApi](../../aftersales/src/main/java/com/lrj/commerce/aftersales/api/AftersaleApi.java) | ship/deliver/request/receiveReturn/fullyReturned | SANDBOX_WMS；case/SKU数量、金额和积分；一order履约 | FACT |
+| E23 | Journey固定版本、当前事实、历史Truth/actionRef及站内通知 | API/domain/Java/SQL：[JourneyApi](../../marketing-automation/src/main/java/com/lrj/commerce/journey/api/JourneyApi.java)、[JourneyService](../../marketing-automation/src/main/java/com/lrj/commerce/journey/application/JourneyService.java)、[JourneyGraph](../../marketing-automation/src/main/java/com/lrj/commerce/journey/domain/JourneyGraph.java)、[JourneyActions](../../marketing-automation/src/main/java/com/lrj/commerce/journey/application/JourneyActions.java)、[V44](../../commerce-app/src/main/resources/db/migration/V44__journey_step_execution_history.sql) | validate/preview/execute/history | 32节点/单路径；WAIT/DECIDE/GRANT/COUPON/NOTIFY/END；不复制完整Facts | FACT |
+| E24 | 阶段8真实kill/多JVM/旧新兼容及到期量测 | historical evidence：[报告](../../docs/evidence/phase8-marketing-journey/PHASE8_REPORT.md)、[scale.csv](../../docs/evidence/phase8-marketing-journey/results/scale.csv)、[规模结果](../../docs/evidence/phase8-marketing-journey/results/scale-results.md)、[进程恢复结果](../../docs/evidence/phase8-marketing-journey/results/process-recovery-results.md) | 真实scheduler_due_drain、hot/normal公平性、process recovery | 100=6.127s/1000=48.759s/10000=469.990s；P95(10000)=446891ms；共享dev_infra | FACT（归档结果）；生产SLO NEEDS_VERIFICATION |
+| E25 | 定向发券批次/逐项结果/撤销控制已有 | API/Java：[CouponDeliveryApi](../../marketing-automation/src/main/java/com/lrj/commerce/journey/delivery/api/CouponDeliveryApi.java)、[CouponDeliveryService](../../marketing-automation/src/main/java/com/lrj/commerce/journey/delivery/application/CouponDeliveryService.java) | create/control/recipients/tick | automation_coupon_batch/recipient/frequency | FACT |
+| E26 | 经营效果为描述性读模型，明确非因果ROI/利润 | API/Java/SQL：[MarketingEffectsApi](../../marketing-automation/src/main/java/com/lrj/commerce/insight/api/MarketingEffectsApi.java)、[MarketingEffectsService](../../marketing-automation/src/main/java/com/lrj/commerce/insight/application/MarketingEffectsService.java)、[EffectsMapper](../../marketing-automation/src/main/resources/mappers/insight/EffectsMapper.xml) | report/journeys/deliveries/rebuild/project | 本地OrderApi/QuoteApi/RefundApi；≤93天；退款/覆盖/成本口径 | FACT |
+| E27 | 低代码白名单和审批已有，角色仍ADMIN | Java：[OpsPageService](../../marketing-automation/src/main/java/com/lrj/commerce/ops/application/OpsPageService.java) | change/preview/render/execute | requireAdmin；APPROVED/PUBLISHED，固定组件 | FACT |
+| E28 | 低基数指标已有，非只有health | Java：[BackgroundLaneMetrics](../../commerce-app/src/main/java/com/lrj/commerce/app/observability/lane/BackgroundLaneMetrics.java)、[EventRuntimeMetrics](../../commerce-app/src/main/java/com/lrj/commerce/app/observability/event/EventRuntimeMetrics.java) | bindTo | commerce.lanes.* / commerce.events.*；固定lane标签，含积压/最老/隔离 | FACT |
+| E29 | 平台聚合与告警代码已有；默认仅日志送出 | Java/config：[BackgroundRuntime](../../commerce-app/src/main/java/com/lrj/commerce/app/runtime/monitoring/BackgroundRuntime.java)、[AlertConfiguration](../../commerce-app/src/main/java/com/lrj/commerce/app/configuration/alert/AlertConfiguration.java)、[OperationalAlertPublisher](../../commerce-app/src/main/java/com/lrj/commerce/app/runtime/monitoring/OperationalAlertPublisher.java)、[PlatformRuntimeController](../../commerce-app/src/main/java/com/lrj/commerce/app/http/runtime/health/PlatformRuntimeController.java) | logHealth/loggingAlertPublisher/publish | EVENT_RUNTIME_METRICS_READ；WARN codes；management仅health | FACT；外部送达NEEDS_VERIFICATION |
+| E30 | 身份/租户/本人授权已有，无应用主体 | API/Java/SQL：[Actor](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/api/identity/Actor.java)、[SecurityConfiguration](../../commerce-app/src/main/java/com/lrj/commerce/app/configuration/security/SecurityConfiguration.java)、[CredentialMapper](../../platform-runtime/src/main/resources/mappers/runtime/CredentialMapper.xml) | capabilities/security/TokenFilter | ADMIN/MEMBER/OPERATOR/PLATFORM_OPERATOR；WEB/MINI_APP；token_hash/active/expires | FACT；应用授权缺口INFERRED |
+| E31 | 商城购物袋为组件状态，已路由懒加载及部分分页 | UI：[Shop](../../frontend/src/features/Shop.tsx)、[App](../../frontend/src/app/App.tsx)、[API](../../frontend/src/shared/api.ts) | basket useState/createQuote/onFinish；lazy/Suspense/useCommand | 无购物车HTTP读写；地址随order.create；token不写localStorage | FACT；持久购物闭环缺口INFERRED |
+| E32 | 编译依赖/核心边界测试已有，不能证明SQL所有权 | test：[ModuleBoundaryTest](../../architecture-tests/src/test/java/com/lrj/commerce/architecture/ModuleBoundaryTest.java) | persistedModulesOnlyReachOtherDomainsThroughApi/appShellReachesDomainsOnlyThroughApi | jdeps对实际编译类；.api跨域依赖约束 | FACT（源码）；本轮执行UNVERIFIED |
+| E33 | CI真实DB/E2E/npm审计已有，基线main已绿 | CI/historical API：[workflow](../../.github/workflows/verify.yml)、[Phase8回归](../../docs/evidence/phase8-marketing-journey/16-regression.md)、[基线main运行](https://github.com/lirji/commerce-platform/actions/runs/36363560873) | build/verify/Chromium/npm audit；gh run list核实baseline head | head=7dda31e；completed/success；后端SBOM/依赖风险步骤未发现 | FACT（配置与已观察基线结果）；本轮新文档ref CI单独观察 |
+| E34 | 单应用/单数据源，已有本地营销热点与滚动证据 | config/historical evidence：[application](../../commerce-app/src/main/resources/application.yml)、[compose](../../compose.yaml)、[运行手册](../../deploy/README.md)、[Phase7报告](../../docs/evidence/phase7-marketing-production/PHASE7_REPORT.md) | datasource/scheduler及OLD/NEW验收 | Hikari8、Tomcat64、app单服务、预算/券额度行争用；无生产HA认证 | FACT；目标环境持续容量/灾备NEEDS_VERIFICATION |
+| E35 | 地址AES-GCM/AAD已有，单密钥/固定写入版本 | Java/SQL：[AddressCipher](../../order-runtime/src/main/java/com/lrj/commerce/ordering/address/infrastructure/security/AddressCipher.java)、[OrderMapper](../../order-runtime/src/main/resources/mappers/ordering/OrderMapper.xml) | encrypt | commerce.address-key；address_key_version写1；只有encrypt，无受控历史解密/轮换 | FACT；真实WMS披露政策UNKNOWN |
+| E36 | 外部适配端口存在；缺合作方完整接入链 | API/Java/docs：[PaymentChannel](../../payment/src/main/java/com/lrj/commerce/payment/charge/application/port/PaymentChannel.java)、[ExternalEntitlementPort](../../benefit/src/main/java/com/lrj/commerce/benefit/entitlement/application/port/ExternalEntitlementPort.java)、[WmsPort](../../fulfillment/src/main/java/com/lrj/commerce/fulfillment/application/port/WmsPort.java)、[运行手册后置清单](../../deploy/README.md) | observe/ensure及权益/WMS端口 | 本地沙箱默认关闭；真实IdP/资金/权益/WMS后置 | 端口FACT；完整对外接入缺口INFERRED |
+| E37 | 全额累计退货返原用券/CREDIT冲正；非自动撤已赠券 | Java/historical evidence：[BenefitCompensationHandler](../../commerce-app/src/main/java/com/lrj/commerce/app/runtime/compensation/BenefitCompensationHandler.java)、[CouponService](../../benefit/src/main/java/com/lrj/commerce/benefit/coupon/application/CouponService.java)、[Phase7报告](../../docs/evidence/phase7-marketing-production/PHASE7_REPORT.md) | handle/refund/confirmCampaign | fullReturn触发coupon hold USED→AVAILABLE；gifted coupon退款政策待独立决定 | 当前行为FACT；撤奖励目标UNKNOWN |
 
-## 结论到证据映射
+## 核心链路交叉核对
 
-| 候选 | 能力 | 证据 | 缺失/建议可信度 |
-|---|---|---|---|
-| M01 | 会员档案与生命周期 | E01 E02 E05 E26 | INFERRED；已有实现见FACT证据 |
-| M02 | 等级、成长值与等级权益 | E01 E02 E12 | INFERRED；已有实现见FACT证据 |
-| M03 | 积分账户与积分生命周期 | E05 E12 E23 | INFERRED；已有实现见FACT证据 |
-| M04 | 会员标签、行为摘要与360视图 | E01 E06 E10 E13 | INFERRED；已有实现见FACT证据 |
-| C01 | 商品主数据与SPU/SKU规格体系 | E03 E04 E05 E26 | INFERRED；已有实现见FACT证据 |
-| C02 | 商品编辑、上下架和价格版本治理 | E03 E04 E10 | INFERRED；已有实现见FACT证据 |
-| C03 | 商品查找、筛选与有界批量维护 | E03 E04 E25 E26 | INFERRED；已有实现见FACT证据 |
-| K01 | 动态分群与人群刷新 | E06 E07 E26 | INFERRED；已有实现见FACT证据 |
-| K02 | 促销范围与组合策略 | E08 E09 E10 E11 | INFERRED；已有实现见FACT证据 |
-| K03 | 优惠券运营生命周期 | E11 E07 E23 | INFERRED；已有实现见FACT证据 |
-| K04 | 事件触发与可恢复旅程扩展 | E13 E14 E28 | INFERRED；已有实现见FACT证据 |
-| K05 | 多渠道触达与偏好治理 | E13 E14 E17 | INFERRED；已有实现见FACT证据 |
-| K06 | 营销经营指标与效果归因 | E09 E10 E11 E13 E15 | INFERRED；已有实现见FACT证据 |
-| K07 | 领券/发奖滥用防护 | E11 E12 E16 E27 | INFERRED；已有实现见FACT证据 |
-| S01 | 真实身份与商家/门店数据权限 | E16 E17 E18 E19 | INFERRED；已有实现见FACT证据 |
-| S02 | 审计查询与审批职责分离 | E05 E08 E13 E15 E16 E27 | INFERRED；已有实现见FACT证据 |
-| S03 | 数据保留、敏感信息访问与密钥恢复 | E05 E21 E24 E34 | INFERRED；已有实现见FACT证据 |
-| T01 | 购物车、地址簿与配送计价 | E10 E21 E25 | INFERRED；已有实现见FACT证据 |
-| T02 | 包裹、逆向物流和售后运营 | E22 E23 E24 | INFERRED；已有实现见FACT证据 |
-| T03 | 多仓库存与作业协同 | E20 E22 E24 | INFERRED；已有实现见FACT证据 |
-| T04 | 商家入驻、合同与结算 | E18 E19 E10 E23 | INFERRED；已有实现见FACT证据 |
-| T05 | 真实渠道接入与差异对账 | E24 E28 E32 | INFERRED；已有实现见FACT证据 |
-| O01 | 业务指标、告警与故障恢复验收 | E28 E29 E30 E31 E34 | INFERRED；已有实现见FACT证据 |
-| P01 | 可恢复批量运营任务 | E07 E13 E28 | INFERRED；已有实现见FACT证据 |
-| P02 | 规则模拟、解释与版本治理 | E06 E09 E35 E37 | INFERRED；已有实现见FACT证据 |
-| P03 | 外部业务接入契约与交付事件 | E16 E17 E24 E28 | INFERRED；已有实现见FACT证据 |
-| X01 | 拼团、秒杀、邀请裂变、订阅/付费会员 | E01 E08 E09 E21 E23 | INFERRED；已有实现见FACT证据 |
-| X02 | Drools接入或旧规则迁移 | E06 E09 E35 | INFERRED；已有实现见FACT证据 |
+| 链路 | 入口→领域→权威持久化/失败恢复 | 证据 |
+|---|---|---|
+| 会员状态与成长 | 管理/注册→MemberService/成长事件→member_record/change/ledger→版本/命令约束 | E03/E05/E06 |
+| 周期与积分 | 订单事实→成长/周期/积分→来源/批次/账本→到期逐项恢复 | E06/E15/E18 |
+| 商品与经营job | 经营HTTP→授权/规格/资料/渠道价/job→catalog表→逐项版本冲突/取消 | E08–E11 |
+| 报价与下单 | 商品可信价/人群/规则/券/积分→quote→order与库存/预算/权益预留→同事务回滚 | E12/E13/E14/E19/E20 |
+| 支付/退款未知 | 请求意图→事务外渠道查证→锁内事实推进→Outbox/Inbox，UNKNOWN保留 | E04/E21/E36 |
+| 履约/售后/补偿 | 已付/可履约事件→履约/售后单→部分金额/积分、累计退货→原券/CREDIT补偿 | E22/E37 |
+| 动态人群/定向券 | 定义/刷新/批次→扫描检查点/固定快照→完整发布/逐项结果 | E13/E25 |
+| Journey | 可信事件/扫描→固定版本→WAIT/DECIDE/既有动作→步骤/检查点原子，原节点恢复 | E23/E24 |
+| 经营效果 | 订单/退款事件→重新读取权威事实→按订单唯一投影→UTC队列/净收款 | E26 |
+| 公共运行 | EventWorker→独立有界车道→WorkLanes/Recovery→低基数观测/告警 | E17/E18/E28/E29 |
 
-## 搜索与反证范围
+## 缺失判断的检索边界
 
-- 先读取根及项目CODEX_PROGRESS.md、设计BRIEF与既有架构风险，再按主数据→营销→交易履约→公共运行→前端→迁移→测试/CI顺序交叉确认。
-- 已扫描所有19个模块结构、101个主Java源码文件清单和15个迁移的建表范围；重点读取各域API、核心服务和Mapper，按调用链核对。并非宣称对每行源码做了完整安全审查。
-- 关键词复核范围：member/catalog/merchant/store/marketing/marketing-runtime/marketing-automation的生产代码与迁移、前端；检索loyalty/points/consent/segment/category/spu/variant/settlement/commission/experiment/attribution/webhook等和中文积分、成长值、画像、运费、分账、频控、归因、分群。语义无关的UI `variant` 不作为能力命中。
-- “缺失”的判断同时依赖公开API、领域数据和UI边界，不以一次字符串无命中作为唯一依据。当前仓库之外的同名平台能力和部署状态均UNKNOWN。
-- 反证保留：已支持券、百分比折扣封顶、单券叠加、预算/资方分摊、部分退款、权益冲正、快照人群、持久旅程与测试；没有将其误记为完全未实现。
+静态清单涵盖19模块、全部41 Mapper XML的表引用和45迁移表定义，以及Controller/API/Service、前端业务页、CI/脚本/测试目录。重要现有链路采用实际方法段复核，不用文件数冒充全行审计。
 
-## 外部参照（2026-09-23检索）
+跨域缺失检索包括：接入应用/外部主体与订单映射、Webhook/OpenAPI、购物车表/地址簿/配送费用、文件上传、仓库/结算、后端SBOM/依赖检查、API限流、密钥版本。未发现完整闭环不等于绝对不存在于外部系统。只有明确的源码/配置事实使用FACT，缺失结论统一INFERRED。
 
-| 编号 | 来源 | 支持的参照范围 | 使用边界 |
-|---|---|---|---|
-| R01 | [Salesforce loyalty program](https://trailhead.salesforce.com/content/learn/modules/loyalty-management-basics/set-up-loyalty-program) | 等级、积分类型、权益、到期与来源追踪 | 不将所有功能列成当前项目必需 |
-| R02 | [Shopify products](https://help.shopify.com/en/manual/products) | 规格、媒体、分类集合、批量修改/导入导出 | 不据此要求采购或模仿全部功能 |
-| R03 | [Adobe capping rules](https://experienceleague.adobe.com/en/docs/journey-optimizer/using/conflict-prioritization/capping-rules/capping-rules-landing-page) | 消息频次与旅程进入治理 | 不把国外产品策略当作本项目合规要求 |
+额度、积分/券/权益防重、交易未知结果与状态约束没有因缺少外部渠道而降级为“未实现”。默认关闭的retention/sandbox/workers标为开关事实，不推测机器当前开启值。
 
-## 验证记录
+## Validation / Handoff
 
-- 五份产物存在与非空：PASS。
-- 证据路径及行号：PASS，248处本地链接目标已验证；38项源码/文档证据。
-- 候选ID及统一字段：PASS，28项唯一候选均含当前状态、目标、风险、依赖、触发条件和可观察验收；四分类齐全。
-- 九维能力地图、Not Recommended Now、阶段路线与依赖图：PASS；Mermaid已检查结构与围栏，未运行图形渲染器。
-- 当前生产功能运行、数据库内容、负载容量、远程CI状态：UNVERIFIED，本次不重跑。
-- 历史测试数据：仅引用E32，未将历史145/4声明为本次通过。
-- 产品/测试/配置未修改：PASS，写入报告前后已跟踪文件聚合SHA256一致：`8ab9ae346094d06e9e5b07af3cb5f1f6f7c7a1f67dd0a4844db76db2e063be10`。原两处未提交修改保留。
-- Git：分析产物保持本地；本次为探索而非开发交付，未提交/推送，未处理既有两处产品修改。
+CE-20260927必需检查：五份产物存在非空、必需章节和9维成熟度、四分类/触发条件、Not Recommended Now、依赖图、证据ID与本地链接有效、未把未执行测试标PASS、无产品/测试/配置/依赖变更。
 
-## SKILL_HANDOFF
+本轮产品测试/压测/实时DB/渠道联调：UNVERIFIED（未执行），无需用它们证明本次文档改动。分析产物检查已PASS：五文件非空、必需章节、四分类/每候选模板、37个证据ID、本地链接、Mermaid围栏与git diff --check均已核对；diff仅五份分析文档。不能以历史CI的PASS继承新文档ref。
 
 ```yaml
-protocol: skill-contract/v1
-status: COMPLETED
-gate: PASS
-summary: 已完成只读能力探索；PASS仅表示分析产物校验，不代表生产验收或实现授权。
-produced:
-  - type: CAPABILITY_EXPLORATION_REPORT
-    ref: .engineering/exploration/
-updated: []
-verification:
-  - check: five-artifacts-present-nonempty
-    result: PASS
-  - check: evidence-links-and-candidate-fields
-    result: PASS
-  - check: no-product-mutation
-    result: PASS
-  - check: current-runtime-tests
-    result: UNVERIFIED
-unresolved:
-  - 中台＋品牌自营方向已确认；品牌店铺范围、第二接入项目、共享授权、主数据归属及运营政策待设计
-  - 真实外部联调沿用后置安排，生产能力未验收
-  - 当前工作树既有两处修改未由本次测试验证
-downstream_requirements:
-  - 围绕中台＋品牌自营方向形成业务蓝图、数据所有权、接入契约与实施切片
-recommended_next:
-  - stop
+SKILL_HANDOFF:
+  protocol: skill-contract/v1
+  skill: project-capability-exploration
+  status: COMPLETED
+  gate: PASS
+  produced:
+    - type: CAPABILITY_EXPLORATION_REPORT
+      ref: .engineering/exploration/
+  updated: []
+  unresolved:
+    - second-application-and-sharing-policy
+    - delivery-fee-and-refund-policy
+    - operating-roles-and-reward-promises
+    - retention-SLO-RTO-RPO-and-alert-owner
+  recommended_next: [stop]
 ```
+
+PASS表示分析产物可交付；未知政策保留且没有依赖它们实施产品。本次Git交付按独立delivery owner处理，实际提交/远程/CI事实以Git和最终交付观察为准。
