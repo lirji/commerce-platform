@@ -8,13 +8,24 @@
   },
   "verification": "docs/delivery/frontend-visual-refresh/TEST_RESULT.md",
   "uiFingerprint": "3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876",
-  "delivery": "VALIDATED_READY_FOR_GIT",
+  "delivery": "PUBLISHED_TO_MAIN",
   "git": {
     "branch": "feat/frontend-visual-refresh",
     "target": "origin/main",
-    "authorization": "User persistent AGENTS instruction permits normal commit/merge/push; no force push or production deployment"
+    "authorization": "User persistent AGENTS instruction permits normal commit/merge/push; no force push or production deployment",
+    "implementationCommit": "0283d9cc8e446e635793a4f90e7810ceb226f7d9",
+    "publishedImplementationRef": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+    "mainMergePush": "PASS"
   },
   "previousMigration": "UNCHANGED",
   "productionDeployment": "NOT_IN_SCOPE",
-  "next": "NORMAL_GIT_DELIVERY"
+  "next": "NONE",
+  "deliveryEvidence": "docs/delivery/frontend-visual-refresh/DELIVERY_RESULT.json",
+  "ci": {
+    "gate": "PASS",
+    "commit": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+    "evidence": "docs/delivery/frontend-visual-refresh/CI_RESULT.json",
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36377172720"
+  },
+  "updatedAt": "2026-09-28T04:25:48.060021+00:00"
 }

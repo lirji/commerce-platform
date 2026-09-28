@@ -1,0 +1,158 @@
+{
+  "sliceId": "S-VR-01",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "branch": "feat/frontend-visual-refresh",
+  "implementationCommit": "0283d9cc8e446e635793a4f90e7810ceb226f7d9",
+  "integratedCommit": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+  "uiFingerprint": "3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876",
+  "normalFeaturePush": "PASS",
+  "mainMergePush": "PASS",
+  "productionDeployment": "NOT_IN_SCOPE",
+  "preservedParallelPlanning": "ae6516f63c68201e2bdb1339df6157724949bac4; IAM documents preserved without changes",
+  "updatedAt": "2026-09-28T04:25:48.060021+00:00",
+  "schemaVersion": 1,
+  "artifact": "DELIVERY_RESULT",
+  "mainMergeMethod": "FAST_FORWARD",
+  "target": "origin/main",
+  "publishedImplementationRef": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+  "requiredCi": "PASS",
+  "ciResult": "CI_RESULT.json",
+  "forcePush": false,
+  "publishedAt": "2026-09-28T04:25:48.060021+00:00",
+  "protocol": "skill-contract/v1",
+  "skill": "task-git-delivery",
+  "delivery_scope": {
+    "slices": [
+      "S-VR-01"
+    ],
+    "included_paths": [
+      "CODEX_PROGRESS.md",
+      "README.md",
+      "docs/PROGRESS_STATE.json",
+      "docs/delivery/frontend-visual-refresh/CODE_HYGIENE_RESULT.json",
+      "docs/delivery/frontend-visual-refresh/IMPLEMENTATION_EVIDENCE.md",
+      "docs/delivery/frontend-visual-refresh/PREVIOUS_PROGRESS_STATE.json",
+      "docs/delivery/frontend-visual-refresh/README.md",
+      "docs/delivery/frontend-visual-refresh/REGRESSION_RESULT.json",
+      "docs/delivery/frontend-visual-refresh/SOURCE_FINGERPRINT.json",
+      "docs/delivery/frontend-visual-refresh/TEST_RESULT.md",
+      "docs/design/frontend-visual-refresh/BRIEF.md",
+      "docs/design/frontend-visual-refresh/IMPLEMENTATION_SLICES.md",
+      "docs/design/unified-commerce/FRONTEND_ARCHITECTURE.md",
+      "docs/evidence/frontend-visual-refresh/REVIEW.md",
+      "docs/evidence/frontend-visual-refresh/after/capture.json",
+      "docs/evidence/frontend-visual-refresh/after/catalog-desktop.png",
+      "docs/evidence/frontend-visual-refresh/after/catalog-form-errors.png",
+      "docs/evidence/frontend-visual-refresh/after/catalog-form-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/catalog-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/checkout-errors-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/checkout-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/checkout-quote-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/dashboard-1280.png",
+      "docs/evidence/frontend-visual-refresh/after/dashboard-data-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/dashboard-desktop.png",
+      "docs/evidence/frontend-visual-refresh/after/dashboard-error.png",
+      "docs/evidence/frontend-visual-refresh/after/dashboard-loading.png",
+      "docs/evidence/frontend-visual-refresh/after/dashboard-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/login-desktop.png",
+      "docs/evidence/frontend-visual-refresh/after/orders-desktop.png",
+      "docs/evidence/frontend-visual-refresh/after/product-detail-mobile-actions.png",
+      "docs/evidence/frontend-visual-refresh/after/product-detail-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/product-detail.png",
+      "docs/evidence/frontend-visual-refresh/after/shop-desktop.png",
+      "docs/evidence/frontend-visual-refresh/after/shop-empty-mobile.png",
+      "docs/evidence/frontend-visual-refresh/after/shop-mobile.png",
+      "docs/evidence/frontend-visual-refresh/before/capture.json",
+      "docs/evidence/frontend-visual-refresh/before/catalog-desktop.png",
+      "docs/evidence/frontend-visual-refresh/before/catalog-form-errors.png",
+      "docs/evidence/frontend-visual-refresh/before/dashboard-1280.png",
+      "docs/evidence/frontend-visual-refresh/before/dashboard-desktop.png",
+      "docs/evidence/frontend-visual-refresh/before/dashboard-mobile.png",
+      "docs/evidence/frontend-visual-refresh/before/login-desktop.png",
+      "docs/evidence/frontend-visual-refresh/before/orders-desktop.png",
+      "docs/evidence/frontend-visual-refresh/before/product-detail.png",
+      "docs/evidence/frontend-visual-refresh/before/shop-desktop.png",
+      "docs/evidence/frontend-visual-refresh/before/shop-mobile.png",
+      "docs/evidence/frontend-visual-refresh/representative/capture.json",
+      "docs/evidence/frontend-visual-refresh/representative/catalog-desktop.png",
+      "docs/evidence/frontend-visual-refresh/representative/catalog-form-errors.png",
+      "docs/evidence/frontend-visual-refresh/representative/dashboard-1280.png",
+      "docs/evidence/frontend-visual-refresh/representative/dashboard-desktop.png",
+      "docs/evidence/frontend-visual-refresh/representative/dashboard-mobile.png",
+      "docs/evidence/frontend-visual-refresh/representative/login-desktop.png",
+      "docs/evidence/frontend-visual-refresh/representative/orders-desktop.png",
+      "docs/evidence/frontend-visual-refresh/representative/product-detail.png",
+      "docs/evidence/frontend-visual-refresh/representative/shop-desktop.png",
+      "docs/evidence/frontend-visual-refresh/representative/shop-mobile.png",
+      "frontend/scripts/capture-visual-refresh.mjs",
+      "frontend/src/app/App.tsx",
+      "frontend/src/features/Dashboard.tsx",
+      "frontend/src/features/ProductOperations.tsx",
+      "frontend/src/features/Shop.tsx",
+      "frontend/src/shared/Icon.tsx",
+      "frontend/src/shared/ui.tsx",
+      "frontend/src/style.css",
+      "frontend/src/theme.ts",
+      "frontend/tests/dashboard.spec.ts",
+      "frontend/tests/visual-refresh.spec.ts"
+    ],
+    "excluded_dirty_paths": []
+  },
+  "git": {
+    "branch": {
+      "before": "feat/frontend-visual-refresh",
+      "after": "feat/frontend-visual-refresh"
+    },
+    "commits": [
+      {
+        "id": "0283d9cc8e446e635793a4f90e7810ceb226f7d9",
+        "slices": [
+          "S-VR-01"
+        ],
+        "message": "feat(frontend): visual refresh"
+      },
+      {
+        "id": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+        "slices": [
+          "S-VR-01"
+        ],
+        "message": "merge: preserve independent IAM planning"
+      }
+    ],
+    "push": {
+      "result": "PASS",
+      "remote": "origin",
+      "branch": "main"
+    },
+    "pr": {
+      "result": "NOT_EXECUTED",
+      "ref": null
+    },
+    "tag": {
+      "result": "NOT_EXECUTED",
+      "value": null
+    },
+    "release": {
+      "result": "NOT_EXECUTED",
+      "ref": null
+    }
+  },
+  "verification": [
+    {
+      "check": "delivery scope matches validated changes",
+      "result": "PASS"
+    },
+    {
+      "check": "unrelated dirty changes excluded",
+      "result": "PASS"
+    },
+    {
+      "check": "every side effect had an explicit effective grant",
+      "result": "PASS"
+    }
+  ],
+  "blockers": [],
+  "downstream_requirements": [],
+  "recommended_next": []
+}
