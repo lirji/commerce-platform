@@ -1,6 +1,7 @@
 # 候选建设项与当前不建议的事项
 
 - generated_at：2026-09-27；baseline：`7dda31ed017617f3701480f8a2d1620656c843cc`
+- permission_followup：`afc5e940c1dd988759880ad9f03106e68170ad0e`；独立补列RBAC和数据范围候选。
 - protocol：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
 - 来源：Claude `project-capability-exploration`，遵循 Evidence → Observation → Gap → Opportunity → Recommendation。
 - 目标边界：这里只回答 WHAT TO BUILD；下面不是已批准需求或技术选型。分类/priority 是建设优先级，不等同已发生事故严重度。
@@ -37,17 +38,17 @@
 - class / priority / triggerCondition / status：MUST_FIX / P1 / 长期运行、敏感删除或密钥轮换前 / NEEDS_MORE_EVIDENCE（政策UNKNOWN）。
 - confidence：机制FACT；目标政策UNKNOWN。
 
-### MF03 运营分工与激励承诺（G05/G12）
+### MF03 页面/按钮/接口RBAC与运营职责分离（G05）
 
-- capability / currentState：PARTIAL；商品范围授权、审批状态和审计已具备；营销能力全由ADMIN取得；赠券和礼包有明确现行行为。
-- problem / evidence：未建立编辑/审核/发布组织分工；赠券退款保留，多权益受理后分别到账，E08/E12/E14/E15/E23/E27/E30/E37。
-- whyNeeded：多人经营、高成本奖励或退款撤奖励/全礼包承诺必须有对应权限和处置口径。
-- proposedCapability / expectedBenefit：业务定义的权限/范围与职责分离；赠券/已消费奖励及礼包部分失败政策和可见处置；防止客户承诺与系统结果不一致。
-- businessValue / engineeringValue：运营可分工，激励成本可解释；策略验收锁定具体失败场景。
-- complexity / risk：中；未确认就禁止自批/回收资产会改变现有业务。
-- dependency：组织职责、奖品成本、退款与礼包兑现政策；现有台账/钱包/状态机继续作为权威。
-- class / priority / triggerCondition / status：MUST_FIX / P1 / 多运营团队或发布相关奖励承诺前 / NEEDS_MORE_EVIDENCE。
-- confidence：当前实现FACT；目标政策UNKNOWN；不是既有越权/错账判定。
+- capability / currentState：PARTIAL基础鉴权；可配置RBAC闭环ABSENT。固定角色、商品范围授权、营销Capability、审批状态和审计已有。
+- problem / evidence：App静态菜单按角色分支，凭据单role，Capability映射写在Actor；ADMIN同时有编辑/审核/发布能力；runtime-capabilities仅返回运行开关，E30/E38/E39。
+- whyNeeded：多人经营需要按职责授予页面与动作；前端展示与服务端实际授权必须一致。
+- proposedCapability / expectedBenefit：账号/角色分配、角色与菜单/动作授权、稳定权限标识、页面/按钮控制及接口/用例校验、撤权和授权审计；按业务确认禁止自批等规则。支持“只读订单”“活动编辑但不能发布”等岗位。
+- businessValue / engineeringValue：降低共享管理员身份和过宽授权的需求；动作权限与审批状态规则可独立验收。
+- complexity / risk：中至高；既有ADMIN兼容、默认权限和撤权语义需明确，不能只加菜单管理。
+- dependency：角色/动作矩阵、授权负责人、自批政策及既有凭据兼容；数据范围由MF05独立负责，不以选定IdP为前提。
+- class / priority / triggerCondition / status：MUST_FIX / P1 / 多岗位、分级运营或高成本动作开放前 / RECOMMENDED（先确认权限矩阵）。
+- confidence：当前实现FACT；完整闭环缺失INFERRED；职责政策UNKNOWN；未认定现有越权漏洞。
 
 ### MF04 真渠道明确拒绝与财务差错闭环（G13）
 
@@ -60,6 +61,30 @@
 - dependency：NE05真实渠道合同、售后政策、渠道账单和幂等范围。
 - class / priority / triggerCondition / status：MUST_FIX / P1 / 按既定后置安排开展真实资金联调前 / DISCOVERED。
 - confidence：当前分支FACT；真实渠道行为NEEDS_VERIFICATION。
+
+### MF05 接口层通用业务数据范围授权（G16）
+
+- capability / currentState：PARTIAL基础隔离；通用闭环ABSENT。tenant/会员本人和商品CATALOG商家/门店授权已有。
+- problem / evidence：会员管理列表按tenant，订单adminList传member=null、adminRead按tenant；OPERATOR范围仅覆盖商品经营；未发现跨业务组织/门店/负责人范围，E08/E40/E41。
+- whyNeeded：同租户多部门、多店或岗位不能靠租户隔离控制各自可见/可操作数据；拥有动作权限也不代表拥有全部数据。
+- proposedCapability / expectedBenefit：逐资源定义归属维度、可授予范围与允许动作；列表、详情、汇总、写操作及后台任务在服务端一致执行，未来导出继承相同规则；兼顾动态归属/撤权与已受理工作的业务效果。使A店运营即使直接调用接口也受A店范围约束。
+- businessValue / engineeringValue：支持真实岗位与门店分权；复用现有权威库授权实践，避免前端筛选替代授权。
+- complexity / risk：高；会员等资源未必天然属于单店，必须先定归属；不能把任意请求参数拼入SQL或默认给后台任务管理员权限。
+- dependency：资源所有者、组织/门店/负责人模型和跨范围例外政策；MF03动作矩阵；已有tenant与本人隔离持续成立，暂不定稿技术框架。
+- class / priority / triggerCondition / status：MUST_FIX / P1 / 同租户出现部门/门店/岗位隔离要求前 / RECOMMENDED（先确认一条业务授权链）。
+- confidence：现状FACT；完整闭环缺失INFERRED；具体数据归属、范围和在途撤权政策UNKNOWN。
+
+### MF06 奖励兑现与补偿政策（G12）
+
+- capability / currentState：PARTIAL；用券退款、CREDIT冲正、礼包原子受理和逐项到账已有。
+- problem / evidence：活动赠券退款保留，多权益受理后分别到账；退款撤奖励/全礼包兑现政策未确定，E14/E15/E37。
+- whyNeeded：对应奖励承诺需要有明确的失败与补偿口径，幂等不能代替兑现政策。
+- proposedCapability / expectedBenefit：确认赠券是否回收及已消费/过期处置，礼包部分失败的可见结果、补发或补偿；让客服和运营能说明实际结果与成本。
+- businessValue / engineeringValue：客户承诺与台账行为一致；以具体失败场景验证补偿。
+- complexity / risk：中；未经政策确认回收资产会改变现有业务。
+- dependency：奖品成本、退款与礼包兑现政策、MF03相关动作授权；已有台账/钱包/状态机继续作为权威。
+- class / priority / triggerCondition / status：MUST_FIX / P1 / 发布退款撤奖励或全礼包兑现承诺前 / NEEDS_MORE_EVIDENCE。
+- confidence：现行为FACT；目标政策UNKNOWN；未认定当前错账。
 
 ## Natural Evolution
 

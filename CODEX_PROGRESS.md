@@ -2,19 +2,21 @@
 
 ## 任务目标
 
-读取并使用Claude中的项目分析技能，基于阶段8后的当前仓库重新分析欠缺能力，更新有证据、优先级、触发条件和依赖路线的报告。仅分析，不实现候选功能。
+读取并使用Claude中的项目分析技能，基于阶段8后的真实仓库重新分析欠缺能力；按用户补充，明确区分页面/按钮/接口RBAC与接口业务数据范围权限。仅分析和更新报告，不实现候选功能。
 
-用户AGENTS Git规则8持续授权本任务报告变更按独立分支提交、正常合并并推送远程main；没有生产部署授权。
+用户AGENTS Git规则8持续授权本任务报告按独立分支提交、正常合并并推送远程main；没有生产部署授权。
 
 ## 已完成
 
-- CE-20260927：读取Claude入口的project-capability-exploration及其references/output-schema；读取discovery/deep-analysis/architecture-reviewer及扫描清单，只复用相邻技能方法。
-- 分析基线7dda31ed017617f3701480f8a2d1620656c843cc，起始main与origin/main一致、工作树干净。基线main CI36363560873 completed/success已实际核实。
-- 静态清单19 Maven模块、205主Java、54测试Java、41 Mapper XML、45迁移；复核会员/商品/营销/交易及公共运行链路、配置、前端和既有阶段证据。
-- 再生五份.engineering/exploration产物：9维成熟度、15项缺口、四分类候选、触发/依赖路线、37个证据索引和Not Recommended Now。
-- 撤销旧的无积分/动态人群/批量任务/观测/保留机制/多进程恢复等结论；现有能力边界与尚缺治理明确区分。
-- 产物验证PASS：五文件非空、必需章节、四分类及候选模板、所有本地链接/证据ID有效、Mermaid围栏、git diff --check。未更改生产代码、测试、配置、依赖或数据库。
-- 未重跑业务测试/压测/真实渠道，报告明确标UNVERIFIED/NEEDS_VERIFICATION；历史CI不继承为新ref。
+- CE-20260927已交付初版报告提交afc5e940c1dd988759880ad9f03106e68170ad0e，origin/main包含该提交，任务分支feat/capability-gap-reassessment已发布。不要重复原交付。
+- Claude入口project-capability-exploration及references/output-schema实际已读；discovery/deep-analysis/architecture-reviewer仅复用扫描方法。技能指向.cursor共享目录，没有调用Claude模型或修改全局技能。
+- 原产品分析基线7dda31e；权限补充检查基于afc5e94开始，工作树干净，产品代码未改变。原静态清单19 Maven模块、205主Java、54测试Java、41 Mapper XML、45迁移。
+- 复核App静态菜单和角色分支、运行开关接口、Actor固定角色/Capability、HTTP默认拒绝清单、credential单role、商品经营grant、会员/订单Service＋Mapper及负向测试源码。
+- 已有基础角色/租户/会员本人过滤及商品商家/门店范围；可配置页面/按钮/接口RBAC和跨业务组织/门店/负责人范围未形成闭环。G05扩充RBAC，新增独立G16数据范围，未据此认定已发生越权漏洞。
+- 同步五份探索报告：16项缺口、16个候选、41个证据索引；MF03权限、MF05数据范围、MF06奖励政策分别表达；权限在多岗位/同租户分权使用前为P1门槛。
+- 初版报告同head CI：main36373088584 completed/success；分支36373067309 completed/failure，24项浏览器中1项标题等待失败、23项通过，原因未确认。均已保留记录，不继承为本次新ref的PASS。
+- 本轮没有改生产代码、测试、配置、依赖、数据库，也没有重跑业务测试/压测或联调真实渠道；测试源码存在不等于本轮执行PASS。
+- 文档必要检查PASS：五份产物、9维、16项缺口、16个完整候选、41个证据、本地链接/围栏/依赖图和git diff --check；只包含当前任务六份文档。
 
 ## 已修改文件
 
@@ -27,26 +29,29 @@
 
 ## 未完成
 
-- 报告已完成；当前feat/capability-gap-reassessment，待按任务Git交付完成文档提交、正常合入远程main，并核实本次ref的CI实际状态。恢复先核对Git，不重复分析。
-- 这些候选功能未获本轮实施授权，不属于本任务未完工作。
+- 本文件为权限补充提交前检查点；本回合完成文档必要检查与正常Git交付。恢复先核对Git和.local/capability-gap-permissions-delivery.md的实际结果，远程main已包含补充提交则不要重复交付。
+- 候选权限功能尚未实施，不属于本轮分析任务的未完工作。
 
 ## 当前问题
 
-- 本轮分析/文档检查没有阻塞。
-- 后续业务输入尚未确定：第二应用与共享授权、配送/运费、运营职责/奖励承诺、数据保留、SLO/RTO/RPO和值班告警目标。未知不阻塞分析。
+- 分工矩阵、资源归属与数据范围、撤权对已受理后台任务的影响尚待后续业务设计确认；不阻塞分析，也不允许自动选择策略。
+- 原报告分支CI的浏览器标题等待失败原因未知，同head main通过；不是权限漏洞证据，不扩大本任务为无关产品修复。
+- 第二应用/共享、配送/运费、奖励承诺、保留与SLO/RTO/RPO、值班告警目标仍待确认。
 
 ## 下一步建议
 
-1. 仅暂存上述六份文件，核对差异并提交；按持续授权正常推任务分支、合入远程main。禁止强推/绕过保护/生产部署。
-2. 记录实际提交/远程/CI结果；如Git已完成，勿重复。最新观察可记录.local/capability-gap-reassessment-delivery.md，不含机密。
-3. 报告建议：自营主线先选持久购物车/地址纵向闭环；中台主线先选第二项目边界与契约发现。需用户选定具体建设目标后再实施。
+1. 检查仅上述六份文档变更、章节/候选模板/证据ID/本地链接/Mermaid与git diff --check，使用当前任务分支按完整逻辑提交。
+2. 正常推分支，在干净.local/capability-gap-main-integration工作树合入最新main并推送；保留分支和工作树，不强推、不绕过保护。核实本次ref实际CI，运行中如实记录，不擅自重跑无关测试。
+3. 若用户选定权限实施，先确认角色动作矩阵和逐资源归属/范围；选一条“动作＋数据范围”纵向链路验证页面、接口、列表/详情/写操作/任务及撤权。不仅做菜单隐藏，不预设技术框架，不要求先联调真实IdP。
 
 ## 重要上下文
 
-上一任务Phase8已交付源码0b7d6f1、证据b389d65、独立CI修复bdc2af7、合并cac9810、文档checkpoint7dda31e；当前基线main7dda31e CI36363560873 success。旧CODEX“仅剩最终文档checkpoint”的状态已过时，不要恢复已完成的Git交付或重跑规模测试。完整历史在docs/delivery/phase8-marketing-journey与docs/evidence/phase8-marketing-journey。
+本次是原能力缺口分析的补充，继续使用feat/capability-gap-reassessment。初版报告和Git交付已经完成；CODEX_PROGRESS是提交前检查点，最终提交/远程/CI以Git和.local交付观察为准。
 
-外部IdP/支付/权益/WMS联调仍按既有要求后置；旧规则迁移仍是独立BLOCKED工作。Claude技能是指向.cursor共享技能的入口；本轮没有调用Claude模型或修改全局技能。.local凭据不可打印/提交。不派子Agent。
+Phase8已交付源码0b7d6f1、证据b389d65、独立CI修复bdc2af7、合并cac9810、checkpoint7dda31e；完整历史在docs/delivery/phase8-marketing-journey和docs/evidence/phase8-marketing-journey。不要恢复已完成的历史Git交付或重跑规模测试。
+
+外部IdP/支付/权益/WMS按既有要求后置；旧规则迁移仍是独立BLOCKED工作。.local凭据不可打印/提交，不派子Agent。
 
 ## 恢复 Prompt
 
-请读取CODEX_PROGRESS.md和Git实际状态，完成CE-20260927报告的尚未完成Git交付及实际CI观察。分析和文档必要检查已完成，只处理本任务六份文档，不重新规划、不重跑产品测试、不开始候选实现、不等待“继续”。若远程main已包含报告提交，记录实际结果后交付即可；历史Phase8已经交付，勿重复。遇到权限或不可确定的冲突时记录具体阻塞。
+请读取CODEX_PROGRESS.md、Git实际状态及.local/capability-gap-permissions-delivery.md，从权限补充报告尚未完成的必要检查/Git交付继续。远程main已包含补充提交则记录实际CI后交付，不重复原afc5e94交付，不重新全面分析、不重跑产品测试、不开始RBAC或数据权限实施、不等待“继续”。只处理本任务六份文档，权限/不可确定冲突时记录具体阻塞。

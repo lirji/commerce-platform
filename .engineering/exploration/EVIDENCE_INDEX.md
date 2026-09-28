@@ -2,6 +2,7 @@
 
 - generated_at：2026-09-27；workspace：`/Users/liruijun/personal/LLM/commerce-platform`
 - baseline：`7dda31ed017617f3701480f8a2d1620656c843cc`；开始时main与origin/main一致、无已有脏改动。
+- permission_followup：`afc5e940c1dd988759880ad9f03106e68170ad0e`；该报告提交已发布main，补充复核开始时工作树干净，产品代码仍同原基线。
 - protocol：`engineering-baseline/v1`、`skill-contract/v1`、`capability-exploration-report/v1`
 - artifact：CAPABILITY_EXPLORATION_REPORT；task：CE-20260927。
 - scope：源码/配置/SQL与测试源码交叉检查；历史验收只归入历史证据。本轮未启动应用、写业务库、重跑产品测试/压测或联调渠道。
@@ -66,6 +67,12 @@
 | E35 | 地址AES-GCM/AAD已有，单密钥/固定写入版本 | Java/SQL：[AddressCipher](../../order-runtime/src/main/java/com/lrj/commerce/ordering/address/infrastructure/security/AddressCipher.java)、[OrderMapper](../../order-runtime/src/main/resources/mappers/ordering/OrderMapper.xml) | encrypt | commerce.address-key；address_key_version写1；只有encrypt，无受控历史解密/轮换 | FACT；真实WMS披露政策UNKNOWN |
 | E36 | 外部适配端口存在；缺合作方完整接入链 | API/Java/docs：[PaymentChannel](../../payment/src/main/java/com/lrj/commerce/payment/charge/application/port/PaymentChannel.java)、[ExternalEntitlementPort](../../benefit/src/main/java/com/lrj/commerce/benefit/entitlement/application/port/ExternalEntitlementPort.java)、[WmsPort](../../fulfillment/src/main/java/com/lrj/commerce/fulfillment/application/port/WmsPort.java)、[运行手册后置清单](../../deploy/README.md) | observe/ensure及权益/WMS端口 | 本地沙箱默认关闭；真实IdP/资金/权益/WMS后置 | 端口FACT；完整对外接入缺口INFERRED |
 | E37 | 全额累计退货返原用券/CREDIT冲正；非自动撤已赠券 | Java/historical evidence：[BenefitCompensationHandler](../../commerce-app/src/main/java/com/lrj/commerce/app/runtime/compensation/BenefitCompensationHandler.java)、[CouponService](../../benefit/src/main/java/com/lrj/commerce/benefit/coupon/application/CouponService.java)、[Phase7报告](../../docs/evidence/phase7-marketing-production/PHASE7_REPORT.md) | handle/refund/confirmCampaign | fullReturn触发coupon hold USED→AVAILABLE；gifted coupon退款政策待独立决定 | 当前行为FACT；撤奖励目标UNKNOWN |
+| E38 | 页面/按钮使用固定角色分支；运行开关不是权限集合 | UI/HTTP：[App](../../frontend/src/app/App.tsx)、[contracts](../../frontend/src/shared/contracts.ts)、[AdminData](../../frontend/src/features/AdminData.tsx)、[Orders](../../frontend/src/features/Orders.tsx)、[ConsoleController](../../commerce-app/src/main/java/com/lrj/commerce/app/http/operations/ConsoleController.java) | groups/menu/content；admin/sandboxEnabled；capabilities | Actor前端单role；静态菜单；runtime-capabilities={sandboxEnabled,workersEnabled} | 当前分支FACT；可配置页面/按钮RBAC闭环缺失INFERRED |
+| E39 | 服务端是固定角色/能力，未见账号角色权限管理闭环 | API/SQL：[Actor](../../platform-runtime/src/main/java/com/lrj/commerce/runtime/api/identity/Actor.java)、[SecurityConfiguration](../../commerce-app/src/main/java/com/lrj/commerce/app/configuration/security/SecurityConfiguration.java)、[CredentialMapper](../../platform-runtime/src/main/resources/mappers/runtime/CredentialMapper.xml)、[V1](../../commerce-app/src/main/resources/db/migration/V1__commerce_foundation.sql)、[V36](../../commerce-app/src/main/resources/db/migration/V36__background_runtime_failure_semantics.sql) | role/capabilities/requireAdmin/require/security | platform_credential单role；四固定角色；ADMIN全部营销能力；45迁移未见通用user-role/role-permission/menu模型 | 固定鉴权FACT；可配置RBAC完整闭环缺失INFERRED |
+| E40 | 会员/订单有tenant/本人隔离，管理员没有岗位数据范围 | Service/SQL：[MemberService](../../member/src/main/java/com/lrj/commerce/member/profile/application/MemberService.java)、[MemberMapper](../../member/src/main/resources/mappers/member/MemberMapper.xml)、[OrderService](../../order-runtime/src/main/java/com/lrj/commerce/ordering/order/application/OrderService.java)、[OrderMapper](../../order-runtime/src/main/resources/mappers/ordering/OrderMapper.xml) | member.list/current；order.list/read/adminList/adminRead | member.list按tenant；order会员tenant＋member；adminList member=null，adminRead按tenant；请求store不是上述授权条件 | 已有过滤FACT；跨业务组织/门店/负责人通用范围缺失INFERRED |
+| E41 | 商品经营已有数据库资源范围与撤权负向测试 | SQL/test：[StoreAccessMapper](../../store/src/main/resources/mappers/store/StoreAccessMapper.xml)、[V17](../../commerce-app/src/main/resources/db/migration/V17__store_operator_grants.sql)、[StoreAccessTest](../../commerce-app/src/test/java/com/lrj/commerce/app/StoreAccessTest.java)、[AuthorizationCoverageTest](../../commerce-app/src/test/java/com/lrj/commerce/app/configuration/security/AuthorizationCoverageTest.java) | allowed/stores；grantsAreScopedRevocableAndNeverGrantPlatformRights；控制器路径清单检查 | store_operator_grant只允许CATALOG＋STORE/MERCHANT；测试源码覆盖撤销、跨tenant、OPERATOR不能读管理会员/转授 | 实现与测试存在FACT；本轮未执行测试，不能扩展成所有业务范围验证PASS |
+
+权限复核时另核实报告提交afc5e94的CI：[main运行36373088584](https://github.com/lirji/commerce-platform/actions/runs/36373088584)为completed/success；[分支运行36373067309](https://github.com/lirji/commerce-platform/actions/runs/36373067309)为completed/failure，浏览器24项中1项在等待“会员营销运营台”标题时失败，23项通过。失败原因未确认，不能静默忽略或直接断言为偶发，也不能把同提交main成功继承为权限补充新ref的CI结果。本轮未修改产品或测试来处理这个独立结果。
 
 ## 核心链路交叉核对
 
@@ -81,12 +88,14 @@
 | Journey | 可信事件/扫描→固定版本→WAIT/DECIDE/既有动作→步骤/检查点原子，原节点恢复 | E23/E24 |
 | 经营效果 | 订单/退款事件→重新读取权威事实→按订单唯一投影→UTC队列/净收款 | E26 |
 | 公共运行 | EventWorker→独立有界车道→WorkLanes/Recovery→低基数观测/告警 | E17/E18/E28/E29 |
+| 页面与接口权限 | App固定菜单/角色→SecurityConfiguration固定路径→Actor固定动作能力；无可配置角色/权限管理闭环 | E38/E39 |
+| 业务数据范围 | 凭据tenant/actor→会员本人/订单过滤；商品StoreAccess→权威grant与目录SQL；管理会员/订单仍按tenant | E08/E40/E41 |
 
 ## 缺失判断的检索边界
 
 静态清单涵盖19模块、全部41 Mapper XML的表引用和45迁移表定义，以及Controller/API/Service、前端业务页、CI/脚本/测试目录。重要现有链路采用实际方法段复核，不用文件数冒充全行审计。
 
-跨域缺失检索包括：接入应用/外部主体与订单映射、Webhook/OpenAPI、购物车表/地址簿/配送费用、文件上传、仓库/结算、后端SBOM/依赖检查、API限流、密钥版本。未发现完整闭环不等于绝对不存在于外部系统。只有明确的源码/配置事实使用FACT，缺失结论统一INFERRED。
+跨域缺失检索包括：账号/角色/权限/菜单管理、permission/capability/role分支、角色关联与组织范围迁移、接口角色/能力、列表/详情/SQL范围；接入应用/外部主体与订单映射、Webhook/OpenAPI、购物车表/地址簿/配送费用、文件上传、仓库/结算、后端SBOM/依赖检查、API限流、密钥版本。权限补充采用入口→服务→Mapper交叉检查，未审计所有接口的每条路径。未发现完整闭环不等于绝对不存在于外部系统。只有明确的源码/配置事实使用FACT，缺失结论统一INFERRED。
 
 额度、积分/券/权益防重、交易未知结果与状态约束没有因缺少外部渠道而降级为“未实现”。默认关闭的retention/sandbox/workers标为开关事实，不推测机器当前开启值。
 
@@ -94,7 +103,7 @@
 
 CE-20260927必需检查：五份产物存在非空、必需章节和9维成熟度、四分类/触发条件、Not Recommended Now、依赖图、证据ID与本地链接有效、未把未执行测试标PASS、无产品/测试/配置/依赖变更。
 
-本轮产品测试/压测/实时DB/渠道联调：UNVERIFIED（未执行），无需用它们证明本次文档改动。分析产物检查已PASS：五文件非空、必需章节、四分类/每候选模板、37个证据ID、本地链接、Mermaid围栏与git diff --check均已核对；diff仅五份分析文档。不能以历史CI的PASS继承新文档ref。
+本轮产品测试/压测/实时DB/渠道联调：UNVERIFIED（未执行），无需用它们证明本次文档改动。分析产物检查PASS：五文件非空、必需章节、四分类/16个候选模板、16项缺口、41个证据ID、本地链接、Mermaid围栏与git diff --check；权限补充只改五份分析文档及owner负责的CODEX_PROGRESS摘要。本次Git/CI实际观察在交付时记录，不能以历史CI的PASS继承新文档ref。
 
 ```yaml
 SKILL_HANDOFF:
@@ -110,6 +119,8 @@ SKILL_HANDOFF:
     - second-application-and-sharing-policy
     - delivery-fee-and-refund-policy
     - operating-roles-and-reward-promises
+    - role-action-matrix-and-business-data-scope
+    - revocation-for-accepted-background-work
     - retention-SLO-RTO-RPO-and-alert-owner
   recommended_next: [stop]
 ```
