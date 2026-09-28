@@ -8,7 +8,7 @@
 
 - auth P2全部9节点实现和本地验收完成，正在Git/CI交付；不进入P3。
 - 商城中央门店读取、显式身份映射、V46迁移及真实SQL过滤完成；旧Actor/memberId/回执及其他路由保留。
-- 真实跨进程13项PASS，非HTTP直调用例2项PASS，全量mvn verify退出0。
+- 真实跨进程13项PASS，非HTTP直调用例2项PASS，全量mvn verify 377项退出0。SDK最终固定ac4c5b2，含响应体总超时修复，真实13项已复跑。
 - 本任务分支feat/oa-auth-p2-commerce；原前端进度保存在.local/oa-auth-p2/PREVIOUS_CODEX_PROGRESS.md。
 
 ## 已修改文件
