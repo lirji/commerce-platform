@@ -15,7 +15,7 @@
 - 三项mutation被具体断言捕获，源hash恢复后上述clean通过。hygiene无BLOCKING，npm audit零漏洞，diff check PASS。
 - 规模10000=469.990s；干净新tenant复测100=6.127s、1000=48.759s；50k future无推进；hot5000/normal5=0.726s正常租户先完成，真实payment/event同时推进。
 - affected browser4/4；修复四项旧UI断言后最终jar全browser24/24（1.2min）。旧main CI20/24四项失败为陈旧按钮/统计/主题断言，不是新Journey故障。
-- 独立worktree.local/phase8-ci-fix分支fix/ci-browser-contracts提交bdc2af712b7e76639cab4ac8e43c65398ea764c1已推远程，CI run36362758041在执行。无前端产品变化。
+- 独立worktree.local/phase8-ci-fix分支fix/ci-browser-contracts提交bdc2af712b7e76639cab4ac8e43c65398ea764c1已推远程，CI run36362758041已SUCCESS。无前端产品变化。
 - 正式设计/契约/切片、TEST_RESULT S1–S5、Review/QA、00–16证据、矩阵、容量/SQL计划、可复跑脚本、PHASE8_REPORT已归档。报告严格PHASE_8_COMPLETE_WITH_LIMITATIONS，本地容量/历史Facts/保留期等限制明示。
 
 ## 已修改文件
@@ -28,22 +28,21 @@
 
 ## 未完成
 
-- 分逻辑提交阶段8功能与验收证据；合并独立CI测试修复，push feat分支以不可变ref等待实际远程CI。
-- 远程CI绿后正常merge到main并push，ls-remote核实。
-- DELIVERY_RESULT/CI_RESULT与状态/报告末尾补真实Git结果，最终main提交远程CI完成后汇报。
+- 无未完必需产品实现；源码交付已完成。
+- 本文件与最终DELIVERY/CI记录作为文档checkpoint在原分支正常提交推main后，核实新HEAD远程CI，并记录ignored.local/phase8-final-observation.md。恢复先核对Git实际状态，若已完成勿重复提交/验证。
+
 
 ## 当前问题
 
-- 无本地必需验证阻断；远程CI未完成不能虚称绿。
+- 无必需验证阻断。源码cac9810cab0d1e63570d271a385a992892a93d56 CI36363137541 SUCCESS，已main push与ls-remote核对；后续文档HEAD单独核对。
 - 原首轮1000容量受故障trigger/DDL互扰，保留原始结果但不用作主容量；已隔离recovery并干净复测，不重置/replay成功数据。
 - 生产SLO/保留期无产品依据；无百万timer认证；历史不存完整Facts，OLD覆盖partial。
 
 ## 下一步建议
 
-1. 核对允许路径/源码指纹，提交完整功能单元和独立证据单元，不机械按文件类型拆分，不夹带其他任务。
-2. 正常merge fix/ci-browser-contracts，push feat，用gh核对当前不可变SHA CI成功；失败按具体证据修复，不绕过门禁。
-3. main未配置保护（已查询），仍必须正常merge/push不force。核对remote main实际SHA。
-4. 最终状态/CI与Git结果落盘，关闭owned进程后给用户简短报告与main SHA。
+1. 本轮功能0b7d6f1、证据b389d65、独立UI测试bdc2af7、正常merge cac9810已交付main，源码CI36363137541 SUCCESS。
+2. 仅收口最终文档checkpoint：提交原任务分支→main正常fast-forward push→核实对应GitHub新HEAD CI。禁止强推/生产部署。
+3. 最终报告docs/evidence/phase8-marketing-journey/PHASE8_REPORT.md；Git/CI记录docs/delivery/phase8-marketing-journey/；最终观察ignored.local/phase8-final-observation.md。
 
 ## 重要上下文
 
@@ -52,4 +51,4 @@
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS、阶段8DELIVERY_STATUS与git实际状态，从未完成Git/远程CI继续。阶段7已推main，阶段8全部本地实现/验收已完成；不要重跑已通过大规模测试或重规划，不等待继续，不把远程pending冒充PASS。正常提交合并推main并归档实际结果，禁止强推/生产部署。
+读取CODEX_PROGRESS、阶段8DELIVERY_STATUS与git实际状态，从未完成Git/远程CI继续。阶段7已推main，阶段8全部实现/验收及源码main交付完成，源码CI36363137541 SUCCESS；仅最终文档checkpoint与新HEAD CI观察需核实。不要重跑大规模测试或重规划，不等待继续，不把旧refPASS继承给新HEAD。最终CI/remote核对后简短汇报，禁止强推/生产部署。

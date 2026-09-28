@@ -1,0 +1,100 @@
+{
+  "protocol": "skill-contract/v1",
+  "skill": "ci-cd-gate",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "ref": {
+    "type": "commit",
+    "value": "cac9810cab0d1e63570d271a385a992892a93d56"
+  },
+  "policy": ".github/workflows/verify.yml",
+  "run": {
+    "id": 36363137541,
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36363137541",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "checks": [
+    {
+      "name": "Verify commerce platform / verify",
+      "required": true,
+      "result": "PASS",
+      "evidence": "https://github.com/lirji/commerce-platform/actions/runs/36363137541"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Set up job",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "conclusion": "success"
+    },
+    {
+      "name": "Create isolated CI resources",
+      "conclusion": "success"
+    },
+    {
+      "name": "Build and verify real MySQL semantics",
+      "conclusion": "success"
+    },
+    {
+      "name": "Audit frontend dependencies",
+      "conclusion": "success"
+    },
+    {
+      "name": "Start packaged application",
+      "conclusion": "success"
+    },
+    {
+      "name": "Browser fixtures and Chromium",
+      "conclusion": "success"
+    },
+    {
+      "name": "Real browser commerce acceptance",
+      "conclusion": "success"
+    },
+    {
+      "name": "Preserve verification evidence",
+      "conclusion": "success"
+    },
+    {
+      "name": "Stop only the ephemeral CI database",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "conclusion": "success"
+    },
+    {
+      "name": "Complete job",
+      "conclusion": "success"
+    }
+  ],
+  "localValidation": "P8-S5_TEST_RESULT.md",
+  "performance": {
+    "result": "PASS",
+    "scope": "Local measured samples; no production SLO certification",
+    "evidence": "../../evidence/phase8-marketing-journey/13-scale-backlog.md"
+  },
+  "environmentApproval": "N/A — no deployment",
+  "blockers": [],
+  "documentationCheckpoint": "Subsequent documentation-only commit must be checked as its own immutable ref; source result does not claim newer HEAD CI."
+}

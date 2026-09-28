@@ -2,7 +2,7 @@
 
 Phase: 8
 
-Final Status: **PHASE_8_COMPLETE_WITH_LIMITATIONS**（有界Journey与全部必需本地验收完成；Git/远程CI实际状态见交付记录）。
+Final Status: **PHASE_8_COMPLETE_WITH_LIMITATIONS**（有界Journey与全部必需验收完成，验证过的源码正常交付main；后续文档checkpoint新ref另核对）。
 
 ## Executive Summary
 
@@ -143,3 +143,5 @@ JourneyApi/Graph/Actions/Service/Mapper/XML，V44/V45，JourneyController与精�
 ## Next Recommended Phase
 
 以真实业务负载建立Journey容量/SLO和保留治理，并针对确有产品需求的下一动作定义版本/幂等/失败/补偿契约。保持同库可恢复模型，暂不建设通用工作流平台。
+
+交付事实：源码cac9810cab0d1e63570d271a385a992892a93d56远程CI [36363137541](https://github.com/lirji/commerce-platform/actions/runs/36363137541) SUCCESS后正常合并推main，ls-remote实际一致；独立旧UI测试契约修复CI36362758041 SUCCESS。后续文档checkpoint只补交付事实，其SHA/CI不得由上述源码PASS自动推导。
