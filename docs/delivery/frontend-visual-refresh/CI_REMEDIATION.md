@@ -6,4 +6,6 @@
 
 [commerce.spec.ts](../../../frontend/tests/commerce.spec.ts) 增加该页面行的“已发布”状态断言，然后在该行打开页面。原标题、真实数据和窄屏断言全部保留，没有增加重试、扩大超时或降低断言。同一延迟条件下，修复后的真实顺序为 `POST publish → 200`，再 `GET render → 200`，用例通过。两次请求顺序和结果见 [RACE_VERIFICATION](RACE_VERIFICATION.json)。延迟与网络记录只存在于本机私密诊断副本，正式测试仅增加状态前置条件。
 
-8 个页面产品文件的摘要仍为 `3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876`；21 张已查看图片继续对应当前页面。修复后本地完整 26 项回归、构建和 Prettier 检查再次通过，结果与测试源码摘要见 [REGRESSION_RESULT](REGRESSION_RESULT.json)。公共扫描对本批测试/文档返回 `NOT_APPLICABLE`、无 finding；原产品质量门禁继续对应不变的源码，前端单元套件缺失的限制保持记录。精确提交 CI 复核与 Git 发布继续按实际结果同步。
+8 个页面产品文件的摘要仍为 `3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876`；21 张已查看图片继续对应当前页面。修复后本地完整 26 项回归、构建和 Prettier 检查再次通过，结果与测试源码摘要见 [REGRESSION_RESULT](REGRESSION_RESULT.json)。公共扫描对本批测试/文档返回 `NOT_APPLICABLE`、无 finding；原产品质量门禁继续对应不变的源码，前端单元套件缺失的限制保持记录。
+
+修复提交 `6914abb` 的 [远程 CI](https://github.com/lirji/commerce-platform/actions/runs/36378779697) 全部通过，上传浏览器报告确认 26/26 成功、flaky=0。该提交已正常快进并推送 main；精确 CI 与发布事实分别见 [CI_RESULT](CI_RESULT.json)、[DELIVERY_RESULT](DELIVERY_RESULT.json)。没有通过重跑旧失败或放宽断言完成交付。

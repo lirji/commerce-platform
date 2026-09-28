@@ -226,5 +226,14 @@
     "visual-refresh.spec.ts": "ebb4d13abc51a6eb71981e1e870155466e3f29e7f42254786d423e4cffa865ca"
   },
   "ciRemediation": "CI_REMEDIATION.md",
-  "raceVerification": "RACE_VERIFICATION.json"
+  "raceVerification": "RACE_VERIFICATION.json",
+  "remoteVerification": "CI_RESULT.json",
+  "remoteStats": {
+    "startTime": "2026-09-28T04:45:06.060Z",
+    "duration": 92849.68,
+    "expected": 26,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
 }

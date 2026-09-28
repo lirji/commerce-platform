@@ -38,4 +38,4 @@ CI 后续发现既有低代码用例未等待异步发布完成的时序问题�
 
 本次验证者（Codex）通过 `view_image` 查看最终 capture.json 中全部 21 张；每张的具体观察与截图链接在 [REVIEW](../../evidence/frontend-visual-refresh/REVIEW.md)。缺图、空结果、字段错误、暂缓加载和 503 均有明确状态来源；503 是声明的测试边界，并非后台真实故障。固定弹层按 viewport 检查，并补看内部滚动后的返回/报价/下单区。
 
-进度 Owner 已同步 `S-VR-01 → DONE`，实现已按持续授权正常发布 main。精确整合提交 `7c3fdb3bf1a516004ed8b63749c056dae1cf5f61` 的远程 verify 成功，包含后端构建/真实数据库、前端构建/依赖检查及完整浏览器验收，见 [CI_RESULT](CI_RESULT.json) 与 [运行记录](https://github.com/lirji/commerce-platform/actions/runs/36377172720)。Git 事实见 [DELIVERY_RESULT](DELIVERY_RESULT.json)；其他历史能力及 IAM 规划不扩大为本轮实施。
+进度 Owner 已同步 `S-VR-01 → DONE`，页面和发布回归修复已按持续授权正常发布 main。精确修复提交 `6914abb56d6e0587075e536dc92e08ef6bfa7749` 的远程 verify 成功，包含后端构建/真实数据库、前端构建/依赖检查及完整 26 项浏览器验收，上传报告确认无失败、跳过或重试失败，见 [CI_RESULT](CI_RESULT.json) 与 [运行记录](https://github.com/lirji/commerce-platform/actions/runs/36378779697)。历史 main 失败及复现/修复保留于 CI_REMEDIATION；Git 事实见 [DELIVERY_RESULT](DELIVERY_RESULT.json)。其他历史能力及 IAM 规划不扩大为本轮实施。

@@ -7,175 +7,216 @@
   "provider": "GitHub Actions",
   "workflow": ".github/workflows/verify.yml",
   "targetRef": "refs/heads/feat/frontend-visual-refresh",
-  "targetCommit": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+  "targetCommit": "6914abb56d6e0587075e536dc92e08ef6bfa7749",
   "uiFingerprint": "3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876",
   "requiredChecks": [
     "verify"
   ],
-  "runId": 36377172720,
-  "url": "https://github.com/lirji/commerce-platform/actions/runs/36377172720",
+  "runId": 36378779697,
+  "url": "https://github.com/lirji/commerce-platform/actions/runs/36378779697",
   "conclusion": "success",
-  "createdAt": "2026-09-28T04:18:51Z",
-  "completedAt": "2026-09-28T04:24:06Z",
+  "createdAt": "2026-09-28T04:41:29Z",
+  "completedAt": "2026-09-28T04:46:46Z",
   "jobs": [
     {
-      "completedAt": "2026-09-28T04:24:06Z",
+      "completedAt": "2026-09-28T04:46:45Z",
       "conclusion": "success",
-      "databaseId": 108785270066,
+      "databaseId": 108789979017,
       "name": "verify",
-      "startedAt": "2026-09-28T04:18:53Z",
+      "startedAt": "2026-09-28T04:41:32Z",
       "status": "completed",
       "steps": [
         {
-          "completedAt": "2026-09-28T04:18:56Z",
+          "completedAt": "2026-09-28T04:41:35Z",
           "conclusion": "success",
           "name": "Set up job",
           "number": 1,
-          "startedAt": "2026-09-28T04:18:54Z",
+          "startedAt": "2026-09-28T04:41:33Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:18:57Z",
+          "completedAt": "2026-09-28T04:41:36Z",
           "conclusion": "success",
           "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
           "number": 2,
-          "startedAt": "2026-09-28T04:18:56Z",
+          "startedAt": "2026-09-28T04:41:35Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:18:59Z",
+          "completedAt": "2026-09-28T04:41:39Z",
           "conclusion": "success",
           "name": "Run actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6",
           "number": 3,
-          "startedAt": "2026-09-28T04:18:57Z",
+          "startedAt": "2026-09-28T04:41:36Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:19:05Z",
+          "completedAt": "2026-09-28T04:41:46Z",
           "conclusion": "success",
           "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
           "number": 4,
-          "startedAt": "2026-09-28T04:18:59Z",
+          "startedAt": "2026-09-28T04:41:39Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:19:27Z",
+          "completedAt": "2026-09-28T04:42:09Z",
           "conclusion": "success",
           "name": "Create isolated CI resources",
           "number": 5,
-          "startedAt": "2026-09-28T04:19:05Z",
+          "startedAt": "2026-09-28T04:41:46Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:21:52Z",
+          "completedAt": "2026-09-28T04:44:32Z",
           "conclusion": "success",
           "name": "Build and verify real MySQL semantics",
           "number": 6,
-          "startedAt": "2026-09-28T04:19:27Z",
+          "startedAt": "2026-09-28T04:42:09Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:21:52Z",
+          "completedAt": "2026-09-28T04:44:32Z",
           "conclusion": "success",
           "name": "Audit frontend dependencies",
           "number": 7,
-          "startedAt": "2026-09-28T04:21:52Z",
+          "startedAt": "2026-09-28T04:44:32Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:22:02Z",
+          "completedAt": "2026-09-28T04:44:41Z",
           "conclusion": "success",
           "name": "Start packaged application",
           "number": 8,
-          "startedAt": "2026-09-28T04:21:52Z",
+          "startedAt": "2026-09-28T04:44:32Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:22:26Z",
+          "completedAt": "2026-09-28T04:45:05Z",
           "conclusion": "success",
           "name": "Browser fixtures and Chromium",
           "number": 9,
-          "startedAt": "2026-09-28T04:22:02Z",
+          "startedAt": "2026-09-28T04:44:41Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:23:58Z",
+          "completedAt": "2026-09-28T04:46:38Z",
           "conclusion": "success",
           "name": "Real browser commerce acceptance",
           "number": 10,
-          "startedAt": "2026-09-28T04:22:26Z",
+          "startedAt": "2026-09-28T04:45:05Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:24:02Z",
+          "completedAt": "2026-09-28T04:46:42Z",
           "conclusion": "success",
           "name": "Preserve verification evidence",
           "number": 11,
-          "startedAt": "2026-09-28T04:23:58Z",
+          "startedAt": "2026-09-28T04:46:38Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:24:02Z",
+          "completedAt": "2026-09-28T04:46:43Z",
           "conclusion": "success",
           "name": "Stop only the ephemeral CI database",
           "number": 12,
-          "startedAt": "2026-09-28T04:24:02Z",
+          "startedAt": "2026-09-28T04:46:42Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:24:02Z",
+          "completedAt": "2026-09-28T04:46:43Z",
           "conclusion": "success",
           "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
           "number": 22,
-          "startedAt": "2026-09-28T04:24:02Z",
+          "startedAt": "2026-09-28T04:46:43Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:24:02Z",
+          "completedAt": "2026-09-28T04:46:43Z",
           "conclusion": "success",
           "name": "Post Run actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6",
           "number": 23,
-          "startedAt": "2026-09-28T04:24:02Z",
+          "startedAt": "2026-09-28T04:46:43Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:24:03Z",
+          "completedAt": "2026-09-28T04:46:43Z",
           "conclusion": "success",
           "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
           "number": 24,
-          "startedAt": "2026-09-28T04:24:02Z",
+          "startedAt": "2026-09-28T04:46:43Z",
           "status": "completed"
         },
         {
-          "completedAt": "2026-09-28T04:24:03Z",
+          "completedAt": "2026-09-28T04:46:43Z",
           "conclusion": "success",
           "name": "Complete job",
           "number": 25,
-          "startedAt": "2026-09-28T04:24:03Z",
+          "startedAt": "2026-09-28T04:46:43Z",
           "status": "completed"
         }
       ],
-      "url": "https://github.com/lirji/commerce-platform/actions/runs/36377172720/job/108785270066"
+      "url": "https://github.com/lirji/commerce-platform/actions/runs/36378779697/job/108789979017"
     }
   ],
-  "scope": "Exact implementation commit; metadata-only follow-up does not change the validated UI source",
+  "scope": "Exact validated implementation and publication-test fix commit; status-only follow-up retains UI and test source hashes",
   "productionDeployment": "NOT_IN_SCOPE",
-  "observedAt": "2026-09-28T04:25:48.060021+00:00",
+  "observedAt": "2026-09-28T04:49:06.306603+00:00",
   "protocol": "skill-contract/v1",
   "skill": "ci-cd-gate",
   "ref": {
     "type": "commit",
-    "value": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61"
+    "value": "6914abb56d6e0587075e536dc92e08ef6bfa7749"
   },
   "checks": [
     {
       "name": "verify",
       "required": true,
       "result": "PASS",
-      "evidence": "https://github.com/lirji/commerce-platform/actions/runs/36377172720"
+      "evidence": "https://github.com/lirji/commerce-platform/actions/runs/36378779697"
     }
   ],
   "blockers": [],
   "downstream_requirements": [],
-  "recommended_next": []
+  "recommended_next": [],
+  "priorRuns": [
+    {
+      "commit": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+      "url": "https://github.com/lirji/commerce-platform/actions/runs/36377172720",
+      "gate": "PASS"
+    },
+    {
+      "commit": "823d2005fe88fa419b1314c60e14e233b1770666",
+      "url": "https://github.com/lirji/commerce-platform/actions/runs/36377797418",
+      "gate": "HOLD",
+      "browserPassed": 25,
+      "browserFailed": 1,
+      "remediation": "CI_REMEDIATION.md"
+    }
+  ],
+  "browserStats": {
+    "startTime": "2026-09-28T04:45:06.060Z",
+    "duration": 92849.68,
+    "expected": 26,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "ciBrowserReportSha256": "234c110a5e16c2c10b719e3983c40b3f38a0a6426f239097f91c3f676ec7188a",
+  "testSourceSha256": {
+    "b-console-regression.spec.ts": "9c30b9c6183eb765111a8c2457fd0c5905205f7bfbfd01910571a8c4f211baeb",
+    "catalog-merchandising.spec.ts": "c448c627c3471530d172c71e31a8f9203ae7f32b6912325f5e5ba9f012bb91e9",
+    "catalog-scheduling.spec.ts": "2048a3fe28436f26905fba33cadd52daf938aa8cc7ce6bfec6e5b71615ef16a3",
+    "commerce.spec.ts": "aef0da34e11f91b52a34b8eb537bf10e848a4120540b0fcb22334761bc38e185",
+    "coupon-deliveries.spec.ts": "c48b3695107dd4c4b5c9f36572144a9c17956db91960492417d0a720dde43799",
+    "dashboard.spec.ts": "8adb25c7e7c5244200cf29ad09fb465bc8a9dd62e1f09fedc735b9d8f73287f9",
+    "lifecycle-journey.spec.ts": "fb9ef7d00c6af6ff5ff161ffb4c9414d58962f4a039fe1bd658410b0b364909b",
+    "member-behavior.spec.ts": "0b34d6e1be30083e94b6edcba0ff3a31f8bb034349ff45ef588f340a7982be14",
+    "member-cycles.spec.ts": "231cbca457934cea03f7552c2393d0773a7536ff6479147925e8c8990f0f9e1d",
+    "member-points.spec.ts": "3e3c4975cf049f344c7623ab6fa81687799c29327bbdc3e350f568121ed30a0a",
+    "navigation.ts": "92175894ee2311b56dcde6ab81caa7b54a9aa59f0e4d56e18d426a8e6e6ef6f1",
+    "operations.spec.ts": "a238b7032afaaddba693fe8734d74153ec2da95e6e8d86fbaa1136254770583a",
+    "point-offers.spec.ts": "eb1842eeaa4fff9f13605d9686aa329cb8914ef93226980dc48dbf0a758198a4",
+    "points-checkout.spec.ts": "7e347d88df541b283ba5beaea2c4cd71ece43986e0d4a656d33c9d813cd193cc",
+    "visual-refresh.spec.ts": "ebb4d13abc51a6eb71981e1e870155466e3f29e7f42254786d423e4cffa865ca"
+  }
 }

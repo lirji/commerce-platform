@@ -10,16 +10,16 @@
   "mainMergePush": "PASS",
   "productionDeployment": "NOT_IN_SCOPE",
   "preservedParallelPlanning": "ae6516f63c68201e2bdb1339df6157724949bac4; IAM documents preserved without changes",
-  "updatedAt": "2026-09-28T04:25:48.060021+00:00",
+  "updatedAt": "2026-09-28T04:49:06.306603+00:00",
   "schemaVersion": 1,
   "artifact": "DELIVERY_RESULT",
   "mainMergeMethod": "FAST_FORWARD",
   "target": "origin/main",
-  "publishedImplementationRef": "7c3fdb3bf1a516004ed8b63749c056dae1cf5f61",
+  "publishedImplementationRef": "6914abb56d6e0587075e536dc92e08ef6bfa7749",
   "requiredCi": "PASS",
   "ciResult": "CI_RESULT.json",
   "forcePush": false,
-  "publishedAt": "2026-09-28T04:25:48.060021+00:00",
+  "publishedAt": "2026-09-28T04:49:06.306603+00:00",
   "protocol": "skill-contract/v1",
   "skill": "task-git-delivery",
   "delivery_scope": {
@@ -30,9 +30,13 @@
       "CODEX_PROGRESS.md",
       "README.md",
       "docs/PROGRESS_STATE.json",
+      "docs/delivery/frontend-visual-refresh/CI_REMEDIATION.md",
+      "docs/delivery/frontend-visual-refresh/CI_RESULT.json",
       "docs/delivery/frontend-visual-refresh/CODE_HYGIENE_RESULT.json",
+      "docs/delivery/frontend-visual-refresh/DELIVERY_RESULT.json",
       "docs/delivery/frontend-visual-refresh/IMPLEMENTATION_EVIDENCE.md",
       "docs/delivery/frontend-visual-refresh/PREVIOUS_PROGRESS_STATE.json",
+      "docs/delivery/frontend-visual-refresh/RACE_VERIFICATION.json",
       "docs/delivery/frontend-visual-refresh/README.md",
       "docs/delivery/frontend-visual-refresh/REGRESSION_RESULT.json",
       "docs/delivery/frontend-visual-refresh/SOURCE_FINGERPRINT.json",
@@ -94,6 +98,7 @@
       "frontend/src/shared/ui.tsx",
       "frontend/src/style.css",
       "frontend/src/theme.ts",
+      "frontend/tests/commerce.spec.ts",
       "frontend/tests/dashboard.spec.ts",
       "frontend/tests/visual-refresh.spec.ts"
     ],
@@ -118,6 +123,20 @@
           "S-VR-01"
         ],
         "message": "merge: preserve independent IAM planning"
+      },
+      {
+        "id": "823d2005fe88fa419b1314c60e14e233b1770666",
+        "slices": [
+          "S-VR-01"
+        ],
+        "message": "docs(frontend): record initial validation and main publication"
+      },
+      {
+        "id": "6914abb56d6e0587075e536dc92e08ef6bfa7749",
+        "slices": [
+          "S-VR-01"
+        ],
+        "message": "test(frontend): await actual lowcode publication before opening"
       }
     ],
     "push": {
@@ -154,5 +173,7 @@
   ],
   "blockers": [],
   "downstream_requirements": [],
-  "recommended_next": []
+  "recommended_next": [],
+  "remediationCommit": "6914abb56d6e0587075e536dc92e08ef6bfa7749",
+  "metadataFollowUp": "Only status/evidence documents; validated UI and test source retained"
 }
