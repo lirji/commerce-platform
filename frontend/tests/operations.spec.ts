@@ -1,12 +1,10 @@
+import { accessPath } from "./access";
 import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 const access = JSON.parse(
-  readFileSync(
-    new URL("../../.local/operations-access.json", import.meta.url),
-    "utf8",
-  ),
+  readFileSync(accessPath("operations-access.json"), "utf8"),
 );
 const evidence =
   process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/operations-evidence";

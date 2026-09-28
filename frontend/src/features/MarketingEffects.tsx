@@ -1,3 +1,4 @@
+import { PagerActions } from "../shared/interactions";
 import { Alert, Button, Card, Form, Input, Space, Table, Tabs } from "antd";
 import { LifecycleEffects } from "./LifecycleEffects";
 import { useState } from "react";
@@ -155,7 +156,7 @@ export function MarketingEffects({ store }: { store: string }) {
                     { title: "最后核对", dataIndex: "updatedAt", render: time },
                   ]}
                 />
-                <Space>
+                <PagerActions>
                   <Button onClick={() => setAfter("")} disabled={!after}>
                     回到首页
                   </Button>
@@ -165,7 +166,7 @@ export function MarketingEffects({ store }: { store: string }) {
                   >
                     下一页
                   </Button>
-                </Space>
+                </PagerActions>
               </Card>
             ),
           },
@@ -200,7 +201,7 @@ export function MarketingEffects({ store }: { store: string }) {
                     },
                   ]}
                 />
-                <Space>
+                <PagerActions>
                   <Button
                     onClick={() => setJourneyAfter("")}
                     disabled={!journeyAfter}
@@ -215,7 +216,7 @@ export function MarketingEffects({ store }: { store: string }) {
                   >
                     下一页
                   </Button>
-                </Space>
+                </PagerActions>
               </Card>
             ),
           },

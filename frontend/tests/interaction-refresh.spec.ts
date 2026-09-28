@@ -52,6 +52,7 @@ async function openCampaign(page: Page) {
   await expect(
     page.getByRole("button", { name: "退出", exact: true }),
   ).toBeVisible();
+  await expect(page).toHaveURL(/#dashboard\?store=store-ui$/);
   await page.evaluate(() => {
     location.hash = "campaigns?store=store-ui";
   });

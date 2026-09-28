@@ -1,11 +1,9 @@
+import { accessPath } from "./access";
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { navigate } from "./navigation";
 const access = JSON.parse(
-  readFileSync(
-    new URL("../../.local/member-suite-access.json", import.meta.url),
-    "utf8",
-  ),
+  readFileSync(accessPath("member-suite-access.json"), "utf8"),
 );
 const evidence =
   process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/member-suite-evidence";

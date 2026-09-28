@@ -173,6 +173,61 @@ export function Blank({ text = "暂无记录" }: { text?: string }) {
   return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={text} />;
 }
 const fieldNames: Record<string, string> = {
+  body: "内容",
+  yesNext: "命中时下一节点",
+  noNext: "未命中时下一节点",
+  journeyVersion: "旅程版本",
+  benefitVersion: "权益版本",
+  validityDays: "领取后有效天数",
+  stackable: "允许叠加",
+  issuanceMode: "领取方式",
+  sourceType: "来源类型",
+  currency: "币种",
+  permission: "经营权限",
+  steps: "执行步数",
+  result: "处理结果",
+  transientAttempts: "自动重试次数",
+  manualRetries: "人工重试次数",
+  nodes: "执行节点",
+  items: "商品明细",
+  lines: "分摊明细",
+  trigger: "触发方式",
+  next: "下一节点",
+  yes: "命中分支",
+  no: "未命中分支",
+  seconds: "等待秒数",
+  expression: "条件表达式",
+  controls: "进入与频次限制",
+  lifecycle: "生命周期配置",
+  entry: "入口节点",
+  entryRule: "入组条件",
+  maxDurationSeconds: "最长运行秒数",
+  maxEntries: "窗口内最多进入次数",
+  entryWindowSeconds: "进入窗口秒数",
+  notificationLimit: "通知次数上限",
+  notificationWindowSeconds: "通知窗口秒数",
+  runId: "任务标识",
+  snapshotVersion: "快照版本",
+  definitionVersion: "定义版本",
+  matched: "匹配人数",
+  lastError: "最近错误",
+  maxMembers: "扫描人数上限",
+  ttlSeconds: "快照有效秒数",
+  refreshSeconds: "刷新间隔秒数",
+  pointDiscount: "积分抵扣金额",
+  quantity: "数量",
+  sections: "展示组件",
+  actions: "业务操作",
+  notificationId: "通知标识",
+  headline: "标题",
+  description: "说明",
+  beforeValue: "变更前",
+  afterValue: "变更后",
+  channel: "渠道",
+  thresholdDays: "触发天数",
+  cartDelaySeconds: "加购等待秒数",
+  scanIntervalSeconds: "扫描间隔秒数",
+  conversionWindowDays: "归因窗口天数",
   id: "标识",
   rule: "资格规则",
   ruleId: "规则标识",
@@ -324,12 +379,57 @@ export function fieldLabel(key: string) {
 }
 export function formatField(key: string, value: unknown): ReactNode {
   if (value == null || value === "") return "—";
+  const enumLabels: Record<string, string> = {
+    WAIT: "等待",
+    DECIDE: "条件分支",
+    GRANT: "授予权益",
+    COUPON: "发放优惠券",
+    NOTIFY: "站内通知",
+    END: "结束",
+    PUBLIC: "公开领取",
+    SOURCE_ONLY: "定向发放",
+    ORDER: "订单",
+    JOURNEY: "营销旅程",
+    FINISHED: "执行完成",
+    CHANNEL_REQUIRED: "渠道支付",
+    SANDBOX: "本地沙箱",
+    SANDBOX_WMS: "沙箱物流",
+    UNASSIGNED: "尚未分配",
+    CNY: "人民币 · CNY",
+    COMPARE: "条件比较",
+    ALL: "全部满足",
+    ANY: "任一满足",
+    NOT: "取反",
+    EQ: "等于",
+    GT: "大于",
+    GTE: "大于等于",
+    LT: "小于",
+    LTE: "小于等于",
+    CONTAINS: "包含",
+    TEXT: "文本",
+    DECIMAL: "数值",
+  };
+  if (
+    [
+      "kind",
+      "operator",
+      "valueType",
+      "sourceType",
+      "issuanceMode",
+      "paymentKind",
+      "provider",
+      "currency",
+      "result",
+    ].includes(key)
+  )
+    return enumLabels[String(value)] ?? String(value);
   if (key.endsWith("Bps")) return `${Number(value) / 100}%`;
   if (key === "field") return fieldLabel(String(value));
   if (key === "status") return <Status value={string(value)} />;
   if (
     moneyKeys.has(key) &&
-    (typeof value === "string" || typeof value === "number")
+    (typeof value === "string" ||
+      (typeof value === "number" && !["held", "spent"].includes(key)))
   )
     return money(value);
   if (timeKeys.has(key)) return time(value);
@@ -347,9 +447,24 @@ function flattenRecord(value: unknown): Record<string, unknown> {
   }
   return row;
 }
-export function RecordFields({ value }: { value: unknown }) {
+export function RecordFields({
+  value,
+  grouped = true,
+}: {
+  value: unknown;
+  grouped?: boolean;
+}) {
   if (value == null) return <Blank />;
   if (Array.isArray(value)) {
+    if (!value.length) return <span className="muted">—</span>;
+    if (value.every((item) => typeof item !== "object"))
+      return (
+        <div className="record-tags">
+          {value.map((item, i) => (
+            <Tag key={i}>{String(item)}</Tag>
+          ))}
+        </div>
+      );
     return (
       <div className="record-stack">
         {value.map((item, i) => (
@@ -371,18 +486,52 @@ export function RecordFields({ value }: { value: unknown }) {
     if (typeof item === "object") nested.push([key, item]);
     else scalars.push([key, formatField(key, item)]);
   }
+  const categories: { title: string; fields: typeof scalars }[] = [
+    { title: "基本信息", fields: [] },
+    { title: "金额与数量", fields: [] },
+    { title: "时间与有效期", fields: [] },
+    { title: "关联记录", fields: [] },
+    { title: "版本与处理信息", fields: [] },
+  ];
+  for (const item of scalars) {
+    const key = item[0];
+    const index =
+      moneyKeys.has(key) ||
+      /^(quantity|units|remainingUnits|debtUnits|available|reserved|sold|quota|issued|memberCount)$/.test(
+        key,
+      )
+        ? 1
+        : timeKeys.has(key)
+          ? 2
+          : /Id$/.test(key)
+            ? 3
+            : /^(version|revision|lockVersion|attempts|errorCode|watermark|processed)$/.test(
+                  key,
+                )
+              ? 4
+              : 0;
+    categories[index].fields.push(item);
+  }
+  const groups = grouped
+    ? categories.filter((group) => group.fields.length)
+    : [{ title: "", fields: scalars }];
   return (
     <>
-      {scalars.length > 0 && (
-        <dl className="record-fields">
-          {scalars.map(([key, item]) => (
-            <div className="record-field" key={key}>
-              <dt>{fieldLabel(key)}</dt>
-              <dd>{item}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
+      {groups.map((group) => (
+        <section className="record-group" key={group.title}>
+          {grouped && groups.length > 1 && (
+            <h3 className="detail-section-title">{group.title}</h3>
+          )}
+          <dl className="record-fields">
+            {group.fields.map(([key, item]) => (
+              <div className="record-field" key={key}>
+                <dt>{fieldLabel(key)}</dt>
+                <dd>{item}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
       {nested.map(([key, item]) => (
         <section className="detail-section" key={key}>
           <div className="detail-section-title">{fieldLabel(key)}</div>

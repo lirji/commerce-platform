@@ -1,3 +1,4 @@
+import { PagerActions } from "../shared/interactions";
 import { Alert, Button, Card, Space, Table, Tabs } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
@@ -126,7 +127,7 @@ export function LifecycleEffects({ query }: { query: string }) {
                   { title: "最后核对", dataIndex: "updatedAt", render: time },
                 ]}
               />
-              <Space>
+              <PagerActions>
                 <Button disabled={!after} onClick={() => setAfter("")}>
                   版本比较首页
                 </Button>
@@ -136,7 +137,7 @@ export function LifecycleEffects({ query }: { query: string }) {
                 >
                   下一页版本比较
                 </Button>
-              </Space>
+              </PagerActions>
             </Card>
           ),
         },
@@ -178,7 +179,7 @@ export function LifecycleEffects({ query }: { query: string }) {
                   { title: "最后核对", dataIndex: "updatedAt", render: time },
                 ]}
               />
-              <Space>
+              <PagerActions>
                 <Button
                   disabled={!batchAfter}
                   onClick={() => setBatchAfter("")}
@@ -193,7 +194,7 @@ export function LifecycleEffects({ query }: { query: string }) {
                 >
                   下一页批次比较
                 </Button>
-              </Space>
+              </PagerActions>
             </Card>
           ),
         },

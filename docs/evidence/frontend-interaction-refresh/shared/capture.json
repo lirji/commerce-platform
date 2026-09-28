@@ -1,0 +1,831 @@
+{
+  "stage": "shared",
+  "hashes": {
+    "frontend/src/app/App.tsx": "4fc44a44509427d0e3221698279c30a675d3b763fc61a09111f057467313a5df",
+    "frontend/src/features/AdminData.tsx": "508adca36d5dc35dbd9408620022334d172dd86ecb782057ea671ac0de38e4ba",
+    "frontend/src/features/CampaignPreview.tsx": "112202a615f4b649ef5f772e149700dbfaa0b9fb16d9eeb541e6aa0b6dddb695",
+    "frontend/src/features/CatalogMerchandising.tsx": "60fc0f50853dc6a60486ff87d8b2b78a4ecf60595ba3730e6a42ce7bfaa303e9",
+    "frontend/src/features/CatalogScheduling.tsx": "46d6010084b8a2683580b7b60eae7fc90238bfa231c0a47a83f6e9828ec8b4a2",
+    "frontend/src/features/CouponDeliveries.tsx": "7f44d2ab2803f76777a818304d3bfe7c491260aeadebfb9b0240bb9ce817ef00",
+    "frontend/src/features/Dashboard.tsx": "d89ac97e642b71e0a3c8e249e96d6887840303aeb4581f159647fceea6d3e1e8",
+    "frontend/src/features/JourneyScans.tsx": "f8acbb2230efb010b8b55b0a2c07a0482d62e390905fc7a795590585ce416ffe",
+    "frontend/src/features/Journeys.tsx": "fed92ae6a6a7799d8099602d3126bd3fc9e25d38acfe79e608eb45694d0aee80",
+    "frontend/src/features/LifecycleEffects.tsx": "af606184ccb751811f0987e780cb2aabb6b3e26813ffd60872052a4933ecb762",
+    "frontend/src/features/Marketing.tsx": "e85e1eb8a26e25bc8d55558f6b90aafe05a0f4a1debfa22143ed2da6379409bb",
+    "frontend/src/features/MarketingDetails.tsx": "0b09235f1fb5d17cd4c84e9968676cb4d76ea5cd425c89a7161cb2d59e6d448c",
+    "frontend/src/features/MarketingEffects.tsx": "b119c50d6d5b087ff192da818281b4f16e66fd09fc5b8f03bf72705842d19af5",
+    "frontend/src/features/MemberActions.tsx": "cc19ec451b2f25645a148c58d9491892f68dc5db59f532d9ffbbdcd35107b022",
+    "frontend/src/features/MemberBehavior.tsx": "ae58101ebb679dd3253432ca842350b57051c7847042074a15e6a25bc775143d",
+    "frontend/src/features/MemberCycles.tsx": "7fcd8122c60705aae1859296944c8129ab497b6acec33e91c7da83bfc4f13c4f",
+    "frontend/src/features/MemberGrowth.tsx": "397e60c95256f3158e11529c27cf3afce0090aa090999b0398e35ab4f7925145",
+    "frontend/src/features/MemberPoints.tsx": "12205fec2705bd05ae224db24843ded2540bc1ff82e7bf81ad1267cebf062b33",
+    "frontend/src/features/MemberWallet.tsx": "cd08875ee00c9a3e0049c3563f1ea03fef118f34976df4b4d4aa67d66e47f848",
+    "frontend/src/features/OpsPages.tsx": "d97970b7e0431a47ad1165d6a0ef6a6b135d1b67ba309b3303f9f07abcbb7c89",
+    "frontend/src/features/Orders.tsx": "5a25fbbf992a4eeb5278ce69c7abcf645a9f51292a533ac819049d36b00538f9",
+    "frontend/src/features/PointOffers.tsx": "d636fa7a0e1e00bdac782c2ac6ff56e9ba41a929c3c20b093098fafb4064b74c",
+    "frontend/src/features/ProductOperations.tsx": "bb6a499c85d4beaab9c33245ed90823d82369378063ed08c07e694e6c340d2b3",
+    "frontend/src/features/Segments.tsx": "7f88fbcedc197aed69ffcc21ce9e15266cde2aff9c369fb87097543fbbe27936",
+    "frontend/src/features/Shop.tsx": "ee5614676f0460fd25021d88b26fbff8cd888f2d4a8de26bba8fe652aec23b8b",
+    "frontend/src/main.tsx": "fe571ee1edde36dbf252984cd032f7af77b72bf358701756caef41b05338a7c0",
+    "frontend/src/shared/Icon.tsx": "2b8aebbe0a18f9410634e26875d676ff522abfb719f0f8d8f87b26768893d37a",
+    "frontend/src/shared/api.ts": "b96afee197208fd1a72240857ae8f90736d273d2ce8651cb32df2a3f95040390",
+    "frontend/src/shared/contracts.ts": "8837b4338ee0c8585184fd8e76efa6b649eca02c674dedb973a941f50cd2c5af",
+    "frontend/src/shared/formSchemas.ts": "339a57b76b5642a298450ed6b86ec50fa9e1da94c9af8b4f027ff46acd802b7b",
+    "frontend/src/shared/interactions.tsx": "4f4e087c05ffb611c1b1c6db05e95f28abada35896cfeb0168e311d143693e35",
+    "frontend/src/shared/marketing.tsx": "431155b09dad55a2a1c074bfb13028c872006c6f6a359e9a4f878410e3c1e71d",
+    "frontend/src/shared/ui.tsx": "1e71615a5be86b07315f91eda68f5390e525ac4a6ebba3807b86223d496e25bd",
+    "frontend/src/style.css": "54601001df372a6b1285f4ba59aebc4571a2c92d5474f4ec3b5df3aafc1ee9b3",
+    "frontend/src/theme.ts": "2b76c9306cd79b3b99f7e6a6bc95294819e0fc770fe7ad63dc1397aa2faccaed"
+  },
+  "results": [
+    {
+      "file": "campaign-list.png",
+      "state": "营销列表与行操作/分页",
+      "timestamp": "2026-09-28T06:25:07.667Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "campaign-detail.png",
+      "state": "实际活动配置",
+      "timestamp": "2026-09-28T06:25:07.802Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "版本配置展开视图营销活动 · 版本配置会员满100减25并赠权益member-benefits · v20260923已发布消费门槛¥100.00优惠金额 / "
+      ]
+    },
+    {
+      "file": "campaign-editor.png",
+      "state": "基于真实活动的一次编辑，未提交",
+      "timestamp": "2026-09-28T06:25:08.072Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "版本配置展开视图返回列表",
+        "复制新版本展开视图基于 v20260923 创建新的草稿版本，保存后可继续审批发布。活动标识版本活动名称消费门槛优惠金额 / 比例折扣上限开始时间结束时间资格规"
+      ]
+    },
+    {
+      "file": "campaign-preview.png",
+      "state": "真实预览入口与表单，未执行业务写",
+      "timestamp": "2026-09-28T06:25:08.267Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "版本配置展开视图返回列表",
+        "会员满100减25并赠权益 · v20260923 预览展开视图输入真实会员与商品清单，查看优惠金额和条件匹配结果。会员标识观察活动时间（留空为现在）购物清单每"
+      ]
+    },
+    {
+      "file": "admin-dashboard.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:08.505Z",
+      "route": "#dashboard?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "admin-members.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:09.511Z",
+      "route": "#members?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-members-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:09.670Z",
+      "route": "#members?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "会员经营详情展开视图正在读取会员详情历史成交补建补建一批成交事实返回列表"
+      ]
+    },
+    {
+      "file": "admin-growth.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:10.680Z",
+      "route": "#growth?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "admin-member-tags.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:10.896Z",
+      "route": "#member-tags?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "admin-segments.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:11.896Z",
+      "route": "#segments?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "admin-audiences.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:12.094Z",
+      "route": "#audiences?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-audiences-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:12.200Z",
+      "route": "#audiences?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "每日VIP会员快照展开视图人群快照每日VIP会员快照daily-vip人数1基本信息名称每日VIP会员快照来源local-demo-database-seed金"
+      ]
+    },
+    {
+      "file": "admin-skus.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:13.346Z",
+      "route": "#skus?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 6,
+      "dialogs": []
+    },
+    {
+      "file": "admin-inventory.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:13.681Z",
+      "route": "#inventory?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 6,
+      "dialogs": []
+    },
+    {
+      "file": "admin-inventory-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:13.799Z",
+      "route": "#inventory?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 6,
+      "dialogs": [
+        "kettle展开视图库存额度kettlekettle可售80金额与数量可售80已预占0已售0关联记录店铺标识store-demoSKU标识kettle版本与处理"
+      ]
+    },
+    {
+      "file": "admin-merchants.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:14.046Z",
+      "route": "#merchants?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-merchants-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:14.147Z",
+      "route": "#merchants?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "统一电商示范商家展开视图商家管理统一电商示范商家merchant-demo可用基本信息名称统一电商示范商家状态可用关联记录商家标识merchant-demo版本"
+      ]
+    },
+    {
+      "file": "admin-stores.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:14.443Z",
+      "route": "#stores?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-stores-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:14.598Z",
+      "route": "#stores?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "城市生活旗舰店展开视图店铺管理城市生活旗舰店store-demo可用基本信息名称城市生活旗舰店状态可用关联记录店铺标识store-demo商家标识merchan"
+      ]
+    },
+    {
+      "file": "admin-store-grants.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:14.830Z",
+      "route": "#store-grants?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "admin-effects.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:15.853Z",
+      "route": "#effects?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "admin-rules.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:16.043Z",
+      "route": "#rules?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-rules-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:16.146Z",
+      "route": "#rules?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "版本配置展开视图动态规则 · 版本配置VIP会员规则vip-rule · v1已发布会员资格条件会员等级等于VIP版本信息版本1完整原始配置{\n  \"conte"
+      ]
+    },
+    {
+      "file": "admin-budgets.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:16.461Z",
+      "route": "#budgets?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "admin-budgets-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:16.587Z",
+      "route": "#budgets?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "c8b7f8ca-252a-4f19-9df2-6ef5e28eddc7展开视图营销预算c8b7f8ca-252a-4f19-9df2-6ef5e28eddc7"
+      ]
+    },
+    {
+      "file": "admin-coupons.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:16.945Z",
+      "route": "#coupons?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-coupons-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:17.068Z",
+      "route": "#coupons?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "会员满100减10加享券展开视图优惠券定义会员满100减10加享券member-gift优惠¥10.00基本信息名称会员满100减10加享券允许叠加是平台承担比"
+      ]
+    },
+    {
+      "file": "admin-coupon-deliveries.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:18.116Z",
+      "route": "#coupon-deliveries?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "admin-definitions.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:18.328Z",
+      "route": "#definitions?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-definitions-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:18.433Z",
+      "route": "#definitions?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "会员体验权益展开视图权益定义会员体验权益member-experience基本信息名称会员体验权益领取后有效天数7金额与数量每份单位3发行额度10000已预留0"
+      ]
+    },
+    {
+      "file": "admin-entitlements.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:18.662Z",
+      "route": "#entitlements?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "admin-entitlements-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:18.768Z",
+      "route": "#entitlements?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "会员体验权益展开视图权益台账会员体验权益1fa15e68-e9c7-457f-a620-bf8e39853125可使用剩余单位3基本信息权益版本1名称会员体验权"
+      ]
+    },
+    {
+      "file": "admin-journeys.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:19.820Z",
+      "route": "#journeys?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "admin-journeys-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:19.953Z",
+      "route": "#journeys?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "旅程节点与版本展开视图支付后会员关怀member-care · v1已发布触发方式支付后执行节点3wait · 等待标识wait类型等待等待秒数1下一节点not"
+      ]
+    },
+    {
+      "file": "admin-instances.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:20.264Z",
+      "route": "#instances?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 3,
+      "dialogs": []
+    },
+    {
+      "file": "admin-instances-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:20.387Z",
+      "route": "#instances?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 3,
+      "dialogs": [
+        "504c5bde-927b-4cbe-af5b-8d6476ae6753展开视图旅程实例504c5bde-927b-4cbe-af5b-8d6476ae6753"
+      ]
+    },
+    {
+      "file": "admin-orders.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:21.467Z",
+      "route": "#orders?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 5,
+      "dialogs": []
+    },
+    {
+      "file": "admin-orders-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:21.585Z",
+      "route": "#orders?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 6,
+      "dialogs": [
+        "订单详情交易记录1474f952-5dc6-4233-8115-f6dfa155ec92store-demo已付款应付金额¥59.00会员member-demo"
+      ]
+    },
+    {
+      "file": "admin-fulfillments.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:21.813Z",
+      "route": "#fulfillments?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 4,
+      "dialogs": []
+    },
+    {
+      "file": "admin-fulfillments-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:21.919Z",
+      "route": "#fulfillments?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 4,
+      "dialogs": [
+        "1474f952-5dc6-4233-8115-f6dfa155ec92展开视图履约队列1474f952-5dc6-4233-8115-f6dfa155ec92"
+      ]
+    },
+    {
+      "file": "admin-aftersales.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:22.143Z",
+      "route": "#aftersales?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "admin-aftersales-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:22.268Z",
+      "route": "#aftersales?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "064b77e7-3785-46d0-84bb-68927f396c9a展开视图售后审批064b77e7-3785-46d0-84bb-68927f396c9a"
+      ]
+    },
+    {
+      "file": "admin-refunds.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:22.546Z",
+      "route": "#refunds?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "admin-refunds-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:22.668Z",
+      "route": "#refunds?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "0f28c640-da3b-49f3-a8ca-0b67d36fa9f3展开视图退款核对0f28c640-da3b-49f3-a8ca-0b67d36fa9f3"
+      ]
+    },
+    {
+      "file": "admin-pages.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:23.695Z",
+      "route": "#pages?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-pages-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:23.871Z",
+      "route": "#pages?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 8,
+      "dialogs": [
+        "运营页面展开视图已发布页面版本与回退刷新页面会员营销运营台新建会员优惠券新建营销活动会员活动名称活动版本状态优惠金额名称活动版本状态优惠金额会员满100减25并"
+      ]
+    },
+    {
+      "file": "admin-events.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:25:24.275Z",
+      "route": "#events?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 24,
+      "dialogs": []
+    },
+    {
+      "file": "admin-events-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:25:24.427Z",
+      "route": "#events?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 24,
+      "dialogs": [
+        "115ecc7e-8c06-486c-8433-2f06d26c8ef7展开视图异步事件115ecc7e-8c06-486c-8433-2f06d26c8ef7"
+      ]
+    },
+    {
+      "file": "member-shop.png",
+      "state": "实际会员入口",
+      "timestamp": "2026-09-28T06:25:25.828Z",
+      "route": "#shop?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "member-orders.png",
+      "state": "实际会员入口",
+      "timestamp": "2026-09-28T06:25:26.866Z",
+      "route": "#orders?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 5,
+      "dialogs": []
+    },
+    {
+      "file": "member-coupons.png",
+      "state": "实际会员入口",
+      "timestamp": "2026-09-28T06:25:27.858Z",
+      "route": "#coupons?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "member-benefits.png",
+      "state": "实际会员入口",
+      "timestamp": "2026-09-28T06:25:28.075Z",
+      "route": "#benefits?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "member-growth.png",
+      "state": "实际会员入口",
+      "timestamp": "2026-09-28T06:25:29.094Z",
+      "route": "#growth?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "member-aftersales.png",
+      "state": "实际会员入口",
+      "timestamp": "2026-09-28T06:25:29.292Z",
+      "route": "#aftersales?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "member-notifications.png",
+      "state": "实际会员入口",
+      "timestamp": "2026-09-28T06:25:29.457Z",
+      "route": "#notifications?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "member-shop-mobile.png",
+      "state": "既有会员窄屏",
+      "timestamp": "2026-09-28T06:25:29.683Z",
+      "route": "#shop?store=store-demo",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rows": 0,
+      "dialogs": []
+    },
+    {
+      "file": "member-product-mobile.png",
+      "state": "真实商品详情",
+      "timestamp": "2026-09-28T06:25:29.810Z",
+      "route": "#shop?store=store-demo",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rows": 0,
+      "dialogs": [
+        "手冲细口壶¥168.00优惠券与积分抵扣后，最终金额将在结算时确认。可用餐具规格容量：600ml商品类目餐具不锈钢细口手冲壶，出水稳定。适合家用冲煮。加入购物袋"
+      ]
+    }
+  ],
+  "errors": [],
+  "fixture": "Persisted local tenant selected with COMMERCE_VISUAL_ACCESS; credentials excluded"
+}

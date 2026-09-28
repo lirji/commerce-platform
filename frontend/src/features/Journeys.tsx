@@ -1,7 +1,7 @@
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import {
   Button,
   Card,
-  Drawer,
   Form,
   Input,
   InputNumber,
@@ -9,11 +9,14 @@ import {
   Space,
   Table,
 } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Governed, Journey, JourneyNode } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
   Detail,
+  RecordHero,
+  FormActions,
+  useDirtyClose,
   ErrorNotice,
   Fields,
   ListPanel,
@@ -276,8 +279,14 @@ export function Journeys({ store }: { store: string }) {
   const [detail, setDetail] = useState<Governed<Journey>>();
   const [draft, setDraft] = useState<Journey>();
   const command = useCommand();
+  const [form] = Form.useForm();
+  const closing = useDirtyClose(form, command.busy, () => setOpen(false));
+  useEffect(() => {
+    if (open) form.resetFields();
+  }, [open, draft, form]);
   return (
     <Workbench>
+      {closing.contextHolder}
       <PageHead
         eyebrow="营销与旅程"
         title="营销旅程"
@@ -380,12 +389,14 @@ export function Journeys({ store }: { store: string }) {
             },
             {
               title: "操作",
+              className: "row-actions-cell",
               render: (_, r) => (
-                <Space wrap>
-                  <Button size="small" onClick={() => setDetail(r)}>
+                <RowActions>
+                  <Button type="link" size="small" onClick={() => setDetail(r)}>
                     查看节点
                   </Button>
                   <Button
+                    type="link"
                     size="small"
                     onClick={() => {
                       setDraft({
@@ -407,7 +418,7 @@ export function Journeys({ store }: { store: string }) {
                     lockVersion={r.lockVersion}
                     onDone={resource.refresh}
                   />
-                </Space>
+                </RowActions>
               ),
             },
           ]}
@@ -421,6 +432,20 @@ export function Journeys({ store }: { store: string }) {
         onClose={() => setDetail(undefined)}
         width={720}
       >
+        {detail && (
+          <RecordHero
+            title={detail.content.name}
+            id={`${detail.content.journeyId} · v${detail.content.version}`}
+            status={detail.status}
+            metrics={[
+              {
+                label: "触发方式",
+                value: triggerLabels[detail.content.trigger],
+              },
+              { label: "执行节点", value: detail.content.nodes.length },
+            ]}
+          />
+        )}
         {detail?.content.nodes.map((n) => (
           <Card
             key={n.id}
@@ -436,13 +461,25 @@ export function Journeys({ store }: { store: string }) {
         title="旅程编辑器"
         size={860}
         open={open}
-        onClose={() => {
-          if (!command.busy) setOpen(false);
-        }}
+        onClose={closing.requestClose}
+        keyboard={!command.busy}
+        maskClosable={!command.busy}
+        footer={
+          <FormActions onCancel={closing.requestClose} busy={command.busy}>
+            <Button
+              type="primary"
+              loading={command.busy}
+              onClick={() => form.submit()}
+            >
+              保存旅程草稿
+            </Button>
+          </FormActions>
+        }
         destroyOnHidden
       >
         <ErrorNotice error={command.error} />
         <Form
+          form={form}
           layout="vertical"
           initialValues={{
             ...(draft ?? {
@@ -647,9 +684,6 @@ export function Journeys({ store }: { store: string }) {
           <Form.Item name="nodes" label="节点与流转">
             <NodesEditor />
           </Form.Item>
-          <Button type="primary" htmlType="submit" loading={command.busy}>
-            保存旅程草稿
-          </Button>
         </Form>
       </Drawer>
     </Workbench>

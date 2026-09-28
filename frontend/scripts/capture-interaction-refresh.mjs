@@ -6,7 +6,7 @@ import { chromium, expect } from "@playwright/test";
 
 const root = path.resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const stage = process.argv[2] ?? "after";
-if (!["before", "representative", "after"].includes(stage))
+if (!["before", "representative", "shared", "after"].includes(stage))
   throw new Error("Invalid capture stage");
 const folder = path.join(
   root,
@@ -169,7 +169,7 @@ try {
       const opener = page
         .locator(".ant-table-tbody")
         .getByRole("button", {
-          name: /^(详情|查看详情|查看配置|查看节点|详情与版本|查看)$/,
+          name: /^(详情|查看详情|查看配置|查看节点|详情与版本|查看|会员详情|任务与受众版本|打开 \/ 版本)$/,
         })
         .first();
       if (await opener.isVisible()) {
@@ -178,7 +178,7 @@ try {
         await close();
       }
     }
-    if (stage === "after") {
+    if (["shared", "after"].includes(stage)) {
       await page.getByRole("button", { name: "退出", exact: true }).click();
       await login(access.memberToken);
       for (const name of [
@@ -218,7 +218,7 @@ try {
         results,
         errors,
         fixture:
-          "Existing isolated persisted member-suite tenant; credentials excluded",
+          "Persisted local tenant selected with COMMERCE_VISUAL_ACCESS; credentials excluded",
       },
       null,
       2,

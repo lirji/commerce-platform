@@ -2,10 +2,13 @@ import {
   Button,
   Drawer as AntDrawer,
   Modal,
+  Space,
   type DrawerProps,
   type FormInstance,
 } from "antd";
 import {
+  Children,
+  isValidElement,
   createContext,
   useContext,
   useEffect,
@@ -114,5 +117,21 @@ export function RecordDrawer({
     >
       {children}
     </AntDrawer>
+  );
+}
+
+/** 子列表仍沿用各自游标契约；没有可导航方向时收起按钮组。 */
+export function PagerActions({ children }: { children: ReactNode }) {
+  const buttons = Children.toArray(children);
+  const unavailable =
+    buttons.length > 0 &&
+    buttons.every(
+      (child) =>
+        isValidElement<{ disabled?: boolean }>(child) &&
+        child.type === Button &&
+        child.props.disabled,
+    );
+  return unavailable ? null : (
+    <Space className="pager-navigation">{children}</Space>
   );
 }

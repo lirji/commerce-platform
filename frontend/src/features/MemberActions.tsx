@@ -1,4 +1,6 @@
-import { Button, Drawer, Dropdown, Space, Table } from "antd";
+import { PagerActions } from "../shared/interactions";
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { Button, Dropdown, Space, Table } from "antd";
 import { MemberBehavior } from "./MemberBehavior";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
@@ -29,7 +31,7 @@ export function MemberActions({
     history.refresh();
   };
   return (
-    <div className="row-actions">
+    <RowActions>
       <Button type="link" size="small" onClick={() => setDetail(true)}>
         会员详情
       </Button>
@@ -141,7 +143,7 @@ export function MemberActions({
             { title: "时间", dataIndex: "createdAt", render: time },
           ]}
         />
-        <Space>
+        <PagerActions>
           <Button disabled={after === 0} onClick={() => setAfter(0)}>
             最早记录
           </Button>
@@ -151,8 +153,8 @@ export function MemberActions({
           >
             下一页
           </Button>
-        </Space>
+        </PagerActions>
       </Drawer>
-    </div>
+    </RowActions>
   );
 }

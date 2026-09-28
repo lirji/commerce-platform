@@ -1,10 +1,17 @@
+import { PagerActions } from "../shared/interactions";
+import { RowActions } from "../shared/interactions";
+import {
+  RecordDrawer as Drawer,
+  FormActions,
+  useDirtyClose,
+} from "../shared/interactions";
 import {
   Alert,
   Button,
   Card,
   Descriptions,
-  Drawer,
   Form,
+  type FormInstance,
   Input,
   InputNumber,
   Select,
@@ -144,37 +151,40 @@ export function CatalogStructure({ store }: { store: string }) {
                   },
                   {
                     title: "操作",
+                    className: "row-actions-cell",
                     render: (_, r) => (
-                      <CommandModal
-                        title="维护类目"
-                        buttonType="link"
-                        path={`/operations/catalog-categories/${encode(r.categoryId)}`}
-                        fields={[
-                          { name: "name", label: "类目名称" },
-                          {
-                            name: "status",
-                            label: "类目状态",
-                            type: "select",
-                            options: [
-                              { value: "ACTIVE", label: "启用" },
-                              { value: "RETIRED", label: "停用" },
-                            ],
-                          },
-                          { name: "reason", label: "类目变更原因" },
-                        ]}
-                        initialValues={{ name: r.name, status: r.status }}
-                        build={(v) => ({
-                          ...v,
-                          storeId: store,
-                          expectedVersion: r.version,
-                        })}
-                        onDone={categories.refresh}
-                      />
+                      <RowActions>
+                        <CommandModal
+                          title="维护类目"
+                          buttonType="link"
+                          path={`/operations/catalog-categories/${encode(r.categoryId)}`}
+                          fields={[
+                            { name: "name", label: "类目名称" },
+                            {
+                              name: "status",
+                              label: "类目状态",
+                              type: "select",
+                              options: [
+                                { value: "ACTIVE", label: "启用" },
+                                { value: "RETIRED", label: "停用" },
+                              ],
+                            },
+                            { name: "reason", label: "类目变更原因" },
+                          ]}
+                          initialValues={{ name: r.name, status: r.status }}
+                          build={(v) => ({
+                            ...v,
+                            storeId: store,
+                            expectedVersion: r.version,
+                          })}
+                          onDone={categories.refresh}
+                        />
+                      </RowActions>
                     ),
                   },
                 ]}
               />
-              <Space>
+              <PagerActions>
                 <Button
                   disabled={!categoryAfter}
                   onClick={() => setCategoryAfter("")}
@@ -189,7 +199,7 @@ export function CatalogStructure({ store }: { store: string }) {
                 >
                   下一批类目
                 </Button>
-              </Space>
+              </PagerActions>
             </Card>
           ),
         },
@@ -250,7 +260,7 @@ export function CatalogStructure({ store }: { store: string }) {
                   },
                 ]}
               />
-              <Space>
+              <PagerActions>
                 <Button
                   disabled={!templateAfter}
                   onClick={() => setTemplateAfter("")}
@@ -265,7 +275,7 @@ export function CatalogStructure({ store }: { store: string }) {
                 >
                   下一批模板
                 </Button>
-              </Space>
+              </PagerActions>
             </Card>
           ),
         },
@@ -462,9 +472,19 @@ export function BarcodeEditor({
   );
 }
 /** 绑定模板后只展示其允许值；自由规格保留原输入方式。 */
-function VariantForm({ store, onDone }: { store: string; onDone: () => void }) {
-  const [form] = Form.useForm();
-  const command = useCommand();
+function VariantForm({
+  store,
+  onDone,
+  form,
+  command,
+  onAvailabilityChange,
+}: {
+  store: string;
+  onDone: () => void;
+  form: FormInstance;
+  command: ReturnType<typeof useCommand>;
+  onAvailabilityChange: (ready: boolean) => void;
+}) {
   const productId = Form.useWatch<string>("productId", form);
   useEffect(() => {
     form.setFieldValue("choices", []);
@@ -505,6 +525,15 @@ function VariantForm({ store, onDone }: { store: string; onDone: () => void }) {
       specifications,
     });
   };
+  const ready =
+    !profile.loading &&
+    !template.loading &&
+    !profile.error &&
+    !template.error &&
+    !!profile.data;
+  useEffect(() => {
+    onAvailabilityChange(ready);
+  }, [ready, onAvailabilityChange]);
   const [localError, setLocalError] = useState<Error>();
   return (
     <Form
@@ -560,20 +589,6 @@ function VariantForm({ store, onDone }: { store: string; onDone: () => void }) {
           ]}
         />
       ) : null}
-      <Button
-        type="primary"
-        htmlType="submit"
-        loading={command.busy}
-        disabled={
-          profile.loading ||
-          template.loading ||
-          !!profile.error ||
-          !!template.error ||
-          !profile.data
-        }
-      >
-        保存销售规格
-      </Button>
     </Form>
   );
 }
@@ -585,19 +600,49 @@ export function VariantCreator({
   onDone: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [form] = Form.useForm();
+  const command = useCommand();
+  const [ready, setReady] = useState(false);
+  const closing = useDirtyClose(form, command.busy, () => setOpen(false));
   return (
     <>
-      <Button type="primary" onClick={() => setOpen(true)}>
+      {closing.contextHolder}
+      <Button
+        type="primary"
+        onClick={() => {
+          form.resetFields();
+          command.clear();
+          setReady(false);
+          setOpen(true);
+        }}
+      >
         创建销售规格
       </Button>
       <Drawer
         title="创建销售规格"
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={closing.requestClose}
+        keyboard={!command.busy}
+        maskClosable={!command.busy}
+        footer={
+          <FormActions onCancel={closing.requestClose} busy={command.busy}>
+            <Button
+              type="primary"
+              loading={command.busy}
+              disabled={!ready}
+              onClick={() => form.submit()}
+            >
+              保存销售规格
+            </Button>
+          </FormActions>
+        }
         destroyOnHidden
-        size="large"
+        size={720}
       >
         <VariantForm
+          form={form}
+          command={command}
+          onAvailabilityChange={setReady}
           store={store}
           onDone={() => {
             setOpen(false);

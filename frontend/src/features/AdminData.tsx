@@ -1,4 +1,5 @@
-import { Button, Drawer, Space, Table, Typography } from "antd";
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { Button, Space, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";
@@ -424,7 +425,7 @@ export function AdminData({
     const target = encode(value);
     const state = string(r.status);
     return (
-      <Space wrap>
+      <RowActions>
         {kind === "members" ? (
           <MemberActions
             row={r}
@@ -432,7 +433,7 @@ export function AdminData({
             onRecord={() => setDetail(r)}
           />
         ) : (
-          <Button size="small" onClick={() => setDetail(r)}>
+          <Button type="link" size="small" onClick={() => setDetail(r)}>
             详情
           </Button>
         )}
@@ -556,7 +557,7 @@ export function AdminData({
             buttonType="default"
           />
         )}
-      </Space>
+      </RowActions>
     );
   }
   const detailTitle = detail

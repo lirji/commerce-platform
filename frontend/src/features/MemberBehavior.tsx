@@ -1,3 +1,4 @@
+import { PagerActions } from "../shared/interactions";
 import {
   Alert,
   Button,
@@ -203,7 +204,7 @@ export function MemberBehavior({
                 { title: "商品", dataIndex: "skuId" },
               ]}
             />
-            <Space>
+            <PagerActions>
               <Button disabled={!after} onClick={() => setAfter(0)}>
                 最早交互
               </Button>
@@ -213,7 +214,7 @@ export function MemberBehavior({
               >
                 下一页交互
               </Button>
-            </Space>
+            </PagerActions>
           </Card>
         </>
       )}

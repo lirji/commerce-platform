@@ -1,12 +1,8 @@
+import { accessPath } from "./access";
 import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
-const access = JSON.parse(
-  readFileSync(
-    new URL("../../.local/e2e-access.json", import.meta.url),
-    "utf8",
-  ),
-);
+const access = JSON.parse(readFileSync(accessPath("e2e-access.json"), "utf8"));
 const evidence = process.env.COMMERCE_EVIDENCE_DIR ?? "../docs/evidence/s10a";
 async function login(page: Page, role: "admin" | "member") {
   await page.goto("/");

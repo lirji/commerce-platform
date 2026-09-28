@@ -1,11 +1,9 @@
+import { accessPath } from "./access";
 import { navigate } from "./navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 const access = JSON.parse(
-  readFileSync(
-    new URL("../../.local/member-suite-access.json", import.meta.url),
-    "utf8",
-  ),
+  readFileSync(accessPath("member-suite-access.json"), "utf8"),
 );
 const evidence =
   process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/member-suite-evidence";
@@ -140,7 +138,9 @@ test("商品经营：类目模板、固定规格、展示图片条码及会员�
         }),
     )
     .toBe(true);
-  await member.getByRole("button", { name: "轻烘手冲咖啡", exact: true }).click();
+  await member
+    .getByRole("button", { name: "轻烘手冲咖啡", exact: true })
+    .click();
   await expect(member.getByRole("dialog")).toContainText("手冲咖啡");
   await expect(member.getByRole("dialog")).toContainText(
     "轻烘焙手冲风味，适合慢慢品尝。",

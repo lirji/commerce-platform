@@ -1,9 +1,10 @@
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import {
   BatchCatalogAction,
   CatalogJobs,
   ChannelPrices,
 } from "./CatalogScheduling";
-import { Alert, Button, Drawer, Space, Table, Tabs } from "antd";
+import { Alert, Button, Space, Table, Tabs } from "antd";
 import {
   BarcodeEditor,
   CatalogFilters,
@@ -198,7 +199,7 @@ export function ProductOperations({ store }: { store: string }) {
                       width: 320,
                       className: "row-actions-cell",
                       render: (_, r) => (
-                        <div className="row-actions">
+                        <RowActions>
                           <CommandModal
                             key={`${r.skuId}:${r.revision}`}
                             title="调价 / 上下架"
@@ -244,7 +245,7 @@ export function ProductOperations({ store }: { store: string }) {
                           >
                             修订记录
                           </Button>
-                        </div>
+                        </RowActions>
                       ),
                     },
                   ]}
@@ -291,33 +292,38 @@ export function ProductOperations({ store }: { store: string }) {
                     { title: "品牌", dataIndex: "brand" },
                     {
                       title: "操作",
+                      className: "row-actions-cell",
                       render: (_, r) => (
-                        <Space>
-                          <Button
-                            type="link"
-                            onClick={() => setPresentation(r)}
-                          >
-                            展示资料
-                          </Button>
-                          <CommandModal
-                            key={`${r.productId}:${r.version}`}
-                            title="编辑资料"
-                            path={"/operations/products/" + encode(r.productId)}
-                            buttonType="link"
-                            fields={metadata}
-                            initialValues={{
-                              title: r.title,
-                              category: r.category,
-                              brand: r.brand,
-                            }}
-                            build={(v) => ({
-                              ...v,
-                              storeId: store,
-                              expectedVersion: r.version,
-                            })}
-                            onDone={refresh}
-                          />
-                        </Space>
+                        <RowActions>
+                          <Space>
+                            <Button
+                              type="link"
+                              onClick={() => setPresentation(r)}
+                            >
+                              展示资料
+                            </Button>
+                            <CommandModal
+                              key={`${r.productId}:${r.version}`}
+                              title="编辑资料"
+                              path={
+                                "/operations/products/" + encode(r.productId)
+                              }
+                              buttonType="link"
+                              fields={metadata}
+                              initialValues={{
+                                title: r.title,
+                                category: r.category,
+                                brand: r.brand,
+                              }}
+                              build={(v) => ({
+                                ...v,
+                                storeId: store,
+                                expectedVersion: r.version,
+                              })}
+                              onDone={refresh}
+                            />
+                          </Space>
+                        </RowActions>
                       ),
                     },
                   ]}

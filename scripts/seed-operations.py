@@ -24,7 +24,10 @@ if "/" + schema + "?" not in url:
 base = os.getenv("COMMERCE_E2E_BASE_URL", "http://127.0.0.1:8600")
 if not base.startswith(("http://127.0.0.1:", "http://localhost:")):
     raise SystemExit("Demo fixtures require a local API.")
-path = root / ".local/operations-access.json"
+# 允许任务独立的私密凭据目录，默认位置保持兼容。
+access_dir = Path(os.getenv("COMMERCE_ACCESS_DIR", str(root / ".local"))).resolve()
+access_dir.mkdir(parents=True, exist_ok=True)
+path = access_dir / "operations-access.json"
 if path.exists() and "--fresh" not in sys.argv:
     access = json.loads(path.read_text())
     if access["schema"] != schema or access["baseUrl"] != base:
@@ -308,5 +311,5 @@ post(
 )
 publish("journeys", "growth-welcome")
 print(
-    "Operations fixture persisted through real APIs. Private access: .local/operations-access.json (not printed)."
+    "Operations fixture persisted through real APIs. Private access stored in selected access directory (not printed)."
 )

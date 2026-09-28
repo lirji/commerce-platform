@@ -1,3 +1,4 @@
+import { PagerActions } from "../shared/interactions";
 import {
   Alert,
   Button,
@@ -272,7 +273,7 @@ export function MemberCycles({ admin }: { admin: boolean }) {
                 },
               ]}
             />
-            <Space className="section-actions">
+            <PagerActions>
               <Button disabled={!after} onClick={() => setAfter(0)}>
                 最早周期策略
               </Button>
@@ -282,7 +283,7 @@ export function MemberCycles({ admin }: { admin: boolean }) {
               >
                 下一页周期策略
               </Button>
-            </Space>
+            </PagerActions>
           </Card>
           <Card
             title="等级权益礼包"

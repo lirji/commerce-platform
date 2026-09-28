@@ -1,8 +1,8 @@
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import {
   Alert,
   Button,
   Card,
-  Drawer,
   Form,
   Input,
   Select,
@@ -15,6 +15,8 @@ import type { Governed, PageDefinition, PageRender } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
   ActionButton,
+  FormActions,
+  useDirtyClose,
   CommandModal,
   ErrorNotice,
   Fields,
@@ -202,37 +204,40 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
           },
           {
             title: "操作",
+            className: "row-actions-cell",
             render: (_, v) => (
-              <Space>
-                <Governance
-                  base="/admin/ops-pages"
-                  id={id}
-                  version={v.content.version}
-                  status={v.status}
-                  lockVersion={v.lockVersion}
-                  onDone={() => {
-                    r.refresh();
-                    onDone();
-                  }}
-                />
-                {v.status === "PAUSED" && (
-                  <ActionButton
-                    label="回退到此版本"
-                    path={
-                      "/admin/ops-pages/" +
-                      encode(id) +
-                      "/" +
-                      v.content.version +
-                      "/rollback"
-                    }
-                    body={{ expectedVersion: v.lockVersion }}
+              <RowActions>
+                <Space>
+                  <Governance
+                    base="/admin/ops-pages"
+                    id={id}
+                    version={v.content.version}
+                    status={v.status}
+                    lockVersion={v.lockVersion}
                     onDone={() => {
                       r.refresh();
                       onDone();
                     }}
                   />
-                )}
-              </Space>
+                  {v.status === "PAUSED" && (
+                    <ActionButton
+                      label="回退到此版本"
+                      path={
+                        "/admin/ops-pages/" +
+                        encode(id) +
+                        "/" +
+                        v.content.version +
+                        "/rollback"
+                      }
+                      body={{ expectedVersion: v.lockVersion }}
+                      onDone={() => {
+                        r.refresh();
+                        onDone();
+                      }}
+                    />
+                  )}
+                </Space>
+              </RowActions>
             ),
           },
         ]}
@@ -252,6 +257,7 @@ export function OpsPages({ store }: { store: string }) {
   const [preview, setPreview] = useState<PageRender>();
   const [form] = Form.useForm();
   const command = useCommand();
+  const closing = useDirtyClose(form, command.busy, () => setEditing(false));
   const body = (v: Values) => ({ ...v, storeId: store }) as PageDefinition;
   // 抽屉复用同一个表单实例；切换草稿或新建时须从当前版本重新初始化。
   useEffect(() => {
@@ -259,6 +265,7 @@ export function OpsPages({ store }: { store: string }) {
   }, [draft, editing, form]);
   return (
     <>
+      {closing.contextHolder}
       <PageHead
         eyebrow="平台工具"
         title="低代码运营页面"
@@ -301,15 +308,18 @@ export function OpsPages({ store }: { store: string }) {
             },
             {
               title: "操作",
+              className: "row-actions-cell",
               render: (_, row) => (
-                <Space wrap>
+                <RowActions>
                   <Button
+                    type="link"
                     size="small"
                     onClick={() => setSelected(row.content.pageId)}
                   >
                     打开 / 版本
                   </Button>
                   <Button
+                    type="link"
                     size="small"
                     onClick={() => {
                       setDraft({
@@ -330,7 +340,7 @@ export function OpsPages({ store }: { store: string }) {
                     lockVersion={row.lockVersion}
                     onDone={r.refresh}
                   />
-                </Space>
+                </RowActions>
               ),
             },
           ]}
@@ -370,9 +380,37 @@ export function OpsPages({ store }: { store: string }) {
         title="页面编排"
         size={960}
         open={editing}
-        onClose={() => {
-          if (!command.busy) setEditing(false);
-        }}
+        onClose={closing.requestClose}
+        keyboard={!command.busy}
+        maskClosable={!command.busy}
+        footer={
+          <FormActions onCancel={closing.requestClose} busy={command.busy}>
+            <Button
+              loading={command.busy}
+              onClick={async () => {
+                try {
+                  const v = await form.validateFields();
+                  const result = await command.run<PageRender>(
+                    "/admin/ops-pages/preview",
+                    body(v),
+                  );
+                  if (result) setPreview(result);
+                } catch {
+                  /* 表单组件就地显示校验错误 */
+                }
+              }}
+            >
+              预览真实数据
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => form.submit()}
+              loading={command.busy}
+            >
+              保存页面草稿
+            </Button>
+          </FormActions>
+        }
         destroyOnHidden
       >
         <ErrorNotice error={command.error} />
@@ -489,28 +527,6 @@ export function OpsPages({ store }: { store: string }) {
               </>
             )}
           </Form.List>
-          <Space className="section-actions">
-            <Button
-              loading={command.busy}
-              onClick={async () => {
-                try {
-                  const v = await form.validateFields();
-                  const result = await command.run<PageRender>(
-                    "/admin/ops-pages/preview",
-                    body(v),
-                  );
-                  if (result) setPreview(result);
-                } catch {
-                  /* 表单组件就地显示校验错误 */
-                }
-              }}
-            >
-              预览真实数据
-            </Button>
-            <Button type="primary" htmlType="submit" loading={command.busy}>
-              保存页面草稿
-            </Button>
-          </Space>
         </Form>
         {preview && <RenderPage render={preview} refresh={() => {}} />}
       </Drawer>

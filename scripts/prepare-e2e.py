@@ -56,7 +56,10 @@ if p.returncode:
     raise SystemExit(
         "Browser credentials could not be provisioned; details suppressed."
     )
-path = root / ".local/e2e-access.json"
+# 允许任务独立的私密凭据目录，默认位置保持兼容。
+access_dir = Path(os.getenv("COMMERCE_ACCESS_DIR", str(root / ".local"))).resolve()
+access_dir.mkdir(parents=True, exist_ok=True)
+path = access_dir / "e2e-access.json"
 fd = os.open(path, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600)
 with os.fdopen(fd, "w") as f:
     json.dump(access, f, indent=2)
@@ -194,5 +197,5 @@ post(
     },
 )
 print(
-    "Browser fixture persisted in a dedicated tenant; credentials stored in .local/e2e-access.json, not printed."
+    "Browser fixture persisted in a dedicated tenant; credentials stored in selected private access directory, not printed."
 )

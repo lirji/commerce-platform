@@ -1,3 +1,5 @@
+import { PagerActions } from "../shared/interactions";
+import { RowActions } from "../shared/interactions";
 import { Alert, Button, Card, Form, Input, Modal, Space, Table } from "antd";
 import { useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
@@ -80,19 +82,22 @@ export function JourneyScans() {
           },
           {
             title: "操作",
+            className: "row-actions-cell",
             render: (_, r) => (
-              <Button
-                size="small"
-                disabled={r.status !== "ISOLATED"}
-                onClick={() => setRetry(r)}
-              >
-                恢复扫描
-              </Button>
+              <RowActions>
+                <Button
+                  size="small"
+                  disabled={r.status !== "ISOLATED"}
+                  onClick={() => setRetry(r)}
+                >
+                  恢复扫描
+                </Button>
+              </RowActions>
             ),
           },
         ]}
       />
-      <Space>
+      <PagerActions>
         <Button disabled={!after} onClick={() => setAfter("")}>
           扫描首页
         </Button>
@@ -102,7 +107,7 @@ export function JourneyScans() {
         >
           下一批扫描
         </Button>
-      </Space>
+      </PagerActions>
       <Modal
         title="恢复隔离扫描"
         open={!!retry}

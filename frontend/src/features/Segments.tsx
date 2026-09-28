@@ -1,9 +1,12 @@
-import { Alert, Button, Drawer, Form, Modal, Space, Table } from "antd";
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { Alert, Button, Form, Modal, Space, Table } from "antd";
 import { useState } from "react";
 import type { Rule } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
   ActionButton,
+  FormActions,
+  useDirtyClose,
   ErrorNotice,
   Fields,
   ListPanel,
@@ -60,12 +63,14 @@ export function Segments() {
   );
   const command = useCommand();
   const [form] = Form.useForm();
+  const closing = useDirtyClose(form, command.busy, () => setOpen(false));
   const refresh = () => {
     resource.refresh();
     runs.refresh();
   };
   return (
     <Workbench>
+      {closing.contextHolder}
       <PageHead
         eyebrow="会员经营"
         title="动态人群"
@@ -127,8 +132,9 @@ export function Segments() {
             },
             {
               title: "操作",
+              className: "row-actions-cell",
               render: (_, r) => (
-                <Space wrap>
+                <RowActions>
                   <ActionButton
                     label="开始刷新"
                     path={`/admin/segments/${encode(r.content.segmentId)}/refresh`}
@@ -149,6 +155,7 @@ export function Segments() {
                     disabled={!r.enabled && r.content.refreshSeconds === 0}
                   />
                   <Button
+                    type="link"
                     onClick={() => {
                       setSelected(r);
                       setRunAfter("");
@@ -157,18 +164,25 @@ export function Segments() {
                     任务与受众版本
                   </Button>
                   <Button
+                    type="link"
                     onClick={() => {
                       form.setFieldsValue({
                         ...r.content,
                         version: r.content.version + 1,
                       });
                       command.clear();
+                      form.setFields(
+                        Object.keys(form.getFieldsValue(true)).map((name) => ({
+                          name,
+                          touched: false,
+                        })),
+                      );
                       setOpen(true);
                     }}
                   >
                     复制为新定义
                   </Button>
-                </Space>
+                </RowActions>
               ),
             },
           ]}
@@ -231,30 +245,33 @@ export function Segments() {
             { title: "有效期至", dataIndex: "validUntil", render: time },
             {
               title: "操作",
+              className: "row-actions-cell",
               render: (_, r) => (
-                <Space>
-                  {["RUNNING", "ISOLATED"].includes(r.status) && (
-                    <ActionButton
-                      label="取消"
-                      path={`/admin/segment-runs/${encode(r.runId)}/cancel`}
-                      onDone={refresh}
-                    />
-                  )}
-                  {r.status === "COMPLETED" && r.entryAttempts >= 5 && (
-                    <ActionButton
-                      label="重试入组事件"
-                      path={`/admin/segment-runs/${encode(r.runId)}/retry-announcement`}
-                      onDone={refresh}
-                    />
-                  )}
-                  {r.status === "ISOLATED" && (
-                    <ActionButton
-                      label="从检查点重试"
-                      path={`/admin/segment-runs/${encode(r.runId)}/retry`}
-                      onDone={refresh}
-                    />
-                  )}
-                </Space>
+                <RowActions>
+                  <Space>
+                    {["RUNNING", "ISOLATED"].includes(r.status) && (
+                      <ActionButton
+                        label="取消"
+                        path={`/admin/segment-runs/${encode(r.runId)}/cancel`}
+                        onDone={refresh}
+                      />
+                    )}
+                    {r.status === "COMPLETED" && r.entryAttempts >= 5 && (
+                      <ActionButton
+                        label="重试入组事件"
+                        path={`/admin/segment-runs/${encode(r.runId)}/retry-announcement`}
+                        onDone={refresh}
+                      />
+                    )}
+                    {r.status === "ISOLATED" && (
+                      <ActionButton
+                        label="从检查点重试"
+                        path={`/admin/segment-runs/${encode(r.runId)}/retry`}
+                        onDone={refresh}
+                      />
+                    )}
+                  </Space>
+                </RowActions>
               ),
             },
           ]}
@@ -272,8 +289,20 @@ export function Segments() {
       <Modal
         title="发布人群定义版本"
         open={open}
-        onCancel={() => !command.busy && setOpen(false)}
-        footer={null}
+        onCancel={closing.requestClose}
+        keyboard={!command.busy}
+        maskClosable={!command.busy}
+        footer={
+          <FormActions onCancel={closing.requestClose} busy={command.busy}>
+            <Button
+              type="primary"
+              loading={command.busy}
+              onClick={() => form.submit()}
+            >
+              发布定义
+            </Button>
+          </FormActions>
+        }
         width={780}
         destroyOnHidden
       >
@@ -334,9 +363,6 @@ export function Segments() {
             title="新定义发布后默认手工刷新；检查结果后再启用周期刷新。"
             style={{ marginBottom: 16 }}
           />
-          <Button type="primary" htmlType="submit" loading={command.busy}>
-            发布定义
-          </Button>
         </Form>
       </Modal>
     </Workbench>

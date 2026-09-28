@@ -1,13 +1,6 @@
-import {
-  Alert,
-  Button,
-  Card,
-  Drawer,
-  Input,
-  Space,
-  Table,
-  Typography,
-} from "antd";
+import { PagerActions } from "../shared/interactions";
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { Alert, Button, Card, Input, Space, Table, Typography } from "antd";
 import { useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
@@ -272,8 +265,9 @@ export function CatalogJobs({ store }: { store: string }) {
           },
           {
             title: "操作",
+            className: "row-actions-cell",
             render: (_, r) => (
-              <Space wrap>
+              <RowActions>
                 <Button type="link" onClick={() => setSelected(r)}>
                   逐项回执
                 </Button>
@@ -307,12 +301,12 @@ export function CatalogJobs({ store }: { store: string }) {
                     onDone={refresh}
                   />
                 )}
-              </Space>
+              </RowActions>
             ),
           },
         ]}
       />
-      <Space>
+      <PagerActions>
         <Button disabled={!after} onClick={() => setAfter("")}>
           计划首页
         </Button>
@@ -322,7 +316,7 @@ export function CatalogJobs({ store }: { store: string }) {
         >
           下一页计划
         </Button>
-      </Space>
+      </PagerActions>
       <Drawer
         title={`${selected?.definition.name ?? "计划"} · 逐项回执`}
         open={!!selected}
@@ -512,7 +506,7 @@ export function ChannelPrices({
               { title: "操作人", dataIndex: "actorId" },
             ]}
           />
-          <Space>
+          <PagerActions>
             <Button disabled={!historyAfter} onClick={() => setHistoryAfter(0)}>
               最早渠道记录
             </Button>
@@ -522,7 +516,7 @@ export function ChannelPrices({
             >
               下一页渠道记录
             </Button>
-          </Space>
+          </PagerActions>
         </>
       )}
     </Drawer>

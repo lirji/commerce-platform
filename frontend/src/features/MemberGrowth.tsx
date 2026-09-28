@@ -1,3 +1,5 @@
+import { PagerActions } from "../shared/interactions";
+import { RowActions } from "../shared/interactions";
 import {
   Alert,
   Button,
@@ -209,7 +211,7 @@ export function MemberGrowth({
                         { title: "时间", dataIndex: "createdAt", render: time },
                       ]}
                     />
-                    <Space>
+                    <PagerActions>
                       <Button
                         onClick={() => setAfter(0)}
                         disabled={after === 0}
@@ -224,7 +226,7 @@ export function MemberGrowth({
                       >
                         下一页
                       </Button>
-                    </Space>
+                    </PagerActions>
                     {admin && (
                       <>
                         <h3>会员标签</h3>
@@ -269,27 +271,30 @@ export function MemberGrowth({
                             { title: "原因", dataIndex: "reason" },
                             {
                               title: "操作",
+                              className: "row-actions-cell",
                               render: (_, r) => (
-                                <CommandModal
-                                  title={r.active ? "撤销" : "恢复"}
-                                  buttonType="link"
-                                  path={`/admin/member-tags/${encode(member)}/assign`}
-                                  fields={[
-                                    { name: "reason", label: "变更原因" },
-                                  ]}
-                                  build={(v) => ({
-                                    ...v,
-                                    tagId: r.tagId,
-                                    expectedVersion: r.version,
-                                    active: !r.active,
-                                  })}
-                                  onDone={refresh}
-                                />
+                                <RowActions>
+                                  <CommandModal
+                                    title={r.active ? "撤销" : "恢复"}
+                                    buttonType="link"
+                                    path={`/admin/member-tags/${encode(member)}/assign`}
+                                    fields={[
+                                      { name: "reason", label: "变更原因" },
+                                    ]}
+                                    build={(v) => ({
+                                      ...v,
+                                      tagId: r.tagId,
+                                      expectedVersion: r.version,
+                                      active: !r.active,
+                                    })}
+                                    onDone={refresh}
+                                  />
+                                </RowActions>
                               ),
                             },
                           ]}
                         />
-                        <Space>
+                        <PagerActions>
                           <Button
                             disabled={!tagAfter}
                             onClick={() => setTagAfter("")}
@@ -304,7 +309,7 @@ export function MemberGrowth({
                           >
                             下一页标签
                           </Button>
-                        </Space>
+                        </PagerActions>
                       </>
                     )}
                   </>

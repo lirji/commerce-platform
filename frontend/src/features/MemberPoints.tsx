@@ -1,3 +1,4 @@
+import { PagerActions } from "../shared/interactions";
 import {
   Alert,
   Button,
@@ -226,7 +227,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
                 },
               ]}
             />
-            <Space className="section-actions">
+            <PagerActions>
               <Button disabled={!after} onClick={() => setAfter(0)}>
                 最早积分记录
               </Button>
@@ -236,7 +237,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
               >
                 下一页积分
               </Button>
-            </Space>
+            </PagerActions>
           </Card>
         </>
       )}
@@ -339,7 +340,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
               },
             ]}
           />
-          <Space className="section-actions">
+          <PagerActions>
             <Button disabled={!policyAfter} onClick={() => setPolicyAfter(0)}>
               最早积分策略
             </Button>
@@ -349,7 +350,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
             >
               下一页积分策略
             </Button>
-          </Space>
+          </PagerActions>
         </Card>
       )}
     </div>

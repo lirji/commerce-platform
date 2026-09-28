@@ -1,3 +1,5 @@
+import { PagerActions } from "../shared/interactions";
+import { RowActions } from "../shared/interactions";
 import {
   Alert,
   Button,
@@ -189,18 +191,21 @@ export function PointOffers({
             },
             {
               title: "操作",
+              className: "row-actions-cell",
               render: (_, r) => (
-                <CommandModal
-                  title={r.status === "ACTIVE" ? "停用兑换" : "启用兑换"}
-                  path={`/admin/point-offers/${encode(r.content.offerId)}/status`}
-                  fields={[{ name: "reason", label: "兑换状态变更原因" }]}
-                  build={(v) => ({
-                    ...v,
-                    expectedVersion: r.version,
-                    active: r.status !== "ACTIVE",
-                  })}
-                  onDone={refresh}
-                />
+                <RowActions>
+                  <CommandModal
+                    title={r.status === "ACTIVE" ? "停用兑换" : "启用兑换"}
+                    path={`/admin/point-offers/${encode(r.content.offerId)}/status`}
+                    fields={[{ name: "reason", label: "兑换状态变更原因" }]}
+                    build={(v) => ({
+                      ...v,
+                      expectedVersion: r.version,
+                      active: r.status !== "ACTIVE",
+                    })}
+                    onDone={refresh}
+                  />
+                </RowActions>
               ),
             },
           ]}
@@ -239,7 +244,7 @@ export function PointOffers({
           ))}
         </Row>
       )}
-      <Space>
+      <PagerActions>
         <Button disabled={!after} onClick={() => setAfter("")}>
           兑换首页
         </Button>
@@ -249,7 +254,7 @@ export function PointOffers({
         >
           下一页兑换
         </Button>
-      </Space>
+      </PagerActions>
       {!admin && (
         <Card title="我的兑换回执">
           <ErrorNotice error={receipts.error} />
@@ -272,7 +277,7 @@ export function PointOffers({
               { title: "券 / 权益标识", dataIndex: "assetId", ellipsis: true },
             ]}
           />
-          <Space>
+          <PagerActions>
             <Button
               disabled={!receiptAfter}
               onClick={() => setReceiptAfter("")}
@@ -287,7 +292,7 @@ export function PointOffers({
             >
               下一页回执
             </Button>
-          </Space>
+          </PagerActions>
         </Card>
       )}
     </div>

@@ -1,0 +1,145 @@
+{
+  "stage": "representative",
+  "hashes": {
+    "frontend/src/app/App.tsx": "4fc44a44509427d0e3221698279c30a675d3b763fc61a09111f057467313a5df",
+    "frontend/src/features/AdminData.tsx": "6f3c7d7d805176c781a21719263d6e6a95f62278ed1e60eeced19e002ce5d9df",
+    "frontend/src/features/CampaignPreview.tsx": "112202a615f4b649ef5f772e149700dbfaa0b9fb16d9eeb541e6aa0b6dddb695",
+    "frontend/src/features/CatalogMerchandising.tsx": "336e3721bd6b0e3256f122186ac3c4eec8858e931d5c84fe63feacd9c52e2d56",
+    "frontend/src/features/CatalogScheduling.tsx": "62a9d3afe18f194c8e2767cfd069c042f46ed96a6f2e84ab12bcb9bcd1580a13",
+    "frontend/src/features/CouponDeliveries.tsx": "f4ec6f6adc2d2059a823c48354b7fd56cdb6c919d005d53ecb69b6f44505557f",
+    "frontend/src/features/Dashboard.tsx": "d89ac97e642b71e0a3c8e249e96d6887840303aeb4581f159647fceea6d3e1e8",
+    "frontend/src/features/JourneyScans.tsx": "e7b3319438f6eded5ce5101cf8edbe7beeb05e64f0c7c55b7c8238e977471086",
+    "frontend/src/features/Journeys.tsx": "6feaed1a88ad4e936dadcbce2c4b31acadacd1492d48ae8ba34a7383316f536c",
+    "frontend/src/features/LifecycleEffects.tsx": "1509043f8307d57187d6b289288a13560ebb16a98d10c5c5e3c3b759be7b567c",
+    "frontend/src/features/Marketing.tsx": "e85e1eb8a26e25bc8d55558f6b90aafe05a0f4a1debfa22143ed2da6379409bb",
+    "frontend/src/features/MarketingDetails.tsx": "07847a04e4ae970a1b48b57b803990a9b4de07d001ae668b61356ed3f6028bb2",
+    "frontend/src/features/MarketingEffects.tsx": "d1192cb603ff3663d5bd04e1c31c842768f4d9def612d0bc6618f60d4e3c28b4",
+    "frontend/src/features/MemberActions.tsx": "318145b14677e8bd404d7fff1d1123bd1fcdc6d70253f41112d436b27dbb59ef",
+    "frontend/src/features/MemberBehavior.tsx": "8d669ce1ecab3bda823a52e001f5186ab30595b131cdcbb2bb36f74547d735ad",
+    "frontend/src/features/MemberCycles.tsx": "cafc0e05b64ad849a2d9c39b5f66ffb1592e826b7cc75fd3ce3d88f3e60793b5",
+    "frontend/src/features/MemberGrowth.tsx": "6dc0002f544da464e6061328fa18374951bd8f6034168b5f0a64375bb76b0f85",
+    "frontend/src/features/MemberPoints.tsx": "fa0d6ccab76841c3c71c52de50901327f6b5fce9b3ec3885f7b9f805fb7bf923",
+    "frontend/src/features/MemberWallet.tsx": "cd08875ee00c9a3e0049c3563f1ea03fef118f34976df4b4d4aa67d66e47f848",
+    "frontend/src/features/OpsPages.tsx": "086646660553c27c4be8e911a145992e48ad7f6306fdc73f689e69e6c4b323a4",
+    "frontend/src/features/Orders.tsx": "5a25fbbf992a4eeb5278ce69c7abcf645a9f51292a533ac819049d36b00538f9",
+    "frontend/src/features/PointOffers.tsx": "a13b616bd5115e3e3199d34e463ec3fe64d7fcaea1597e0b406e45041dce081f",
+    "frontend/src/features/ProductOperations.tsx": "0ffc284869ca78c44cf58327a5f3f32ad14f1ead04035b569fa05fac155836c2",
+    "frontend/src/features/Segments.tsx": "ad744db4fd6f2cefcc0c13a2a36c3036e93ca5846870d1700c16380fa30b4391",
+    "frontend/src/features/Shop.tsx": "ee5614676f0460fd25021d88b26fbff8cd888f2d4a8de26bba8fe652aec23b8b",
+    "frontend/src/main.tsx": "fe571ee1edde36dbf252984cd032f7af77b72bf358701756caef41b05338a7c0",
+    "frontend/src/shared/Icon.tsx": "2b8aebbe0a18f9410634e26875d676ff522abfb719f0f8d8f87b26768893d37a",
+    "frontend/src/shared/api.ts": "b96afee197208fd1a72240857ae8f90736d273d2ce8651cb32df2a3f95040390",
+    "frontend/src/shared/contracts.ts": "8837b4338ee0c8585184fd8e76efa6b649eca02c674dedb973a941f50cd2c5af",
+    "frontend/src/shared/formSchemas.ts": "339a57b76b5642a298450ed6b86ec50fa9e1da94c9af8b4f027ff46acd802b7b",
+    "frontend/src/shared/interactions.tsx": "a8951f7a3869038da136f0d6479040cb7f270cefb44d196f589b831fd5ccce40",
+    "frontend/src/shared/marketing.tsx": "431155b09dad55a2a1c074bfb13028c872006c6f6a359e9a4f878410e3c1e71d",
+    "frontend/src/shared/ui.tsx": "4a57dd29e4be313e88f35ac5ca60e7ff1d67f037bc448ad4a937b86e5d6bdd37",
+    "frontend/src/style.css": "628f8394e206427798a7ba9f10a82f419b2d1797cfe84afee250ff90a287513b",
+    "frontend/src/theme.ts": "2b76c9306cd79b3b99f7e6a6bc95294819e0fc770fe7ad63dc1397aa2faccaed"
+  },
+  "results": [
+    {
+      "file": "campaign-list.png",
+      "state": "营销列表与行操作/分页",
+      "timestamp": "2026-09-28T06:16:55.206Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": []
+    },
+    {
+      "file": "campaign-detail.png",
+      "state": "实际活动配置",
+      "timestamp": "2026-09-28T06:16:55.327Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "版本配置展开视图营销活动 · 版本配置会员满100减25并赠权益member-benefits · v20260923已发布消费门槛¥100.00优惠金额 / "
+      ]
+    },
+    {
+      "file": "campaign-editor.png",
+      "state": "基于真实活动的一次编辑，未提交",
+      "timestamp": "2026-09-28T06:16:55.528Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "版本配置展开视图返回列表",
+        "复制新版本展开视图基于 v20260923 创建新的草稿版本，保存后可继续审批发布。活动标识版本活动名称消费门槛优惠金额 / 比例折扣上限开始时间结束时间资格规"
+      ]
+    },
+    {
+      "file": "campaign-preview.png",
+      "state": "真实预览入口与表单，未执行业务写",
+      "timestamp": "2026-09-28T06:16:55.759Z",
+      "route": "#campaigns?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 2,
+      "dialogs": [
+        "版本配置展开视图返回列表",
+        "会员满100减25并赠权益 · v20260923 预览展开视图输入真实会员与商品清单，查看优惠金额和条件匹配结果。会员标识观察活动时间（留空为现在）购物清单每"
+      ]
+    },
+    {
+      "file": "admin-rules.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:16:56.050Z",
+      "route": "#rules?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    },
+    {
+      "file": "admin-rules-detail.png",
+      "state": "实际打开的关联详情",
+      "timestamp": "2026-09-28T06:16:56.152Z",
+      "route": "#rules?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": [
+        "版本配置展开视图动态规则 · 版本配置VIP会员规则vip-rule · v1已发布会员资格条件会员等级等于VIP版本信息版本1完整原始配置{\n  \"conte"
+      ]
+    },
+    {
+      "file": "admin-members.png",
+      "state": "实际管理入口",
+      "timestamp": "2026-09-28T06:16:57.218Z",
+      "route": "#members?store=store-demo",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "rows": 1,
+      "dialogs": []
+    }
+  ],
+  "errors": [],
+  "fixture": "Existing isolated persisted member-suite tenant; credentials excluded"
+}

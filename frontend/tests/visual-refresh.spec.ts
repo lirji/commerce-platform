@@ -1,3 +1,4 @@
+import { accessPath } from "./access";
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { navigate } from "./navigation";
@@ -5,7 +6,7 @@ import { navigate } from "./navigation";
 const access = JSON.parse(
   readFileSync(
     process.env.COMMERCE_VISUAL_ACCESS ??
-      new URL("../../.local/member-suite-access.json", import.meta.url),
+      accessPath("member-suite-access.json"),
     "utf8",
   ),
 );

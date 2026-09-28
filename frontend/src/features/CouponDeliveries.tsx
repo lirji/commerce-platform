@@ -1,4 +1,6 @@
-import { Alert, Button, Drawer, Space, Table } from "antd";
+import { PagerActions } from "../shared/interactions";
+import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { Alert, Button, Space, Table } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
 import {
@@ -231,8 +233,9 @@ export function CouponDeliveries({ store }: { store: string }) {
             },
             {
               title: "操作",
+              className: "row-actions-cell",
               render: (_, r) => (
-                <Space wrap>
+                <RowActions>
                   <Button
                     type="link"
                     onClick={() => {
@@ -243,7 +246,7 @@ export function CouponDeliveries({ store }: { store: string }) {
                     发券回执
                   </Button>
                   {controls(r)}
-                </Space>
+                </RowActions>
               ),
             },
           ]}
@@ -317,7 +320,7 @@ export function CouponDeliveries({ store }: { store: string }) {
             { title: "处理时间", dataIndex: "createdAt", render: time },
           ]}
         />
-        <Space>
+        <PagerActions>
           <Button
             disabled={!recipientAfter}
             onClick={() => setRecipientAfter("")}
@@ -330,7 +333,7 @@ export function CouponDeliveries({ store }: { store: string }) {
           >
             下一页收件人
           </Button>
-        </Space>
+        </PagerActions>
       </Drawer>
     </Workbench>
   );

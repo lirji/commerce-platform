@@ -34,6 +34,7 @@ export function MarketingDetails({
         <section className="detail-section">
           <h3 className="detail-section-title">活动范围与有效期</h3>
           <RecordFields
+            grouped={false}
             value={{
               storeId: campaign.storeId,
               validFrom: campaign.validFrom,
@@ -51,6 +52,7 @@ export function MarketingDetails({
           <h3 className="detail-section-title">关联资产与优惠配置</h3>
           {campaign.policy.audience && (
             <RecordFields
+              grouped={false}
               value={{
                 audienceId: campaign.policy.audience.id,
                 version: campaign.policy.audience.version,
@@ -59,6 +61,7 @@ export function MarketingDetails({
           )}
           {campaign.policy.rule && (
             <RecordFields
+              grouped={false}
               value={{
                 ruleId: campaign.policy.rule.id,
                 version: campaign.policy.rule.version,
@@ -66,13 +69,14 @@ export function MarketingDetails({
             />
           )}
           {campaign.policy.terms && (
-            <RecordFields value={campaign.policy.terms} />
+            <RecordFields grouped={false} value={campaign.policy.terms} />
           )}
         </section>
       )}
       <section className="detail-section">
         <h3 className="detail-section-title">版本信息</h3>
         <RecordFields
+          grouped={false}
           value={{ version: c.version, lockVersion: record.lockVersion }}
         />
       </section>

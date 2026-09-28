@@ -1,50 +1,16 @@
 {
-  "task": "frontend-visual-refresh",
-  "status": "COMPLETE",
-  "baseline": "f170e317f12006d8559ac41d1858b00c42998890",
-  "priorState": "docs/delivery/frontend-visual-refresh/PREVIOUS_PROGRESS_STATE.json",
+  "task": "frontend-interaction-refresh",
+  "status": "IN_PROGRESS",
+  "branch": "feat/frontend-interaction-refresh",
+  "baseline": "1cabf40",
   "slices": {
-    "S-VR-01": "DONE"
+    "S-UX-01": "DONE",
+    "S-UX-02": "DONE",
+    "S-UX-03": "IN_PROGRESS"
   },
-  "verification": "docs/delivery/frontend-visual-refresh/TEST_RESULT.md",
-  "uiFingerprint": "3a72634e2bfdbf5b15cd07377373dc6bb281b4013ff2d82e506b13329e589876",
-  "delivery": "PUBLISHED_TO_MAIN",
-  "git": {
-    "branch": "feat/frontend-visual-refresh",
-    "target": "origin/main",
-    "authorization": "User persistent AGENTS instruction permits normal commit/merge/push; no force push or production deployment",
-    "implementationCommit": "0283d9cc8e446e635793a4f90e7810ceb226f7d9",
-    "publishedImplementationRef": "6914abb56d6e0587075e536dc92e08ef6bfa7749",
-    "mainMergePush": "PASS",
-    "remediationCommit": "6914abb56d6e0587075e536dc92e08ef6bfa7749"
-  },
-  "previousMigration": "UNCHANGED",
-  "productionDeployment": "NOT_IN_SCOPE",
-  "next": "NONE",
-  "deliveryEvidence": "docs/delivery/frontend-visual-refresh/DELIVERY_RESULT.json",
-  "ci": {
-    "gate": "PASS",
-    "commit": "6914abb56d6e0587075e536dc92e08ef6bfa7749",
-    "evidence": "docs/delivery/frontend-visual-refresh/CI_RESULT.json",
-    "url": "https://github.com/lirji/commerce-platform/actions/runs/36378779697"
-  },
-  "updatedAt": "2026-09-28T04:49:06.306603+00:00",
-  "localRemediation": {
-    "gate": "PASS",
-    "regression": "docs/delivery/frontend-visual-refresh/REGRESSION_RESULT.json",
-    "reproduction": "docs/delivery/frontend-visual-refresh/RACE_VERIFICATION.json",
-    "productSourceChanged": false
-  },
-  "runtimeDeployment": {
-    "status": "DONE",
-    "gate": "PASS",
-    "target": "local Docker commerce-platform/app",
-    "baseUrl": "http://127.0.0.1:8602",
-    "sourceCommit": "919081be0deef6024f39ba2ea4c232d2ed56fdab",
-    "imageTag": "commerce-platform:rev-919081b",
-    "imageId": "sha256:fa6b89cfea91db24b7b13dcc45db169c6be37e3243f56d7bb7abf5773aaaacd7",
-    "databaseSchemaVersion": "45",
-    "verification": "docs/delivery/frontend-visual-refresh/DEPLOYMENT_RESULT.json",
-    "productCodeChange": false
-  }
+  "validation": "S1 6/6; S2 10/10 and final layout 6/6; build PASS",
+  "evidence": "docs/evidence/frontend-interaction-refresh/shared/capture.json",
+  "next": "订单完整工作区与全量验收，Git交付",
+  "previousProgressBackup": ".local/frontend-interaction-refresh/PREVIOUS_PROGRESS_STATE.json",
+  "deployment": "No new deployment performed; source preview8601 / existingAPI8602"
 }
