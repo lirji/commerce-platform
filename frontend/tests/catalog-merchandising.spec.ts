@@ -121,7 +121,7 @@ test("商品经营：类目模板、固定规格、展示图片条码及会员�
   member.on("pageerror", (error) => errors.push(error.message));
   await login(member, false);
   await member.getByLabel("商品名称或条码", { exact: true }).fill("filter-042");
-  await member.getByRole("button", { name: "筛选商品", exact: true }).click();
+  await member.getByRole("button", { name: "搜索", exact: true }).click();
   await expect(member.locator(".product-card")).toHaveCount(1);
   await expect(member.locator(".product-card")).toContainText("轻烘手冲咖啡");
   await expect
@@ -140,7 +140,7 @@ test("商品经营：类目模板、固定规格、展示图片条码及会员�
         }),
     )
     .toBe(true);
-  await member.getByRole("button", { name: "查看商品", exact: true }).click();
+  await member.getByRole("button", { name: "轻烘手冲咖啡", exact: true }).click();
   await expect(member.getByRole("dialog")).toContainText("手冲咖啡");
   await expect(member.getByRole("dialog")).toContainText(
     "轻烘焙手冲风味，适合慢慢品尝。",

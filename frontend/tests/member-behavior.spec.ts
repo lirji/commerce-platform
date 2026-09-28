@@ -38,7 +38,10 @@ test("行为经营：真实商品交互、本人偏好、会员详情与行为�
   const product = page
     .locator(".product-card")
     .filter({ hasText: "积分精品咖啡" });
-  await product.getByRole("button", { name: "查看商品", exact: true }).click();
+  await product
+    .getByRole("button", { name: "积分精品咖啡", exact: true })
+    .filter({ hasText: "积分精品咖啡" })
+    .click();
   await page.getByRole("button", { name: "返回店铺", exact: true }).click();
   await product
     .getByRole("button", { name: "加入购物袋", exact: true })

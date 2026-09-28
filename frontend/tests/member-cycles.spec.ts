@@ -46,7 +46,7 @@ test("周期经营：查询考核、礼包绑定与幂等补发", async ({ page 
     path: `${evidence}/member-cycles-admin.png`,
     fullPage: true,
   });
-  await expect(page.locator("body")).toHaveCSS("color-scheme", "dark");
+  await expect(page.locator("body")).toHaveCSS("color-scheme", "light");
 });
 test("会员周期与权益钱包展示真实已发余额", async ({ page }) => {
   await login(page, "member");
