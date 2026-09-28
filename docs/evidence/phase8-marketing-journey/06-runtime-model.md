@@ -1,0 +1,9 @@
+# 持久运行模型
+
+复用TenantRotation与共享EventWorker。journeys policy：每租户访问最多20个生命周期scan步+5个实例节点；一轮最大200次尝试、协作时间预算500ms；每节点独立READ_COMMITTED事务timeout10s，连接池8、调度线程3。时间预算不是抢占式500ms上限，单次事务/语句配置10s超时，驱动和服务端取消需观测，不能当硬时限。
+
+候选查询不领取；dueLock以tenant/id与资格条件FOR UPDATE SKIP LOCKED，重读真实版本后执行。动作和stepFinish和version条件advance在同一事务；受影响行数必须1，否则回滚。别的实例不能在同一节点并行写效果。
+
+due查询按RUNNING/WAITING due与RUNNING/WAITING/ISOLATED deadline分别索引读取每分支5行，UNION去重最多25行后稳定due_at/instance_id选5。全局租户发现使用新增status/time/tenant索引排除未来WAIT。保留deadline终止语义，不用纯due范围漏掉未来due但已经deadline的实例。
+
+V45为扩展索引迁移，V44已执行后不修改历史。旧SQL仍可运行。受测场景计划见13-scale-backlog.md。

@@ -1,0 +1,9 @@
+# 版本与发布
+
+内容通过INSERT独立版本保存，创建已存在版本返回CONFLICT；数据库主键防最终并发覆盖。审批只变status/lock_version，不UPDATE definition_json。publish重检固定权益/券引用和店铺，再停旧版本新入组。
+
+JourneyRecoveryTest.newVersionAndPauseDoNotChangeActiveHistoricalGraph：v1有在途实例，v2发布新入组绑定v2，再pause v2阻止后续新入组；v1仍按原grant→notify→end完成，history.definition.version=1且原名称保留，v2只有END。禁止伪装inflight migration。
+
+真实OLD远程main aa8bef1二进制与NEW在V44/V45扩展schema共同运行：旧接口读新实例、旧进程推进新实例、新进程读旧入组和新旧入组去重均PASS。旧进程没有trace写入，新origin非空却缺节点记录→PARTIAL，旧origin NULL→LEGACY_PARTIAL；不重建历史。
+
+原schema1节点和实例枚举保持，所以代码回退可继续原节点，但旧代码不提供新历史/preview路由、不再写新trace；历史解释会退化为partial。迁移索引/nullable列不删除，业务效果不随代码回退撤销。

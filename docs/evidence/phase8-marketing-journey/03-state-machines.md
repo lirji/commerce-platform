@@ -1,0 +1,9 @@
+# 状态机
+
+定义：DRAFT→IN_REVIEW→APPROVED→PUBLISHED，拒绝为REJECTED；PUBLISHED→PAUSED，PAUSED可重新publish。动作必须包含expected lock_version；唯一published_id确保同Journey仅一发布版本。
+
+实例：RUNNING→WAITING/RUNNING/COMPLETED；WAITING到期→下一节点；永久失败累计第五次ISOLATED；ISOLATED仅截止前管理员retry→RUNNING；取消为CANCELLED，绝对deadline为TIMED_OUT。已发生效果不因取消被抹掉，真实订单退款继续走原权益冲正。
+
+Step：EXECUTING只存在同一未提交事务内；COMPLETED/WAITING/STOPPED与实例推进原子提交。失败事务回滚后，版本仍未变化才另写FAILED/DEFERRED/ISOLATED。transition_version为尝试唯一键，ordinal为逻辑节点，失败不增加steps。
+
+没有长租约或持久RUNNING领取标记；数据库行锁和连接断开回滚负责领取回收。没有EXECUTING行不意味着没有一次未提交的崩溃尝试，不伪造无法保存的证据。

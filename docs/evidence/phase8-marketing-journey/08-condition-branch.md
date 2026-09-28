@@ -1,0 +1,7 @@
+# 条件与分支
+
+规则使用现有RuleDecisionPort、RuleNode、MemberRuleFacts；结构校验与业务不命中分离。MATCH→yesNext，NO_MATCH→noNext，UNKNOWN终止RULE_UNKNOWN，不进入奖励支路。事实在WAIT之后当前读取，单次条件不再重复读取两套会员快照。
+
+当前事实证据：waitBranchUsesCurrentTagsInsteadOfEnrollmentFacts先赋loyal入组WAIT，等待期间通过真实标签API撤销，恢复后NO_MATCH走END、无权益。真实支付纵向链在WAIT后MATCH，history保留Truth、下一节点和固定版本。原unknown事实测试无通知/权益，保证UNKNOWN不误当false或true。
+
+历史只记录判定、评估时间、分支和动作引用，不保存敏感完整会员/订单事实；能解释已走路径，不能在事实变更后精确重算所有原输入。preview.at为评估说明时间，事实仍当前，WAIT以未来依赖停止，不虚构未来结果。

@@ -1,0 +1,4 @@
+cohort,due,elapsed_seconds,steps_per_second,delay_p50_ms,delay_p95_ms,scope
+clean_recheck,100,6.127,16.32,2864.0,5756.0,local shared dev_infra; synthetic volume fixtures
+clean_recheck,1000,48.759,20.51,27461.0,47098.0,local shared dev_infra; synthetic volume fixtures
+scheduler_due_drain,10000,469.99,21.28,235293.0,446891.0,local shared dev_infra; synthetic volume fixtures

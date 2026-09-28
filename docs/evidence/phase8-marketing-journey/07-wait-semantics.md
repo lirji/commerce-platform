@@ -1,0 +1,7 @@
+# WAIT语义
+
+WAIT执行提交后：实例current_node已经是后继，status WAITING，due_at是服务器UTC now+seconds；step记录执行过的WAIT节点与wakeAt。未来资格不能被线程sleep、进程计时器或内存状态代替。deadline早于wakeAt时截止优先，取消/退款/偏好关闭阻止后续动作。
+
+HTTP集成证明未来pump不推进；生命周期测试覆盖会员关闭和原WAIT。真实进程脚本设25秒WAIT，先写数据库再SIGKILL，两个新JVM加载完全相同检查点与history，未到期pump返回0，到期并发推进恰好一个权益与3个成功step。
+
+时间设置：应用连接connectionTimeZone=UTC并forceConnectionTimeZoneToSession=true；dev_infra MySQL默认系统CST，SQL探针显式SET time_zone='+00:00'，防止SQL夹具把显示时区和UTC比较混用。

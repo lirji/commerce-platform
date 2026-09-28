@@ -1,0 +1,9 @@
+# 幂等与恢复
+
+entry版本内ONCE_PER_TRIGGER：ORDER_PAID用真实orderId，不依赖传输eventId；manual eventKey不可换member重用。唯一tenant/journey/version/event，Commands幂等和固定action source共同保护。真支付测试重新构造不同eventId但同订单的真实来源事实，只有一个实例。
+
+FailureClass复用原运行时：瞬时UNAVAILABLE/锁/timeout只DEFERRED，attempts不增；永久错误五次ISOLATED，带deadline的有界指数退避与抖动。失败记录在节点回滚后再次锁实例，实际版本必须与尝试一致，再更新和写trace；并发推进后旧失败不污染新节点。
+
+JourneyRecoveryTest：暂态动作回滚、后续notify失败5次隔离，管理员retry保留原节点/步骤，platform_recovery同事务APPLIED审计；早期grant不重发。完整replay为未知control动作拒绝，EventHandler.replaySafety明确historicalReplay=false。
+
+重试与取消都仅管理员；本人可读取history不能恢复，跨tenant404。deadline后retry冲突，已终止cancel冲突；已提交效果通过既有业务补偿，而非Journey自动逆转。

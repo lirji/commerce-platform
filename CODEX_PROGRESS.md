@@ -2,63 +2,54 @@
 
 ## 任务目标
 
-执行用户提供的 Phase 7 文档，验证营销平台的生产规模模型、旧/新滚动兼容、第二既有权益、确定性活动冲突及运维可恢复性。
-
-## 当前状态
-
-`PHASE_7_COMPLETE_WITH_LIMITATIONS`。任务分支 `feat/phase7-marketing-production`，基线 main `ddf55026bf026f96cec8793556b6559bdc749b72`。权威报告：`docs/evidence/phase7-marketing-production/PHASE7_REPORT.md`；状态与计划：`docs/delivery/phase7-marketing-production/`。
-
-Phase 7 原实施轮次未 commit/push。用户现明确要求「先把阶段7的代码提交并推送到远程main分支，再开启阶段8」，授权正常提交、合并和推送 origin/main。本轮两笔代码提交 `11c7f37`、`a6b3b8d` 和验收 `40376b3` 已正常合并并推送 origin/main；远程实测 SHA `40376b3741a9723377810c69d8dbda972e79f018`，不包含生产部署。
+先提交推送阶段7到远程main（已完成），再按用户确认方案完成阶段8持久营销Journey。用户最新AGENTS#8持续授权：必要验证通过后，独立分支、完整逻辑提交、正常合并推main，无需重复确认。原方案未明确授权不commit/push条款已由此满足；无生产部署授权。
 
 ## 已完成
 
-- 基线 verify：应用 271/0/5 configured skips、架构 3/3，V41。
-- V42 有效期索引/SQL；历史过期发布活动不再占当前候选限额，仍保留 100 同时有效候选。
-- 显式 BEST_OF 纯解析、落选解释、竞争预览，同额按 ID，旧预览缺省语义不变。
-- V43 券订单额度预留/同事务发放/释放、来源唯一与固定券 ID、执行类型；COUPON 复用原券 owner，原 CREDIT 保持。
-- 默认关闭 coupon 配置与 extended-trace 门禁；真实 OLD df955f1+NEW 共享 V43 和事件，旧 CREDIT 生产链、新 completion 唯一消费已验证。
-- 收尾实际发现并修复新 Trace enum 使 OLD 读 NEW quote 500；最后门禁关闭时 OLD 读/下单/取消均 200，赢家与金额不变，旧 enum 往返回归通过。
-- 额外回退探针证明 OLD 会忽略 coupon 字段而丢失承诺；部署/回退文档明确只在 OLD 全退后启用，启用后回退目标必须保留券能力。
-- 三层真实 quote、方法段、规则/选择微基准、三租户、无命中/单命中/人群 miss；50k 执行/grant/event/Inbox、人群存储探针及真实查询计划。
-- 10→81 候选、1→20 人群、69 节点时 quote 查询数不增长；公开固定名单 API 仍 500（数据库 CHECK 100k）。
-- 最终双进程每种 120 用户/30 额度，30 成功/90 409、reserved=0/issued=30/grants=30，独立批次零新增死锁/锁超时；额度/执行/订单/赠券分段有证据。
-- 券最后一份竞争、取消、事务效果后回滚恢复、真实双实例唯一发放；七个新增 MySQL 场景及一项旧 enum 契约回归。
-- 删除冲突 ID 破平局的 mutation 检出，finally 恢复；最终 clean 构建应用 279/0/5、架构 3/3、marketing 27/27、order 45/45、UI 入 jar。
-- 最终 jar 浏览器受影响 2/2；测试等待真实异步退款记录后进入退款页面。
-- 完成 00–15 证据、可复跑脚本、无密钥结果 CSV/计划、Review/QA、报告和文档同步。
+- Phase7四提交11c7f37/a6b3b8d/40376b3/aa8bef1，实际remote main aa8bef17343c9722b3d2f19a4f9d9a006d694ae1；不要重复。
+- 当前feat/phase8-marketing-journey。S1–S5实现/本地验收全部DONE：图稳定校验/发布固定引用重检/纯preview、V44逐步历史、显式动作registry、失败原版本保护、history tenant/本人权限、V45有界到期查询与真实backlog。
+- 真实支付事件→WAIT→当前事实→CREDIT→END→AVAILABLE/ledger1；不同eventId同order来源去重；WAIT后真实标签撤销false无grant；v1/v2/pause固定历史通过。
+- 实际25秒WAIT SIGKILL重启、两个新JVM到期竞争；动作write/stepFinish前真实kill+owned MySQL连接释放，全部回滚、另一JVM恢复唯一grant/ledger。隔离recovery schema，所有临时trigger/owned进程已清理。
+- OLD远程main aa8bef1与NEW共享V44/V45互读、去重、恢复PASS；旧trace明确PARTIAL/LEGACY_PARTIAL，不伪造。
+- 最终clean scripts/build.sh PASS：app297/0/5 configured skips、architecture3、marketing27/order45/kernel3；前端tsc/Vite/UI入jar。jar SHA256 74a16e41e86ff98928fc00ef09444dca097cb845bc735a535c4e2113b6c9baa9。
+- 三项mutation被具体断言捕获，源hash恢复后上述clean通过。hygiene无BLOCKING，npm audit零漏洞，diff check PASS。
+- 规模10000=469.990s；干净新tenant复测100=6.127s、1000=48.759s；50k future无推进；hot5000/normal5=0.726s正常租户先完成，真实payment/event同时推进。
+- affected browser4/4；修复四项旧UI断言后最终jar全browser24/24（1.2min）。旧main CI20/24四项失败为陈旧按钮/统计/主题断言，不是新Journey故障。
+- 独立worktree.local/phase8-ci-fix分支fix/ci-browser-contracts提交bdc2af712b7e76639cab4ac8e43c65398ea764c1已推远程，CI run36362758041在执行。无前端产品变化。
+- 正式设计/契约/切片、TEST_RESULT S1–S5、Review/QA、00–16证据、矩阵、容量/SQL计划、可复跑脚本、PHASE8_REPORT已归档。报告严格PHASE_8_COMPLETE_WITH_LIMITATIONS，本地容量/历史Facts/保留期等限制明示。
 
 ## 已修改文件
 
-完整清单：`docs/evidence/phase7-marketing-production/results/changed-files.md`。
-
-- `benefit/` 券 API、Service、Mapper/XML
-- `marketing/` 冲突解析、决策、强化确定性测试
-- `marketing-runtime/` 活动契约、有效候选、预览、资金承诺与执行
-- `order-runtime/` 券预留/支付/取消和可关闭性能日志
-- `trade/` 可关闭 quote 分段采样
-- `commerce-app/` V42/V43、默认门禁/采样配置、MySQL 测试
-- `frontend/tests/commerce.spec.ts` 异步退款等待
-- `docs/delivery/phase7-marketing-production/`、`docs/evidence/phase7-marketing-production/`
-- `deploy/README.md`、`docs/doc-map.md`、`CODEX_PROGRESS.md`
+- JourneyApi、JourneyGraph/Actions（新）、JourneyService、JourneyMapper/XML。
+- V44/V45、JourneyController、精确SecurityConfiguration路径。
+- JourneyGraphTest/JourneyRecoveryTest（新）、PersistedCommerceTest。
+- docs/delivery/phase8-marketing-journey、docs/evidence/phase8-marketing-journey、doc-map、CODEX_PROGRESS。
+- 独立fix分支frontend/tests四个陈旧契约断言和自身DELIVERY_RESULT；待正常merge到本任务。
 
 ## 未完成
 
-本轮已授权范围内没有剩余实施/验证门禁。生产上线/长期压测、真实硬件和峰值、跨券激活点 OLD 全量回退、细角色、叠加、礼包、外部权益和客户 SLO 是后续独立工作，不宣称已完成。
+- 分逻辑提交阶段8功能与验收证据；合并独立CI测试修复，push feat分支以不可变ref等待实际远程CI。
+- 远程CI绿后正常merge到main并push，ls-remote核实。
+- DELIVERY_RESULT/CI_RESULT与状态/报告末尾补真实Git结果，最终main提交远程CI完成后汇报。
 
 ## 当前问题
 
-- 生产容量没有获批目标，本地短批次与共享 MySQL 实例结果不可当生产承诺。
-- 首次最终构建两项旧旅程偶发失败未归因；独立复跑及后续两次完整 clean 都通过，历史记录未删除。
-- Phase 5 完整浏览器集合未重跑，其原有四项失败仍是历史边界；本轮只认证受影响 2/2。
-- OLD 忽略 coupon 字段；券或扩展 Trace 激活后的安全回退目标必须保留已启用能力/enum，不能仅排空 HELD 后切回 OLD。
-- `.local/phase7-old` detached df955f1 worktree、专用 `commerce_phase7_bench` 数据库及忽略目录原始日志/令牌保留用于复跑；没有删除共享数据。所有本轮验证节点在收尾停止，共享 dev_infra 未重启。
+- 无本地必需验证阻断；远程CI未完成不能虚称绿。
+- 原首轮1000容量受故障trigger/DDL互扰，保留原始结果但不用作主容量；已隔离recovery并干净复测，不重置/replay成功数据。
+- 生产SLO/保留期无产品依据；无百万timer认证；历史不存完整Facts，OLD覆盖partial。
 
 ## 下一步建议
 
-1. Phase 7 Git 交付已完成，完成本交付结果补记提交后，从远程 main 创建 Phase 8 任务分支。
-2. 下一阶段先输入真实生产峰值、租户/历史分布和 SLO，在授权环境做持续负载及滚动/恢复验收。
-3. Phase 7 远程交付确认后，创建 Phase 8 任务分支，按用户提供的 phase-8-marketing-journey-workflow-orchestration.md 先做基线与 Journey 能力盘点。
+1. 核对允许路径/源码指纹，提交完整功能单元和独立证据单元，不机械按文件类型拆分，不夹带其他任务。
+2. 正常merge fix/ci-browser-contracts，push feat，用gh核对当前不可变SHA CI成功；失败按具体证据修复，不绕过门禁。
+3. main未配置保护（已查询），仍必须正常merge/push不force。核对remote main实际SHA。
+4. 最终状态/CI与Git结果落盘，关闭owned进程后给用户简短报告与main SHA。
+
+## 重要上下文
+
+原方案/Users/liruijun/Downloads/phase-8-marketing-journey-workflow-orchestration.md。用户已确认DELIVERY_PLAN并要求连续执行；最新AGENTS#8是Phase8 Git持续授权来源。不派子Agent。
+.local/runtime.env/tokens私密不提交不打印。使用既有dev_infra MySQL8.4，commerce_test_20260923/commerce_phase8_bench/commerce_phase8_recovery均隔离本地schema，无生产部署。初始ROUTER_CONTEXT仅保留启动历史，不代表当前缺实现；后续权威formal TEST_RESULT已PASS。
 
 ## 恢复 Prompt
 
-读取 `CODEX_PROGRESS.md` 和 Phase 7 最终报告。用户已明确授权本轮把 Phase 7 提交并推送到远程 main，再开启 Phase 8；先核对 Git 实际状态，完成未完成交付，然后接续 Phase 8。不重做 Phase 7 实现，不强推、不生产部署。
+读取CODEX_PROGRESS、阶段8DELIVERY_STATUS与git实际状态，从未完成Git/远程CI继续。阶段7已推main，阶段8全部本地实现/验收已完成；不要重跑已通过大规模测试或重规划，不等待继续，不把远程pending冒充PASS。正常提交合并推main并归档实际结果，禁止强推/生产部署。
