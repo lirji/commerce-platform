@@ -15,6 +15,14 @@ import {
   Typography,
 } from "antd";
 import { palette } from "../theme";
+import { useDirtyClose, useRowAction } from "./interactions";
+export {
+  RowActions,
+  RecordDrawer,
+  FormActions,
+  useDirtyClose,
+  useRowAction,
+} from "./interactions";
 import { useId, useState, type ReactNode } from "react";
 import { ApiError, useCommand } from "./api";
 export const time = (v: unknown) =>
@@ -165,6 +173,37 @@ export function Blank({ text = "暂无记录" }: { text?: string }) {
   return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={text} />;
 }
 const fieldNames: Record<string, string> = {
+  id: "标识",
+  rule: "资格规则",
+  ruleId: "规则标识",
+  policy: "活动策略",
+  terms: "优惠配置",
+  audience: "关联人群",
+  grant: "支付后权益",
+  pricing: "商品范围与阶梯",
+  includedSkuIds: "参与商品",
+  excludedSkuIds: "排除商品",
+  tiers: "优惠阶梯",
+  percentageBps: "优惠比例",
+  platformFundingBps: "平台承担比例",
+  memberGrowth: "会员成长值",
+  memberNetSpend: "会员净消费",
+  memberTags: "会员标签",
+  memberStatus: "会员状态",
+  memberBrowse30: "近30天浏览次数",
+  memberCart30: "近30天加购次数",
+  memberOrders30: "近30天完成订单数",
+  memberSpend30: "近30天净现金消费",
+  memberDaysSinceOrder: "距最近成交天数",
+  memberDaysSinceJoin: "入会天数",
+  memberBirthdayToday: "今日生日",
+  memberJourneyEnabled: "接收旅程",
+  orderAmount: "订单金额",
+  kind: "类型",
+  field: "条件字段",
+  operator: "比较方式",
+  valueType: "值类型",
+  value: "条件值",
   actorId: "认证主体",
   active: "启用",
   after: "游标",
@@ -285,6 +324,8 @@ export function fieldLabel(key: string) {
 }
 export function formatField(key: string, value: unknown): ReactNode {
   if (value == null || value === "") return "—";
+  if (key.endsWith("Bps")) return `${Number(value) / 100}%`;
+  if (key === "field") return fieldLabel(String(value));
   if (key === "status") return <Status value={string(value)} />;
   if (
     moneyKeys.has(key) &&
@@ -441,14 +482,16 @@ export function Pager({
   return (
     <div className="pager">
       <span className="list-count">本页 {count} 条</span>
-      <Space>
-        <Button disabled={!after} onClick={onHome}>
-          {homeLabel}
-        </Button>
-        <Button disabled={count < pageSize} onClick={onNext}>
-          {nextLabel}
-        </Button>
-      </Space>
+      {(!!after || count >= pageSize) && (
+        <Space>
+          <Button disabled={!after} onClick={onHome}>
+            {homeLabel}
+          </Button>
+          <Button disabled={count < pageSize} onClick={onNext}>
+            {nextLabel}
+          </Button>
+        </Space>
+      )}
     </div>
   );
 }
@@ -524,12 +567,12 @@ export function Fields({ fields }: { fields: Field[] }) {
               : [{ required: true, message: `请输入${f.label}` }]
           }
           valuePropName={f.type === "switch" ? "checked" : "value"}
-          help={f.help}
+          extra={f.help}
         >
           {f.type === "number" ? (
             <InputNumber
               min={f.min ?? 0}
-              max={f.max ?? 1000000}
+              max={f.max ?? (/version$/i.test(f.name) ? 2147483647 : 1000000)}
               precision={0}
               style={{ width: "100%" }}
             />
@@ -562,7 +605,7 @@ export function CommandModal({
   children,
   disabled = false,
   initialValues = {},
-  buttonType = "primary",
+  buttonType,
   hideButton = false,
   open: openProp,
   onOpenChange,
@@ -581,6 +624,7 @@ export function CommandModal({
   onOpenChange?: (open: boolean) => void;
 }) {
   const formId = useId();
+  const rowAction = useRowAction();
   const [innerOpen, setInnerOpen] = useState(false);
   const [form] = Form.useForm();
   const command = useCommand();
@@ -589,11 +633,14 @@ export function CommandModal({
     onOpenChange?.(next);
     if (openProp === undefined) setInnerOpen(next);
   };
+  const closing = useDirtyClose(form, command.busy, () => setOpen(false));
   return (
     <>
+      {closing.contextHolder}
       {!hideButton && (
         <Button
-          type={buttonType}
+          type={rowAction ? "link" : (buttonType ?? "primary")}
+          size={rowAction ? "small" : "middle"}
           disabled={disabled}
           onClick={() => {
             command.clear();
@@ -609,10 +656,25 @@ export function CommandModal({
         afterOpenChange={(next) => {
           if (next) command.clear();
         }}
-        onCancel={() => {
-          if (!command.busy) setOpen(false);
-        }}
-        footer={null}
+        className="command-modal"
+        afterClose={() => form.resetFields()}
+        onCancel={closing.requestClose}
+        keyboard={!command.busy}
+        maskClosable={!command.busy}
+        footer={
+          <div className="form-actions">
+            <Button disabled={command.busy} onClick={closing.requestClose}>
+              取消
+            </Button>
+            <Button
+              type="primary"
+              loading={command.busy}
+              onClick={() => form.submit()}
+            >
+              确认提交
+            </Button>
+          </div>
+        }
         destroyOnHidden
       >
         <ErrorNotice error={command.error} />
@@ -651,9 +713,6 @@ export function CommandModal({
         >
           <Fields fields={fields} />
           {children}
-          <Button type="primary" htmlType="submit" loading={command.busy} block>
-            确认提交
-          </Button>
         </Form>
       </Modal>
     </>
@@ -675,10 +734,12 @@ export function ActionButton({
   disabled?: boolean;
 }) {
   const c = useCommand();
+  const rowAction = useRowAction();
   return (
     <span>
       <Button
         size="small"
+        type={rowAction ? "link" : "default"}
         danger={danger}
         disabled={disabled}
         loading={c.busy}

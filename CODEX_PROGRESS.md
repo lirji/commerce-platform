@@ -1,5 +1,13 @@
 # Codex Progress
 
+## 当前任务：全项目交互优化
+
+用户再次授权使用优化后的前端 Skill 改善整个项目。独立分支 `feat/frontend-interaction-refresh`，基线 `1cabf40`；按 S-UX-01–03 连续执行，计划与覆盖位于 `docs/design/frontend-interaction-refresh/`。当前 S-UX-01 DONE、S-UX-02 IN_PROGRESS、S-UX-03 TODO；最终需构建/浏览器/实际截图/范围内 Review 与正常 Git 交付，不能提前宣称完成。
+
+本地预览 8601 已恢复，API 使用现有 Docker 8602。本轮没有新生产部署授权；UI 预览与原 Docker 静态资源版本分别说明。旧完整进度原件保存在 `.local/frontend-interaction-refresh/PREVIOUS_CODEX_PROGRESS.md`，旧正式 PROGRESS_STATE 亦保存。本任务保留其他 worktree、IAM 待决事项、数据库与凭据。
+
+S-UX-01 6/6浏览器及构建通过，7张代表截图已查看。下一步：扩展共享操作与分组详情到其他消费者，再做完整订单工作区与全量验收。任务结束重新汇总当前状态，下面保留上一轮完成记录供追溯。
+
 ## 任务目标
 
 修改 commerce-platform 前端，实际应用新版前端架构 Skill，完成经营台与会员商城改版，并用真实浏览器截图和功能回归验证。用户偏好：简洁企业工作台、重图片展示。独立分支 feat/frontend-visual-refresh；用户 AGENTS 规则 8 持续授权正常提交、合并、推送 main，不包含生产部署。

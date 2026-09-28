@@ -1,10 +1,13 @@
-import { Button, Drawer, Form, Modal, Space, Table } from "antd";
+import { Button, Form, Modal, Table } from "antd";
 import { useState } from "react";
 import type { Campaign, Governed, Rule } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
   ActionButton,
-  Detail,
+  RecordDrawer as Drawer,
+  RowActions,
+  FormActions,
+  useDirtyClose,
   ErrorNotice,
   Fields,
   ListPanel,
@@ -16,6 +19,7 @@ import {
   instant,
   money,
 } from "../shared/ui";
+import { MarketingDetails } from "./MarketingDetails";
 import { CampaignPreview } from "./CampaignPreview";
 import { CampaignEditor, Governance, RuleEditor } from "../shared/marketing";
 export function Marketing({ kind, store }: { kind: string; store: string }) {
@@ -27,11 +31,19 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
     >[]
   >(`${path}?after=${encode(after)}`);
   const last = resource.data?.at(-1)?.content;
-  const [detail, setDetail] = useState<unknown>();
+  const [detail, setDetail] =
+    useState<
+      Governed<
+        Campaign | { ruleId: string; version: number; name: string; rule: Rule }
+      >
+    >();
   const [open, setOpen] = useState(false);
   const command = useCommand();
+  const [form] = Form.useForm();
+  const closing = useDirtyClose(form, command.busy, () => setOpen(false));
   return (
     <Workbench>
+      {closing.contextHolder}
       <PageHead
         eyebrow="营销与旅程"
         title={kind === "rules" ? "动态规则资产" : "营销活动"}
@@ -100,9 +112,11 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
             },
             {
               title: "操作",
+              width: 350,
+              className: "row-actions-cell",
               render: (_, r) => (
-                <Space wrap>
-                  <Button size="small" onClick={() => setDetail(r)}>
+                <RowActions>
+                  <Button type="link" size="small" onClick={() => setDetail(r)}>
                     查看配置
                   </Button>
                   {"campaignId" in r.content && (
@@ -142,7 +156,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
                       />
                     )
                   )}
-                </Space>
+                </RowActions>
               ),
             },
           ]}
@@ -155,18 +169,31 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
         onClose={() => setDetail(undefined)}
         width={720}
       >
-        <Detail value={detail} />
+        {detail && <MarketingDetails record={detail} />}
       </Drawer>
       <Modal
         title="新建规则资产"
         open={open}
-        onCancel={() => setOpen(false)}
-        footer={null}
+        onCancel={closing.requestClose}
+        keyboard={!command.busy}
+        maskClosable={!command.busy}
+        footer={
+          <FormActions onCancel={closing.requestClose} busy={command.busy}>
+            <Button
+              type="primary"
+              loading={command.busy}
+              onClick={() => form.submit()}
+            >
+              保存规则
+            </Button>
+          </FormActions>
+        }
         width={720}
         destroyOnHidden
       >
         <ErrorNotice error={command.error} />
         <Form
+          form={form}
           layout="vertical"
           initialValues={{
             version: 1,
@@ -195,9 +222,6 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           <Form.Item label="规则条件" name="rule">
             <RuleEditor />
           </Form.Item>
-          <Button type="primary" htmlType="submit" loading={command.busy}>
-            保存规则
-          </Button>
         </Form>
       </Modal>
     </Workbench>

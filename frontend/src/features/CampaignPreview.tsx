@@ -1,8 +1,16 @@
-import { Alert, Button, Descriptions, Drawer, Form, Table } from "antd";
+import { Alert, Button, Descriptions, Form, Table } from "antd";
 import { useState } from "react";
 import type { Campaign } from "../shared/contracts";
 import { encode, useCommand } from "../shared/api";
-import { ErrorNotice, Fields, instant, money } from "../shared/ui";
+import {
+  ErrorNotice,
+  Fields,
+  instant,
+  money,
+  RecordDrawer as Drawer,
+  FormActions,
+  useRowAction,
+} from "../shared/ui";
 type Result = {
   gross: string;
   discount: string;
@@ -25,9 +33,12 @@ export function CampaignPreview({ campaign }: { campaign: Campaign }) {
   const [result, setResult] = useState<Result>();
   const [form] = Form.useForm();
   const command = useCommand();
+  const rowAction = useRowAction();
   return (
     <>
       <Button
+        type={rowAction ? "link" : "default"}
+        size={rowAction ? "small" : "middle"}
         onClick={() => {
           setOpen(true);
           setResult(undefined);
@@ -40,8 +51,25 @@ export function CampaignPreview({ campaign }: { campaign: Campaign }) {
         title={`${campaign.name} · v${campaign.version} 预览`}
         open={open}
         onClose={() => !command.busy && setOpen(false)}
-        size="large"
+        size={760}
+        footer={
+          <FormActions
+            onCancel={() => !command.busy && setOpen(false)}
+            busy={command.busy}
+          >
+            <Button
+              type="primary"
+              loading={command.busy}
+              onClick={() => form.submit()}
+            >
+              计算预览
+            </Button>
+          </FormActions>
+        }
       >
+        <p className="overlay-intro">
+          输入真实会员与商品清单，查看优惠金额和条件匹配结果。
+        </p>
         <ErrorNotice error={command.error} />
         <Form
           form={form}
@@ -101,10 +129,12 @@ export function CampaignPreview({ campaign }: { campaign: Campaign }) {
               },
             ]}
           />
-          <Button type="primary" htmlType="submit" loading={command.busy}>
-            计算预览
-          </Button>
         </Form>
+        {!result && !command.busy && (
+          <div className="preview-placeholder">
+            填写清单后，计算结果会显示在这里
+          </div>
+        )}
         {result && (
           <>
             <Alert

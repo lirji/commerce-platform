@@ -272,6 +272,72 @@ textarea {
   gap: 2px;
   white-space: nowrap;
 }
+.row-actions {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  max-width: 100%;
+}
+.row-actions .ant-btn {
+  height: 32px;
+  padding-inline: 8px;
+  font-size: 12px;
+  box-shadow: none;
+}
+.row-actions .ant-btn-default {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+}
+.row-actions .ant-space {
+  gap: 2px !important;
+}
+.drawer-header-actions,
+.form-actions,
+.drawer-read-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.record-drawer .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+.record-drawer .ant-drawer-footer {
+  padding: 16px 24px;
+  background: var(--surface);
+}
+.overlay-intro {
+  color: var(--muted);
+  margin: 0 0 24px;
+  line-height: 1.7;
+}
+.rule-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+.rule-summary-group {
+  border-left: 2px solid var(--line);
+  padding-left: 16px;
+  margin-top: 12px;
+}
+.preview-placeholder {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  margin-top: 24px;
+}
+.command-modal .ant-modal-footer {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
 .primary-cell {
   display: grid;
   gap: 4px;

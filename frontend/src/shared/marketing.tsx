@@ -1,14 +1,4 @@
-import {
-  Button,
-  Card,
-  Drawer,
-  Form,
-  Input,
-  Modal,
-  Select,
-  Space,
-  Table,
-} from "antd";
+import { Button, Card, Form, Input, Modal, Select, Space, Table } from "antd";
 import { useState } from "react";
 import type { Campaign, Governed, Rule } from "./contracts";
 import { encode, useCommand, useResource } from "./api";
@@ -24,6 +14,11 @@ import {
   money,
   localDateTime,
   type Values,
+  RecordDrawer as Drawer,
+  FormActions,
+  useDirtyClose,
+  useRowAction,
+  fieldLabel,
 } from "./ui";
 /** 受限可视规则树只生成契约允许的节点，不执行字符串表达式。 */
 export function RuleEditor({
@@ -238,6 +233,43 @@ export function RuleEditor({
     </div>
   );
 }
+/** 条件以业务语言展示，嵌套逻辑保留原树的全部/任一/取反语义。 */
+export function RuleSummary({ rule }: { rule: Rule | null }) {
+  if (!rule) return <p className="muted">未配置独立资格条件</p>;
+  if (rule.kind === "COMPARE") {
+    const operators: Record<string, string> = {
+      EQ: "等于",
+      GT: "大于",
+      GTE: "大于等于",
+      LT: "小于",
+      LTE: "小于等于",
+      CONTAINS: "包含",
+    };
+    return (
+      <div className="rule-summary">
+        <span>{fieldLabel(rule.field ?? "")}</span>
+        <span className="muted">
+          {operators[rule.operator ?? ""] ?? rule.operator}
+        </span>
+        <strong>{rule.value || "—"}</strong>
+      </div>
+    );
+  }
+  return (
+    <div className="rule-summary-group">
+      <strong>
+        {
+          { ALL: "全部条件满足", ANY: "任一条件满足", NOT: "不满足以下条件" }[
+            rule.kind
+          ]
+        }
+      </strong>
+      {rule.children?.map((child, i) => (
+        <RuleSummary key={i} rule={child} />
+      ))}
+    </div>
+  );
+}
 export function CampaignEditor({
   store,
   onDone,
@@ -256,6 +288,8 @@ export function CampaignEditor({
   const [open, setOpen] = useState(false);
   const command = useCommand();
   const [form] = Form.useForm();
+  const rowAction = useRowAction();
+  const closing = useDirtyClose(form, command.busy, () => setOpen(false));
   function build(v: Values): Campaign {
     const audience = String(v.audienceId ?? "").trim();
     const ruleRef = String(v.ruleId ?? "").trim();
@@ -343,11 +377,14 @@ export function CampaignEditor({
   }
   return (
     <>
+      {closing.contextHolder}
       <Button
-        type="primary"
+        type={rowAction ? "link" : "primary"}
+        size={rowAction ? "small" : "middle"}
         disabled={!store}
         onClick={() => {
           command.clear();
+          form.resetFields();
           if (initialCampaign) {
             const c = initialCampaign;
             const terms = c.policy?.terms;
@@ -377,6 +414,12 @@ export function CampaignEditor({
                   .join("\n") ?? "",
             });
           }
+          form.setFields(
+            Object.keys(form.getFieldsValue(true)).map((name) => ({
+              name,
+              touched: false,
+            })),
+          );
           setOpen(true);
         }}
       >
@@ -386,11 +429,27 @@ export function CampaignEditor({
         size={760}
         title={label}
         open={open}
-        onClose={() => {
-          if (!command.busy) setOpen(false);
-        }}
+        onClose={closing.requestClose}
+        keyboard={!command.busy}
+        maskClosable={!command.busy}
+        footer={
+          <FormActions onCancel={closing.requestClose} busy={command.busy}>
+            <Button
+              type="primary"
+              loading={command.busy}
+              onClick={() => form.submit()}
+            >
+              保存活动草稿
+            </Button>
+          </FormActions>
+        }
         destroyOnHidden
       >
+        <p className="overlay-intro">
+          {initialCampaign
+            ? `基于 v${initialCampaign.version} 创建新的草稿版本，保存后可继续审批发布。`
+            : "先填写活动与资格条件，再按需要配置商品范围和关联资产。"}
+        </p>
         <ErrorNotice error={command.error} />
         <Form
           form={form}
@@ -457,7 +516,13 @@ export function CampaignEditor({
             <Fields
               fields={[
                 { name: "campaignId", label: "活动标识" },
-                { name: "version", label: "版本", type: "number", min: 1 },
+                {
+                  name: "version",
+                  label: "版本",
+                  type: "number",
+                  min: 1,
+                  max: 2147483647,
+                },
                 { name: "name", label: "活动名称" },
                 { name: "minimumSpend", label: "消费门槛", type: "money" },
                 {
@@ -554,9 +619,6 @@ export function CampaignEditor({
               ]}
             />
           </div>
-          <Button type="primary" htmlType="submit" loading={command.busy}>
-            保存活动草稿
-          </Button>
         </Form>
       </Drawer>
     </>
