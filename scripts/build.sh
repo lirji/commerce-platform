@@ -5,6 +5,7 @@ if [[ -f .local/runtime.env ]]; then
   source .local/runtime.env
 fi
 : "${COMMERCE_TEST_DB_URL:?An isolated project test database is required}"
+scripts/install-auth-sdk.sh
 npm ci --prefix frontend --ignore-scripts
 npm run build --prefix frontend
 test -s frontend/dist/index.html

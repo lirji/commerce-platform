@@ -1,3 +1,5 @@
+> **当前实施状态（2026-09-28）**：本文保留早期候选方案历史。企业IAM权威计划已迁入[auth 63节点DAG](https://github.com/lirji/auth-platform/tree/main/docs/design/oa-auth-unification)，P1完成、P2本地验收完成并正在Git/CI交付。商城P2-06真实只读接入见[验收记录](../../implementation/oa-auth/phase-2/P2-06_TEST_RESULT.md)。原IAM候选编号的TODO不代表当前P1/P2未完成；本轮按用户要求P2后暂停，不自动执行P3。
+
 # 企业 IAM 建设与项目接入执行计划
 
 - 状态：PROPOSED；本轮只有计划文档完成，以下 IAM 切片均未执行。

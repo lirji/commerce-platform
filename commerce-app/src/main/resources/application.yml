@@ -66,3 +66,8 @@ management:
   endpoint:
     health:
       show-details: never
+
+# 仅使用显式装配的中央客户端；不自动启用旧对象授权SDK客户端。
+authz:
+  client:
+    enabled: false
