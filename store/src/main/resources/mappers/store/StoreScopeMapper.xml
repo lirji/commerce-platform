@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.store.access.infrastructure.persistence.StoreScopeMapper">
+ <sql id="columns">s.store_id resource_id,s.store_id,s.name title,s.version resource_version,s.merchant_id,s.status,CAST(NULL AS CHAR) category,CAST(NULL AS CHAR) brand</sql>
+ <sql id="scope">AND <choose><when test="scope.paths.isEmpty()">1=0</when><otherwise>
+ <foreach collection="scope.paths" item="g" open="(" separator=" OR " close=")">(1=1
+ <if test="!g.stores.isEmpty()">AND s.store_id IN <foreach collection="g.stores" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+ <if test="!g.resources.isEmpty()">AND s.store_id IN <foreach collection="g.resources" item="id" open="(" separator="," close=")">#{id}</foreach></if>)</foreach>
+ </otherwise></choose></sql>
+ <sql id="where">WHERE s.tenant_id=#{tenant} <include refid="scope"/><if test="search != ''">AND LOCATE(#{search},s.name) &gt;0</if></sql>
+ <select id="page" resultType="com.lrj.commerce.runtime.api.scope.ScopeQuery$Row">SELECT <include refid="columns"/> FROM store_record s <include refid="where"/>
+ AND s.store_id &gt;#{after} ORDER BY s.store_id LIMIT #{limit}</select>
+ <select id="stats" resultType="com.lrj.commerce.runtime.api.scope.ScopeQuery$Stats">SELECT count(*) total,count(DISTINCT s.store_id) stores FROM store_record s <include refid="where"/></select>
+ <select id="fact" resultType="com.lrj.commerce.runtime.api.scope.ScopeQuery$Row">SELECT <include refid="columns"/> FROM store_record s WHERE s.tenant_id=#{tenant} AND s.store_id=#{id}</select>
+ <select id="current" resultType="com.lrj.commerce.runtime.api.scope.ScopeQuery$Row">SELECT <include refid="columns"/> FROM store_record s WHERE s.tenant_id=#{tenant} <include refid="scope"/>
+ AND s.store_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach> ORDER BY s.store_id</select>
+</mapper>

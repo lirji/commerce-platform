@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.app.iam.ScopeWorkMapper">
+ <sql id="jobColumns">id,tenant_id,principal_id,membership_id,generation,binding,resource_type,search,state,after_id,row_count,version,expires_at</sql>
+ <insert id="cursor">INSERT INTO central_scope_cursor(id,tenant_id,principal_id,binding,resource_type,search,after_id,expires_at)
+ VALUES(#{c.id},#{c.tenantId},#{c.principalId},#{c.binding},#{c.resourceType},#{c.search},#{c.afterId},#{c.expiresAt})</insert>
+ <select id="cursorById" resultType="com.lrj.commerce.app.iam.ScopeWork$Cursor">SELECT id,tenant_id,principal_id,binding,resource_type,search,after_id,expires_at
+ FROM central_scope_cursor WHERE tenant_id=#{tenant} AND id=#{id} AND expires_at&gt;CURRENT_TIMESTAMP(3)</select>
+ <insert id="quota">INSERT INTO central_scope_quota(tenant_id) VALUES(#{tenant}) AS incoming ON DUPLICATE KEY UPDATE tenant_id=incoming.tenant_id</insert>
+ <select id="lockQuota" resultType="string">SELECT tenant_id FROM central_scope_quota WHERE tenant_id=#{tenant} FOR UPDATE</select>
+ <select id="active" resultType="int">SELECT count(*) FROM central_scope_export WHERE tenant_id=#{tenant} AND expires_at&gt;CURRENT_TIMESTAMP(3)
+ <if test="principal != null">AND principal_id=#{principal}</if></select>
+ <insert id="insert">INSERT INTO central_scope_export(id,tenant_id,principal_id,membership_id,generation,binding,resource_type,search,state,after_id,row_count,version,expires_at)
+ VALUES(#{j.id},#{j.tenantId},#{j.principalId},#{j.membershipId},#{j.generation},#{j.binding},#{j.resourceType},#{j.search},#{j.state},#{j.afterId},#{j.rowCount},#{j.version},#{j.expiresAt})</insert>
+ <select id="job" resultType="com.lrj.commerce.app.iam.ScopeWork$Job">SELECT <include refid="jobColumns"/> FROM central_scope_export WHERE tenant_id=#{tenant} AND id=#{id} AND expires_at&gt;CURRENT_TIMESTAMP(3)</select>
+ <select id="lock" resultType="com.lrj.commerce.app.iam.ScopeWork$Job">SELECT <include refid="jobColumns"/> FROM central_scope_export WHERE tenant_id=#{tenant} AND id=#{id} AND expires_at&gt;CURRENT_TIMESTAMP(3) FOR UPDATE</select>
+ <update id="start">UPDATE central_scope_export SET state='RUNNING',version=version+1 WHERE tenant_id=#{tenant} AND id=#{id} AND version=#{version} AND state='SUBMITTED' AND expires_at&gt;CURRENT_TIMESTAMP(3)</update>
+ <update id="advance">UPDATE central_scope_export SET state=#{state},after_id=#{after},row_count=row_count+#{count},version=version+1
+ WHERE tenant_id=#{tenant} AND id=#{id} AND version=#{version} AND state='RUNNING' AND expires_at&gt;CURRENT_TIMESTAMP(3) AND row_count+#{count}&lt;=1000</update>
+ <insert id="row">INSERT INTO central_scope_export_row(tenant_id,job_id,sequence_no,resource_id,resource_version,snapshot_json)
+ VALUES(#{tenant},#{job},#{r.sequence},#{r.resourceId},#{r.resourceVersion},#{r.snapshotJson})</insert>
+ <select id="rows" resultType="com.lrj.commerce.app.iam.ScopeWork$ExportRow">SELECT sequence_no sequence,resource_id,resource_version,CAST(snapshot_json AS CHAR) snapshot_json
+ FROM central_scope_export_row WHERE tenant_id=#{tenant} AND job_id=#{job} AND sequence_no&gt;#{after} ORDER BY sequence_no LIMIT 50</select>
+</mapper>
