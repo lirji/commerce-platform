@@ -34,5 +34,17 @@
     "regression": "docs/delivery/frontend-visual-refresh/REGRESSION_RESULT.json",
     "reproduction": "docs/delivery/frontend-visual-refresh/RACE_VERIFICATION.json",
     "productSourceChanged": false
+  },
+  "runtimeDeployment": {
+    "status": "DONE",
+    "gate": "PASS",
+    "target": "local Docker commerce-platform/app",
+    "baseUrl": "http://127.0.0.1:8602",
+    "sourceCommit": "919081be0deef6024f39ba2ea4c232d2ed56fdab",
+    "imageTag": "commerce-platform:rev-919081b",
+    "imageId": "sha256:fa6b89cfea91db24b7b13dcc45db169c6be37e3243f56d7bb7abf5773aaaacd7",
+    "databaseSchemaVersion": "45",
+    "verification": "docs/delivery/frontend-visual-refresh/DEPLOYMENT_RESULT.json",
+    "productCodeChange": false
   }
 }

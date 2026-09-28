@@ -1,0 +1,118 @@
+{
+  "sourceCommit": "919081be0deef6024f39ba2ea4c232d2ed56fdab",
+  "target": "Docker commerce-platform/app",
+  "preview": "http://127.0.0.1:8602",
+  "api": "http://127.0.0.1:8602",
+  "sourceHashes": {
+    "frontend/src/shared/Icon.tsx": "2b8aebbe0a18f9410634e26875d676ff522abfb719f0f8d8f87b26768893d37a",
+    "frontend/src/features/ProductOperations.tsx": "0ffc284869ca78c44cf58327a5f3f32ad14f1ead04035b569fa05fac155836c2",
+    "frontend/src/theme.ts": "2b76c9306cd79b3b99f7e6a6bc95294819e0fc770fe7ad63dc1397aa2faccaed",
+    "frontend/src/style.css": "85c594868dd064d4885a789536c8b788871f56a9ae40a4c4e09e70f56d14b1c9",
+    "frontend/src/app/App.tsx": "4fc44a44509427d0e3221698279c30a675d3b763fc61a09111f057467313a5df",
+    "frontend/src/shared/ui.tsx": "9d42c4b55fd789a1f0f8e7dd79eb275fad3b246d337d61f8a6ad6f53e65ce374",
+    "frontend/src/features/Dashboard.tsx": "d89ac97e642b71e0a3c8e249e96d6887840303aeb4581f159647fceea6d3e1e8",
+    "frontend/src/features/Shop.tsx": "ee5614676f0460fd25021d88b26fbff8cd888f2d4a8de26bba8fe652aec23b8b"
+  },
+  "results": [
+    {
+      "file": "dashboard-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T05:04:34.837Z",
+      "route": "#dashboard?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "经营总览"
+      ]
+    },
+    {
+      "file": "catalog-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T05:04:36.038Z",
+      "route": "#skus?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [],
+      "headings": [
+        "商品经营"
+      ]
+    },
+    {
+      "file": "shop-desktop.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T05:04:37.618Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentWidth": 1440,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "手冲咖啡包装"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    },
+    {
+      "file": "shop-mobile.png",
+      "state": "normal",
+      "screenshotMode": "fullPage",
+      "timestamp": "2026-09-28T05:04:37.755Z",
+      "route": "#shop?store=brand-store",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "images": [
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "日常品牌咖啡包装示意图"
+        },
+        {
+          "src": "/media/coffee.svg",
+          "loaded": true,
+          "alt": "手冲咖啡包装"
+        }
+      ],
+      "headings": [
+        "店铺商品"
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "actuallyViewed": [
+    "dashboard-desktop.png",
+    "catalog-desktop.png",
+    "shop-desktop.png",
+    "shop-mobile.png"
+  ],
+  "review": "Codex view_image inspected all 4 listed Docker screenshots; remaining private capture images are not claimed reviewed",
+  "imageSha256": {
+    "dashboard-desktop.png": "ccff6cd85f93745b94bbf5187e10124e3af84946c9c305ea8d3973414c649504",
+    "catalog-desktop.png": "0f787f49740584e16b645bcdc66236a243169503c75e2c45fbe4931e89aaf59f",
+    "shop-desktop.png": "99d1fed57f93254a135fcd9b8dc96c45120e935989238e6515de054946b43e3a",
+    "shop-mobile.png": "55befef9397daa3ed60495232589054db223daea17485a7586365535e1f13f00"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "protocol": "skill-contract/v1",
+  "skill": "deployment-execution",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "target": {
+    "environment": "local Docker desktop-linux",
+    "service": "commerce-platform/app",
+    "baseUrl": "http://127.0.0.1:8602"
+  },
+  "ref": {
+    "requested": "latest origin/main after frontend completion",
+    "deployed": "919081be0deef6024f39ba2ea4c232d2ed56fdab"
+  },
+  "ci": {
+    "gate": "PASS",
+    "commit": "919081be0deef6024f39ba2ea4c232d2ed56fdab",
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36379346310"
+  },
+  "deployment": {
+    "result": "PASS",
+    "imageTag": "commerce-platform:rev-919081b",
+    "imageId": "sha256:fa6b89cfea91db24b7b13dcc45db169c6be37e3243f56d7bb7abf5773aaaacd7",
+    "containerId": "f28e6dcded56f5a2dbf3a7be7eb96afb1828530da6b661558cd838ff7d44ec99",
+    "startedAt": "2026-09-28T05:03:09.551293002Z",
+    "jarSha256": "61a0ae6563cfdabb6a39837d35f5c3a6e727b9b52447dd5918f60c98041c3fe3",
+    "composeTagPersisted": true
+  },
+  "health": {
+    "result": "PASS",
+    "state": "healthy"
+  },
+  "smoke": {
+    "result": "PASS",
+    "sameOrigin": {
+      "baseUrl": "http://127.0.0.1:8602",
+      "health": "UP",
+      "uiAsset": "/assets/index-o5_bZlkJ.js",
+      "unauthenticatedApi": 401
+    },
+    "existingAdminIdentity": 200,
+    "existingMemberIdentity": 200,
+    "memberAdminAccess": 403,
+    "staticAssetCount": 26,
+    "allServedStaticHashesMatch": true,
+    "browser": {
+      "startTime": "2026-09-28T05:04:34.413Z",
+      "duration": 2500.942,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "actuallyViewedDockerScreenshots": [
+      "dashboard-desktop.png",
+      "catalog-desktop.png",
+      "shop-desktop.png",
+      "shop-mobile.png"
+    ]
+  },
+  "build": {
+    "result": "PASS",
+    "frontendDistMatchesPackagedJar": true,
+    "mavenTests": {
+      "tests": 375,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    "sourceBuildInputsUnchanged": true
+  },
+  "database": {
+    "schema": "commerce_local",
+    "beforeVersion": "40",
+    "afterVersion": "45",
+    "successfulMigrations": 45,
+    "addedVersions": [
+      "41",
+      "42",
+      "43",
+      "44",
+      "45"
+    ],
+    "historicalMigrationChecksumsUnchanged": true,
+    "projectSnapshotTaken": true,
+    "snapshotRestoreDrill": "NOT_IN_SCOPE",
+    "criticalRuntimeConfigurationPreserved": true
+  },
+  "rollback": {
+    "result": "NOT_NEEDED",
+    "ref": "sha256:6408b070e37ce7cfe75c762695e19c3f0e591cd0b634118da5cc8639676bc8b1",
+    "policy": "Preserve expanded schema and business data; V40 fallback is not certified after V41-V45. Use compatible forward fix if needed; no schema downgrade or feature activation performed"
+  },
+  "productCodeChange": false,
+  "productionDeployment": "NOT_IN_SCOPE",
+  "blockers": [],
+  "recommended_next": [
+    "update-progress-docs"
+  ],
+  "observedAt": "2026-09-28T05:07:18.173660+00:00"
+}

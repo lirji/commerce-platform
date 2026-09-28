@@ -2,6 +2,8 @@
 
 本方案交付本地可运行的统一应用，不执行生产部署。应用唯一持久化依赖是 MySQL；复用已存在的 `dev-infra` 外部网络和 `dev-infra-mysql84-1`（网络别名 `mysql84`）。不要执行共享基础设施的 down、清库或重建。
 
+当前本地部署已更新到最新前端交付后的源码 `919081b`，镜像 `commerce-platform:rev-919081b`，运行库迁移至 V45。JAR、全部 26 个同源页面资源、健康及 Docker 浏览器检查已验证；具体不可变摘要、迁移与回退边界以[本轮部署记录](../docs/delivery/frontend-visual-refresh/DEPLOYMENT_RESULT.md)为准。下方阶段增量说明保留历史设计背景，当前容器版本以该记录为准。
+
 ## 连接与私密配置
 
 | 用途 | 地址/标识 | 权限边界 |
