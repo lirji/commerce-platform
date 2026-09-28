@@ -2,56 +2,59 @@
 
 ## 任务目标
 
-读取并使用Claude中的项目分析技能，基于阶段8后的真实仓库重新分析欠缺能力；按用户补充，明确区分页面/按钮/接口RBAC与接口业务数据范围权限。仅分析和更新报告，不实现候选功能。
+基于现有 auth-platform、oa-platform、commerce-platform，交付企业统一身份与权限的完整接入和执行计划，覆盖内部人员跨应用角色／数据范围、外部合作方、消费者、服务主体、接入协议、兼容迁移、验收与回退。本轮只设计，不实现、改数据库、操作真实账号或部署。
 
-用户AGENTS Git规则8持续授权本任务报告按独立分支提交、正常合并并推送远程main；没有生产部署授权。
+用户 AGENTS Git 规则 8 已授权当前文档按独立分支、必要验证、正常合并与推送 main；无生产部署授权。
 
 ## 已完成
 
-- CE-20260927已交付初版报告提交afc5e940c1dd988759880ad9f03106e68170ad0e，origin/main包含该提交，任务分支feat/capability-gap-reassessment已发布。不要重复原交付。
-- Claude入口project-capability-exploration及references/output-schema实际已读；discovery/deep-analysis/architecture-reviewer仅复用扫描方法。技能指向.cursor共享目录，没有调用Claude模型或修改全局技能。
-- 原产品分析基线7dda31e；权限补充检查基于afc5e94开始，工作树干净，产品代码未改变。原静态清单19 Maven模块、205主Java、54测试Java、41 Mapper XML、45迁移。
-- 复核App静态菜单和角色分支、运行开关接口、Actor固定角色/Capability、HTTP默认拒绝清单、credential单role、商品经营grant、会员/订单Service＋Mapper及负向测试源码。
-- 已有基础角色/租户/会员本人过滤及商品商家/门店范围；可配置页面/按钮/接口RBAC和跨业务组织/门店/负责人范围未形成闭环。G05扩充RBAC，新增独立G16数据范围，未据此认定已发生越权漏洞。
-- 同步五份探索报告：16项缺口、16个候选、41个证据索引；MF03权限、MF05数据范围、MF06奖励政策分别表达；权限在多岗位/同租户分权使用前为P1门槛。
-- 初版报告同head CI：main36373088584 completed/success；分支36373067309 completed/failure，24项浏览器中1项标题等待失败、23项通过，原因未确认。均已保留记录，不继承为本次新ref的PASS。
-- 本轮没有改生产代码、测试、配置、依赖、数据库，也没有重跑业务测试/压测或联调真实渠道；测试源码存在不等于本轮执行PASS。
-- 文档必要检查PASS：五份产物、9维、16项缺口、16个完整候选、41个证据、本地链接/围栏/依赖图和git diff --check；只包含当前任务六份文档。
+- 读取并使用 Claude 入口后端架构、边界评估与架构演进规划技能；定向核对三仓当前源码／Mapper／设计，没有重复全仓扫描或调用 Claude 模型。
+- 已交付的能力复核与权限补充保持：afc5e94、f170e31 已在 main，.engineering/exploration 五报告不改，不重复交付历史任务。
+- 形成 docs/design/enterprise-iam-integration 完整方案：企业／应用／环境、身份绑定与成员关系、治理角色与业务角色、逐动作范围、外部邀请／到期／复核、消费者本人策略、统一协议与 SDK。
+- 规划 18 个候选切片（17 必选、1 可选物理收拢）、34 个 MUST 场景、7 个待确认决策和 12 项风险；每切片明确依赖、责任、交付、验收和回退。
+- 实际只读架构 CLI 核对源码并 plan/replay PASS；物理迁移结果 REMEDIATION_PLAN、CUTOVER_BLOCKED，成本／运行／批准未知没有补分，不伪造可执行切换。
+- 原 commerce 工作区同时出现前端设计与根进度改动，已保留；本任务转入独立 .local/enterprise-iam-plan-worktree，分支 feat/enterprise-iam-plan-delivery。
+- OA 已有脏进度／DEPLOYMENT_RESULT／tmp 全部保持，auth 与 OA 没有本轮改动。
+- 文档检查 PASS：九份产物、34 个链接／锚点、18 切片依赖无环且与正文一致、7 决策、34 MUST、12 风险和 15 条事实；规范性文件指纹记录在 TEST_RESULT。显式暂存十份本任务文档及补丁检查 PASS；Git 实际发布待下述步骤核对。
 
 ## 已修改文件
 
-- .engineering/exploration/CAPABILITY_MAP.md
-- .engineering/exploration/CAPABILITY_GAPS.md
-- .engineering/exploration/OPPORTUNITIES.md
-- .engineering/exploration/EVOLUTION_ROADMAP.md
-- .engineering/exploration/EVIDENCE_INDEX.md
-- CODEX_PROGRESS.md（update-progress-docs负责的当前摘要）
+- docs/design/enterprise-iam-integration/README.md
+- docs/design/enterprise-iam-integration/BACKEND_ARCHITECTURE.md
+- docs/design/enterprise-iam-integration/CONTRACT_REQUIREMENTS.md
+- docs/design/enterprise-iam-integration/EXECUTION_PLAN.md
+- docs/design/enterprise-iam-integration/EXECUTION_DAG.json
+- docs/design/enterprise-iam-integration/MIGRATION_AND_VALIDATION.md
+- docs/design/enterprise-iam-integration/EVIDENCE_INDEX.md
+- docs/design/enterprise-iam-integration/PROGRESS_STATE.md
+- docs/design/enterprise-iam-integration/TEST_RESULT.md
+- CODEX_PROGRESS.md（仅隔离任务工作树，原工作区并行任务的进度不覆盖）
 
 ## 未完成
 
-- 本文件为权限补充提交前检查点；本回合完成文档必要检查与正常Git交付。恢复先核对Git和.local/capability-gap-permissions-delivery.md的实际结果，远程main已包含补充提交则不要重复交付。
-- 候选权限功能尚未实施，不属于本轮分析任务的未完工作。
+- 本文件是计划文档交付检查点，必要验证结果以 TEST_RESULT.md 为准，最终提交／main／CI 以真实 Git 和 .local/enterprise-iam-plan-delivery.json 为准；恢复先核对再行动。
+- IAM-00–16 均未实施；IAM-17 可选。后续实施需要用户明确要求并先确认对应业务决策／正式契约，不属于本轮计划交付的剩余实现。
+- 登录联调、数据库迁移、授权变更、业务验证、压力、恢复演练和生产部署 NOT_RUN。
 
 ## 当前问题
 
-- 分工矩阵、资源归属与数据范围、撤权对已受理后台任务的影响尚待后续业务设计确认；不阻塞分析，也不允许自动选择策略。
-- 原报告分支CI的浏览器标题等待失败原因未知，同head main通过；不是权限漏洞证据，不扩大本任务为无关产品修复。
-- 第二应用/共享、配送/运费、奖励承诺、保留与SLO/RTO/RPO、值班告警目标仍待确认。
+- Q01–Q07：企业／集团隔离、同人退出、外部准入期限、岗位动作、资源继承、撤权与在途、运行／隐私指标，见 README；计划可交付，依赖这些决策的实施与切换不能假定已批准。
+- 当前 OA 仍有员工依赖；auth 对象水位为单实例；商城固定角色需兼容。都是明确实施前置，未认定已发生线上越权。
+- 原 commerce 前端视觉设计是并行任务，不 stage／提交／覆盖其文件；main 如出现同一根进度并发更新，应保留两项任务事实，不能强制覆盖。
 
 ## 下一步建议
 
-1. 检查仅上述六份文档变更、章节/候选模板/证据ID/本地链接/Mermaid与git diff --check，使用当前任务分支按完整逻辑提交。
-2. 正常推分支，在干净.local/capability-gap-main-integration工作树合入最新main并推送；保留分支和工作树，不强推、不绕过保护。核实本次ref实际CI，运行中如实记录，不擅自重跑无关测试。
-3. 若用户选定权限实施，先确认角色动作矩阵和逐资源归属/范围；选一条“动作＋数据范围”纵向链路验证页面、接口、列表/详情/写操作/任务及撤权。不仅做菜单隐藏，不预设技术框架，不要求先联调真实IdP。
+1. 验证本任务九份文档、DAG／锚点／引用／验收与范围，显式暂存本任务十文件，按独立分支正常提交／发布。
+2. 在干净 integration 工作树合入最新 main，正常推送；如并发 main 更新，仅解决本任务文档的可确定冲突，保留其他任务。
+3. 观察本次 ref 的远程 CI；运行中如实记录，不用历史 PASS 代替。若已交付，不重复提交或推送。
+4. 用户要求开始接入后，从 IAM-00 确认试点矩阵，再按 DAG 冻结一期契约；先商城商品运营链路，再订单读、外部／消费者、OA 跨应用。
 
 ## 重要上下文
 
-本次是原能力缺口分析的补充，继续使用feat/capability-gap-reassessment。初版报告和Git交付已经完成；CODEX_PROGRESS是提交前检查点，最终提交/远程/CI以Git和.local交付观察为准。
+本次源基线 commerce f170e317f12006d8559ac41d1858b00c42998890、auth c07741a、OA f07c978。保留所有旧 subject／actor／member 与订单、权益、幂等回执；禁止新运营角色通用映射 ADMIN，禁止 oldAllow OR newAllow。
 
-Phase8已交付源码0b7d6f1、证据b389d65、独立CI修复bdc2af7、合并cac9810、checkpoint7dda31e；完整历史在docs/delivery/phase8-marketing-journey和docs/evidence/phase8-marketing-journey。不要恢复已完成的历史Git交付或重跑规模测试。
-
-外部IdP/支付/权益/WMS按既有要求后置；旧规则迁移仍是独立BLOCKED工作。.local凭据不可打印/提交，不派子Agent。
+Phase8 与原能力报告已经完成，不恢复历史 Git 交付或重跑规模测试。真实 IdP／支付／权益／WMS 生产联调和旧规则迁移为独立范围；不打印 .local 凭据，不派子 Agent。
 
 ## 恢复 Prompt
 
-请读取CODEX_PROGRESS.md、Git实际状态及.local/capability-gap-permissions-delivery.md，从权限补充报告尚未完成的必要检查/Git交付继续。远程main已包含补充提交则记录实际CI后交付，不重复原afc5e94交付，不重新全面分析、不重跑产品测试、不开始RBAC或数据权限实施、不等待“继续”。只处理本任务六份文档，权限/不可确定冲突时记录具体阻塞。
+请读取本工作树 CODEX_PROGRESS.md、docs/design/enterprise-iam-integration/PROGRESS_STATE.md、TEST_RESULT.md 与 Git 实际状态及 .local/enterprise-iam-plan-delivery.json，继续本次计划文档交付尚未完成的检查／提交／正常 main 发布。已发布则不重复。只处理本任务十份文档，保护原工作区前端改动和兄弟仓库脏文件；不自动实现 IAM 或部署，不等待重复“继续”。

@@ -1,0 +1,31 @@
+{
+  "protocol": "enterprise-iam-candidate-work-plan/v1",
+  "task_id": "IAM-PLAN-20260927",
+  "version": 1,
+  "status": "PROPOSED",
+  "implementation_authorized": false,
+  "production_deployment_authorized": false,
+  "duration": "UNKNOWN",
+  "source": "EXECUTION_PLAN.md",
+  "decisions": "README.md#10-实施前需确认的业务决策",
+  "nodes": [
+    {"id":"IAM-00","phase":"P0","name":"业务边界与试点矩阵","depends_on":[],"repos":["commerce-platform","oa-platform","auth-platform"],"status":"TODO","required":true,"exit_evidence":"业务确认、试点矩阵与基线"},
+    {"id":"IAM-01","phase":"P1","name":"企业应用环境目录","depends_on":["IAM-00"],"repos":["oa-platform","auth-platform"],"status":"TODO","required":true,"exit_evidence":"目录、映射与应用隔离验收"},
+    {"id":"IAM-02","phase":"P1","name":"身份成员与员工适配","depends_on":["IAM-00"],"repos":["oa-platform"],"status":"TODO","required":true,"exit_evidence":"身份与员工／外部生命周期验收"},
+    {"id":"IAM-03","phase":"P1","name":"认证上下文与准入","depends_on":["IAM-01","IAM-02"],"repos":["auth-platform","oa-platform"],"status":"TODO","required":true,"exit_evidence":"安装版 OIDC、可信上下文与准入验收"},
+    {"id":"IAM-04","phase":"P2","name":"权限角色与管理上限","depends_on":["IAM-01"],"repos":["oa-platform","auth-platform"],"status":"TODO","required":true,"exit_evidence":"应用目录、角色版本和管理上限验收"},
+    {"id":"IAM-05","phase":"P2","name":"动作范围授权与审批","depends_on":["IAM-02","IAM-04"],"repos":["oa-platform"],"status":"TODO","required":true,"exit_evidence":"动作范围关联、审批与幂等验收"},
+    {"id":"IAM-06","phase":"P2","name":"契约 SDK 与门面","depends_on":["IAM-03","IAM-05"],"repos":["auth-platform","oa-platform"],"status":"TODO","required":true,"exit_evidence":"正式版本契约与新旧 SDK 兼容验收"},
+    {"id":"IAM-07","phase":"P2","name":"数据范围业务适配","depends_on":["IAM-06"],"repos":["oa-platform","commerce-platform"],"status":"TODO","required":true,"exit_evidence":"SQL／写事务／字段范围验收"},
+    {"id":"IAM-08","phase":"P2","name":"可靠变更生命周期撤权","depends_on":["IAM-06"],"repos":["oa-platform","auth-platform"],"status":"TODO","required":true,"exit_evidence":"Q06、两实例／断连／乱序撤权验收"},
+    {"id":"IAM-09","phase":"P3","name":"商城认证旧身份桥","depends_on":["IAM-06","IAM-08"],"repos":["commerce-platform"],"status":"TODO","required":true,"exit_evidence":"旧 Actor／会员／回执兼容验收"},
+    {"id":"IAM-10","phase":"P3","name":"内部商品运营纵向链路","depends_on":["IAM-07","IAM-09"],"repos":["commerce-platform","oa-platform"],"status":"TODO","required":true,"exit_evidence":"两门店商品读写与浏览器负向验收"},
+    {"id":"IAM-11","phase":"P3","name":"订单客服与敏感字段","depends_on":["IAM-10"],"repos":["commerce-platform"],"status":"TODO","required":true,"exit_evidence":"订单集合、详情、字段和本人回归验收"},
+    {"id":"IAM-12","phase":"P4","name":"合作方邀请限域运营","depends_on":["IAM-05","IAM-08","IAM-10"],"repos":["oa-platform","auth-platform","commerce-platform"],"status":"TODO","required":true,"exit_evidence":"两合作方、邀请与到期撤权验收"},
+    {"id":"IAM-13","phase":"P4","name":"消费者认证会员绑定","depends_on":["IAM-02","IAM-03","IAM-09"],"repos":["commerce-platform","auth-platform"],"status":"TODO","required":true,"exit_evidence":"消费者本人数据及员工双关系验收"},
+    {"id":"IAM-14","phase":"P5","name":"OA 消费统一协议","depends_on":["IAM-07","IAM-08","IAM-09"],"repos":["oa-platform"],"status":"TODO","required":true,"exit_evidence":"OA 旧权限、golden、数据范围回归"},
+    {"id":"IAM-15","phase":"P5","name":"两应用端到端验收","depends_on":["IAM-11","IAM-12","IAM-13","IAM-14"],"repos":["commerce-platform","oa-platform","auth-platform"],"status":"TODO","required":true,"exit_evidence":"V01–V34 当前版本 MUST 证据"},
+    {"id":"IAM-16","phase":"P6","name":"推广运行接入手册","depends_on":["IAM-15"],"repos":["commerce-platform","oa-platform","auth-platform"],"status":"TODO","required":true,"exit_evidence":"运行目标、回退、应用准入与交接验收"},
+    {"id":"IAM-17","phase":"P6","name":"可选仓库进程收拢评估","depends_on":["IAM-16"],"repos":["oa-platform","auth-platform"],"status":"OPTIONAL_DEFERRED","required":false,"exit_evidence":"可回放边界决定与就绪迁移计划"}
+  ]
+}
