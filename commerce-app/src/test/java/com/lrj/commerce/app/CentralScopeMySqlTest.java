@@ -142,4 +142,26 @@ class CentralScopeMySqlTest {
         assertEquals("product-1",jdbc.queryForObject("SELECT title FROM catalog_product WHERE tenant_id=? AND product_id='P001'",String.class,tenant));
     }
 
+    @Test void productExportRequiresIndependentCapabilityAtEveryCheckpointAndReadSurvives(){
+        var job=service.submit(identity,"product","",id());var started=service.start(identity,"product",job.id(),job.version(),id());
+        var first=service.advance(identity,"product",job.id(),started.version(),id());var completed=service.advance(identity,"product",job.id(),first.version(),id());
+        assertEquals(55,service.download(identity,"product",job.id()).rows().size());
+        doAnswer(inv->{Check c=inv.getArgument(1);if(c.capability().equals("commerce.product.export"))throw new AccessDeniedException("expired export only");return plan(c);}).when(client).requireScope(anyString(),any());
+        assertFalse(service.exportAccess(identity,"product").export());assertEquals(55,service.page(identity,"product","",50,"").total());
+        assertThrows(AccessDeniedException.class,()->service.submit(identity,"product","",id()));
+        assertThrows(AccessDeniedException.class,()->service.start(identity,"product",job.id(),job.version(),id()));
+        assertThrows(AccessDeniedException.class,()->service.advance(identity,"product",job.id(),first.version(),id()));
+        assertThrows(AccessDeniedException.class,()->service.job(identity,"product",job.id()));
+        assertThrows(AccessDeniedException.class,()->service.download(identity,"product",completed.id()));
+    }
+
+    @Test void centralWriteDoesNotBypassStoreAndMerchantBusinessStatus(){
+        var change=new com.lrj.commerce.catalog.product.api.ScopedProductOperations.MetadataChange(1,"new-title","category","brand");
+        jdbc.update("UPDATE store_record SET status='FROZEN' WHERE tenant_id=? AND store_id='S001'",tenant);
+        assertThrows(DomainException.class,()->service.changeProduct(identity,"P001",change,id(),products));
+        jdbc.update("UPDATE store_record SET status='ACTIVE' WHERE tenant_id=? AND store_id='S001'",tenant);
+        jdbc.update("UPDATE merchant_record SET status='FROZEN' WHERE tenant_id=? AND merchant_id='M'",tenant);
+        assertThrows(DomainException.class,()->service.changeProduct(identity,"P001",change,id(),products));
+    }
+
 }

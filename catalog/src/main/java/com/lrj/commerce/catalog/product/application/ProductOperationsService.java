@@ -26,10 +26,13 @@ public class ProductOperationsService implements ProductOperationsApi, com.lrj.c
 
 	private final StoreAccessApi access;
 
+	private final com.lrj.commerce.store.management.api.StoreApi stores;
+
 	private final Commands commands;
 
 	public ProductOperationsService(ProductMapper mapper, CatalogMapper catalog, StoreAccessApi access,
-			Commands commands, MerchandisingMapper merchandising) {
+			Commands commands, MerchandisingMapper merchandising, com.lrj.commerce.store.management.api.StoreApi stores) {
+		this.stores = stores;
 		this.merchandising = merchandising;
 		this.mapper = mapper;
 		this.catalog = catalog;
@@ -72,9 +75,12 @@ public class ProductOperationsService implements ProductOperationsApi, com.lrj.c
 		Identifiers.require(id);Identifiers.require(store);
 		Inputs.require(input!=null && input.expectedVersion()>=0,"版本无效");
 		metadata(input.title(),input.category(),input.brand());
+		// 中央授权只替换ACL来源，门店及商家停用等业务不变量仍由原Owner检查。
+		stores.requireActive(actor,store);
 		Inputs.require(deadline!=null && deadline.isAfter(java.time.Instant.now()) && !deadline.isAfter(java.time.Instant.now().plusSeconds(5)),"授权决策已过期");
 		var change=new ProductChange(store,input.expectedVersion(),input.title(),input.category(),input.brand());
 		return commands.run(actor,"central.product.change",key,new Object[]{requester,id,change},Product.class,()->{
+			stores.requireActive(actor,store);
 			check(mapper.changeScopedProduct(actor.tenantId(),id,change,scope,deadline));
 			return mapper.product(actor.tenantId(),store,id);
 		});

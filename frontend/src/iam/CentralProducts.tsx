@@ -13,6 +13,7 @@ import {
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { ProductExport } from "./ProductExport";
 import type { User } from "oidc-client-ts";
 import { enabled, login, manager, session } from "./session";
 import { central, CentralError, useCentral, type Context } from "./api";
@@ -225,6 +226,17 @@ function Products({
             </Button>
           </Space>
         </Space>
+      </Card>
+      <Card title="限时商品导出" style={{ marginTop: 24 }}>
+        <ProductExport
+          key={params.get("export") ?? "new-export"}
+          context={context}
+          search={search}
+          jobId={params.get("export")}
+          revision={revision}
+          onJob={(id) => navigate({ export: id })}
+          refresh={() => setRevision((v) => v + 1)}
+        />
       </Card>
       <Drawer
         open={!!selected}

@@ -91,9 +91,9 @@ public final class CentralScopeService {
     private static final String PRODUCT_UPDATE="commerce.product.update";
     /** 提交时确认范围与有界容量；幂等命令、任务和审计在同一本地事务。 */
     public JobView submit(CentralStoreIdentity identity,String type,String search,String key){
-        validateQuery(1,search);var a=authorize(identity,type);
+        validateQuery(1,search);var a=authorizeExport(identity,type);
         if(owner(type).stats(a.actor(),a.filter(),search).total()>MAX_EXPORT_ROWS)throw limit();
-        recheck(identity,type,a);
+        recheckExport(identity,type,a);
         var input=List.of(type,search,a.binding(),a.plan().context().principalId());
         return commands.run(a.actor(),"central.export.submit",key,input,JobView.class,()->{
             work.quota(a.actor().tenantId());if(work.lockQuota(a.actor().tenantId())==null)throw conflict("导出配额不可用");
@@ -104,7 +104,7 @@ public final class CentralScopeService {
     }
     /** 实际开始与提交分开，排队期间的撤权不能被旧提交状态覆盖。 */
     public JobView start(CentralStoreIdentity identity,String type,String jobId,long version,String key){
-        var a=authorize(identity,type);owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);recheck(identity,type,a);
+        var a=authorizeExport(identity,type);owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);recheckExport(identity,type,a);
         return commands.run(a.actor(),"central.export.start",key,List.of(jobId,version,a.binding()),JobView.class,()->{
             var job=owned(work.lock(a.actor().tenantId(),jobId),a,type);version(job,version,State.SUBMITTED);
             one(work.start(a.actor().tenantId(),jobId,version));return view(work.job(a.actor().tenantId(),jobId));
@@ -112,7 +112,7 @@ public final class CentralScopeService {
     }
     /** 每次至多50行，崩溃重放由命令回执和原子检查点保证不重复、不遗漏。 */
     public JobView advance(CentralStoreIdentity identity,String type,String jobId,long version,String key){
-        var a=authorize(identity,type);owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);recheck(identity,type,a);
+        var a=authorizeExport(identity,type);owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);recheckExport(identity,type,a);
         return commands.run(a.actor(),"central.export.batch",key,List.of(jobId,version,a.binding()),JobView.class,()->{
             var job=owned(work.lock(a.actor().tenantId(),jobId),a,type);version(job,version,State.RUNNING);
             var page=owner(type).page(a.actor(),a.filter(),job.search(),job.afterId(),BATCH_SIZE+1);
@@ -125,14 +125,14 @@ public final class CentralScopeService {
         });
     }
     /** 状态查询也绑定申请主体，不能通过猜任务ID查看其他人的进度。 */
-    public JobView job(CentralStoreIdentity identity,String type,String jobId){var a=authorize(identity,type);return view(owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type));}
+    public JobView job(CentralStoreIdentity identity,String type,String jobId){var a=authorizeExport(identity,type);return view(owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type));}
     /** 下载每批重新判权并核对当前资源归属/版本；完成的历史文件也不能绕过撤权。 */
     public Download download(CentralStoreIdentity identity,String type,String jobId){
-        var a=authorize(identity,type);var job=owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);
+        var a=authorizeExport(identity,type);var job=owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);
         if(!State.COMPLETED.code().equals(job.state()))throw conflict("导出尚未完成");
         List<ScopeQuery.Row> rows=new ArrayList<>();int after=0;
         for(int batch=0;batch<=MAX_EXPORT_ROWS/BATCH_SIZE;batch++){
-            var current=authorize(identity,type);CentralAccessClient.requireSameScope(a.plan(),current.plan());
+            var current=authorizeExport(identity,type);CentralAccessClient.requireSameScope(a.plan(),current.plan());
             var stored=work.rows(a.actor().tenantId(),jobId,after);if(stored.isEmpty())break;
             var ids=stored.stream().map(ExportRow::resourceId).toList();var facts=owner(type).current(a.actor(),current.filter(),ids).stream().collect(Collectors.toMap(ScopeQuery.Row::resourceId,Function.identity()));
             if(facts.size()!=stored.size())throw denied();
@@ -140,8 +140,16 @@ public final class CentralScopeService {
             after=stored.getLast().sequence();
         }
         if(rows.size()!=job.rowCount()||rows.size()>MAX_EXPORT_ROWS)throw conflict("导出检查点不完整");
-        recheck(identity,type,a);return new Download(jobId,type,List.copyOf(rows));
+        recheckExport(identity,type,a);return new Download(jobId,type,List.copyOf(rows));
     }
+    /** product导出必须显式授权；读取能力不再允许批量导出。store旧试点契约保持。 */
+    private Authorized authorizeExport(CentralStoreIdentity identity,String type){return authorize(identity,type,exportCapability(type));}
+    private void recheckExport(CentralStoreIdentity identity,String type,Authorized before){CentralAccessClient.requireSameScope(before.plan(),authorizeExport(identity,type).plan());}
+    private static String exportCapability(String type){return ScopeDtos.PRODUCT_RESOURCE_TYPE.equals(type)?"commerce.product.export":"commerce."+type+".read";}
+    /** 仅供UI提示；提交、每批与下载仍各自重新判权，依赖失败不转为false。 */
+    public ExportAccess exportAccess(CentralStoreIdentity identity,String type){try{authorizeExport(identity,type);return new ExportAccess(true);}catch(AccessDeniedException denied){return new ExportAccess(false);}}
+    /** 最小展示契约，无Grant细节。 */
+    public record ExportAccess(boolean export) {}
     private Authorized authorize(CentralStoreIdentity identity,String type){return authorize(identity,type,"commerce."+type+".read");}
     private Authorized authorize(CentralStoreIdentity identity,String type,String capability){
         if(identity==null)throw denied();var plan=client.requireScope(identity.userToken(),new Check(identity.authTenant(),identity.generation(),id(),capability,type));var actor=binding(plan);

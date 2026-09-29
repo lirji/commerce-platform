@@ -28,6 +28,9 @@ public class CentralScopeController {
     public Object change(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type,@PathVariable String id,
             @RequestHeader("Idempotency-Key") String key,@RequestBody com.lrj.commerce.catalog.product.api.ScopedProductOperations.MetadataChange input){product(type);return scopes.changeProduct(identity,id,input,key,products);}
     private static void product(String type){if(!com.lrj.authz.protocol.ScopeDtos.PRODUCT_RESOURCE_TYPE.equals(type))throw new IllegalArgumentException("不支持的写入资源");}
+    /** 独立导出能力提示，不能因可读就显示为可导出。 */
+    @GetMapping("/export-access")
+    public Object exportAccess(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type){return scopes.exportAccess(identity,type);}
     /** 提交不等于开始或完成，任务不保存用户Token。 */
     @PostMapping("/exports")
     public ResponseEntity<Object> submit(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type,@RequestParam(defaultValue="") String search,@RequestHeader("Idempotency-Key") String key){return ResponseEntity.accepted().body(scopes.submit(identity,type,search,key));}

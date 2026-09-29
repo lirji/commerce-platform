@@ -54,7 +54,7 @@ def main():
     manifest={'schema_version':'1','application':'commerce','manifest_version':2,'capabilities':[{'code':'commerce.store.read','resource_type':'store','risk_level':'NORMAL'},{'code':'commerce.store.manage','resource_type':'store','risk_level':'HIGH'},{'code':'commerce.product.read','resource_type':'product','risk_level':'NORMAL'}],
         'menus':[{'code':'stores','parent':None,'route':'/stores','any_of':['commerce.store.read']},{'code':'products','parent':None,'route':'/products','any_of':['commerce.product.read']}]}
     if args.p5_ui:
-        manifest['capabilities'].append({'code':'commerce.product.update','resource_type':'product','risk_level':'HIGH'})
+        manifest['capabilities'].extend([{'code':'commerce.product.update','resource_type':'product','risk_level':'HIGH'},{'code':'commerce.product.export','resource_type':'product','risk_level':'HIGH'}])
         manifest['menus'][1]['route']='/operations/products'
     (run/'manifest.json').write_text(json.dumps(manifest));cli('CatalogCli',['publish',run/'catalog.properties',run/'manifest.json'])
     access={'access.tenant':tenant,'access.application':'commerce','access.environment':env,'access.manager':members['internal'],'access.generation':1,'access.capabilities':'commerce.store.read,commerce.store.manage,commerce.product.read','access.max-duration-seconds':3600,'access.operator':'p3-fixture','access.command':uid()}

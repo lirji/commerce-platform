@@ -33,3 +33,5 @@
 读取auth CODEX_PROGRESS.md和原63节点DAG，从P505最终验收继续到完整P5交付，不重问Q-EXT，不自动进入P6。
 
 P505最终验收已PASS，报告已落盘，http-ac027002b488截图实际查看，待本地提交后立即继续P506。所有测试JVM/Vite已退出，基础容器不变。
+
+P506已通过并报告：e2e-b74400d225，72 HTTP、7外部/门户浏览器+3 OA浏览器、10MySQL全部PASS，实际截图已查看。P505 auth7d8682d/commerce1c02a6c已提交；P506待本地提交。下一步P507真实交互OIDC/SSO/错误态和运行回归。全commerce mvn test正在session42274(.local/p5-full-tests.log)；auth全-Pgovernance-it verify正在session23690(.local/governance/p5/p5-full-pg.log)。本轮harness进程全部已退出，P4基础容器继续保留。未推送main。
