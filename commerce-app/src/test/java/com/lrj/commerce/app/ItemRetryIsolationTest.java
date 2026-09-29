@@ -91,6 +91,9 @@ class ItemRetryIsolationTest {
 		assertNotNull(row.firstFailedAt());
 		assertNull(row.quarantinedAt());
 		assertTrue(row.retryAt().isAfter(Instant.now()), "失败后进入退避");
+		// 已断言生产策略生成未来退避时间；固定本项窗口，避免共享测试库扫描耗时越过两秒导致误报。
+		jdbc.update("UPDATE member_work_retry SET retry_at=? WHERE tenant_id=? AND lane='points' AND item_id='bad'",
+				Timestamp.from(Instant.now().plusSeconds(300)), a);
 		// 退避期间反复执行车道也不会再尝试该批次。
 		for (int i = 0; i < 5; i++)
 			points.tick();
