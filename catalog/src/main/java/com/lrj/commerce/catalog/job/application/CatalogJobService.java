@@ -153,6 +153,8 @@ public class CatalogJobService implements CatalogJobApi {
 			else {
 				if (!row.status().equals("ISOLATED") || !now().isBefore(content(row).deadline()))
 					throw conflict();
+				// 恢复不能用当前新Grant替代创建时已经撤销的执行路径。
+				access.requireCatalog(creator, row.storeId());
 				target = "SCHEDULED";
 			}
 			check(mapper.status(actor.tenantId(), id, row.version(), target, now()));

@@ -89,6 +89,9 @@ if r.returncode:
 values = {
     "COMMERCE_DB_URL": "jdbc:mysql://127.0.0.1:3306/commerce_local?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true",
     "COMMERCE_TEST_DB_URL": "jdbc:mysql://127.0.0.1:3306/commerce_test_20260923?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true",
+    # 触发器DDL由临时runner的迁移Owner执行；应用连接池继续使用commerce_app。
+    "SPRING_FLYWAY_USER": "root",
+    "SPRING_FLYWAY_PASSWORD": root_password,
     "COMMERCE_DB_USER": "commerce_app",
     "COMMERCE_DB_PASSWORD": password,
     "COMMERCE_ADDRESS_KEY": key,

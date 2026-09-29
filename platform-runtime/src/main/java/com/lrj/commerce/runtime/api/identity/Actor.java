@@ -4,7 +4,12 @@ import com.lrj.commerce.kernel.DomainException;
 import com.lrj.commerce.kernel.Identifiers;
 
 /** 由认证边界构造的业务身份，租户不能从请求体替换。 */
-public record Actor(String tenantId, String actorId, Role role, Channel channel) {
+public record Actor(String tenantId, String actorId, Role role, Channel channel, String executionId) {
+	/** 旧认证与历史快照没有执行引用，不能在中央路由下继续经营。 */
+	public Actor(String tenantId, String actorId, Role role, Channel channel) {
+		this(tenantId, actorId, role, channel, null);
+	}
+
 	public enum Channel {
 
 		WEB, MINI_APP
@@ -39,6 +44,8 @@ public record Actor(String tenantId, String actorId, Role role, Channel channel)
 		channel = channel == null ? Channel.WEB : channel;
 		Identifiers.require(tenantId);
 		Identifiers.require(actorId);
+		if (executionId != null && !executionId.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			throw new DomainException(DomainException.Code.FORBIDDEN, "执行引用无效");
 		if (role == null)
 			throw new DomainException(DomainException.Code.FORBIDDEN, "身份角色无效");
 	}

@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
 /** 用例二次校验失败也保持商城错误契约，不让Filter之后的异常变成成功或泄露堆栈。 */
-@RestControllerAdvice(assignableTypes = {StoreAccessController.class,com.lrj.commerce.app.http.store.CentralScopeController.class})
+@RestControllerAdvice(assignableTypes = {StoreAccessController.class,com.lrj.commerce.app.http.store.CentralScopeController.class,
+    com.lrj.commerce.app.http.catalog.product.ProductOperationsController.class,
+    com.lrj.commerce.app.http.catalog.job.CatalogSchedulingController.class,
+    com.lrj.commerce.app.http.catalog.merchandising.CatalogMerchandisingController.class})
 @Order(-100)
 public class CentralStoreErrors {
     /** 明确拒绝与上游不可用分开。 */

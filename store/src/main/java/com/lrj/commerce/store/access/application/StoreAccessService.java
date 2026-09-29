@@ -26,17 +26,21 @@ public class StoreAccessService implements StoreAccessApi {
 
 	private final Commands commands;
 
+	private final CatalogAuthority authority;
+
 	public StoreAccessService(StoreAccessMapper mapper, StoreApi stores, MerchantApi merchants,
-			OperatorDirectory identities, Commands commands) {
+			OperatorDirectory identities, Commands commands, CatalogAuthority authority) {
 		this.mapper = mapper;
 		this.stores = stores;
 		this.merchants = merchants;
 		this.identities = identities;
 		this.commands = commands;
+		this.authority = authority;
 	}
 
 	/** 商家范围包含后续新增店铺，选择时必须显式声明资源类型。 */
 	public Grant create(Actor actor, String key, Create input) {
+		authority.requireLegacyWrite(actor);
 		actor.requireAdmin();
 		Inputs.require(input != null, "授权不能为空");
 		Identifiers.require(input.grantId());
@@ -58,6 +62,7 @@ public class StoreAccessService implements StoreAccessApi {
 
 	/** 撤销直接修改权威库，不依赖缓存失效通知。 */
 	public Grant change(Actor actor, String key, String id, Change input) {
+		authority.requireLegacyWrite(actor);
 		actor.requireAdmin();
 		Identifiers.require(id);
 		Inputs.require(input != null && input.expectedVersion() >= 0, "版本无效");
@@ -81,6 +86,7 @@ public class StoreAccessService implements StoreAccessApi {
 
 	/** 查询在数据库中过滤范围，撤销后不会返回旧目录。 */
 	public List<StoreApi.View> stores(Actor actor, String after, int limit) {
+		authority.requireLegacyRead(actor);
 		Inputs.page(after, limit);
 		if (actor.role() == Actor.Role.ADMIN)
 			return stores.list(actor, after, limit);
@@ -91,6 +97,7 @@ public class StoreAccessService implements StoreAccessApi {
 	/** 不可见店铺与跨租户资源由店铺API统一拒绝。 */
 	public void requireCatalog(Actor actor, String id) {
 		var store = stores.requireActive(actor, id);
+		if (authority.require(actor, store)) return;
 		if (actor.role() == Actor.Role.ADMIN)
 			return;
 		operator(actor);

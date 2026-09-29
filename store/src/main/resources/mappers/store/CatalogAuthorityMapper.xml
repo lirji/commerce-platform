@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.store.access.infrastructure.persistence.CatalogAuthorityMapper">
+ <select id="find" resultType="com.lrj.commerce.store.access.api.CatalogAuthorityRoutes$Route">SELECT tenant_id,auth_tenant_id,state,frozen,ever_central,version FROM catalog_authority_route WHERE tenant_id=#{tenant} FOR SHARE</select>
+ <select id="central" resultType="com.lrj.commerce.store.access.api.CatalogAuthorityRoutes$Route">SELECT tenant_id,auth_tenant_id,state,frozen,ever_central,version FROM catalog_authority_route WHERE auth_tenant_id=#{authTenant} AND state='CENTRAL'</select>
+</mapper>

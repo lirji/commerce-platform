@@ -52,4 +52,10 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 商品经营入口 `/operations/products`，外部门店协作入口 `/collaboration/products`。前端构建变量见 [frontend/.env.example](frontend/.env.example)；后端需同时启用既有中央store-read/scope开关并提供私有配置。product.read、product.update、product.export独立授权，数据库Owner再次核对范围、版本和门店状态；外部限时导出由真实OA审批后生效。
 
-[统一运行与恢复说明](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/phase-5/P5_RUNTIME.md)包含精确OIDC回调、同源打包及开关回退边界。共享旧IdP升级HOLD不因本地试点通过而解除；本轮未执行生产部署或P6迁移。
+[统一运行与恢复说明](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/phase-5/P5_RUNTIME.md)包含精确OIDC回调、同源打包及开关回退边界。共享旧IdP升级HOLD不因本地试点通过而解除；P5历史不包含生产部署；最新P6状态见下方。
+
+### P6 本地隔离迁移
+
+中央`commerce.catalog.operate`覆盖既有完整CATALOG经营API和后台任务。`commerce.iam.catalog.enabled`默认关闭，启用还需store-read私有配置、显式身份桥及数据库CENTRAL路由；旧ADMIN和后台历史身份不能绕过。执行引用不保存用户Token，每步实时复核，目录版本/授权变化按安全边界停止旧任务。
+
+[本仓测试记录](docs/implementation/oa-auth/phase-6/P6_TEST_RESULT.md)和[统一运行说明](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/phase-6/P6_RUNTIME.md)记录V48迁移Owner、冻结/切换/回退和31项真实隔离检查。原8602及commerce_local未切换；生产候选仍HOLD，P7未执行。
