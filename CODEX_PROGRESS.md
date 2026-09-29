@@ -18,7 +18,7 @@
 
 ## 未完成
 
-- 最终P507提交、正常合并推送main及CI，auth负责统一落盘交付记录。
+- 无剩余产品开发；P5已完成并正常合并推送main。产品版本c7384fe的完整CI 36596109216通过，本次仅同步交付记录。
 
 ## 当前问题
 
@@ -27,9 +27,9 @@
 
 ## 下一步建议
 
-1. 完成本任务提交，正常ff合并main/push。
-2. 核对精确提交Actions，最终状态以auth phase-5/P5_DELIVERY_RESULT和CI_RESULT为准。
+1. 本轮结束，P6前停止。
+2. 最终SHA/Actions见auth phase-5/P5_DELIVERY_RESULT和CI_RESULT；后续新阶段需另行授权。
 
 ## 恢复 Prompt
 
-读取本文件和auth CODEX_PROGRESS.md，从P5最终Git/CI交付继续，保护OA用户改动，不重新做已完成切片，不进入P6。
+读取本文件和auth CODEX_PROGRESS.md，先核对auth最终交付记录；P5已经完成，保护OA用户改动，不重做已完成切片，不自动进入P6。
