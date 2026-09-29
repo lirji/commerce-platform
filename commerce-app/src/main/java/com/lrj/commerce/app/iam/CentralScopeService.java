@@ -59,6 +59,36 @@ public final class CentralScopeService {
         if(!row.equals(latest))throw conflict("资源已变化，请重新读取");
         recheck(identity,type,a);return row;
     }
+    /** 动作提示也基于当前资源事实；只是体验提示，不替代实际提交的再次检查。 */
+    public ProductActions actions(CentralStoreIdentity identity,String resource) {
+        detail(identity,ScopeDtos.PRODUCT_RESOURCE_TYPE,resource);
+        try { productWrite(identity,resource);return new ProductActions(true); }
+        catch(AccessDeniedException denied){return new ProductActions(false);}
+    }
+    /** 只有受控商品元资料写入使用该端口；中央网络判权不延长数据库事务。 */
+    public com.lrj.commerce.catalog.product.api.ProductOperationsApi.Product changeProduct(CentralStoreIdentity identity,String resource,
+            com.lrj.commerce.catalog.product.api.ScopedProductOperations.MetadataChange input,String key,
+            com.lrj.commerce.catalog.product.api.ScopedProductOperations products) {
+        var a=productWrite(identity,resource);var row=owner(ScopeDtos.PRODUCT_RESOURCE_TYPE).fact(a.actor(),resource);
+        if(row==null)throw denied();
+        // 完整范围仍进入Owner SQL；资源版本或归属在判权后变化时，不会借旧事实写入其他范围。
+        var current=authorize(identity,ScopeDtos.PRODUCT_RESOURCE_TYPE,PRODUCT_UPDATE);CentralAccessClient.requireSameScope(a.plan(),current.plan());
+        Instant deadline=Instant.now().plusSeconds(5),validUntil=Instant.parse(current.plan().validUntil());
+        if(validUntil.isBefore(deadline))deadline=validUntil;
+        return products.changeScoped(current.actor(),current.filter(),deadline,current.plan().context().principalId()+":"+current.plan().context().membershipId()+":"+identity.generation(),key,resource,row.storeId(),input);
+    }
+    /** 对单条真实商品判定update，绝不拼接read来源的范围。 */
+    private Authorized productWrite(CentralStoreIdentity identity,String resource) {
+        resourceId(resource);var a=authorize(identity,ScopeDtos.PRODUCT_RESOURCE_TYPE,PRODUCT_UPDATE);
+        var row=owner(ScopeDtos.PRODUCT_RESOURCE_TYPE).fact(a.actor(),resource);if(row==null)throw denied();
+        var facts=new ScopeDtos.Facts(a.plan().context().tenantId(),ScopeDtos.PRODUCT_RESOURCE_TYPE,row.resourceId(),row.resourceVersion(),null,null,List.of(),row.storeId(),null);
+        var decision=client.checkResource(identity.userToken(),new Check(identity.authTenant(),identity.generation(),id(),PRODUCT_UPDATE,ScopeDtos.PRODUCT_RESOURCE_TYPE),facts);
+        if(!"ALLOW".equals(decision.decision())||!decision.context().principalId().equals(a.plan().context().principalId()) || decision.context().membershipGeneration()!=a.plan().context().membershipGeneration())throw denied();
+        return a;
+    }
+    /** 仅返回当前对象的最小动作提示，不返回Grant或员工目录。 */
+    public record ProductActions(boolean update) {}
+    private static final String PRODUCT_UPDATE="commerce.product.update";
     /** 提交时确认范围与有界容量；幂等命令、任务和审计在同一本地事务。 */
     public JobView submit(CentralStoreIdentity identity,String type,String search,String key){
         validateQuery(1,search);var a=authorize(identity,type);
@@ -112,8 +142,9 @@ public final class CentralScopeService {
         if(rows.size()!=job.rowCount()||rows.size()>MAX_EXPORT_ROWS)throw conflict("导出检查点不完整");
         recheck(identity,type,a);return new Download(jobId,type,List.copyOf(rows));
     }
-    private Authorized authorize(CentralStoreIdentity identity,String type){
-        if(identity==null)throw denied();var plan=client.requireScope(identity.userToken(),check(identity.authTenant(),identity.generation(),type));var actor=binding(plan);
+    private Authorized authorize(CentralStoreIdentity identity,String type){return authorize(identity,type,"commerce."+type+".read");}
+    private Authorized authorize(CentralStoreIdentity identity,String type,String capability){
+        if(identity==null)throw denied();var plan=client.requireScope(identity.userToken(),new Check(identity.authTenant(),identity.generation(),id(),capability,type));var actor=binding(plan);
         if(!actor.equals(identity.actor())||plan.context().membershipGeneration()!=identity.generation())throw denied();
         return new Authorized(plan,actor,filter(plan),CentralAccessClient.scopeFingerprint(plan));
     }

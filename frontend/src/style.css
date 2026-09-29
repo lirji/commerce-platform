@@ -1741,3 +1741,22 @@ textarea {
 .order-workspace > .section-actions {
   margin-block: 20px;
 }
+
+.central-products {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+.central-products .central-heading {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.central-products .ant-typography {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .central-products {
+    padding: 20px 12px;
+  }
+}

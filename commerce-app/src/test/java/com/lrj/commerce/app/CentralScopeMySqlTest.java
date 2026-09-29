@@ -36,6 +36,7 @@ class CentralScopeMySqlTest {
     @Autowired CentralStoreBindingMapper bindings;
     @Autowired ScopeWorkMapper work;
     @Autowired Commands commands;
+    @Autowired com.lrj.commerce.catalog.product.api.ScopedProductOperations products;
     @Autowired List<ScopeQuery> owners;
     private CentralAccessClient client;private CentralScopeService service;
     private String tenant,authTenant,principal,member,policy,directory,grant;
@@ -118,4 +119,27 @@ class CentralScopeMySqlTest {
         assertThrows(AccessDeniedException.class,()->service.page(another,"store",page.nextCursor(),1,""));assertThrows(AccessDeniedException.class,()->service.job(another,"store",job.id()));
         assertNotNull(service.submit(another,"store","",id()));
     }
+    @Test void controlledWriteUsesItsOwnScopeAndAtomicVersionAndCommandReceipt(){
+        alternatives=List.of(new Alternative(grant,1,List.of(new Clause(Kind.SPECIFIED_STORES,List.of("S001"),false))));
+        var change=new com.lrj.commerce.catalog.product.api.ScopedProductOperations.MetadataChange(1,"new-title","category","brand");
+        String key=id();var result=service.changeProduct(identity,"P001",change,key,products);
+        assertEquals(2,result.version());assertEquals(result,service.changeProduct(identity,"P001",change,key,products));
+        assertThrows(DomainException.class,()->service.changeProduct(identity,"P001",change,id(),products));
+        assertThrows(AccessDeniedException.class,()->service.changeProduct(identity,"P002",change,id(),products));
+        assertEquals("product-2",jdbc.queryForObject("SELECT title FROM catalog_product WHERE tenant_id=? AND product_id='P002'",String.class,tenant));
+        verify(client,atLeastOnce()).requireScope(eq("test-user"),argThat(c->c.capability().equals("commerce.product.update")));
+        principal=id();member=id();bind();var another=service.authenticate("another",authTenant,"product");
+        assertThrows(DomainException.class,()->service.changeProduct(another,"P001",change,key,products));
+        denied.set(true);assertThrows(AccessDeniedException.class,()->service.changeProduct(identity,"P001",change,key,products));
+    }
+    @Test void ownerRejectsStaleOrOutOfScopeWriteEvenIfCallerPassesAChangedResource(){
+        var scope=new ScopeQuery.Filter(List.of(new ScopeQuery.Path(false,List.of("S001"),List.of())));
+        var change=new com.lrj.commerce.catalog.product.api.ScopedProductOperations.MetadataChange(1,"new-title","category","brand");
+        assertThrows(DomainException.class,()->products.changeScoped(identity.actor(),scope,Instant.now().plusSeconds(4),principal,id(),"P002","S002",change));
+        assertThrows(DomainException.class,()->products.changeScoped(identity.actor(),scope,Instant.now().minusSeconds(1),principal,id(),"P001","S001",change));
+        jdbc.update("UPDATE catalog_product SET store_id='S002',version=version+1 WHERE tenant_id=? AND product_id='P001'",tenant);
+        assertThrows(DomainException.class,()->products.changeScoped(identity.actor(),scope,Instant.now().plusSeconds(4),principal,id(),"P001","S001",change));
+        assertEquals("product-1",jdbc.queryForObject("SELECT title FROM catalog_product WHERE tenant_id=? AND product_id='P001'",String.class,tenant));
+    }
+
 }

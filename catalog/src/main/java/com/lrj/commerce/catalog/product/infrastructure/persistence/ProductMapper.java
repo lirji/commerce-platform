@@ -22,6 +22,10 @@ public interface ProductMapper {
 	int changeProduct(@Param("tenant") String tenant, @Param("id") String id,
 			@Param("input") ProductOperationsApi.ProductChange input);
 
+	/** 授权范围和乐观版本同一UPDATE，旧决策超时不得提交。 */
+	int changeScopedProduct(@Param("tenant") String tenant,@Param("id") String id,
+		@Param("input") ProductOperationsApi.ProductChange input,@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+		@Param("deadline") java.time.Instant deadline);
 	List<ProductOperationsApi.Product> products(@Param("tenant") String tenant, @Param("store") String store,
 			@Param("after") String after, @Param("limit") int limit);
 

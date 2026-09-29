@@ -11,14 +11,23 @@ import org.springframework.http.ResponseEntity;
 @RequestMapping("/v1/operations/scoped/{type}")
 public class CentralScopeController {
     private final CentralScopeService scopes;
+    private final com.lrj.commerce.catalog.product.api.ScopedProductOperations products;
     /** 所有真实权限检查属于中央用例，不依赖按钮显示。 */
-    public CentralScopeController(CentralScopeService scopes){this.scopes=scopes;}
+    public CentralScopeController(CentralScopeService scopes,com.lrj.commerce.catalog.product.api.ScopedProductOperations products){this.scopes=scopes;this.products=products;}
     /** 返回精确授权范围内的数据和计数，下一页只能使用本次服务端游标。 */
     @GetMapping
     public Object page(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type,@RequestParam(defaultValue="") String cursor,@RequestParam(defaultValue="50") int limit,@RequestParam(defaultValue="") String search){return scopes.page(identity,type,cursor,limit,search);}
     /** 资源事实由后端读库生成，浏览器仅指定资源主键。 */
     @GetMapping("/resources/{id}")
     public Object detail(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type,@PathVariable String id){return scopes.detail(identity,type,id);}
+    /** 只允许商品试点，不把任意type动态映射到写操作。 */
+    @GetMapping("/resources/{id}/actions")
+    public Object actions(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type,@PathVariable String id){product(type);return scopes.actions(identity,id);}
+    /** 元资料修订与菜单提示独立授权；无storeId或权限表达式输入。 */
+    @PostMapping("/resources/{id}")
+    public Object change(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type,@PathVariable String id,
+            @RequestHeader("Idempotency-Key") String key,@RequestBody com.lrj.commerce.catalog.product.api.ScopedProductOperations.MetadataChange input){product(type);return scopes.changeProduct(identity,id,input,key,products);}
+    private static void product(String type){if(!com.lrj.authz.protocol.ScopeDtos.PRODUCT_RESOURCE_TYPE.equals(type))throw new IllegalArgumentException("不支持的写入资源");}
     /** 提交不等于开始或完成，任务不保存用户Token。 */
     @PostMapping("/exports")
     public ResponseEntity<Object> submit(@AuthenticationPrincipal CentralStoreIdentity identity,@PathVariable String type,@RequestParam(defaultValue="") String search,@RequestHeader("Idempotency-Key") String key){return ResponseEntity.accepted().body(scopes.submit(identity,type,search,key));}

@@ -16,7 +16,7 @@ import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 规格不可换绑，商品修订原子写当前投影和历史，不重写已成交报价。 */
 @Service
-public class ProductOperationsService implements ProductOperationsApi {
+public class ProductOperationsService implements ProductOperationsApi, com.lrj.commerce.catalog.product.api.ScopedProductOperations {
 
 	private final MerchandisingMapper merchandising;
 
@@ -64,6 +64,21 @@ public class ProductOperationsService implements ProductOperationsApi {
 		});
 	}
 
+	/** 只消费中央用例验证过的范围；本地SQL原子检查门店/版本/范围，避免检查后资源换绑。 */
+	@Override
+	public Product changeScoped(Actor actor, com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			java.time.Instant deadline,String requester,String key,String id,String store,com.lrj.commerce.catalog.product.api.ScopedProductOperations.MetadataChange input) {
+		com.lrj.commerce.runtime.api.scope.ScopeQuery.validate(actor,scope,"",id,1);
+		Identifiers.require(id);Identifiers.require(store);
+		Inputs.require(input!=null && input.expectedVersion()>=0,"版本无效");
+		metadata(input.title(),input.category(),input.brand());
+		Inputs.require(deadline!=null && deadline.isAfter(java.time.Instant.now()) && !deadline.isAfter(java.time.Instant.now().plusSeconds(5)),"授权决策已过期");
+		var change=new ProductChange(store,input.expectedVersion(),input.title(),input.category(),input.brand());
+		return commands.run(actor,"central.product.change",key,new Object[]{requester,id,change},Product.class,()->{
+			check(mapper.changeScopedProduct(actor.tenantId(),id,change,scope,deadline));
+			return mapper.product(actor.tenantId(),store,id);
+		});
+	}
 	/** 数据库游标保证读取有界。 */
 	public List<Product> products(Actor actor, String store, String after, int limit) {
 		access.requireCatalog(actor, store);

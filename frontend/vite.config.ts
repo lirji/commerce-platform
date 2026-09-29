@@ -6,8 +6,8 @@ export default defineConfig({
     port: 8601,
     strictPort: true,
     proxy: {
-      "/v1": "http://127.0.0.1:8600",
-      "/actuator": "http://127.0.0.1:8600",
+      "/v1": process.env.COMMERCE_API_URL ?? "http://127.0.0.1:8600",
+      "/actuator": process.env.COMMERCE_API_URL ?? "http://127.0.0.1:8600",
     },
   },
   build: { outDir: "dist", chunkSizeWarningLimit: 900 },

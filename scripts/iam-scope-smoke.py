@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """P3真实跨仓验收；只使用自建MySQL库、已有隔离IdP/图及本工具持有的回环进程。"""
-import argparse, base64, hashlib, http.client, importlib.util, json, math, os, secrets, socket, subprocess, time, urllib.parse, uuid
+import argparse, base64, hashlib, shutil, http.client, importlib.util, json, math, os, secrets, socket, subprocess, time, urllib.parse, uuid
 from concurrent.futures import ThreadPoolExecutor
 from http import HTTPStatus
 from datetime import datetime, timedelta, timezone
@@ -8,15 +8,21 @@ from pathlib import Path
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--auth-root',default='../auth-platform');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--auth-root',default='../auth-platform');parser.add_argument('--p5-ui',action='store_true');parser.add_argument('--p5-only',action='store_true');args=parser.parse_args()
     auth=Path(args.auth_root).resolve();spec=importlib.util.spec_from_file_location('access',auth/'deploy/governance-access-smoke.py');up=importlib.util.module_from_spec(spec);spec.loader.exec_module(up);h=up.h
     root=auth/'.local/governance';run=Path('.local/oa-auth-p3')/('http-'+secrets.token_hex(6));run.mkdir(parents=True,mode=0o700);run=run.resolve()
-    fixture=json.loads(h.read_private(root/'p2/identity/casdoor.json'));ops=json.loads(h.read_private(root/'casdoor-isolated/management-client.json'));db=h.read_private(root/'database.properties')
+    fixture=json.loads(h.read_private(root/'p2/identity/casdoor.json'));ops=json.loads(h.read_private(root/'casdoor-isolated/management-client.json'))
+    dbfile=root/'database.properties'
+    if args.p5_ui:
+        subprocess.run(['python3',str(auth/'deploy/governance-test-db.py'),'--container','auth-governance-p4-postgres-1','--port','15434','--directory',str(run/'database')],check=True,stdout=subprocess.DEVNULL)
+        dbfile=run/'database/database.properties'
+    db=h.read_private(dbfile)
     if '/auth_gov_p1_test_' not in db:raise RuntimeError('only isolated governance database allowed')
     graph=h.read_private(root/'p3/graph/graph.properties');legacy=h.read_private(root/'p2/graph/graph.properties')
     if '18544' not in graph:raise RuntimeError('P3 isolated graph required')
     jars={kind:next((auth/('auth-platform-'+kind)/'target').glob('auth-platform-'+kind+'-*.jar')) for kind in ('admin','server')}
     processes=[];checks=[];convergence=[]
+    commerce_jar=run/'commerce.jar';shutil.copy2(Path('commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar'),commerce_jar)
     def uid():return str(uuid.uuid4())
     def record(name):
         checks.append({'check':name,'result':'PASS'});(run/'checkpoint.json').write_text(json.dumps({'state':'IN_PROGRESS','http_checks':checks},ensure_ascii=False,indent=2)+'\n')
@@ -42,13 +48,17 @@ def main():
     for kind in ('internal','external'):
         principal=str(uuid.uuid5(uuid.NAMESPACE_URL,'p2:'+fixture['users'][kind]['id']));member=uid();members[kind]=member;principals[kind]=principal
         values={'command.id':uid(),'operator.ref':'p3-fixture','tenant.id':tenant,'tenant.code':'p3-'+tenant,'principal.id':principal,'issuer':h.ISSUER,'subject':fixture['users'][kind]['id'],'membership.id':member,'valid.from':'2020-01-01T00:00:00Z','source.system':'p3-fixture','source.tenant.ref':tenant,'source.subject.ref':kind}
-        file=run/(kind+'.properties');h.private(file,h.props(values));cli('GovernanceCli',['bootstrap',root/'database.properties',file])
+        file=run/(kind+'.properties');h.private(file,h.props(values));cli('GovernanceCli',['bootstrap',dbfile,file])
     catalog={'catalog.application':'commerce','catalog.owner-principal':principals['internal'],'catalog.entry-origin':'http://127.0.0.1:8601','catalog.operator':'p3-fixture','catalog.command':uid(),'catalog.owner-issuer':h.ISSUER,'catalog.owner-subject':fixture['users']['internal']['id']}
     h.private(run/'catalog.properties',db+h.props(catalog));cli('CatalogCli',['register',run/'catalog.properties','configured'])
     manifest={'schema_version':'1','application':'commerce','manifest_version':2,'capabilities':[{'code':'commerce.store.read','resource_type':'store','risk_level':'NORMAL'},{'code':'commerce.store.manage','resource_type':'store','risk_level':'HIGH'},{'code':'commerce.product.read','resource_type':'product','risk_level':'NORMAL'}],
         'menus':[{'code':'stores','parent':None,'route':'/stores','any_of':['commerce.store.read']},{'code':'products','parent':None,'route':'/products','any_of':['commerce.product.read']}]}
+    if args.p5_ui:
+        manifest['capabilities'].append({'code':'commerce.product.update','resource_type':'product','risk_level':'HIGH'})
+        manifest['menus'][1]['route']='/operations/products'
     (run/'manifest.json').write_text(json.dumps(manifest));cli('CatalogCli',['publish',run/'catalog.properties',run/'manifest.json'])
     access={'access.tenant':tenant,'access.application':'commerce','access.environment':env,'access.manager':members['internal'],'access.generation':1,'access.capabilities':'commerce.store.read,commerce.store.manage,commerce.product.read','access.max-duration-seconds':3600,'access.operator':'p3-fixture','access.command':uid()}
+    if args.p5_ui:access['access.capabilities']+=',commerce.product.update'
     h.private(run/'access.properties',db+h.props(access));cli('AccessBootstrapCli',[run/'access.properties'])
     def authority(purpose):
         c=fixture['clients'][purpose];return {'issuer':h.ISSUER,'jwks.uri':h.ISSUER+'/.well-known/jwks','audience':c['name'],'client.id':c['name'],'client.secret':c['secret'],'version-probe.client.id':ops['client_id'],'version-probe.client.secret':ops['client_secret']}
@@ -73,7 +83,7 @@ def main():
     def start_commerce(label):
         with socket.socket() as guard:guard.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);guard.bind(('127.0.0.1',18603))
         with os.fdopen(os.open(run/(label+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600),'w') as log:
-            process=subprocess.Popen(['java','-Xmx512m','-jar','commerce-app/target/commerce-app-0.1.0-SNAPSHOT.jar','--server.address=127.0.0.1','--commerce.iam.store-read.enabled=true','--commerce.iam.scope.enabled=true','--commerce.iam.store-read.configuration='+str(run/'consumer.properties')],env=environment,stdout=log,stderr=subprocess.STDOUT)
+            process=subprocess.Popen(['java','-Xmx512m','-jar',str(commerce_jar),'--server.address=127.0.0.1','--commerce.iam.store-read.enabled=true','--commerce.iam.scope.enabled=true','--commerce.iam.store-read.configuration='+str(run/'consumer.properties')],env=environment,stdout=log,stderr=subprocess.STDOUT)
         processes.append(process)
         for _ in range(90):
             if process.poll() is not None:raise RuntimeError('owned commerce startup failed; private log '+label)
@@ -123,6 +133,36 @@ def main():
         expect('raw old resource cursor rejected',18603,'/v1/operations/stores?after=S001',user,status=403,code='FORBIDDEN')
         expect('legacy admin cannot enter scoped route',18603,base+'store',[('Authorization','Bearer '+local_admin),('X-Tenant-Id',tenant)],status=401,code='UNAUTHENTICATED')
         expect('user token cannot enter legacy admin',18603,'/v1/admin/members',user,status=401,code='UNAUTHENTICATED')
+        if args.p5_ui:
+            # external只是隔离IdP账号名称；本场景经bootstrap建立的是EMPLOYEE，非合作成员。
+            ui_env=dict(os.environ,VITE_IAM_ENABLED='true',VITE_IAM_AUTHORITY=h.ISSUER,VITE_IAM_CLIENT_ID=fixture['clients']['business']['name'],COMMERCE_API_URL='http://127.0.0.1:18603')
+            h.private(run/'pilot.json',json.dumps({'tenant':tenant,'token':user_token,'authority':h.ISSUER,'client':fixture['clients']['business']['name']}))
+            with open(run/'pilot-vite.log','w') as log:
+                vite=subprocess.Popen(['npm','run','dev','--','--port','18605'],cwd='frontend',env=ui_env,stdout=log,stderr=subprocess.STDOUT)
+            processes.append(vite)
+            for _ in range(40):
+                if vite.poll() is not None:raise RuntimeError('pilot Vite failed')
+                try:
+                    with socket.create_connection(('127.0.0.1',18605),timeout=1):break
+                except OSError:time.sleep(.25)
+            def browser(phase):
+                subprocess.run(['node','scripts/iam-pilot-browser.mjs'],env=dict(ui_env,P5_RUN=str(run),P5_PHASE=phase),check=True,timeout=120)
+                record('real internal browser '+phase)
+            browser('read-only')
+            writer=expect('register actual product update role',18112,prefix+'/roles',admin,{**partition,'command_id':uid(),'role_code':'product-editor','role_version':1,'capabilities':['commerce.product.update']})['id']
+            writing=grant(writer,'product',[clause('SPECIFIED_STORES',['S001'])],'product-write');projection()
+            deadline=time.monotonic()+15
+            while time.monotonic()<deadline:
+                action_status,action=request(18603,base+'product/resources/P001/actions',user)
+                if action_status==HTTPStatus.OK and action.get('update'):break
+                time.sleep(.25)
+            else:raise RuntimeError('actual product action did not converge: '+str(action_status)+' '+str(action))
+            browser('write')
+            expect('revoke product write source',18112,prefix+'/strict-revoke',admin,{**partition,'command_id':uid(),'grant_id':writing['id'],'expected_version':1},202)
+            projection();browser('revoked')
+            assert sql(f"USE {database}; SELECT title FROM catalog_product WHERE tenant_id='{local}' AND product_id='P001';").strip()=='P5 browser edited product'
+            if args.p5_only:
+                (run/'result.json').write_text(json.dumps({'result':'PASS','http_checks':checks},indent=2));print('PASS P5 internal '+str(run));return
         menu=expect('strict menu hints use real grants',18112,'/api/governance/v1/me/access?'+urllib.parse.urlencode(partition),[('Authorization','Bearer '+menu_token)]);assert set(menu['capability_hints'])=={'commerce.store.read','commerce.product.read'}
         forged={**check(),'principal_id':uid()};expect('browser identity injection rejected',18111,endpoint,dual,forged,400,'INVALID_ARGUMENT')
         expect('wrong service credential rejected',18113,endpoint,[('Authorization','Bearer '+'x'*48),('X-User-Access-Token',user_token)],check(),401,'INVALID_CREDENTIAL')

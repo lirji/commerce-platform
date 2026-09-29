@@ -16,7 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** 仅接受显式Bearer凭据，无Cookie自动认证；外部IdP适配尚未启用。 */
+/** 仅接受显式Bearer凭据，无Cookie自动认证；中央试点由更高优先级的独立过滤链处理。 */
 @Configuration
 public class SecurityConfiguration {
 
@@ -32,6 +32,8 @@ public class SecurityConfiguration {
 			.sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(
 					c -> c.requestMatchers("/actuator/health", "/", "/index.html", "/assets/**", "/media/**")
+						.permitAll()
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/operations/products", "/collaboration/products", "/iam/callback")
 						.permitAll()
 						.requestMatchers("/v1/admin/**")
 						.hasAuthority("ADMIN")

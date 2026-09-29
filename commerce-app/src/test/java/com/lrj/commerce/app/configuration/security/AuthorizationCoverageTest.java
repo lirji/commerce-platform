@@ -141,4 +141,16 @@ class AuthorizationCoverageTest {
 		assertEquals(200, status("GET", "/v1/admin/events/health", admin));
 	}
 
+	/** 深链接仅开放静态壳，不能把同名业务API或POST作为匿名入口。 */
+	@Test
+	void centralPagesServeOnlyStaticGetShell() throws Exception {
+		for (String path : List.of("/operations/products", "/collaboration/products", "/iam/callback")) {
+			var response = http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).GET().build(), HttpResponse.BodyHandlers.ofString());
+			assertEquals(200, response.statusCode());
+			assertTrue(response.body().contains("id=\"root\""));
+			assertNotEquals(200, status("POST", path, "invalid-token"));
+		}
+		assertEquals(401, status("GET", "/v1/operations/products", "invalid-token"));
+	}
+
 }
