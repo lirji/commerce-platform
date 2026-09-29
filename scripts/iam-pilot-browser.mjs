@@ -28,6 +28,14 @@ try {
  } else {
   await page.getByRole('button',{name:'编辑商品资料',exact:true}).click();
   await page.getByLabel('商品名称',{exact:true}).fill('P5 browser edited product');
+  await page.locator('.ant-drawer-close').click();
+  await page.locator('.ant-modal-confirm-title').waitFor();
+  // 等确认弹层进入动画结束再取证，避免透明初始帧被误当作完成截图。
+  await page.waitForTimeout(450);
+  await page.screenshot({path:`${run}/internal-unsaved-confirm.png`,fullPage:true,animations:'disabled'});
+  await page.getByRole('button',{name:'继续编辑',exact:true}).click();
+  assert.equal(await page.getByLabel('商品名称',{exact:true}).inputValue(),'P5 browser edited product');
+  record('closing dirty detail asks confirmation; cancellation preserves the exact edit');
   await page.screenshot({path:`${run}/internal-edit-1440.png`,fullPage:true});
   await page.getByRole('button',{name:'保存商品资料',exact:true}).click();
   await page.getByText('商品资料已保存',{exact:true}).waitFor();

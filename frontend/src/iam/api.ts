@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-const HTTP = { UNAUTHORIZED: 401, FORBIDDEN: 403, CONFLICT: 409 } as const;
+export const HTTP = {
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  CONFLICT: 409,
+} as const;
 export class CentralError extends Error {
   constructor(
     public status: number,
@@ -57,7 +61,19 @@ export function useCentral<T>(
     const controller = new AbortController();
     setState({ loading: !!path });
     if (path !== null)
-      central<T>(context, path, undefined, undefined, controller.signal)
+      // StrictMode会立即撤销第一次effect；在发请求前检查，避免废弃请求占用实时鉴权并发槽。
+      Promise.resolve()
+        .then(() =>
+          controller.signal.aborted
+            ? undefined
+            : central<T>(
+                context,
+                path,
+                undefined,
+                undefined,
+                controller.signal,
+              ),
+        )
         .then((data) => {
           if (!controller.signal.aborted) setState({ data, loading: false });
         })

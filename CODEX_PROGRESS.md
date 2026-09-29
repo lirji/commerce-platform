@@ -2,36 +2,34 @@
 
 ## 任务目标
 
-完成已授权P5商城真实内部读写及外部门店/商家协作限时导出，随auth原63节点DAG连续执行P5-05..07，正常合并推送main和CI；P6前停止，不生产部署。
+完成已授权P5统一身份试点与正常Git交付、CI；P6前停止，不生产部署。
 
 ## 已完成
 
-- P505中央product.update用例、Owner条件更新/幂等审计、前端独立OIDC和产品页面、固定SPA入口；8真实MySQL及4Security测试通过，两UI构建通过。
-- 原P3加内部主链54检查通过http-756ed29af567；最终浏览器含有效390截图复核中http-ac027002b488。
+- P505商品范围查询/受控元资料修订、Owner SQL版本/范围/活动状态约束，提交1c02a6c。
+- P506独立限时product.export全生命周期、真实门店伙伴邀请/申请/OA审批/生效/导出/到期/撤权，提交c57441b。
+- P507真实三应用PKCE/SSO、打包同源运行、CORS/Cookie/错误/开关、未保存编辑保护全部验收通过；auth统一报告和截图已落盘。
+- 全reactor388项（383通过、5性能profile未开启跳过）；25 HTTP+7内部浏览器最新重跑通过。测试时序稳定修复提交ca590be，生产重试策略未改。
 
 ## 已修改文件
 
-- git status列出的catalog/api/service/Mapper、commerce-app/iam/controller/security/tests、frontend/iam及依赖oidc-client-ts3.5.0、scripts/iam-scope-smoke.py和iam-pilot-browser.mjs。
+- frontend/src/iam/{CentralProducts.tsx,api.ts,session.ts}、frontend/.env.example、scripts/iam-pilot-browser.mjs。
+- README.md、docs/design/enterprise-iam-integration/PROGRESS_STATE.md、docs/implementation/oa-auth/phase-5/P5-07_TEST_RESULT.md。
 
 ## 未完成
 
-- P505最终截图/报告/本地提交；P506显式product.export全生命周期及真实OA链；P507交互OIDC/SSO/回归，Git交付CI。
+- 最终P507提交、正常合并推送main及CI，auth负责统一落盘交付记录。
 
 ## 当前问题
 
-- 无输入阻塞。分支feat/iam-p5-portal-pilots，基线ca4f831，尚未提交/推送。
-- 原脚本运行JAR会被重打包覆盖，已改每次复制独立副本。最终日志.local/p5-browser-final.log，真实测试私密证据/数据库保留。
+- 无业务阻塞；不修改共享IdP，不扩大至供应商订单，不进入P6。
+- 私有.local测试数据库/配置/凭据/日志保留，不入库。
 
 ## 下一步建议
 
-1. 核对最终浏览器结果及390截图；P505报告和进度后提交。
-2. P506设计已在auth CONTRACTS_P5_PORTAL末尾，按其实现；用户确认真实门店商品，不做供应商订单。
-3. 完整P5正常合并推送main/CI统一由auth交付；OA既有用户脏文件保留。
+1. 完成本任务提交，正常ff合并main/push。
+2. 核对精确提交Actions，最终状态以auth phase-5/P5_DELIVERY_RESULT和CI_RESULT为准。
 
 ## 恢复 Prompt
 
-读取auth CODEX_PROGRESS.md和原63节点DAG，从P505最终验收继续到完整P5交付，不重问Q-EXT，不自动进入P6。
-
-P505最终验收已PASS，报告已落盘，http-ac027002b488截图实际查看，待本地提交后立即继续P506。所有测试JVM/Vite已退出，基础容器不变。
-
-P506已通过并报告：e2e-b74400d225，72 HTTP、7外部/门户浏览器+3 OA浏览器、10MySQL全部PASS，实际截图已查看。P505 auth7d8682d/commerce1c02a6c已提交；P506待本地提交。下一步P507真实交互OIDC/SSO/错误态和运行回归。全commerce mvn test正在session42274(.local/p5-full-tests.log)；auth全-Pgovernance-it verify正在session23690(.local/governance/p5/p5-full-pg.log)。本轮harness进程全部已退出，P4基础容器继续保留。未推送main。
+读取本文件和auth CODEX_PROGRESS.md，从P5最终Git/CI交付继续，保护OA用户改动，不重新做已完成切片，不进入P6。

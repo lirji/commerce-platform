@@ -1,4 +1,4 @@
-> **当前实施状态（2026-09-28）**：本文以下保留早期候选方案历史。权威计划在[auth 63节点DAG](https://github.com/lirji/auth-platform/tree/main/docs/design/oa-auth-unification)。P1/P2已交付；用户新授权P3后，全部P3实现与本地验证通过，商城代码已正常合并推送main dceeb5a且完整CI通过；auth最终CI与整个阶段交付以其P3_DELIVERY_RESULT为准。[商城P3验收](../../implementation/oa-auth/phase-3/P3-02_TEST_RESULT.md)及[运行契约](../../implementation/oa-auth/phase-3/RUNTIME_AND_CONTRACTS.md)为本轮事实来源。本仓实施已完成；整体交付确认后停在P4之前；下方历史TODO及授权描述不覆盖本段当前状态。
+> **当前实施状态（2026-09-29）**：以下为早期候选计划历史。权威计划在[auth 63节点DAG](https://github.com/lirji/auth-platform/tree/main/docs/design/oa-auth-unification)。P3已交付；本轮P5商品查询/受控资料修改及外部门店合作限时导出已实现，通过真实MySQL/OA/浏览器验收；P507正在汇总最终运行证据和Git/CI交付。Q-EXT已确认门店/商家协作，不实现供应商订单。最终状态见[auth进度](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/PROGRESS_STATE.md)和本仓phase-5测试报告；P6前停止，无生产部署。下方历史TODO不覆盖本段。
 
 # 企业 IAM 整体接入计划进度
 

@@ -36,10 +36,17 @@ export function session() {
   if (!initialization)
     initialization =
       location.pathname === "/iam/callback"
-        ? manager.signinRedirectCallback().then((user) => {
-            history.replaceState(null, "", safeReturn(user.state));
-            return user;
-          })
+        ? manager
+            .signinRedirectCallback()
+            .then((user) => {
+              history.replaceState(null, "", safeReturn(user.state));
+              return user;
+            })
+            .catch((error) => {
+              // 失败回调同样清除授权码，不将一次性凭据残留在地址栏。
+              history.replaceState(null, "", "/operations/products");
+              throw error;
+            })
         : manager.getUser();
   return initialization;
 }

@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { ProductExport } from "./ProductExport";
 import type { User } from "oidc-client-ts";
 import { enabled, login, manager, session } from "./session";
-import { central, CentralError, useCentral, type Context } from "./api";
+import { central, CentralError, HTTP, useCentral, type Context } from "./api";
 
 type Product = {
   resourceId: string;
@@ -38,6 +38,11 @@ function ErrorView({ error }: { error?: Error }) {
     <Alert
       type="error"
       showIcon
+      action={
+        error instanceof CentralError && error.status === HTTP.UNAUTHORIZED ? (
+          <Button onClick={() => void login()}>重新登录</Button>
+        ) : undefined
+      }
       title={error.message}
       description={
         error instanceof CentralError
@@ -77,7 +82,7 @@ export function CentralProducts() {
     return (
       <div className="central-products">
         <Card title="商城统一身份登录">
-          <ErrorView error={error} />
+          {error && <Alert type="error" showIcon title={error.message} />}
           <p>使用企业身份进入已授权门店。</p>
           <Button
             type="primary"
@@ -115,6 +120,31 @@ function Products({
     () => new URLSearchParams(location.search),
   );
   const [revision, setRevision] = useState(0);
+  const dirty = useRef(false);
+  const { modal } = App.useApp();
+  const guard = (action: () => void) => {
+    if (!dirty.current) return action();
+    modal.confirm({
+      title: "放弃未保存的商品修改？",
+      content: "结果未知的命令应先原样重试确认；离开后将丢失本次表单。",
+      okText: "放弃修改",
+      cancelText: "继续编辑",
+      onOk: () => {
+        dirty.current = false;
+        action();
+      },
+    });
+  };
+  useEffect(() => {
+    const protect = (event: BeforeUnloadEvent) => {
+      if (dirty.current) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    addEventListener("beforeunload", protect);
+    return () => removeEventListener("beforeunload", protect);
+  }, []);
   useEffect(() => {
     const sync = () => setParams(new URLSearchParams(location.search));
     addEventListener("popstate", sync);
@@ -148,7 +178,7 @@ function Products({
             查看已授权门店商品，修改权限按商品实时核验。
           </Typography.Text>
         </div>
-        <Button onClick={onLogout}>退出本应用</Button>
+        <Button onClick={() => guard(() => void onLogout())}>退出本应用</Button>
       </Space>
       <Card>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
@@ -165,7 +195,9 @@ function Products({
               }
               style={{ width: 280 }}
             />
-            <Button onClick={() => setRevision((v) => v + 1)}>刷新商品</Button>
+            <Button onClick={() => guard(() => setRevision((v) => v + 1))}>
+              刷新商品
+            </Button>
           </Space>
           <ErrorView error={page.error} />
           <Typography.Text>
@@ -243,7 +275,7 @@ function Products({
         title="商品资料"
         size="large"
         destroyOnHidden
-        onClose={() => navigate({ product: null })}
+        onClose={() => guard(() => navigate({ product: null }))}
       >
         {selected && (
           <ProductDetail
@@ -251,7 +283,10 @@ function Products({
             context={context}
             id={selected}
             revision={revision}
-            refresh={() => setRevision((v) => v + 1)}
+            refresh={() => guard(() => setRevision((v) => v + 1))}
+            markDirty={(value) => {
+              dirty.current = value;
+            }}
           />
         )}
       </Drawer>
@@ -263,11 +298,13 @@ function ProductDetail({
   id,
   revision,
   refresh,
+  markDirty,
 }: {
   context: Context;
   id: string;
   revision: number;
   refresh: () => void;
+  markDirty: (value: boolean) => void;
 }) {
   const data = useCentral<Product>(
     context,
@@ -305,7 +342,9 @@ function ProductDetail({
             key={`${id}:${row.resourceVersion}`}
             context={context}
             row={row}
+            markDirty={markDirty}
             onDone={() => {
+              markDirty(false);
               setEdit(false);
               refresh();
             }}
@@ -326,9 +365,11 @@ function EditProduct({
   context,
   row,
   onDone,
+  markDirty,
 }: {
   context: Context;
   row: Product;
+  markDirty: (value: boolean) => void;
   onDone: () => void;
 }) {
   const [form] = Form.useForm();
@@ -370,7 +411,13 @@ function EditProduct({
     }
   }
   return (
-    <Form form={form} layout="vertical" initialValues={row} onFinish={submit}>
+    <Form
+      form={form}
+      layout="vertical"
+      initialValues={row}
+      onValuesChange={() => markDirty(true)}
+      onFinish={submit}
+    >
       <ErrorView error={error} />
       {(["title", "category", "brand"] as const).map((name, index) => (
         <Form.Item
