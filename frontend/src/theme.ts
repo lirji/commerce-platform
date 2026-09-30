@@ -24,6 +24,17 @@ export const palette = {
   idleSoft: "#F0F3F7",
 };
 export const memberPalette = palette;
+// 经营框架与会员页面共用组件体系，但导航/画布只在 B 端作用域使用。
+export const workspacePalette = {
+  canvas: "#F3F5F2",
+  spine: "#18313D",
+  spineHover: "#254450",
+  spineText: "#C3D1D8",
+  spineActive: "#F3F6F8",
+  signal: "#BDEACF",
+};
+for (const [name, value] of Object.entries(workspacePalette))
+  document.documentElement.style.setProperty(`--workspace-${name}`, value);
 for (const [name, value] of Object.entries(palette))
   document.documentElement.style.setProperty(`--${name}`, value);
 const fontFamily =

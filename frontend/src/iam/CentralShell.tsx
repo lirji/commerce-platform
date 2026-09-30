@@ -5,11 +5,12 @@ import {
   Grid,
   Layout,
   Menu,
-  Select,
   Space,
+  Typography,
 } from "antd";
 import { useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../shared/Icon";
+import { WorkspaceBrand, WorkspaceSearch } from "../shared/WorkspaceChrome";
 import { centralGroups } from "./navigation";
 
 /** 壳层仅承载导航和视觉，原页面继续负责独立权限、凭据及未保存/未知结果保护。 */
@@ -55,14 +56,7 @@ export function CentralShell({
     <Layout className="app admin-app central-app">
       {!compact && !collaboration && (
         <Layout.Sider width={236} theme="light" className="sidebar">
-          <div className="brand">
-            <span className="brand-mark">
-              <Icon name="overview" />
-            </span>
-            <span>
-              日常经营<span className="brand-sub">COMMERCE WORKSPACE</span>
-            </span>
-          </div>
+          <WorkspaceBrand />
           <div className="nav-caption">企业经营工作空间</div>
           <nav aria-label="中央经营导航">{navigation}</nav>
           <div className="sidebar-note">
@@ -90,18 +84,15 @@ export function CentralShell({
             </strong>
           </div>
           {!collaboration && (
-            <Select
-              className="nav-search"
-              aria-label="搜索中央功能"
-              showSearch={{ optionFilterProp: "label" }}
-              value={null}
-              placeholder="查找经营功能…"
-              options={centralGroups.flatMap((g) =>
-                g.pages.map(([value, label]) => ({ value, label })),
-              )}
-              onChange={(path) => {
-                if (path) location.assign(target(path));
-              }}
+            <WorkspaceSearch
+              label="搜索中央功能"
+              groups={centralGroups.map((g) => ({
+                label: g.label,
+                pages: g.pages.map(
+                  ([target, label]) => [target, label] as const,
+                ),
+              }))}
+              onNavigate={(path) => location.assign(target(path))}
             />
           )}
           <Space className="account-context">
@@ -115,7 +106,9 @@ export function CentralShell({
         <Layout.Content className="workspace">
           <div className="organization-context">
             <span>当前组织</span>
-            <span title={tenant}>{tenant}</span>
+            <Typography.Text type="secondary" copyable={{ text: tenant }}>
+              <span title={tenant}>{tenant}</span>
+            </Typography.Text>
           </div>
           {children}
         </Layout.Content>

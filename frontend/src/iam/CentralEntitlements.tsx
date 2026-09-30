@@ -21,7 +21,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice } from "../shared/ui";
+import { ErrorNotice, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 type ResolutionInput = {
@@ -422,15 +422,12 @@ export function CentralEntitlements({
     <main className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              权益实例
-            </Typography.Title>
-            <Button onClick={logout}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="权益实例"
+            description="核对权益实例、处理结果与补偿记录。"
+            extra={<Button onClick={logout}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"

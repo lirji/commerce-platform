@@ -1,6 +1,3 @@
-import { CentralRules } from "./CentralRules";
-import { CentralEntitlementDefinitions } from "./CentralEntitlementDefinitions";
-import { CentralEntitlements } from "./CentralEntitlements";
 import {
   Alert,
   App,
@@ -15,23 +12,88 @@ import {
   Table,
   Typography,
 } from "antd";
-import { useEffect, useRef, useState } from "react";
-import { CentralCouponDefinitions } from "./CentralCouponDefinitions";
-import { CentralPointOffers } from "./CentralPointOffers";
-import { CentralPoints } from "./CentralPoints";
-import { CentralCycles } from "./CentralCycles";
-import { CentralBehavior } from "./CentralBehavior";
-import { CentralTags } from "./CentralTags";
-import { CentralGrowth } from "./CentralGrowth";
-import { CentralMembers } from "./CentralMembers";
-import { CentralDirectory } from "./CentralDirectory";
-import { CentralInventory } from "./CentralInventory";
-import { CentralCatalog } from "./CentralCatalog";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+} from "react";
+import { PageHead } from "../shared/ui";
 import { ProductExport } from "./ProductExport";
 import { CentralShell } from "./CentralShell";
 import type { User } from "oidc-client-ts";
 import { enabled, login, manager, session } from "./session";
 import { central, CentralError, HTTP, useCentral, type Context } from "./api";
+
+// 登录与单一工作区不提前下载其他中央能力；权限仍由各页面的原客户端独立核验。
+const CentralRules = lazy(() =>
+  import("./CentralRules").then((module) => ({ default: module.CentralRules })),
+);
+const CentralEntitlementDefinitions = lazy(() =>
+  import("./CentralEntitlementDefinitions").then((module) => ({
+    default: module.CentralEntitlementDefinitions,
+  })),
+);
+const CentralEntitlements = lazy(() =>
+  import("./CentralEntitlements").then((module) => ({
+    default: module.CentralEntitlements,
+  })),
+);
+const CentralCouponDefinitions = lazy(() =>
+  import("./CentralCouponDefinitions").then((module) => ({
+    default: module.CentralCouponDefinitions,
+  })),
+);
+const CentralPointOffers = lazy(() =>
+  import("./CentralPointOffers").then((module) => ({
+    default: module.CentralPointOffers,
+  })),
+);
+const CentralPoints = lazy(() =>
+  import("./CentralPoints").then((module) => ({
+    default: module.CentralPoints,
+  })),
+);
+const CentralCycles = lazy(() =>
+  import("./CentralCycles").then((module) => ({
+    default: module.CentralCycles,
+  })),
+);
+const CentralBehavior = lazy(() =>
+  import("./CentralBehavior").then((module) => ({
+    default: module.CentralBehavior,
+  })),
+);
+const CentralTags = lazy(() =>
+  import("./CentralTags").then((module) => ({ default: module.CentralTags })),
+);
+const CentralGrowth = lazy(() =>
+  import("./CentralGrowth").then((module) => ({
+    default: module.CentralGrowth,
+  })),
+);
+const CentralMembers = lazy(() =>
+  import("./CentralMembers").then((module) => ({
+    default: module.CentralMembers,
+  })),
+);
+const CentralDirectory = lazy(() =>
+  import("./CentralDirectory").then((module) => ({
+    default: module.CentralDirectory,
+  })),
+);
+const CentralInventory = lazy(() =>
+  import("./CentralInventory").then((module) => ({
+    default: module.CentralInventory,
+  })),
+);
+const CentralCatalog = lazy(() =>
+  import("./CentralCatalog").then((module) => ({
+    default: module.CentralCatalog,
+  })),
+);
 
 type Product = {
   resourceId: string;
@@ -114,7 +176,7 @@ export function CentralProducts() {
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
   // 固定入口与组件一一对应，新增页面不再加深路由条件分支。
-  const pages: Record<string, typeof Products> = {
+  const pages: Record<string, ComponentType<Parameters<typeof Products>[0]>> = {
     "/operations/rules": CentralRules,
     "/operations/entitlement-definitions": CentralEntitlementDefinitions,
     "/operations/entitlements": CentralEntitlements,
@@ -134,14 +196,22 @@ export function CentralProducts() {
   const Page = pages[location.pathname] ?? Products;
   return (
     <CentralShell tenant={tenant} subject={user.profile.sub}>
-      <Page
-        key={`${user.profile.sub}:${tenant}`}
-        context={{ token: user.access_token, tenant }}
-        onLogout={async () => {
-          await manager?.removeUser();
-          setUser(null);
-        }}
-      />
+      <Suspense
+        fallback={
+          <div className="page-loading">
+            <Spin description="正在加载已授权工作区" />
+          </div>
+        }
+      >
+        <Page
+          key={`${user.profile.sub}:${tenant}`}
+          context={{ token: user.access_token, tenant }}
+          onLogout={async () => {
+            await manager?.removeUser();
+            setUser(null);
+          }}
+        />
+      </Suspense>
     </CentralShell>
   );
 }
@@ -203,24 +273,26 @@ function Products({
   );
   return (
     <main className="central-products">
-      <Space className="central-heading" wrap>
-        <div>
-          <Typography.Title level={2}>
-            {location.pathname.startsWith("/collaboration")
-              ? "门店商品协作"
-              : "商品经营"}
-          </Typography.Title>
-          <Typography.Text type="secondary">
-            查看已授权门店商品，修改权限按商品实时核验。
-          </Typography.Text>
-        </div>
-        <Button onClick={() => guard(() => void onLogout())}>退出本应用</Button>
-      </Space>
+      <PageHead
+        eyebrow={
+          location.pathname.startsWith("/collaboration")
+            ? "门店协作"
+            : "企业经营"
+        }
+        title={
+          location.pathname.startsWith("/collaboration")
+            ? "门店商品协作"
+            : "商品经营"
+        }
+        description="查看已授权门店商品，修改权限按商品实时核验。"
+        extra={
+          <Button onClick={() => guard(() => void onLogout())}>
+            退出本应用
+          </Button>
+        }
+      />
       <Card>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
           <Space wrap>
             <Input.Search
               aria-label="搜索商品"

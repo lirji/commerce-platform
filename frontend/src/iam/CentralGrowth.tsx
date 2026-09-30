@@ -20,7 +20,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice } from "../shared/ui";
+import { ErrorNotice, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Action = {
@@ -724,15 +724,12 @@ export function CentralGrowth({
     <main className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              会员成长
-            </Typography.Title>
-            <Button onClick={logout}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="会员成长"
+            description="查询成长政策与记录，按独立权限执行调整。"
+            extra={<Button onClick={logout}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"

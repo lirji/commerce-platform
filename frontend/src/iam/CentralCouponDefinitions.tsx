@@ -21,7 +21,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice } from "../shared/ui";
+import { ErrorNotice, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Issuance = { PUBLIC: "PUBLIC", SOURCE_ONLY: "SOURCE_ONLY" } as const;
@@ -595,15 +595,12 @@ export function CentralCouponDefinitions({
     <main className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              优惠券定义
-            </Typography.Title>
-            <Button onClick={logout}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="优惠券定义"
+            description="维护券定义、适用范围与发布版本。"
+            extra={<Button onClick={logout}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"

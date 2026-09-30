@@ -1,0 +1,994 @@
+/* B端统一构图：框架退后、任务与业务事实优先，中央页共享同一主题。 */
+.admin-app {
+  min-height: 100vh;
+  --canvas: var(--workspace-canvas);
+}
+.admin-app .sidebar {
+  border: 0;
+  background: var(--workspace-spine);
+}
+.admin-app .sidebar .brand {
+  padding: 30px 22px 32px;
+  color: #fff;
+}
+.admin-app .sidebar .brand-sub {
+  color: var(--workspace-spineText);
+  font-size: 9px;
+  letter-spacing: 1.1px;
+}
+.admin-app .sidebar .nav-caption {
+  color: var(--workspace-spineText);
+  padding-inline: 24px;
+  font-size: 11px;
+}
+.admin-app .sidebar .ant-menu {
+  background: transparent;
+  color: var(--workspace-spineText);
+}
+.admin-app .sidebar .ant-menu-item,
+.admin-app .sidebar .ant-menu-submenu-title {
+  border-radius: 6px;
+  color: var(--workspace-spineText);
+}
+.admin-app .sidebar .ant-menu-submenu-open > .ant-menu-submenu-title {
+  color: #fff;
+}
+.admin-app .sidebar .ant-menu-item:not(.ant-menu-item-selected):hover,
+.admin-app .sidebar .ant-menu-submenu-title:hover {
+  background: var(--workspace-spineHover);
+  color: #fff;
+}
+.admin-app .sidebar .ant-menu-item-selected {
+  background: var(--workspace-spineActive);
+  color: var(--ink);
+  font-weight: 600;
+}
+.admin-app .sidebar .sidebar-note {
+  border-color: #38505b;
+  color: var(--workspace-spineText);
+  font-size: 12px;
+  margin-top: 36px;
+}
+.admin-app .sidebar a {
+  color: inherit;
+}
+.workspace-brand .brand-mark svg {
+  width: 28px;
+  height: 28px;
+}
+.workspace-search {
+  position: relative;
+  min-width: 0;
+}
+.workspace-search kbd {
+  position: absolute;
+  right: 25px;
+  top: 12px;
+  color: var(--muted);
+  font-size: 10px;
+  pointer-events: none;
+  font-family: inherit;
+}
+.workspace-search .ant-select-focused + kbd {
+  display: none;
+}
+.workspace-search .ant-select-input {
+  padding-right: 62px;
+}
+.admin-app .topbar {
+  background: var(--surface);
+  padding-inline: 28px;
+}
+.admin-app .workspace {
+  padding: 36px 32px;
+}
+.admin-app .workspace .ant-card {
+  border-color: var(--line);
+}
+.admin-app .workspace .ant-tabs-tab {
+  padding-block: 14px;
+}
+.admin-app .page-head .ant-typography-secondary {
+  font-size: 14px;
+  max-width: 760px;
+  display: block;
+}
+.admin-app .page-head h1 {
+  font-size: 30px !important;
+  letter-spacing: -1px;
+}
+.admin-app .page-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-app .page-eyebrow::before {
+  content: "";
+  width: 16px;
+  height: 2px;
+  background: var(--accent);
+}
+.admin-app .list-panel {
+  box-shadow: 0 2px 6px #18313d03;
+}
+.admin-app .list-panel .ant-table-tbody > tr > td {
+  background: var(--surface);
+}
+.admin-app .list-panel .ant-table-tbody > tr:hover > td {
+  background: var(--raised);
+}
+.admin-app .ant-table-cell-fix-right {
+  box-shadow: -1px 0 0 var(--line);
+}
+.record-drawer .ant-drawer-header {
+  border-bottom-color: var(--line);
+  padding: 24px;
+}
+.record-drawer .ant-drawer-title {
+  font-size: 20px;
+  letter-spacing: -0.4px;
+}
+.record-drawer .ant-drawer-footer {
+  background: var(--raised);
+}
+.record-drawer .ant-descriptions-item-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.record-drawer .ant-descriptions-bordered .ant-descriptions-view {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.admin-app .footer {
+  padding-top: 28px !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dashboard-shortcut {
+    transition:
+      border-color 140ms ease,
+      background 140ms ease;
+  }
+}
+.admin-app > .ant-layout {
+  background: var(--canvas);
+}
+.admin-app .workspace {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+}
+.admin-app .brand-mark {
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  background: var(--accent);
+}
+.admin-app .page-head {
+  align-items: flex-start;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-app .page-head h1 {
+  margin: 0 0 9px;
+  font-size: 26px;
+  line-height: 1.35;
+  letter-spacing: -0.7px;
+  font-weight: 650;
+}
+.admin-app .page-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+.workspace-location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.workspace-location span {
+  color: var(--muted);
+}
+.workspace-location span::after {
+  content: "/";
+  padding-left: 10px;
+  color: var(--line);
+}
+.workspace-location strong {
+  font-weight: 550;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.admin-app .nav-search {
+  width: 230px;
+}
+.admin-app .topbar {
+  gap: 16px;
+}
+.admin-app .ant-tabs-top > .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+.admin-app .list-panel {
+  overflow: hidden;
+  border-radius: 12px;
+}
+.admin-app .list-panel .ant-table-thead > tr > th {
+  height: 46px;
+  font-size: 12px;
+  letter-spacing: 0.1px;
+}
+.admin-app .ant-table-cell {
+  font-size: 14px;
+}
+.admin-app .ant-table-cell.ant-table-cell-row-hover {
+  background: var(--raised);
+}
+.admin-app .ant-table-cell[style*="text-align: right"] {
+  font-variant-numeric: tabular-nums;
+}
+.admin-app .metric-card {
+  border-top: 1px solid var(--line);
+}
+.admin-app .metric-card strong {
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+.admin-app .dashboard-shortcuts {
+  margin-top: 32px;
+}
+.organization-context {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+.organization-context span:last-child {
+  overflow-wrap: anywhere;
+}
+.organization-context > span:first-child {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.organization-context .ant-typography {
+  margin: 0;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.central-app .central-products {
+  padding: 0;
+  max-width: none;
+  min-width: 0;
+}
+.central-app .central-products > .ant-card {
+  background: transparent;
+  border: 0;
+}
+.central-app .central-products > .ant-card > .ant-card-body {
+  padding: 0;
+}
+.central-app .central-products h2 {
+  font-size: 26px;
+  line-height: 1.35;
+  letter-spacing: -0.7px;
+  font-weight: 650;
+}
+.central-app .central-products .ant-table-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.central-app .central-products .ant-table-thead > tr > th {
+  background: var(--raised);
+  color: var(--muted);
+  font-size: 12px;
+}
+.central-app .central-products .ant-space-vertical,
+.central-app .central-products .ant-space-vertical > .ant-space-item {
+  min-width: 0;
+  max-width: 100%;
+}
+.session-recovery {
+  max-width: 640px;
+  min-height: 260px;
+  margin: 15vh auto;
+  padding: 32px;
+  display: grid;
+  align-content: center;
+  gap: 20px;
+}
+.operation-panel {
+  margin-block: 24px;
+}
+.operation-panel .ant-card-head {
+  min-height: 60px;
+}
+.command-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+  max-width: 1000px;
+}
+.command-result {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
+}
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.filter-field label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.runtime-observed {
+  color: var(--muted);
+  font-size: 12px;
+  margin-block: -8px 24px;
+}
+.runtime-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+.runtime-metrics strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 30px;
+  letter-spacing: -0.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.replay-summary {
+  margin-block: 12px;
+}
+.catalog-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.catalog-thumbnail {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  overflow: hidden;
+}
+.catalog-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.operation-panel .ant-alert + .ant-alert {
+  margin-top: 12px;
+}
+@media (max-width: 1200px) {
+  .admin-app .workspace-location {
+    display: none;
+  }
+  .admin-app .nav-search {
+    width: 210px;
+  }
+}
+@media (max-width: 767px) {
+  .admin-app .topbar {
+    padding-inline: 16px;
+    gap: 8px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 64px;
+    padding-block: 12px;
+  }
+  .admin-app .workspace {
+    padding: 24px 16px;
+  }
+  .admin-app .page-head {
+    gap: 16px;
+    padding-bottom: 20px;
+  }
+  .admin-app .page-head h1 {
+    font-size: 24px;
+  }
+  .admin-app .nav-search {
+    width: 160px;
+  }
+  .workspace-search kbd {
+    display: none;
+  }
+  .admin-app .page-head h1 {
+    font-size: 26px !important;
+  }
+  .admin-app .page-head-actions {
+    justify-content: flex-start;
+  }
+  .command-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .runtime-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .runtime-metrics .ant-card-body {
+    padding: 20px 16px;
+  }
+  .runtime-metrics strong {
+    font-size: 25px;
+  }
+  .central-app .account-context {
+    margin-left: auto;
+  }
+  .operation-panel .ant-card-body {
+    padding: 20px 16px;
+  }
+}
+
+/* 总览：净收为主要信号，其余指标保留各自范围，不生成虚构同比。 */
+.admin-app .metric-grid {
+  grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.admin-app .metric-card .ant-card-body {
+  padding: 24px;
+}
+.admin-app .metric-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.admin-app .metric-label .ui-icon {
+  opacity: 0.75;
+  width: 18px;
+}
+.admin-app .metric-card strong {
+  font-size: clamp(30px, 2.5vw, 42px);
+  margin-block: 18px 12px;
+  line-height: 1.1;
+  font-weight: 550;
+}
+.admin-app .metric-note {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.admin-app .metric-featured {
+  background: var(--workspace-spine);
+  border-color: var(--workspace-spine);
+}
+.admin-app .metric-featured .metric-label,
+.admin-app .metric-featured .metric-note {
+  color: var(--workspace-spineText);
+}
+.admin-app .metric-featured strong {
+  color: #fff;
+}
+.admin-app .metric-featured .ui-icon {
+  color: var(--workspace-signal);
+  opacity: 1;
+}
+.admin-app .dashboard-main-grid {
+  grid-template-columns: minmax(0, 2.6fr) minmax(245px, 1fr);
+  gap: 20px;
+}
+.admin-app .trend-card .ant-card-head {
+  border-bottom: 0;
+}
+.admin-app .trend-card .ant-card-body {
+  padding-top: 8px;
+}
+.admin-app .trend-summary {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.daily-explorer {
+  margin-top: 20px;
+}
+.trend-readout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.trend-readout > div > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.trend-readout strong {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 30px;
+  font-weight: 550;
+  line-height: 1.5;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+.trend-readout small {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+.trend-day-orders {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.trend-day-orders b {
+  font-size: 24px;
+  font-weight: 500;
+}
+.trend-scale {
+  position: relative;
+  padding: 0 0 0 65px;
+}
+.trend-scale > span {
+  position: absolute;
+  left: 0;
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+.trend-scale > span:first-child {
+  top: -8px;
+}
+.trend-scale > span:last-child {
+  bottom: -8px;
+}
+.daily-explorer .trend-plot {
+  height: 190px;
+  margin-top: 0;
+  padding: 0;
+  border-bottom: 0;
+  background: repeating-linear-gradient(
+    to top,
+    var(--line),
+    var(--line) 1px,
+    transparent 1px,
+    transparent 25%
+  );
+}
+.trend-zero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--muted);
+  opacity: 0.5;
+  z-index: 1;
+  pointer-events: none;
+}
+.daily-explorer .trend-bars {
+  align-items: stretch;
+  gap: 3px;
+}
+.daily-explorer .trend-column {
+  display: block;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.trend-column:hover {
+  background: var(--selected);
+}
+.trend-column.is-selected {
+  background: var(--selected);
+}
+.trend-bar {
+  position: absolute;
+  width: 70%;
+  left: 15%;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  pointer-events: none;
+}
+.trend-bar.is-negative {
+  background: var(--error);
+  border-radius: 0 0 3px 3px;
+}
+.trend-day-mark {
+  position: absolute;
+  bottom: -8px;
+  left: calc(50% - 2px);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+}
+.trend-column.is-selected .trend-day-mark {
+  opacity: 1;
+}
+.daily-explorer .trend-axis {
+  padding: 18px 0 0 65px;
+}
+.daily-explorer .trend-empty {
+  pointer-events: none;
+  background: #ffffffdd;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px;
+}
+.trend-empty small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.trend-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.trend-slider {
+  min-width: 0;
+  flex: 1;
+  max-width: 250px;
+  display: flex;
+  align-items: center;
+  height: 44px;
+}
+.trend-slider input {
+  width: 100%;
+  height: 44px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.trend-controls .ant-btn {
+  width: 38px;
+  height: 44px;
+}
+.trend-help {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: auto;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.state-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.state-heading .ui-icon {
+  color: var(--muted);
+  width: 17px;
+}
+.admin-app .state-card .ant-card-body {
+  padding-top: 8px;
+}
+.admin-app .state-total {
+  font-size: 40px;
+  font-weight: 500;
+  margin-block: 16px 20px;
+}
+.admin-app .state-track {
+  height: 4px;
+}
+.admin-app .shortcut-grid {
+  gap: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.admin-app .dashboard-shortcut {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 20px 16px;
+}
+.admin-app .dashboard-shortcut + .dashboard-shortcut {
+  border-left: 1px solid var(--line);
+}
+.admin-app .dashboard-shortcut > span {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+}
+.admin-app .dashboard-shortcut:hover {
+  background: var(--surface);
+}
+.admin-app .dashboard-shortcut small {
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .admin-app .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-app .dashboard-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 767px) {
+  .admin-app .metric-card .ant-card-body {
+    padding: 20px 16px;
+  }
+  .admin-app .metric-card strong {
+    font-size: 30px;
+    margin-block: 14px 12px;
+  }
+  .admin-app .metric-label {
+    font-size: 12px;
+    gap: 8px;
+  }
+  .admin-app .metric-note {
+    font-size: 11px;
+  }
+  .admin-app .trend-summary {
+    gap: 8px 16px;
+  }
+  .daily-explorer .trend-plot {
+    height: 170px;
+  }
+  .trend-readout strong {
+    font-size: 28px;
+  }
+  .trend-day-orders {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .trend-scale {
+    padding-left: 58px;
+  }
+  .daily-explorer .trend-axis {
+    padding-left: 58px;
+  }
+  .daily-explorer .trend-axis > span:nth-child(2) {
+    display: none;
+  }
+  .daily-explorer .trend-bars {
+    gap: 1px;
+  }
+  .trend-help {
+    display: none;
+  }
+  .trend-slider {
+    max-width: none;
+  }
+  .admin-app .shortcut-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-app .dashboard-shortcut {
+    padding: 16px 10px;
+    gap: 8px;
+  }
+  .admin-app .dashboard-shortcut:nth-child(3) {
+    border-left: 0;
+  }
+  .admin-app .dashboard-shortcut:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+  .admin-app .dashboard-shortcut .shortcut-arrow {
+    display: none;
+  }
+}
+
+.record-identity {
+  margin-bottom: 24px;
+  background: var(--raised);
+}
+.record-identity-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.record-identity-heading h3 {
+  margin: 8px 0 !important;
+  font-size: 24px !important;
+}
+.record-facts {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 20px;
+}
+.record-facts span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.record-facts strong {
+  font-size: 16px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.record-facts > div:last-child strong {
+  font-size: 14px;
+}
+@media (max-width: 767px) {
+  .record-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .record-facts > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* 版本关系图表达真实节点连线，颜色仅表示选择，无执行状态含义。 */
+.journey-map-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+.journey-map-heading strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+.journey-map-heading span,
+.journey-map-help {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.journey-map-scroll {
+  max-height: 480px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background-color: var(--raised);
+  background-image: radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.journey-board {
+  position: relative;
+  margin-inline: auto;
+}
+.journey-board > svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.journey-edge {
+  color: var(--muted);
+}
+.journey-edge > path {
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+.journey-edge text {
+  fill: var(--muted);
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: var(--raised);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+.journey-edge.is-active {
+  color: var(--accent);
+}
+.journey-edge.is-active > path {
+  stroke-width: 2;
+}
+.journey-map-node {
+  position: absolute;
+  width: 188px;
+  height: 108px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  box-shadow: 0 2px 4px #18313d06;
+}
+.journey-map-node:hover {
+  border-color: var(--muted);
+}
+.journey-map-node.is-selected {
+  border: 2px solid var(--accent);
+  padding: 13px;
+  box-shadow: 0 0 0 3px var(--selected);
+}
+.journey-map-node.is-end {
+  border-style: dashed;
+}
+.journey-node-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.journey-node-top .ui-icon {
+  width: 15px;
+  height: 15px;
+}
+.journey-node-top small {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 11px;
+}
+.journey-map-node strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.journey-node-caption {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.journey-node-detail {
+  margin-top: 20px;
+}
+.journey-map {
+  container-type: inline-size;
+}
+.journey-map-content {
+  min-width: 0;
+}
+@container (min-width: 860px) {
+  .journey-map-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
+    align-items: start;
+  }
+  .journey-node-detail {
+    margin-top: 0;
+    max-height: 480px;
+    overflow: auto;
+  }
+  .journey-node-detail .record-fields {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .journey-map-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .journey-map-scroll {
+    max-height: 400px;
+  }
+}

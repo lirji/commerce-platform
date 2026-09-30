@@ -43,6 +43,7 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
   for (const path of centralRoutes) {
     await page.goto(`${base}${path}?tenant_id=${tenant}&store_id=store-ui`);
     await expect(page.locator(".central-app")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     await expect(page.getByRole("button", { name: /退出/ })).toBeVisible();
     await expect(page.locator(".ant-spin-spinning")).toHaveCount(0);
     await page.screenshot({

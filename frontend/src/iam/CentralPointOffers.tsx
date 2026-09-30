@@ -21,7 +21,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice } from "../shared/ui";
+import { ErrorNotice, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const OfferStatus = { ACTIVE: "ACTIVE", INACTIVE: "INACTIVE" } as const;
@@ -631,15 +631,12 @@ export function CentralPointOffers({
     <main className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              积分兑换商品
-            </Typography.Title>
-            <Button onClick={logout}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="积分兑换商品"
+            description="配置积分兑换标的，确认扣减与补偿边界。"
+            extra={<Button onClick={logout}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"

@@ -25,6 +25,7 @@ import {
 import { hasUnconfirmedCommand } from "../shared/useIntent";
 import { ErrorNotice } from "../shared/ui";
 import { Icon, type IconName } from "../shared/Icon";
+import { WorkspaceBrand, WorkspaceSearch } from "../shared/WorkspaceChrome";
 import { memberTheme } from "../theme";
 // 按业务页面加载，登录和总览不下载所有经营表单。
 const Orders = lazy(() =>
@@ -560,15 +561,14 @@ export function App() {
     <Layout className={admin ? "app admin-app" : "app member-app"}>
       {admin && !compact && (
         <Layout.Sider width={236} theme="light" className="sidebar">
-          <div className="brand">
-            <span className="brand-mark">
-              <Icon name="overview" />
-            </span>
-            <span>
-              日常经营<span className="brand-sub">COMMERCE WORKSPACE</span>
-            </span>
+          <WorkspaceBrand />
+          <div className="nav-caption">
+            {platform
+              ? "运行健康工作空间"
+              : operator
+                ? "门店经营工作空间"
+                : "经营工作空间"}
           </div>
-          <div className="nav-caption">经营工作空间</div>
           <Menu
             aria-label="经营导航"
             mode="inline"
@@ -579,9 +579,17 @@ export function App() {
             onClick={({ key }) => navigate(key)}
           />
           <div className="sidebar-note">
-            会员 · 商品 · 营销
+            {platform
+              ? "跨租户聚合 · 只读指标"
+              : operator
+                ? "门店商品 · 授权经营"
+                : "会员 · 商品 · 营销"}
             <br />
-            让每一次经营都有据可循
+            {platform
+              ? "从运行事实发现问题"
+              : operator
+                ? "操作范围由业务权限核验"
+                : "让每一次经营都有据可循"}
           </div>
         </Layout.Sider>
       )}
@@ -630,17 +638,18 @@ export function App() {
             </div>
           )}
           {admin && !operator && !platform && (
-            <Select<string | null>
-              className="nav-search"
-              aria-label="搜索功能"
-              showSearch={{ optionFilterProp: "label" }}
-              placeholder="搜索经营功能…"
-              value={null}
-              options={adminPages.map(([value, label]) => ({ value, label }))}
-              onChange={(v) => {
-                if (v) navigate(v);
-              }}
-              popupMatchSelectWidth={260}
+            <WorkspaceSearch
+              label="搜索功能"
+              groups={[
+                { label: "工作台", pages: [["dashboard", "经营总览"]] },
+                ...groups.map((g) => ({
+                  label: g.label,
+                  pages: g.children.map(
+                    ([target, label]) => [target, label] as const,
+                  ),
+                })),
+              ]}
+              onNavigate={navigate}
             />
           )}
 
@@ -728,7 +737,15 @@ export function App() {
             </div>
           ) : (
             <>
-              统一电商业务平台 <span>{actor.tenantId} · 运营管理</span>
+              统一电商业务平台{" "}
+              <span>
+                {actor.tenantId} ·{" "}
+                {platform
+                  ? "平台运维 · 只读聚合"
+                  : operator
+                    ? "门店经营"
+                    : "运营管理"}
+              </span>
             </>
           )}
         </Layout.Footer>

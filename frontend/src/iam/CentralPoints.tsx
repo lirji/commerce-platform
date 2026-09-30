@@ -21,7 +21,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice } from "../shared/ui";
+import { ErrorNotice, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Action = {
@@ -710,15 +710,12 @@ export function CentralPoints({
     <main className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              会员积分
-            </Typography.Title>
-            <Button onClick={logout}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="会员积分"
+            description="查询会员积分、账本与独立授权的积分操作。"
+            extra={<Button onClick={logout}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"

@@ -5,7 +5,16 @@ import {
   CatalogJobs,
   ChannelPrices,
 } from "./CatalogScheduling";
-import { Alert, Button, Space, Table, Tabs } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Grid,
+  Space,
+  Table,
+  Tabs,
+  Typography,
+} from "antd";
 import { Icon } from "../shared/Icon";
 import {
   BarcodeEditor,
@@ -69,7 +78,14 @@ const skuFields: Field[] = [
 ];
 
 /** 操作入口相同，但每次请求由服务端重新判断实际门店授权。 */
-export function ProductOperations({ store }: { store: string }) {
+export function ProductOperations({
+  store,
+  embedded = false,
+}: {
+  store: string;
+  embedded?: boolean;
+}) {
+  const compact = Grid.useBreakpoint().md === false;
   const [tab, setTab] = useRouteState("tab", "sku");
   const [batch, setBatch] = useState<Sku[]>([]);
   const [channelSku, setChannelSku] = useState<Sku>();
@@ -113,11 +129,13 @@ export function ProductOperations({ store }: { store: string }) {
   if (!store) return <Alert type="info" title="请先选择有经营权限的门店" />;
   return (
     <Workbench>
-      <PageHead
-        eyebrow="商品与门店"
-        title="商品经营"
-        description="商品、规格、价格与上下架。历史报价保留原价格，修订需填写原因。"
-      />
+      {!embedded && (
+        <PageHead
+          eyebrow="商品与门店"
+          title="商品经营"
+          description="商品、规格、价格与上下架。历史报价保留原价格，修订需填写原因。"
+        />
+      )}
       <ErrorNotice error={products.error} />
       <ErrorNotice error={skus.error} />
       <Tabs
@@ -167,7 +185,7 @@ export function ProductOperations({ store }: { store: string }) {
                   dataSource={skus.data}
                   loading={skus.loading}
                   pagination={false}
-                  scroll={{ x: 1200 }}
+                  scroll={{ x: 1150 }}
                   columns={[
                     {
                       title: "商品",
@@ -221,7 +239,8 @@ export function ProductOperations({ store }: { store: string }) {
                     { title: "版本", dataIndex: "revision", width: 64 },
                     {
                       title: "操作",
-                      width: 320,
+                      width: 230,
+                      fixed: compact ? undefined : "right",
                       className: "row-actions-cell",
                       render: (_, r) => (
                         <RowActions>
@@ -387,15 +406,53 @@ export function ProductOperations({ store }: { store: string }) {
         onClose={() => setSelected(undefined)}
         size="large"
       >
+        {selected && (
+          <Card className="record-identity" variant="borderless">
+            <div className="record-identity-heading">
+              <div>
+                <span className="page-eyebrow">销售规格 / 修订审计</span>
+                <Typography.Title level={3}>{selected.title}</Typography.Title>
+                <Typography.Text type="secondary" copyable>
+                  {selected.skuId}
+                </Typography.Text>
+              </div>
+              <Status value={selected.status} />
+            </div>
+            <div className="record-facts">
+              <div>
+                <span>列表售价</span>
+                <strong>{money(selected.unitPrice)}</strong>
+              </div>
+              <div>
+                <span>列表版本</span>
+                <strong>v{selected.revision}</strong>
+              </div>
+              <div>
+                <span>销售规格</span>
+                <strong>
+                  {selected.specifications
+                    .map((spec) => `${spec.name}：${spec.value}`)
+                    .join(" / ") || "—"}
+                </strong>
+              </div>
+            </div>
+          </Card>
+        )}
         <ErrorNotice error={history.error} />
         <Table<Revision>
           rowKey="revision"
           dataSource={history.data}
+          scroll={{ x: 780 }}
           loading={history.loading}
           pagination={false}
           columns={[
             { title: "版本", dataIndex: "revision" },
-            { title: "售价", dataIndex: "unitPrice", render: money },
+            {
+              title: "售价",
+              dataIndex: "unitPrice",
+              align: "right",
+              render: money,
+            },
             {
               title: "状态",
               dataIndex: "status",

@@ -18,7 +18,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice } from "../shared/ui";
+import { ErrorNotice, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 type Stock = {
@@ -121,17 +121,16 @@ export function CentralInventory({
     <main className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              库存额度
-            </Typography.Title>
-            <Button onClick={() => leave(() => void onLogout())}>
-              退出登录
-            </Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="库存额度"
+            description="核对门店库存与作业事实，独立核验调整权限。"
+            extra={
+              <Button onClick={() => leave(() => void onLogout())}>
+                退出登录
+              </Button>
+            }
+          />
           {expired ? (
             <Alert
               type="warning"

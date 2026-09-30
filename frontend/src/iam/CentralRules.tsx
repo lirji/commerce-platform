@@ -22,7 +22,7 @@ import {
 } from "../shared/api";
 import type { Rule } from "../shared/contracts";
 import { RuleEditor, RuleSummary } from "../shared/marketing";
-import { ErrorNotice } from "../shared/ui";
+import { ErrorNotice, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 type RuleContent = {
@@ -471,15 +471,12 @@ export function CentralRules({
           style={{ width: "100%" }}
           styles={{ item: { minWidth: 0, maxWidth: "100%" } }}
         >
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              规则管理
-            </Typography.Title>
-            <Button onClick={logout}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="规则管理"
+            description="按独立权限维护规则版本、发布与经营条件。"
+            extra={<Button onClick={logout}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"

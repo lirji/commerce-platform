@@ -1,3 +1,4 @@
+import { PageHead } from "../shared/ui";
 import { Alert, Button, Card, Form, Input, Space, Typography } from "antd";
 import { lazy, Suspense, useMemo, useState } from "react";
 const ProductOperations = lazy(() =>
@@ -71,15 +72,12 @@ export function CentralCatalog({
     <div className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              商品经营
-            </Typography.Title>
-            <Button onClick={() => void onLogout()}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title="商品经营"
+            description="维护有经营权限的门店商品、规格与展示资料。"
+            extra={<Button onClick={() => void onLogout()}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"
@@ -141,6 +139,7 @@ export function CentralCatalog({
             <ProductOperations
               key={`${context.tenant}:${store}`}
               store={store}
+              embedded
             />
           </Suspense>
         </RequestContext.Provider>

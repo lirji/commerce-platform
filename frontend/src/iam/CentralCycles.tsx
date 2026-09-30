@@ -20,7 +20,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, time } from "../shared/ui";
+import { ErrorNotice, time, PageHead } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Family = {
@@ -229,15 +229,12 @@ export function CentralCycles({
     <main className="central-products">
       <Card>
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Space wrap>
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              {title}
-            </Typography.Title>
-            <Button onClick={logout}>退出登录</Button>
-          </Space>
-          <Typography.Text type="secondary">
-            当前组织：{context.tenant}
-          </Typography.Text>
+          <PageHead
+            eyebrow="企业经营"
+            title={title}
+            description="核对周期政策、会员考核与当前周期权益。"
+            extra={<Button onClick={logout}>退出登录</Button>}
+          />
           {expired ? (
             <Alert
               type="warning"
