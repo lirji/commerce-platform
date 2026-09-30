@@ -16,6 +16,13 @@ public class PlatformRuntimeController {
 		this.runtime = runtime;
 	}
 
+	/** 平台工作台只读取自身身份；不借租户/me入口附赠租户业务权限。 */
+	@GetMapping("/me")
+	public Actor me(@AuthenticationPrincipal Actor actor) {
+		actor.require(Actor.Capability.EVENT_RUNTIME_METRICS_READ);
+		return actor;
+	}
+
 	/** 事件与各后台车道的积压、轮转、调度延迟和告警代码，不含租户标识与载荷。 */
 	@GetMapping("/runtime")
 	public Object runtime(@AuthenticationPrincipal Actor actor) {

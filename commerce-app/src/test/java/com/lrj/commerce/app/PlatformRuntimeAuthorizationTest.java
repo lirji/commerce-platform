@@ -94,6 +94,21 @@ class PlatformRuntimeAuthorizationTest {
 	}
 
 	@Test
+	void platformIdentityDoesNotGrantTenantAccess() throws Exception {
+		String platform = token(tenant, "sre", "PLATFORM_OPERATOR");
+		assertEquals(401, get("/v1/platform/me", null).statusCode());
+		for (String role : List.of("ADMIN", "MEMBER", "OPERATOR"))
+			assertEquals(403, get("/v1/platform/me", token(tenant, "actor-" + role, role)).statusCode());
+		var response = get("/v1/platform/me", platform);
+		assertEquals(200, response.statusCode());
+		var identity = JsonCodec.read(response.body(), Map.class);
+		assertEquals("PLATFORM_OPERATOR", identity.get("role"));
+		assertEquals("sre", identity.get("actorId"));
+		assertEquals(403, get("/v1/me", platform).statusCode());
+		assertEquals(403, get("/v1/admin/runtime/work-types", platform).statusCode());
+	}
+
+	@Test
 	void platformOperatorHasNoTenantPermissions() throws Exception {
 		String platform = token(tenant, "sre", "PLATFORM_OPERATOR");
 		// 即使平台凭据归属某个租户，也不能读取或操作该租户的任何业务或管理接口。
