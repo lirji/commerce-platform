@@ -144,7 +144,7 @@ class AuthorizationCoverageTest {
 	/** 深链接仅开放静态壳，不能把同名业务API或POST作为匿名入口。 */
 	@Test
 	void centralPagesServeOnlyStaticGetShell() throws Exception {
-		for (String path : List.of("/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")) {
+		for (String path : List.of("/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")) {
 			var response = http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).GET().build(), HttpResponse.BodyHandlers.ofString());
 			assertEquals(200, response.statusCode());
 			assertTrue(response.body().contains("id=\"root\""));
