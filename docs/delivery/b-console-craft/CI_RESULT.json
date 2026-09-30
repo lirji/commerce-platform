@@ -1,0 +1,57 @@
+{
+  "protocol": "skill-contract/v1",
+  "skill": "ci-cd-gate",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "ref": {
+    "type": "commit",
+    "value": "5009180691fe7737ad9ac4ddca1d211e09c88589"
+  },
+  "run": {
+    "id": 36718762851,
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36718762851",
+    "conclusion": "success"
+  },
+  "checks": [
+    {
+      "name": "Build and verify real MySQL semantics",
+      "required": true,
+      "result": "PASS",
+      "evidence": "https://github.com/lirji/commerce-platform/actions/runs/36718762851"
+    },
+    {
+      "name": "Audit frontend dependencies",
+      "required": true,
+      "result": "PASS",
+      "evidence": "https://github.com/lirji/commerce-platform/actions/runs/36718762851"
+    },
+    {
+      "name": "Start packaged application",
+      "required": true,
+      "result": "PASS",
+      "evidence": "https://github.com/lirji/commerce-platform/actions/runs/36718762851"
+    },
+    {
+      "name": "Real browser commerce acceptance",
+      "required": true,
+      "result": "PASS",
+      "evidence": "https://github.com/lirji/commerce-platform/actions/runs/36718762851"
+    }
+  ],
+  "results": {
+    "backendTests": 470,
+    "backendSkipped": 5,
+    "backendFailures": 0,
+    "backendErrors": 0,
+    "browserPassed": 41,
+    "browserSkipped": 1,
+    "browserUnexpected": 0,
+    "browserFlaky": 0
+  },
+  "limitations": [
+    "5个显式性能实验跳过",
+    "CI中央边界用例未启用独立IAM入口；本地三浏览器17入口补证",
+    "外部获奖认可/生产部署不是CI事实"
+  ],
+  "blockers": []
+}

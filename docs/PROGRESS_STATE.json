@@ -20,18 +20,26 @@
     "otherEnginesPassed": 22,
     "realBusinessPassed": 19,
     "httpChecks": 18,
-    "review": "PASS_WITH_LIMITATIONS"
+    "review": "PASS_WITH_LIMITATIONS",
+    "ci": "PASS",
+    "backendCases": 470,
+    "backendSkipped": 5,
+    "ciBrowserPassed": 41,
+    "ciBrowserSkipped": 1
   },
   "evidence": [
     "docs/delivery/b-console-craft/TEST_RESULT.md",
     "docs/delivery/b-console-craft/REVIEW.md"
   ],
   "delivery": {
-    "result": "PENDING",
-    "resultRef": "docs/delivery/b-console-craft/DELIVERY_RESULT.json"
+    "result": "PASS",
+    "resultRef": "docs/delivery/b-console-craft/DELIVERY_RESULT.json",
+    "sourceCommit": "5009180691fe7737ad9ac4ddca1d211e09c88589",
+    "sourceCI": "https://github.com/lirji/commerce-platform/actions/runs/36718762851",
+    "reportHeadPolicy": "最终报告提交自身CI在忽略的.local/b-console-craft/ci-final-status.json及远程精确HEAD核对"
   },
   "previousProgressState": "docs/delivery/b-console-craft/PREVIOUS_PROGRESS_STATE.json",
-  "next": "按逻辑单元提交、正常合并推送main并核对当前HEAD完整CI",
+  "next": "产品及交付记录完成；核对最后报告HEAD完整CI与工作区后结束，不执行生产部署",
   "deployment": "NOT_EXECUTED",
   "limitations": [
     "外部奖项认可未验证",

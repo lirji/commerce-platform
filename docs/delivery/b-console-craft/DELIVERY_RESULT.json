@@ -1,0 +1,66 @@
+{
+  "protocol": "skill-contract/v1",
+  "skill": "task-git-delivery",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "scope": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05"
+  ],
+  "sourceFingerprint": "aacaaa4dc4e552ad3e6c1090d7dcc1e8a31e89d3507d29d48595ca430b5a72f1",
+  "branch": "refactor/b-console-design-craft",
+  "sourceCommit": "5009180691fe7737ad9ac4ddca1d211e09c88589",
+  "commits": [
+    {
+      "id": "7eed21083a1d56765f4f22a2d55803c10d7900ab",
+      "message": "refactor(console): 统一经营工作区并按页加载中央能力"
+    },
+    {
+      "id": "b1b27fb074aba1f1684460bcae10df0718dfb9cf",
+      "message": "feat(console): 用真实金额提供正负趋势和日期探索"
+    },
+    {
+      "id": "943394c019c326cc78f0d3b178a13ba04a756d4c",
+      "message": "feat(console): 直观核对旅程版本的分支和节点事实"
+    },
+    {
+      "id": "5009180691fe7737ad9ac4ddca1d211e09c88589",
+      "message": "docs(console): 记录品质迭代和真实验证边界"
+    }
+  ],
+  "merge": {
+    "result": "PASS",
+    "mode": "ff-only",
+    "target": "main"
+  },
+  "push": {
+    "result": "PASS",
+    "remote": "origin",
+    "branch": "main"
+  },
+  "ci": {
+    "result": "PASS",
+    "ref": "5009180691fe7737ad9ac4ddca1d211e09c88589",
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36718762851",
+    "resultRef": "docs/delivery/b-console-craft/CI_RESULT.json"
+  },
+  "reportHeadPolicy": "本报告提交自身的最终CI在.local/b-console-craft/ci-final-status.json及远程当前HEAD核对；不将sourceCommit成功冒充后续HEAD成功",
+  "excludedDirtyPaths": [],
+  "pr": "NOT_EXECUTED",
+  "tag": "NOT_EXECUTED",
+  "release": "NOT_EXECUTED",
+  "deployment": "NOT_EXECUTED",
+  "worktrees": {
+    "created": [],
+    "existingDetached": "/Users/liruijun/personal/LLM/auth-platform/.local/p0-baselines/commerce，其他任务干净工作树保留"
+  },
+  "retention": {
+    ".local/b-console-craft": "原始截图/失败与修正/CI证据及私有种子凭据，需保留，未删除",
+    "frontend/dist": "8614生产包本地预览使用",
+    "frontend/node_modules": "构建依赖保留"
+  },
+  "blockers": []
+}

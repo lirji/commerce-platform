@@ -11,6 +11,8 @@ B端接口匹配、刷新恢复及Awwwards/Webby/FWA品质追求，持续完善�
 - 构建/格式通过；Chromium19、Firefox/WebKit22、真实业务19、真实HTTP18通过；29管理和17中央入口及手机/详情实际截图复查。
 - 设计/实施/测试/修订证据：docs/design/b-console-craft/PLAN.md及docs/delivery/b-console-craft/。
 
+- 四次逻辑提交正常合并推送main；产品HEAD 5009180完整CI成功：后端470例（5跳过）、浏览器41通过（1条件跳过）、0失败。CI_RESULT/DELIVERY_RESULT已记录。
+
 ## 已修改文件
 
 - frontend/src/{app,features,iam,shared}相关B端页面与通用壳层、theme/style/workspace/main。
@@ -19,8 +21,7 @@ B端接口匹配、刷新恢复及Awwwards/Webby/FWA品质追求，持续完善�
 
 ## 未完成
 
-- 按逻辑单元提交，正常合并推送main。
-- 验证本轮当前HEAD完整CI并记录实际交付结果。
+- 产品范围无未完成项；最后报告HEAD的CI实际结果以 .local/b-console-craft/ci-final-status.json 和远程精确HEAD为准。失败时从该处恢复。
 
 ## 当前问题
 
@@ -30,8 +31,8 @@ B端接口匹配、刷新恢复及Awwwards/Webby/FWA品质追求，持续完善�
 
 ## 下一步建议
 
-1. 读取TEST_RESULT和源码指纹，按C01/C03、C02、C05及文档逻辑提交。
-2. 正常合并推送main，检查精确HEAD完整CI；完善DELIVERY_RESULT和进度。
+1. 核对最后报告HEAD CI；若已成功且工作区干净，本轮无需继续修改。
+2. .local/b-console-craft/ci-final-status.json绑定最后报告HEAD和实际结果；失败时修复实际失败，保留既有证据。
 3. 核查工作区/旧工作树，不丢弃用户内容，不强推。
 
 ## 恢复 Prompt
