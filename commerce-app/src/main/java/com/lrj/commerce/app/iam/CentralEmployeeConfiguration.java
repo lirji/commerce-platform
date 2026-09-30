@@ -46,6 +46,10 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_DIRECTORY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_CREATE;
         }
+        if ("GET".equals(r.getMethod())) {
+            if ("/v1/operations/directory/merchants/create-access".equals(path)) return EmployeeAccess.Capability.MERCHANT_CREATE;
+            if ("/v1/operations/directory/stores/create-access".equals(path)) return EmployeeAccess.Capability.STORE_CREATE;
+        }
         return null;
     }
     private static final class EmployeeFilter extends OncePerRequestFilter {

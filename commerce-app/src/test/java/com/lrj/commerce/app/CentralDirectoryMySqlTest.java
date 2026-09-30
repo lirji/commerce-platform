@@ -119,6 +119,20 @@ class CentralDirectoryMySqlTest {
         forbidden(()->stores.list(admin,"",10));
         assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM merchant_record WHERE tenant_id=? AND merchant_id='NO'",Integer.class,tenant));
     }
+    /** 提示无读权限前置条件，但局部范围、旧ADMIN、撤权与故障均不能显示允许。 */
+    @Test void creationHintsRequireIndependentWholeTenantCapability() throws Exception {
+        for (String kind : List.of("merchants", "stores")) {
+            String path = "/v1/operations/directory/" + kind + "/create-access";
+            createAll.set(false);
+            assertEquals(403,http("GET",path,"valid",true,null).statusCode());
+            createAll.set(true);
+            var allowed=http("GET",path,"valid",true,null);
+            assertEquals(200,allowed.statusCode());assertTrue(allowed.body().contains("\"allowed\":true"));
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            denied.set(true);assertEquals(403,http("GET",path,"valid",true,null).statusCode());denied.set(false);
+            unavailable.set(true);assertEquals(503,http("GET",path,"valid",true,null).statusCode());unavailable.set(false);
+        }
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",centralTenant);

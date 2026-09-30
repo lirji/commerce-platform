@@ -13,6 +13,7 @@ import {
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { CentralDirectory } from "./CentralDirectory";
 import { CentralInventory } from "./CentralInventory";
 import { CentralCatalog } from "./CentralCatalog";
 import { ProductExport } from "./ProductExport";
@@ -101,11 +102,13 @@ export function CentralProducts() {
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
   const Page =
-    location.pathname === "/operations/inventory"
-      ? CentralInventory
-      : location.pathname === "/operations/catalog"
-        ? CentralCatalog
-        : Products;
+    location.pathname === "/operations/directory"
+      ? CentralDirectory
+      : location.pathname === "/operations/inventory"
+        ? CentralInventory
+        : location.pathname === "/operations/catalog"
+          ? CentralCatalog
+          : Products;
   return (
     <Page
       key={`${user.profile.sub}:${tenant}`}

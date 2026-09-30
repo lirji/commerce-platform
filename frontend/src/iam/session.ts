@@ -3,6 +3,7 @@ export const enabled = import.meta.env.VITE_IAM_ENABLED === "true";
 export const routes = [
   "/operations/products",
   "/collaboration/products",
+  "/operations/directory",
   "/operations/inventory",
   "/operations/catalog",
 ];
