@@ -15,8 +15,9 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
     private final CentralAccessClient client;
     private final CentralStoreBindingMapper bindings;
     private final EmployeeAccess access;
-    public CentralEmployeeService(CentralAccessClient client, CentralStoreBindingMapper bindings, EmployeeAccess access) {
-        this.client = client; this.bindings = bindings; this.access = access;
+    private final com.lrj.commerce.store.management.api.StoreApi stores;
+    public CentralEmployeeService(CentralAccessClient client, CentralStoreBindingMapper bindings, EmployeeAccess access, com.lrj.commerce.store.management.api.StoreApi stores) {
+        this.client = client; this.bindings = bindings; this.access = access; this.stores = stores;
     }
     /** 引用有效期有界，用例仍逐次核对Owner资源及当前Grant。 */
     public Actor authenticate(String token, String tenant, EmployeeAccess.Capability capability) {
@@ -42,6 +43,35 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
         } catch (CentralAccessException failure) {
             throw new DomainException(DomainException.Code.UNAVAILABLE, "中央员工授权暂不可用");
         } catch (AccessDeniedException failure) { throw denied(); }
+    }
+    /** 提示必须独立检查写能力；再次读取Owner与read防止身份或范围切换后返回旧动作。 */
+    public InventoryActions actions(Actor actor, String token, String tenant, String storeId) {
+        if (actor.executionId() == null || actor.role() != Actor.Role.OPERATOR) throw denied();
+        com.lrj.commerce.kernel.Identifiers.require(storeId);
+        var store = store(actor, storeId);
+        var fact = new EmployeeAccess.StoreFact(store.storeId(), store.version());
+        var before = access.require(actor, EmployeeAccess.Capability.INVENTORY_READ, fact);
+        boolean receive = false;
+        try {
+            var result = client.checkResource(token, check(tenant, EmployeeAccess.Capability.INVENTORY_RECEIVE),
+                    new Facts(tenant, RESOURCE_TYPE, fact.id(), fact.version(), null, null, List.of(), fact.id(), null));
+            var c = result.context();
+            var identity = new EmployeeAccess.Identity(c.principalId(), c.membershipId(), c.membershipGeneration());
+            receive = "ALLOW".equals(result.decision()) && identity.equals(before.identity());
+        } catch (AccessDeniedException denied) { /* 明确无写能力只隐藏按钮，依赖故障继续上抛。 */ }
+        if (!store.equals(store(actor, storeId))) throw denied();
+        var after = access.require(actor, EmployeeAccess.Capability.INVENTORY_READ, fact);
+        if (!Objects.equals(before.route(), after.route()) || !Objects.equals(before.identity(), after.identity())) throw denied();
+        return new InventoryActions(receive);
+    }
+    /** 仅返回最小动作提示，不暴露Grant与员工目录。 */
+    public record InventoryActions(boolean receive) {}
+    private com.lrj.commerce.store.management.api.StoreApi.View store(Actor actor, String storeId) {
+        try { return stores.requireActive(actor, storeId); }
+        catch (DomainException failure) {
+            if (failure.code() == DomainException.Code.NOT_FOUND) throw denied();
+            throw failure;
+        }
     }
     private Check check(String tenant, EmployeeAccess.Capability capability) {
         return new Check(tenant, null, UUID.randomUUID().toString(), capability.code(), RESOURCE_TYPE);

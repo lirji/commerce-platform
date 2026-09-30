@@ -22,8 +22,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = {"commerce.iam.store-read.enabled", "commerce.iam.employee.enabled"}, havingValue = "true")
 public class CentralEmployeeConfiguration {
-    @Bean CentralEmployeeService centralEmployeeService(CentralAccessClient client, CentralStoreBindingMapper bindings, EmployeeAccess access) {
-        return new CentralEmployeeService(client, bindings, access);
+    @Bean CentralEmployeeService centralEmployeeService(CentralAccessClient client, CentralStoreBindingMapper bindings, EmployeeAccess access, com.lrj.commerce.store.management.api.StoreApi stores) {
+        return new CentralEmployeeService(client, bindings, access, stores);
     }
     /** 独立authority不等价于ROLE_ADMIN，不能进入未登记的管理接口。 */
     @Bean @Order(-3) SecurityFilterChain centralEmployeeSecurity(HttpSecurity http, CentralEmployeeService service) throws Exception {
@@ -36,7 +36,7 @@ public class CentralEmployeeConfiguration {
     }
     private static EmployeeAccess.Capability capability(HttpServletRequest r) {
         String path = r.getRequestURI().substring(r.getContextPath().length());
-        if ("GET".equals(r.getMethod()) && "/v1/admin/inventory".equals(path)) return EmployeeAccess.Capability.INVENTORY_READ;
+        if ("GET".equals(r.getMethod()) && ("/v1/admin/inventory".equals(path) || "/v1/operations/inventory/actions".equals(path))) return EmployeeAccess.Capability.INVENTORY_READ;
         if ("POST".equals(r.getMethod()) && "/v1/admin/inventory/receipts".equals(path)) return EmployeeAccess.Capability.INVENTORY_RECEIVE;
         return null;
     }

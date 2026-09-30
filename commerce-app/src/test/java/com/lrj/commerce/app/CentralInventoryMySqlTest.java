@@ -96,6 +96,25 @@ class CentralInventoryMySqlTest {
         assertEquals(401,http("GET","/v1/admin/members","valid",true,null).statusCode());
         assertEquals(200,http("POST","/v1/admin/inventory/receipts","valid",true,new InventoryApi.Receipt("S1","SKU1",1)).statusCode());
     }
+    @Test void actionHintUsesIndependentWriteCheckAndDoesNotConcealOutage() throws Exception {
+        when(client.checkResource(anyString(), any(), any())).thenAnswer(call -> {
+            CentralAccessDtos.Check check = call.getArgument(1);
+            ScopeDtos.Facts facts = call.getArgument(2);
+            assertEquals("commerce.inventory.receive", check.capability());
+            assertEquals("S1", facts.storeId());
+            return new ResourceDecision("1", check.requestId(), check.capability(), "store", facts.resourceId(), facts.resourceVersion(), "ALLOW", id(), context(), Instant.now().plusSeconds(5).toString());
+        });
+        var allowed = http("GET", "/v1/operations/inventory/actions?storeId=S1", "valid", true, null);
+        assertEquals(200, allowed.statusCode()); assertTrue(allowed.body().contains("\"receive\":true"));
+        doThrow(new AccessDeniedException("DENY")).when(client).checkResource(anyString(), any(), any());
+        var readOnly = http("GET", "/v1/operations/inventory/actions?storeId=S1", "valid", true, null);
+        assertEquals(200, readOnly.statusCode()); assertTrue(readOnly.body().contains("\"receive\":false"));
+        assertEquals(403, http("GET", "/v1/operations/inventory/actions?storeId=S2", "valid", true, null).statusCode());
+        doThrow(new CentralAccessException(503)).when(client).checkResource(anyString(), any(), any());
+        assertEquals(503, http("GET", "/v1/operations/inventory/actions?storeId=S1", "valid", true, null).statusCode());
+        assertEquals(401, http("GET", "/v1/operations/inventory/actions?storeId=S1", "invalid", true, null).statusCode());
+        forbidden(() -> service.actions(admin, adminToken, authTenant, "S1"));
+    }
     @Test void receiptIsIdempotentButRebindingCannotReadPreviousIdentityReceipt() {
         var write=actor(EmployeeAccess.Capability.INVENTORY_RECEIVE);String key=id();var receipt=new InventoryApi.Receipt("S1","SKU1",3);
         assertEquals(13,inventory.receive(write,key,receipt).available());

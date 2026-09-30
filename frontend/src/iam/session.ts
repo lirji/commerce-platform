@@ -3,6 +3,7 @@ export const enabled = import.meta.env.VITE_IAM_ENABLED === "true";
 export const routes = [
   "/operations/products",
   "/collaboration/products",
+  "/operations/inventory",
   "/operations/catalog",
 ];
 export const manager = enabled
@@ -28,7 +29,9 @@ export function safeReturn(value: unknown) {
   for (const name of [
     "tenant_id",
     "environment",
-    ...(url.pathname === "/operations/catalog" ? ["store_id"] : []),
+    ...(["/operations/catalog", "/operations/inventory"].includes(url.pathname)
+      ? ["store_id"]
+      : []),
   ]) {
     const value = url.searchParams.get(name);
     if (value && /^[A-Za-z0-9_-]{1,100}$/.test(value))

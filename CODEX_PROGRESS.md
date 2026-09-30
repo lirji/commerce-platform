@@ -1,5 +1,13 @@
 # Codex Progress
 
+## 2026-09-29 最新恢复状态（优先于下方历史）
+
+用户已批准员工权限边界和沿用现有审批。CE03-I b7715ce及auth29052d0已合并推送main，CI36664884967/36664884469 SUCCESS。
+
+当前feat/central-inventory-ui已实现库存SSO页、独立read/receive动作提示和错误恢复。398项Java393PASS/5skip；前端build、Prettier、打包和hygiene通过（保留Java无formatter限制）。auth rehearsal-ba03baa64c88共58PASS，含库存9条浏览器细分与CATALOG9条回归。真实响应丢失同键重试仅增加一次，撤写/跨店/401/503及390视口通过，最终截图已查看。失败历史保留在auth CE03_INVENTORY.md。
+
+本片本地实现验证DONE，Git/CI交付进行中。下一片CE03-D商家门店集合/创建需补执行引用scope-plan协议；CE04—08未做。真实OA映射/Owner/截止与生产目标待定，仅阻塞对应真实动作。原8602与OA脏改动保持，无新worktree；私密配置日志不提交。专用MySQL43308保留供后续切片，P6自有PG/IdP/JVM/Vite已停止且保留数据。
+
 ## 任务目标
 
 继续商城中央授权接入。已批准完整CATALOG页面补齐；用户追加其他模块，先补能力与权限契约。员工/部门权威OA，目标先本地隔离，生产目标待定。
