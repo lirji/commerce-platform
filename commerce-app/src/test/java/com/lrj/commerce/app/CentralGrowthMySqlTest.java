@@ -146,6 +146,22 @@ class CentralGrowthMySqlTest {
         forbidden(()->growth.recalculate(actor(GROWTH_RECALCULATE),id(),"M1"));forbidden(()->growth.wallet(admin,"M1"));
         assertEquals(20,growth.current(new Actor(tenant,"customer",Actor.Role.MEMBER)).growth());
     }
+    @Test void actionHintsRemainIndependentAndNeverAcceptLegacyAdmin() throws Exception {
+        var caps = List.of(GROWTH_POLICY_PUBLISH, GROWTH_ADJUST, GROWTH_RECALCULATE);
+        var names = List.of("policy", "adjust", "recalculate");
+        allowed.remove(GROWTH_READ.code());allowed.remove(GROWTH_POLICY_READ.code());
+        for (int n=0; n<caps.size(); n++) {
+            String path = "/v1/operations/member-growth/"+names.get(n)+"-access";
+            var response = http("GET",path,"valid",true,null);
+            assertEquals(200,response.statusCode());assertTrue(response.body().contains("\"allowed\":true"));
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+            allowed.remove(caps.get(n).code());assertEquals(403,http("GET",path,"valid",true,null).statusCode());allowed.add(caps.get(n).code());
+        }
+        partial.set(true);assertEquals(403,http("GET","/v1/operations/member-growth/policy-access","valid",true,null).statusCode());partial.set(false);
+        afterScope.set(()->epoch.incrementAndGet());assertEquals(403,http("GET","/v1/operations/member-growth/adjust-access","valid",true,null).statusCode());
+        unavailable.set(true);assertEquals(503,http("GET","/v1/operations/member-growth/recalculate-access","valid",true,null).statusCode());
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);
