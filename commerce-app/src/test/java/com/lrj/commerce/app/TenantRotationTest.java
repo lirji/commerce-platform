@@ -108,6 +108,24 @@ class TenantRotationTest {
 		assertEquals(0, rotation.run(lane::tenants, lane::visit), "没有工作时整圈无尝试即结束");
 	}
 
+	/** 领取查询耗尽预算时并未尝试该租户，下一轮必须先补访问，不能让热租户抢到第二个quantum。 */
+	@Test
+	void budgetExhaustedBeforeFirstAttemptDoesNotAdvancePastSmallTenant() {
+		var lane = new Lane();
+		lane.add("a-hot", 20);
+		lane.add("b-small", 1);
+		var clock = new AtomicLong();
+		var rotation = new TenantRotation("test", new TenantRotation.Policy(10, 50, Duration.ofNanos(100), 100), clock::get);
+		rotation.run(lane::tenants, (tenant, run) -> {
+			if (tenant.equals("b-small")) clock.set(100);
+			return lane.visit(tenant, run);
+		});
+		assertEquals(10, lane.order.size());
+		rotation.run(lane::tenants, lane::visit);
+		assertEquals("b-small", lane.order.get(10), "未尝试的小租户必须在热租户第二次访问前获得处理");
+		assertEquals(0, lane.pending());
+	}
+
 	@Test
 	void newTenantBehindTheCursorIsReachedAfterWrapping() {
 		var lane = new Lane();

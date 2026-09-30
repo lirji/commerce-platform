@@ -233,12 +233,16 @@ public final class TenantRotation {
 				if (cursor.isEmpty() && tenants.size() == 1) {
 					// 全局只有一个租户有到期工作：无人竞争，连续处理到取空或预算用完，避免每个quantum重扫该租户。
 					String only = tenants.getFirst();
+					int first = run.items;
 					int before;
 					do {
 						before = run.items;
 						count += visit(only, run, visit);
 					}
 					while (run.items - before == policy.quantum() && !run.exhausted());
+					// 查询耗尽预算但未领取时不能把该租户记为已访问，下一轮先重试它。
+					if (run.items == first && run.exhausted())
+						break;
 					cursor = only;
 					rotationTenants++;
 					continue;
@@ -246,7 +250,11 @@ public final class TenantRotation {
 				for (var tenant : tenants) {
 					if (run.exhausted())
 						break;
+					int before = run.items;
 					count += visit(tenant, run, visit);
+					// 领取查询本身也耗时；零尝试时推进游标会让热租户早于小租户得到第二个quantum。
+					if (run.items == before && run.exhausted())
+						break;
 					cursor = tenant;
 					rotationTenants++;
 				}
