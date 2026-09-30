@@ -118,6 +118,13 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DEFINITION_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DEFINITION_CREATE;
         }
+        if ("/v1/admin/entitlement-definitions".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_CREATE;
+        }
+        if ("GET".equals(r.getMethod()) && "/v1/admin/entitlements".equals(path)) return EmployeeAccess.Capability.ENTITLEMENT_READ;
+        // Servlet路径已按容器规则解码，支持合法冒号标识；仍限定完整路径和业务长度。
+        if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/entitlements/[A-Za-z0-9_.:-]{1,64}/resolve")) return EmployeeAccess.Capability.ENTITLEMENT_RESOLVE;
         if ("/v1/admin/point-offers".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.POINT_OFFER_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.POINT_OFFER_DEFINE;

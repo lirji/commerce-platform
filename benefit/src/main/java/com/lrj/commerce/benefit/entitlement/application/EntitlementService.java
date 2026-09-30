@@ -11,6 +11,8 @@ import java.time.*;
 import java.util.*;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.event.Outbox;
@@ -31,37 +33,46 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 
 	private final Clock clock;
 
+	private final EmployeeAccess access;
+
 	public EntitlementService(EntitlementMapper mapper, MemberApi members, StoreApi stores, Commands commands,
-			Outbox outbox, Clock clock) {
+			Outbox outbox, Clock clock, EmployeeAccess access) {
 		this.mapper = mapper;
 		this.members = members;
 		this.stores = stores;
 		this.commands = commands;
 		this.outbox = outbox;
 		this.clock = clock;
+		this.access = access;
 	}
 
 	/** 权益窗口与单位有界，发行配额不是可变的页面配置。 */
 	public DefinitionView create(Actor actor, String key, Definition input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, ENTITLEMENT_DEFINITION_CREATE);
 		Inputs.require(input != null && input.version() > 0 && input.units() > 0 && input.units() <= 10000
 				&& input.quota() > 0 && input.quota() <= 1000000 && input.validityDays() > 0
 				&& input.validityDays() <= 365 && input.validFrom() != null && input.validTo() != null
 				&& input.validFrom().isBefore(input.validTo()), "权益定义无效");
 		Identifiers.require(input.benefitId());
 		Inputs.text(input.name(), 128);
-		return commands.run(actor, "entitlement.definition", key, input, DefinitionView.class, () -> {
+		// 中央稳定身份参与摘要；旧模式保留原输入，临时引用不破坏原键重试。
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "entitlement.definition", key, command, DefinitionView.class, () -> access.lock(permit), () -> {
 			stores.requireActive(actor, input.storeId());
 			mapper.definition(actor.tenantId(), input);
+			access.audit(actor, permit, "entitlement.definition", key, input.benefitId());
 			return definition(mapper.definitionFind(actor.tenantId(), input.benefitId(), input.version()));
 		});
 	}
 
+	/** 最新目录仍按原门店过滤；返回前复核完整租户许可，不额外赋予门店权限。 */
 	public List<DefinitionView> definitions(Actor actor, String store, String after, int limit) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, ENTITLEMENT_DEFINITION_READ);
 		Identifiers.require(store);
 		Inputs.page(after, limit);
-		return mapper.definitions(actor.tenantId(), store, after, limit).stream().map(this::definition).toList();
+		var result = mapper.definitions(actor.tenantId(), store, after, limit).stream().map(this::definition).toList();
+		EmployeeAccess.requireSame(permit, access.scope(actor, ENTITLEMENT_DEFINITION_READ));
+		return result;
 	}
 
 	/** 发布必须保证所承诺的权益定义覆盖整个活动窗口。 */
@@ -152,10 +163,13 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit);
 	}
 
+	/** 实例目录包含各状态，按实际租户与grant游标隔离，不借会员归属代替员工授权。 */
 	public List<View> adminList(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, ENTITLEMENT_READ);
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), null, after, limit);
+		var result = mapper.list(actor.tenantId(), null, after, limit);
+		EmployeeAccess.requireSame(permit, access.scope(actor, ENTITLEMENT_READ));
+		return result;
 	}
 
 	/** 账本详情也验证会员归属，不因知道grantId而越权。 */
@@ -184,19 +198,37 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 
 	/** 人工处理仅记录已明确的恢复或损失决定，不自动执行外部扣款。 */
 	public View resolve(Actor actor, String key, String id, Resolution input) {
-		actor.requireAdmin();
+		var scope = access.scope(actor, ENTITLEMENT_RESOLVE);
 		Identifiers.require(id);
 		Inputs.require(input != null && input.resolution() != null
 				&& Set.of("RECOVERED", "WRITTEN_OFF").contains(input.resolution()), "补偿结论无效");
 		Inputs.text(input.reference(), 128);
-		return commands.run(actor, "entitlement.resolve", key, Map.of("id", id, "input", input), View.class, () -> {
+		var current = Inputs.found(mapper.find(actor.tenantId(), id));
+		var permit = access.resource(actor, scope, fact(current));
+		// 实际版本只用于提交前事实复核，不能进入稳定摘要使成功后的重试变成新意图。
+		Object command = scope.identity() == null ? Map.of("id", id, "input", input)
+				: Map.of("id", id, "input", input, "identity", scope.identity());
+		return commands.runGuarded(actor, "entitlement.resolve", key, command, View.class, () -> lockPermit(actor, permit), () -> {
 			var grant = Inputs.found(mapper.lock(actor.tenantId(), id));
 			if (!grant.status().equals(State.COMPENSATION_REQUIRED))
 				throw conflict();
 			change(actor.tenantId(), grant, State.COMPENSATED, 0, 0, grant.expiresAt());
 			entry(actor.tenantId(), id, input.resolution(), grant.debtUnits(), 0, input.reference());
+			access.audit(actor, permit.scope(), "entitlement.resolve", key, grant.grantId());
 			return mapper.find(actor.tenantId(), id);
 		});
+	}
+
+	/** 路由锁先于真实授予锁及旧回执，防止已撤权或事实变化的请求提交。 */
+	private void lockPermit(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		access.lock(permit.scope());
+		var locked = Inputs.found(mapper.lock(actor.tenantId(), permit.fact().id()));
+		if (!permit.fact().equals(fact(locked))) throw conflict();
+		access.lock(permit.scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(View grant) {
+		return new EmployeeAccess.ResourceFact(ENTITLEMENT_READ.resourceType(), grant.grantId(), grant.version());
 	}
 
 	public String consumer() {

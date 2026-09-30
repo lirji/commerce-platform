@@ -36,7 +36,11 @@ public interface EmployeeAccess {
         POINT_OFFER_DEFINE("commerce.point_offer.define", "POINT_OFFER", "point_offer"),
         POINT_OFFER_STATUS_UPDATE("commerce.point_offer.status.update", "POINT_OFFER", "point_offer"),
         COUPON_DEFINITION_READ("commerce.coupon_definition.read", "COUPON_DEFINITION", "coupon_definition"),
-        COUPON_DEFINITION_CREATE("commerce.coupon_definition.create", "COUPON_DEFINITION", "coupon_definition");
+        COUPON_DEFINITION_CREATE("commerce.coupon_definition.create", "COUPON_DEFINITION", "coupon_definition"),
+        ENTITLEMENT_DEFINITION_READ("commerce.entitlement_definition.read", "ENTITLEMENT_DEFINITION", "entitlement_definition"),
+        ENTITLEMENT_DEFINITION_CREATE("commerce.entitlement_definition.create", "ENTITLEMENT_DEFINITION", "entitlement_definition"),
+        ENTITLEMENT_READ("commerce.entitlement.read", "ENTITLEMENT", "entitlement"),
+        ENTITLEMENT_RESOLVE("commerce.entitlement.resolve", "ENTITLEMENT", "entitlement");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }
