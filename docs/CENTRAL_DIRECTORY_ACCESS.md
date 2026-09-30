@@ -7,3 +7,5 @@ CE03-D1本地DONE，依赖auth2557de1（执行范围协议）。四个GET/POST a
 V51兼容扩展DIRECTORY族与资源类型审计，保留V49/V50及状态触发器；历史库存写入仍兼容。所有实例认识DIRECTORY路由后才能切换CENTRAL；旧CE03-U二进制不检查该族，不能用回滚旧版本恢复ADMIN。安全回退使用认识DIRECTORY的版本并置STOPPED。5秒准入不是全局即时撤权承诺，事务仍原10秒上限。
 
 仅隔离库演练，原8602/commerce_local未切换；真实映射/Owner/生产目标待定。专用MySQL43308保留供后续切片，不清理私密证据。
+
+首次远程CI36667458010失败：构建脚本固定旧SDK来源，缺少executionScope，未到测试阶段。本地已安装D0 SDK所以未暴露。已将scripts/auth-sdk-source.ref固定为经过CI的auth2557de1；复用原安装脚本验证SDK源码精确一致，后续远程结果另记。
