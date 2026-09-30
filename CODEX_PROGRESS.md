@@ -42,3 +42,19 @@
 ## 恢复 Prompt
 
 读取CODEX_PROGRESS及auth commerce-readiness/EXECUTION_PLAN、CE04_MEMBER和对应正式契约，从G2交付/标签T继续。边界和Git已授权，无需反复确认；保护原商城/OA/其他任务与私密数据，继续直到已批准计划完成或真实必要阻塞。
+
+最新T0检查点：G2已推送auth8351043/commerce646ebd5，CI36673405496/36673407016待查；独立修复CI36672968400被G2取消（非失败亦非成功）。auth当前feat/commerce-tag-execution，正式CONTRACTS_COMMERCE_TAG.md已细化T0/T1/T2，有限member_tag.read/define/assign与define scope-only已实现。252单元PASS，真实PG f5d5df7c48f4+graph的ExecutionAuthorizationIT6项PASS，自有PG finally已停，tag-core-unit/integration日志和-result.json保留。SDK install→Boot4→package→hygiene正在运行，完成后记录T0证据/Git，再T1；commerce main646ebd5当前无新产品改动，V54尚未实施。
+
+T0最终本地DONE：SDK/Boot4/package/hygiene已PASS，验证后无产品代码变化，准备Git交付；下一T1真实标签Owner/独立族与V54。
+
+## T1进行中检查点（后于上文）
+
+T0已交付auth6bfaae70fa3fb44449f5b502b9ab9278714b8728，CI36673611219运行中；G2 auth36673405496被T0取消，commerce36673407016 SUCCESS（含轮转45b74ee；独立fix CI取消不冒充成功）。auth当前feat/commerce-tag-owner-contract：正式TAG契约追加锁与审计、P6 --tags联调已实现，隐含growth/member/directory/inventory，36项Python/231入口通过，尚未实际运行。
+
+commerce当前feat/central-member-tags（main646ebd5基线）：EmployeeAccess3标签能力/MEMBER_TAG族，EmployeeAuthority全租户/define不可resource且固定实际审计type commerce_member_tag；MemberTagService定义/字典读/分配/关联读的Owner锁/身份幂等/事务审计；精确四HTTP入口；V54已在专用MySQL成功应用不可修改历史；CentralTagMySqlTest新增5项（含64上限/释放、审计失败真实回滚、版本与代际）。SDK来源固定6bfaae7且原安装脚本PASS。无页面改动；完整mvn -B -Pwith-ui verify正在session83658，日志commerce/.local/central-inventory/tag-verify.log，未确认最终测试结果。
+
+下一先完成回归，必要修复后打包真实T1 jar，再在已核对空闲子网10.254.86.0/24执行python3 deploy/governance-p6-rehearsal.py --isolated-identity --identity-subnet ... --tags（先无browser；T2再新增标签页面/浏览器），日志私有。不能并行重复大回归和演练以免发券500ms测试受负载影响；现有growthG2浏览器已183PASS，标签T1不冒充T2验收。完成证据/hygiene/进度/Git/CI后接T2。
+
+T1验证最新：完整tag-verify.log已417项412PASS/5skip（最初4标签项）；后补64上限测试未包含在该次编译，最终tag-limit-test-module.log实际5项全PASS。两次-am窄跑因根POM failIfNoTests=true在无匹配测试上游停止，日志保留；不改POM，先mvn install -DskipTests装当前依赖，再仅-pl commerce-app -Dtest=CentralTagMySqlTest test成功。产品源码自完整回归未改，后补仅测试。两仓hygiene无阻断，36项Python/231入口通过。真实--tags session41176正运行rehearsal-c1893723fb4a（子网86），最新169检查已过标签四次审计与撤权，尚待最终result.json/进程结束。T2草案.local/governance/commerce-contracts/tag-ui-contract-draft.md已准备，未实施。
+
+T1最终本地DONE：真实演练c1893723fb4a已182PASS（tags_checked=true、runtime_switched=false、production_ready=false），自有PG/IdP/JVM停止，子网86/数据保留。完整417项412PASS/5skip+最终标签5项窄测试、36项工具/231入口、SDK/package/hygiene通过。产品代码未再修改，待按明确路径Git交付两仓；下一正式化tag-ui-contract-draft并实施T2，不停止于后端。

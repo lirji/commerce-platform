@@ -65,7 +65,7 @@ public class EmployeeAuthority implements EmployeeAccess {
     }
     /** 对象判权追加在可信集合许可上，仍限制相同路由、身份和准入时间。 */
     @Override public ResourcePermit resource(Actor actor, ScopePermit permit, ResourceFact fact) {
-        if (!memberCapability(permit.capability()) || permit.capability() == Capability.MEMBER_CREATE
+        if (!memberCapability(permit.capability()) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE
                 || !actor.tenantId().equals(permit.tenant()) || fact == null
                 || !permit.capability().resourceType().equals(fact.type()) || fact.version() < 0) throw denied();
         com.lrj.commerce.kernel.Identifiers.require(fact.id());
@@ -84,7 +84,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         return new ResourcePermit(new ScopePermit(permit.capability(), permit.tenant(), permit.filter(), permit.route(), permit.identity(), permit.fingerprint(), until), fact);
     }
     private static boolean memberCapability(Capability capability) {
-        return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE, Capability.GROWTH_READ, Capability.GROWTH_ADJUST, Capability.GROWTH_RECALCULATE).contains(capability);
+        return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE, Capability.GROWTH_READ, Capability.GROWTH_ADJUST, Capability.GROWTH_RECALCULATE, Capability.MEMBER_TAG_READ, Capability.MEMBER_TAG_DEFINE, Capability.MEMBER_TAG_ASSIGN).contains(capability);
     }
     /** 集合许可的路由锁先于命令回执与业务写入。 */
     @Override @Transactional(propagation = Propagation.MANDATORY)
@@ -92,13 +92,13 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (!Objects.equals(routes.lock(permit.tenant(), permit.capability().family()), permit.route())
                 || !permit.until().isAfter(Instant.now())) throw denied();
     }
-    /** 目录效果与主体归属在原Commands事务中原子提交。 */
+    /** 业务效果与主体归属同事务；标签定义的实际审计目标独立于会员域授权类型，不接受请求指定类型。 */
     @Override @Transactional(propagation = Propagation.MANDATORY)
     public void audit(Actor actor, ScopePermit permit, String operation, String key, String resourceId) {
         if (permit.identity() == null) return;
         com.lrj.commerce.kernel.Identifiers.require(resourceId);
         if (!actor.tenantId().equals(permit.tenant()) || routes.auditScoped(actor, permit, permit.capability().code(),
-                permit.capability().resourceType(), operation, key, resourceId,
+                permit.capability() == Capability.MEMBER_TAG_DEFINE ? "commerce_member_tag" : permit.capability().resourceType(), operation, key, resourceId,
                 permit.capability() == Capability.STORE_CREATE ? resourceId : null) != 1)
             throw new DomainException(DomainException.Code.CONFLICT, "中央目录操作归属记录失败");
     }

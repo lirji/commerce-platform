@@ -65,6 +65,12 @@ public class CentralEmployeeConfiguration {
             if (path.matches("/v1/admin/members/[A-Za-z0-9_-]{1,100}/profile")) return EmployeeAccess.Capability.MEMBER_PROFILE_UPDATE;
             if (path.matches("/v1/admin/members/[A-Za-z0-9_-]{1,100}/status")) return EmployeeAccess.Capability.MEMBER_STATUS_UPDATE;
         }
+        if ("/v1/admin/member-tags".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.MEMBER_TAG_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.MEMBER_TAG_DEFINE;
+        }
+        if ("GET".equals(r.getMethod()) && path.matches("/v1/admin/member-tags/[A-Za-z0-9_-]{1,100}/assignments")) return EmployeeAccess.Capability.MEMBER_TAG_READ;
+        if ("POST".equals(r.getMethod()) && path.matches("/v1/admin/member-tags/[A-Za-z0-9_-]{1,100}/assign")) return EmployeeAccess.Capability.MEMBER_TAG_ASSIGN;
         if ("/v1/admin/member-growth/policies".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.GROWTH_POLICY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.GROWTH_POLICY_PUBLISH;
