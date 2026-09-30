@@ -80,12 +80,13 @@ export function RecordDrawer({
   footer,
   onClose,
   open,
+  initialExpanded = false,
   ...props
-}: DrawerProps) {
-  const [expanded, setExpanded] = useState(false);
+}: DrawerProps & { initialExpanded?: boolean }) {
+  const [expanded, setExpanded] = useState(initialExpanded);
   useEffect(() => {
-    if (!open) setExpanded(false);
-  }, [open]);
+    if (!open) setExpanded(initialExpanded);
+  }, [open, initialExpanded]);
   return (
     <AntDrawer
       {...props}

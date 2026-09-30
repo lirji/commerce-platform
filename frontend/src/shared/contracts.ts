@@ -178,9 +178,17 @@ export type Refund = {
   status: string;
   provider: string;
 };
+export const JourneyNodeKind = {
+  WAIT: "WAIT",
+  DECIDE: "DECIDE",
+  GRANT: "GRANT",
+  COUPON: "COUPON",
+  NOTIFY: "NOTIFY",
+  END: "END",
+} as const;
 export type JourneyNode = {
   id: string;
-  kind: "WAIT" | "DECIDE" | "GRANT" | "COUPON" | "NOTIFY" | "END";
+  kind: (typeof JourneyNodeKind)[keyof typeof JourneyNodeKind];
   seconds?: number;
   next?: string;
   rule?: Rule;

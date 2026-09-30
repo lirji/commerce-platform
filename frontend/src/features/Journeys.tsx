@@ -11,7 +11,12 @@ import {
   Table,
 } from "antd";
 import { useEffect, useState } from "react";
-import type { Governed, Journey, JourneyNode } from "../shared/contracts";
+import {
+  JourneyNodeKind,
+  type Governed,
+  type Journey,
+  type JourneyNode,
+} from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
   Detail,
@@ -30,14 +35,15 @@ import {
   localDateTime,
 } from "../shared/ui";
 import { JourneyScans } from "./JourneyScans";
+import { JourneyMap } from "./JourneyMap";
 import { Governance, RuleEditor } from "../shared/marketing";
 const kinds = [
-  { value: "WAIT", label: "等待" },
-  { value: "DECIDE", label: "规则分支" },
-  { value: "GRANT", label: "授予权益" },
-  { value: "COUPON", label: "发放受控券" },
-  { value: "NOTIFY", label: "站内触达" },
-  { value: "END", label: "结束" },
+  { value: JourneyNodeKind.WAIT, label: "等待" },
+  { value: JourneyNodeKind.DECIDE, label: "规则分支" },
+  { value: JourneyNodeKind.GRANT, label: "授予权益" },
+  { value: JourneyNodeKind.COUPON, label: "发放受控券" },
+  { value: JourneyNodeKind.NOTIFY, label: "站内触达" },
+  { value: JourneyNodeKind.END, label: "结束" },
 ];
 function NodesEditor({
   value = [],
@@ -393,7 +399,15 @@ export function Journeys({ store }: { store: string }) {
               className: "row-actions-cell",
               render: (_, r) => (
                 <RowActions>
-                  <Button type="link" size="small" onClick={() => setDetail(r)}>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={(event) => {
+                      // Safari 点击按钮不一定赋予焦点，显式保存打开详情的返回位置。
+                      event.currentTarget.focus({ preventScroll: true });
+                      setDetail(r);
+                    }}
+                  >
                     查看节点
                   </Button>
                   <Button
@@ -429,6 +443,7 @@ export function Journeys({ store }: { store: string }) {
       <Drawer
         className="record-drawer"
         title="旅程节点与版本"
+        initialExpanded
         open={!!detail}
         onClose={() => setDetail(undefined)}
         width={720}
@@ -447,16 +462,12 @@ export function Journeys({ store }: { store: string }) {
             ]}
           />
         )}
-        {detail?.content.nodes.map((n) => (
-          <Card
-            key={n.id}
-            title={n.id + " · " + kinds.find((k) => k.value === n.kind)?.label}
-            size="small"
-            className="node-card"
-          >
-            <Detail value={n} />
-          </Card>
-        ))}
+        {detail && (
+          <JourneyMap
+            key={`${detail.content.journeyId}:${detail.content.version}`}
+            journey={detail.content}
+          />
+        )}
       </Drawer>
       <Drawer
         title="旅程编辑器"
