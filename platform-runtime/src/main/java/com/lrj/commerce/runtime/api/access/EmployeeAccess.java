@@ -40,7 +40,10 @@ public interface EmployeeAccess {
         ENTITLEMENT_DEFINITION_READ("commerce.entitlement_definition.read", "ENTITLEMENT_DEFINITION", "entitlement_definition"),
         ENTITLEMENT_DEFINITION_CREATE("commerce.entitlement_definition.create", "ENTITLEMENT_DEFINITION", "entitlement_definition"),
         ENTITLEMENT_READ("commerce.entitlement.read", "ENTITLEMENT", "entitlement"),
-        ENTITLEMENT_RESOLVE("commerce.entitlement.resolve", "ENTITLEMENT", "entitlement");
+        ENTITLEMENT_RESOLVE("commerce.entitlement.resolve", "ENTITLEMENT", "entitlement"),
+        RULE_READ("commerce.rule.read", "RULE", "marketing_rule"),
+        RULE_CREATE("commerce.rule.create", "RULE", "marketing_rule"),
+        RULE_PUBLISH("commerce.rule.publish", "RULE", "marketing_rule");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }

@@ -52,6 +52,9 @@ public interface MarketingAssets {
 
 	RuleView publishRule(Actor actor, String key, String id, long version);
 
+	/** 字段目录与规则读取使用同一员工权限，不附赠给创建者。 */
+	java.util.Map<String, String> ruleFields(Actor actor);
+
 	List<RuleView> rules(Actor actor, String after, int limit);
 
 	RuleNode publishedRule(String tenant, Ref ref);

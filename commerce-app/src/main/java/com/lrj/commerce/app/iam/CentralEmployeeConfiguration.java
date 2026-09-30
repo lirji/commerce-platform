@@ -120,6 +120,13 @@ public class CentralEmployeeConfiguration {
         }
         if ("GET".equals(r.getMethod()) && "/v1/operations/entitlement-definitions/create-access".equals(path)) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_CREATE;
         if ("GET".equals(r.getMethod()) && "/v1/operations/entitlements/resolve-access".equals(path)) return EmployeeAccess.Capability.ENTITLEMENT_RESOLVE;
+        if ("/v1/admin/rules".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.RULE_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.RULE_CREATE;
+        }
+        if ("GET".equals(r.getMethod()) && "/v1/admin/rule-fields".equals(path)) return EmployeeAccess.Capability.RULE_READ;
+        // 解码后的合法标识与正版本匹配完整路径，不允许未知规则动作。
+        if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/rules/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/publish")) return EmployeeAccess.Capability.RULE_PUBLISH;
         if ("/v1/admin/entitlement-definitions".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_CREATE;

@@ -70,8 +70,7 @@ public class MarketingAssetController {
 	/** 字段类型来自固定可信数据提供方。 */
 	@GetMapping("/rule-fields")
 	public Object fields(@AuthenticationPrincipal Actor actor) {
-		actor.requireAdmin();
-		return MarketingAssets.TRUSTED_FIELDS;
+		return assets.ruleFields(actor);
 	}
 
 	/** 路径只允许三个审批动作，发布继续走已冻结接口。 */

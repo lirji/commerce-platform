@@ -59,14 +59,15 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (decision.until().isBefore(until)) until = decision.until();
         if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
         if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability)
-                || pointOfferCapability(capability) || couponDefinitionCapability(capability) || entitlementCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
+                || pointOfferCapability(capability) || couponDefinitionCapability(capability) || entitlementCapability(capability) || ruleCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
                 && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
         return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
     }
     /** 对象判权追加在可信集合许可上，仍限制相同路由、身份和准入时间。 */
     @Override public ResourcePermit resource(Actor actor, ScopePermit permit, ResourceFact fact) {
         if ((!memberCapability(permit.capability()) && !pointOfferCapability(permit.capability())
-                && permit.capability() != Capability.ENTITLEMENT_READ && permit.capability() != Capability.ENTITLEMENT_RESOLVE) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD || permit.capability() == Capability.POINT_OFFER_DEFINE
+                && permit.capability() != Capability.ENTITLEMENT_READ && permit.capability() != Capability.ENTITLEMENT_RESOLVE
+                && permit.capability() != Capability.RULE_READ && permit.capability() != Capability.RULE_PUBLISH) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD || permit.capability() == Capability.POINT_OFFER_DEFINE
                 || !actor.tenantId().equals(permit.tenant()) || fact == null
                 || !permit.capability().resourceType().equals(fact.type()) || fact.version() < 0) throw denied();
         com.lrj.commerce.kernel.Identifiers.require(fact.id());
@@ -96,6 +97,10 @@ public class EmployeeAuthority implements EmployeeAccess {
     private static boolean entitlementCapability(Capability capability) {
         return java.util.Set.of(Capability.ENTITLEMENT_DEFINITION_READ, Capability.ENTITLEMENT_DEFINITION_CREATE,
                 Capability.ENTITLEMENT_READ, Capability.ENTITLEMENT_RESOLVE).contains(capability);
+    }
+    /** 规则首批只按完整租户接管，创建不能冒用已有版本事实。 */
+    private static boolean ruleCapability(Capability capability) {
+        return java.util.Set.of(Capability.RULE_READ, Capability.RULE_CREATE, Capability.RULE_PUBLISH).contains(capability);
     }
     private static boolean memberCapability(Capability capability) {
         return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE, Capability.GROWTH_READ, Capability.GROWTH_ADJUST, Capability.GROWTH_RECALCULATE, Capability.MEMBER_TAG_READ, Capability.MEMBER_TAG_DEFINE, Capability.MEMBER_TAG_ASSIGN, Capability.MEMBER_BEHAVIOR_READ, Capability.MEMBER_BEHAVIOR_UPDATE, Capability.MEMBER_BEHAVIOR_REBUILD, Capability.MEMBER_CYCLE_READ, Capability.MEMBER_CYCLE_EVALUATE, Capability.CYCLE_BENEFIT_GRANT, Capability.POINTS_READ, Capability.POINTS_ADJUST, Capability.POINTS_EXPIRE).contains(capability);

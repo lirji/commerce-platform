@@ -8,6 +8,8 @@ import java.util.*;
 import com.lrj.commerce.campaign.asset.api.MarketingAssets;
 import com.lrj.commerce.campaign.rule.api.RuleNode;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
@@ -22,10 +24,14 @@ public class MarketingAssetService implements MarketingAssets {
 
 	private final Clock clock;
 
-	public MarketingAssetService(AssetMapper mapper, Commands commands, Clock clock) {
+	private final EmployeeAccess access;
+
+	/** 规则与人群共用持久层，但本片只接管规则权限，不更改人群身份入口。 */
+	public MarketingAssetService(AssetMapper mapper, Commands commands, Clock clock, EmployeeAccess access) {
 		this.mapper = mapper;
 		this.commands = commands;
 		this.clock = clock;
+		this.access = access;
 	}
 
 	public AudienceView createAudience(Actor actor, String key, Audience input) {
@@ -89,36 +95,68 @@ public class MarketingAssetService implements MarketingAssets {
 			throw new DomainException(DomainException.Code.CONFLICT, "发布引用人群快照已失效");
 	}
 
+	/** 创建只取集合许可；原规则树约束继续是权威，不能注入任意事实字段。 */
 	public RuleView createRule(Actor actor, String key, Rule input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, RULE_CREATE);
 		Inputs.require(input != null && input.rule() != null && input.version() > 0, "规则资产无效");
 		Identifiers.require(input.ruleId());
 		Inputs.text(input.name(), 128);
 		input.rule().requireTrustedFields();
-		return commands.run(actor, "rule.create", key, input, RuleView.class, () -> {
+		// 中央只增加稳定身份，旧模式意图和重试摘要保持不变。
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "rule.create", key, command, RuleView.class, () -> access.lock(permit), () -> {
 			mapper.rule(actor.tenantId(), input, JsonCodec.write(input.rule()));
+			access.audit(actor, permit, "rule.create", key, input.ruleId());
 			return view(mapper.ruleFind(actor.tenantId(), input.ruleId(), input.version()));
 		});
 	}
 
+	/** 发布绑定实际资产版本；已发布版本按原语义返回成功，不人为新增状态或修订号。 */
 	public RuleView publishRule(Actor actor, String key, String id, long version) {
-		actor.requireAdmin();
+		var scope = access.scope(actor, RULE_PUBLISH);
 		Identifiers.require(id);
 		Inputs.require(version > 0, "规则版本无效");
-		return commands.run(actor, "rule.publish", key, List.of(id, version), RuleView.class, () -> {
+		var current = Inputs.found(mapper.ruleFind(actor.tenantId(), id, version));
+		var permit = access.resource(actor, scope, fact(current));
+		Object command = scope.identity() == null ? List.of(id, version) : List.of(id, version, scope.identity());
+		return commands.runGuarded(actor, "rule.publish", key, command, RuleView.class, () -> lockPermit(actor, permit), () -> {
 			var row = Inputs.found(mapper.ruleFind(actor.tenantId(), id, version));
 			if (!row.status().equals("PUBLISHED") && mapper.publishRule(actor.tenantId(), id, version) != 1)
 				throw new DomainException(DomainException.Code.CONFLICT, "规则版本状态冲突");
+			access.audit(actor, permit.scope(), "rule.publish", key, id);
 			return view(mapper.ruleFind(actor.tenantId(), id, version));
 		});
 	}
 
+	/** 最新版本目录与可信字段独立于写权限，返回前复核完整租户范围。 */
 	public List<RuleView> rules(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, RULE_READ);
 		Inputs.page(after, limit);
-		return mapper.rules(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var result = mapper.rules(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		EmployeeAccess.requireSame(permit, access.scope(actor, RULE_READ));
+		return result;
 	}
 
+	/** 字段列表虽是固定协议元数据，仍按已批准的rule.read边界返回。 */
+	public Map<String, String> ruleFields(Actor actor) {
+		var permit = access.scope(actor, RULE_READ);
+		EmployeeAccess.requireSame(permit, access.scope(actor, RULE_READ));
+		return TRUSTED_FIELDS;
+	}
+
+	/** 路由锁先于真实版本锁和旧回执；等待行锁后重新检查许可期限。 */
+	private void lockPermit(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		access.lock(permit.scope());
+		var row = Inputs.found(mapper.ruleLock(actor.tenantId(), permit.fact().id(), permit.fact().version()));
+		if (!permit.fact().equals(fact(row))) throw new DomainException(DomainException.Code.CONFLICT, "规则版本事实变化");
+		access.lock(permit.scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(AssetMapper.RuleRow row) {
+		return new EmployeeAccess.ResourceFact(RULE_READ.resourceType(), row.ruleId(), row.version());
+	}
+
+	/** 已发布固定版本仍供可信活动/交易引用，员工撤权不能撤销已经承诺的规则。 */
 	public RuleNode publishedRule(String tenant, Ref ref) {
 		validate(ref);
 		var row = Inputs.found(mapper.ruleFind(tenant, ref.id(), ref.version()));

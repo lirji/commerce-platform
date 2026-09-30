@@ -35,6 +35,9 @@ public interface AssetMapper {
 
 	RuleRow ruleFind(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
+	/** 锁定实际不可变版本，和权威路由锁共同保护发布及幂等回执。 */
+	RuleRow ruleLock(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
+
 	int publishRule(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
 	List<RuleRow> rules(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
