@@ -1,8 +1,8 @@
 package com.lrj.commerce.app.http.member.behavior;
 
 import com.lrj.commerce.catalog.assortment.api.CatalogApi;
-import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.app.application.member.MemberBehaviorRebuildService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -22,23 +22,22 @@ public class MemberBehaviorController {
 
 	private final CatalogApi catalog;
 
-	private final OrderApi orders;
+	private final MemberBehaviorRebuildService rebuild;
 
 	private final Commands commands;
 
-	public MemberBehaviorController(MemberBehaviorApi behavior, MemberApi members, CatalogApi catalog, OrderApi orders,
+	public MemberBehaviorController(MemberBehaviorApi behavior, MemberApi members, CatalogApi catalog, MemberBehaviorRebuildService rebuild,
 			Commands commands) {
 		this.behavior = behavior;
 		this.members = members;
 		this.catalog = catalog;
-		this.orders = orders;
+		this.rebuild = rebuild;
 		this.commands = commands;
 	}
 
-	/** 管理员会员详情。 */
+	/** 员工会员详情由领域核验独立行为读取权限。 */
 	@GetMapping("/admin/member-behavior/{id}")
 	public Object detail(@AuthenticationPrincipal Actor actor, @PathVariable String id) {
-		actor.requireAdmin();
 		return behavior.detail(actor, id);
 	}
 
@@ -46,7 +45,6 @@ public class MemberBehaviorController {
 	@PostMapping("/admin/member-behavior/{id}/profile")
 	public Object profile(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
 			@PathVariable String id, @RequestBody MemberBehaviorApi.ProfileChange input) {
-		actor.requireAdmin();
 		return behavior.profile(actor, key, id, input);
 	}
 
@@ -54,7 +52,6 @@ public class MemberBehaviorController {
 	@GetMapping("/admin/member-behavior/{id}/events")
 	public Object events(@AuthenticationPrincipal Actor actor, @PathVariable String id,
 			@RequestParam(defaultValue = "0") long after, @RequestParam(defaultValue = "50") int limit) {
-		actor.requireAdmin();
 		return behavior.events(actor, id, after, limit);
 	}
 
@@ -94,26 +91,11 @@ public class MemberBehaviorController {
 		return behavior.events(actor, members.current(actor).memberId(), after, limit);
 	}
 
-	record Rebuild(String after, int limit) {
-	}
-
-	record Progress(String next, int scanned, boolean done) {
-	}
-
-	/** 每次最多50单，调用领域端口补建，不跨领域直写订单或会员表。 */
+	/** 重建独立授权，领域服务只消费真实订单来源，不复用管理员订单列表。 */
 	@PostMapping("/admin/member-behavior/rebuild")
-	public Object rebuild(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
-			@RequestBody Rebuild input) {
-		actor.requireAdmin();
-		Inputs.require(input != null && input.limit() > 0 && input.limit() <= 50, "补建批次1至50");
-		Inputs.page(input.after(), input.limit());
-		return commands.run(actor, "member.behavior.rebuild", key, input, Progress.class, () -> {
-			var batch = orders.adminList(actor, input.after(), input.limit());
-			for (var order : batch)
-				behavior.projectOrder(actor.tenantId(), order.orderId(), order.createdAt());
-			return new Progress(batch.isEmpty() ? input.after() : batch.getLast().orderId(), batch.size(),
-					batch.size() < input.limit());
-		});
+	public MemberBehaviorRebuildService.Progress rebuild(@AuthenticationPrincipal Actor actor,
+			@RequestHeader("Idempotency-Key") String key, @RequestBody MemberBehaviorRebuildService.Rebuild input) {
+		return rebuild.rebuild(actor, key, input);
 	}
 
 }

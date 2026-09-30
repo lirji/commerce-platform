@@ -12,6 +12,8 @@ import java.util.*;
 import com.lrj.commerce.member.behavior.api.MemberBehaviorApi;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 
@@ -28,26 +30,30 @@ public class MemberBehaviorService implements MemberBehaviorApi {
 	private final Commands commands;
 
 	private final Clock clock;
+	private final EmployeeAccess access;
 
 	public MemberBehaviorService(BehaviorMapper mapper, GrowthMapper locks, MemberMapper members, Commands commands,
-			Clock clock) {
+			Clock clock, EmployeeAccess access) {
 		this.mapper = mapper;
 		this.locks = locks;
 		this.members = members;
 		this.commands = commands;
 		this.clock = clock;
+		this.access = access;
 	}
 
 	/** 没有消费事实时保留null，不伪造流失天数。 */
 	public Detail detail(Actor actor, String member) {
-		var value = authorize(actor, member);
-		return new Detail(value, profile(actor.tenantId(), member),
+		var permit = authorize(actor, member, MEMBER_BEHAVIOR_READ);
+		var result = new Detail(permit.member(), profile(actor.tenantId(), member),
 				facts(actor.tenantId(), List.of(member), clock.instant()).getFirst());
+		recheck(actor, permit);
+		return result;
 	}
 
 	/** 月日合法性用闰年校验，后续由UTC实际日期决定是否生日。 */
 	public Profile profile(Actor actor, String key, String member, ProfileChange input) {
-		authorize(actor, member);
+		var permit = authorize(actor, member, MEMBER_BEHAVIOR_UPDATE);
 		Inputs.require(input != null && input.expectedVersion() >= 0, "资料版本无效");
 		Inputs.text(input.reason(), 256);
 		if (input.birthday() != null) {
@@ -59,14 +65,18 @@ public class MemberBehaviorService implements MemberBehaviorApi {
 				throw new DomainException(DomainException.Code.INVALID_INPUT, "生日月日无效");
 			}
 		}
-		return commands.run(actor, "member.behavior.profile", key, new Object[] { member, input }, Profile.class,
-				() -> {
+		Object command = permit.employee() == null || permit.employee().scope().identity() == null
+				? new Object[] { member, input } : new Object[] { member, input, permit.employee().scope().identity() };
+		return commands.runGuarded(actor, "member.behavior.profile", key, command, Profile.class,
+				() -> lockPermit(actor, permit), () -> {
 					var locked = Inputs.found(locks.lockMember(actor.tenantId(), member));
 					if (!locked.status().equals("ACTIVE"))
 						throw conflict("非正常会员不可修改偏好");
 					mapper.ensure(actor.tenantId(), member);
 					if (mapper.profileChange(actor.tenantId(), member, input) != 1)
 						throw conflict("会员偏好版本已变化");
+					if (permit.employee() != null)
+						access.audit(actor, permit.employee().scope(), "member.behavior.profile", key, member);
 					return profile(actor.tenantId(), member);
 				});
 	}
@@ -103,10 +113,12 @@ public class MemberBehaviorService implements MemberBehaviorApi {
 
 	/** 正序游标与租户/会员索引一致。 */
 	public List<Event> events(Actor actor, String member, long after, int limit) {
-		authorize(actor, member);
+		var permit = authorize(actor, member, MEMBER_BEHAVIOR_READ);
 		Inputs.require(after >= 0, "行为游标无效");
 		Inputs.page("", limit);
-		return mapper.events(actor.tenantId(), member, after, limit);
+		var result = mapper.events(actor.tenantId(), member, after, limit);
+		recheck(actor, permit);
+		return result;
 	}
 
 	/** 先从权威来源识别会员，会员锁后当前读取净额防止回放覆盖新退款。 */
@@ -166,13 +178,41 @@ public class MemberBehaviorService implements MemberBehaviorApi {
 		return p == null ? new Profile(null, true, 0) : p;
 	}
 
-	private MemberApi.View authorize(Actor actor, String member) {
+	private record Authorized(MemberApi.View member, EmployeeAccess.ResourcePermit employee) {}
+
+	/** 客户本人沿原绑定；员工先集合资格，再读取真实Member Owner，不能借ADMIN绕过接管。 */
+	private Authorized authorize(Actor actor, String member, EmployeeAccess.Capability capability) {
 		Identifiers.require(member);
+		if (actor.role() == Actor.Role.MEMBER) {
+			var value = Inputs.found(members.find(actor.tenantId(), member));
+			if (!value.actorId().equals(actor.actorId()))
+				throw new DomainException(DomainException.Code.FORBIDDEN, "不可访问其他会员行为");
+			return new Authorized(value, null);
+		}
+		var scope = access.scope(actor, capability);
 		var value = Inputs.found(members.find(actor.tenantId(), member));
-		if (actor.role() != Actor.Role.ADMIN
-				&& (actor.role() != Actor.Role.MEMBER || !value.actorId().equals(actor.actorId())))
-			throw new DomainException(DomainException.Code.FORBIDDEN, "不可访问其他会员行为");
-		return value;
+		return new Authorized(value, access.resource(actor, scope, fact(value)));
+	}
+
+	/** 查询后复核许可和会员版本，冻结状态仍可读取；客户继续原本人语义。 */
+	private void recheck(Actor actor, Authorized permit) {
+		if (permit.employee() == null) return;
+		EmployeeAccess.requireSame(permit.employee().scope(), access.scope(actor, permit.employee().scope().capability()));
+		if (!permit.employee().fact().equals(fact(Inputs.found(members.find(actor.tenantId(), permit.member().memberId())))))
+			throw conflict("会员版本已变化，请刷新");
+	}
+
+	/** 路由与会员锁早于命令旧回执；远程授权不在事务内调用。 */
+	private void lockPermit(Actor actor, Authorized permit) {
+		if (permit.employee() == null) return;
+		access.lock(permit.employee().scope());
+		if (!permit.employee().fact().equals(fact(Inputs.found(members.lock(actor.tenantId(), permit.member().memberId())))))
+			throw conflict("会员版本已变化，请刷新");
+		access.lock(permit.employee().scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(MemberApi.View member) {
+		return new EmployeeAccess.ResourceFact(MEMBER_BEHAVIOR_READ.resourceType(), member.memberId(), member.version());
 	}
 
 	private DomainException conflict(String reason) {

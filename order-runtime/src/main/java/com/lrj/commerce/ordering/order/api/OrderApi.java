@@ -59,6 +59,12 @@ public interface OrderApi {
 	/** 履约可信事实推进生命周期，必须加入调用者本地事务。 */
 	View fulfillmentFact(String tenant, String id, boolean delivered);
 
+	/** 行为投影只需真实订单编号和原下单时间，不传播订单商业或地址数据。 */
+	record BehaviorSource(String orderId, Instant createdAt) {}
+
+	/** 仅内部已授权重建用例调用，租户来自实际Actor；每批最多50单。 */
+	List<BehaviorSource> behaviorSources(String tenant, String after, int limit);
+
 	/** 管理查询仅同租户投影，不暴露收货地址。 */
 	List<View> adminList(Actor actor, String after, int limit);
 

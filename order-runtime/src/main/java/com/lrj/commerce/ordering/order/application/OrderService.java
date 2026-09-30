@@ -413,6 +413,14 @@ public class OrderService implements OrderApi {
 		return result;
 	}
 
+	/** 内部投影源不借管理员角色；应用层已判权，Owner仍校验租户及有界游标。 */
+	public List<BehaviorSource> behaviorSources(String tenant, String after, int limit) {
+		Identifiers.require(tenant);
+		Inputs.require(limit > 0 && limit <= 50, "补建批次1至50");
+		Inputs.page(after, limit);
+		return mapper.behaviorSources(tenant, after, limit);
+	}
+
 	/** 与本人列表分开，不能通过可选参数放大会员查询范围。 */
 	public List<View> adminList(Actor actor, String after, int limit) {
 		actor.requireAdmin();

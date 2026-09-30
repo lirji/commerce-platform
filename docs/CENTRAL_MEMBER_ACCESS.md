@@ -2,7 +2,7 @@
 
 ## 已实现范围
 
-CE04-P0/P1：基础会员四能力member.read/create/profile.update/status.update，真实TENANT_ALL；OA员工显式映射本地OPERATOR，客户本人账号仍按商城绑定。V52新增MEMBER_PROFILE独立族和commerce_member身份审计类型；旧ADMIN不能绕过已接管族，配置关闭或STOPPED不能退回旧权威。成长由独立MEMBER_GROWTH族接管，标签后端接入见[CENTRAL_TAG_ACCESS](CENTRAL_TAG_ACCESS.md)，行为/周期/积分仍未接管，不从基础会员能力隐式继承。
+CE04-P0/P1：基础会员四能力member.read/create/profile.update/status.update，真实TENANT_ALL；OA员工显式映射本地OPERATOR，客户本人账号仍按商城绑定。V52新增MEMBER_PROFILE独立族和commerce_member身份审计类型；旧ADMIN不能绕过已接管族，配置关闭或STOPPED不能退回旧权威。成长由独立MEMBER_GROWTH族接管，标签接入见[CENTRAL_TAG_ACCESS](CENTRAL_TAG_ACCESS.md)，行为后端验证见[CENTRAL_BEHAVIOR_ACCESS](CENTRAL_BEHAVIOR_ACCESS.md)，周期/积分仍未接管，不从基础会员能力隐式继承。
 
 MemberService集合读取在SQL前/后检查许可；已有会员由本域读出真实ID/version追加对象判权。修改事务先锁权限路由、再锁会员并比较事实版本，早于旧幂等回执；命令摘要绑定稳定主体/成员代际，审计与业务同事务。创建注册事件继续走原Outbox。注销终态、expectedVersion、原因和客户/内部交易语义保持。5秒是本地准入窗口，不代表跨服务原子撤销；旧二进制不认识新族，回退必须使用认识该族的版本和STOPPED。
 

@@ -24,6 +24,10 @@ public interface OrderMapper {
 	List<Row> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
 			@Param("limit") int limit);
 
+	/** 租户与游标在SQL中过滤，只取投影所需列。 */
+	List<com.lrj.commerce.ordering.order.api.OrderApi.BehaviorSource> behaviorSources(
+			@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
+
 	int change(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version,
 			@Param("status") String status);
 

@@ -14,13 +14,16 @@
 
 ## 已修改文件
 
-- auth feat/commerce-tag-ui-contract：TAG正式T2契约、bindings/HTTP_INVENTORY及计数234、P6标签浏览器阶段、governance-ce04-tags.mjs。
-- commerce feat/central-tags-ui：CentralTags页面、SSO/session/main、TagActionsController、中央精确过滤/错误/静态GET安全、CentralTagMySqlTest第6项和壳门禁测试。
+- auth feat/commerce-behavior-owner-contract：deploy/governance-p6-rehearsal.py（--behavior）、CONTRACTS_COMMERCE_BEHAVIOR.md（B1/B2技术细化）、CE04_MEMBER.md（验证与失败证据）。
+- commerce feat/central-member-behavior：MemberBehaviorService、MemberBehaviorController、MemberBehaviorRebuildService（新应用用例）、EmployeeAccess/EmployeeAuthority、CentralEmployeeConfiguration/CentralStoreErrors、OrderApi/OrderService/OrderMapper及XML、V55、CentralBehaviorMySqlTest、scripts/auth-sdk-source.ref、CENTRAL_BEHAVIOR_ACCESS/CENTRAL_MEMBER_ACCESS、CODEX_PROGRESS。
+- B1测试后仅改Controller中文注释，产品语义未再改变。T2及B0已交付，不混入新提交。
 
 ## 未完成
 
-- T2本地DONE：真实fdda68438ef6共221PASS，标签10/成长11/会员12/目录11/库存9/CATALOG9浏览器检查，1440/390/字典/关联/重试/409/撤销/503截图已实际查看，API+UI恰7条身份审计。自有PG/IdP/JVM/Vite已finally停止，子网87和数据保留。当前仅待显式路径Git交付/CI，继续B。
-- 下一CE04-B行为：已只读盘点BehaviorService/Controller；profile及detail/events真实Member Owner；rebuild现从orders.adminList扫描最多50订单并投影，需正式细化独立权限及内部门禁，禁止伪装ADMIN。
+- T2本地DONE：真实fdda68438ef6共221PASS，标签10/成长11/会员12/目录11/库存9/CATALOG9浏览器检查，1440/390/字典/关联/重试/409/撤销/503截图已实际查看，API+UI恰7条身份审计。自有PG/IdP/JVM/Vite已finally停止，子网87和数据保留。已交付authfd9ef83/commerce4aafed1，auth CI36675135942被B0取消，commerce36675136986 SUCCESS，继续B。
+- CE04-B0已推送authf7fa425，CI36675295449 SUCCESS（T2 auth36675135942因后续push取消，非失败或通过）。252单元、真实PG ebabed7fcae1+graph7方法、SDK/Boot4/package/hygiene PASS，自有PG已停。
+- B1本地DONE：commerce feat/central-member-behavior：三行为能力/MEMBER_BEHAVIOR族；真实Member Owner/前后读复核/写guard/同事务审计、客户本人规则保留；专用应用重建服务与订单Owner仅id+createdAt有限内部端口；V55扩族/实际持久批次审计type。SDK固定f7fa425并安装，compile PASS。完整behavior-verify.log已424项419PASS/5skip（新行为5项及原行为6项PASS），两仓hygiene无阻断。V55已随测试启动应用，禁止改历史。
+- auth feat/commerce-behavior-owner-contract：P6 --behavior已加显式3有限角色、独立资料/重建/读、真实客户事件与隔离历史订单/成长来源种子、审计/撤权/503。语法/36Python/234入口PASS；实际第一轮c1c16e0bba56在169PASS后脚本错误调用/grants收到400；已按现有/scoped-grants真实契约修复字段/202/execution_ready，不改业务/断言。第二轮b849379ea0ae已207PASS含行为全链路，但行为batch变量覆盖原迁移batch致末尾MigrationImportCli失败；仅脚本改behavior_batch，未改产品/断言。第三轮31b246afdc39共221PASS（无浏览器），behavior_checked=true，runtime_switched/production_ready=false，自有PG/IdP/JVM已停，子网88—90/数据保留。behavior-source-sha256两仓源码摘要复核一致。B2页面正式技术细化已追加契约，尚未实施。
 - 周期/积分、CE05—08未完成。原DAG63节点61DONE/2productionBLOCKED不变；真实OA映射、Owner签字/授权截止、生产容量SLO/RTO/RPO目标待定仅阻塞对应真实动作。
 
 ## 当前问题
@@ -33,8 +36,8 @@
 
 ## 下一步建议
 
-1. T2验收通过，按明确路径提交普通合并推送两仓并查CI。
-2. 正式化CE04-B行为契约，串行实施协议、Owner/业务路由、页面和真实联调；继续后续已批准能力，不每片暂停。
+1. B1所有本地验证已通过，精确路径提交普通合并推送两仓并查CI；立即B2，不停在后端。
+2. B1证据/文档/进度/Git交付后继续B2页面与真实浏览器；其余已批准模块不断片。
 
 ## 恢复 Prompt
 
