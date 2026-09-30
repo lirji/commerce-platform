@@ -422,3 +422,49 @@ test("390窄屏恢复页和重放表单不溢出，字段校验与焦点可见",
     ),
   ).toBe(true);
 });
+
+test("延迟店铺读取不能覆盖刚导航的页面、店铺和查询", async ({ page }) => {
+  await fixture(page);
+  let release!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/v1/stores*", async (route) => {
+    await ready;
+    await route.fulfill({
+      json: [
+        {
+          storeId: "store-ui",
+          merchantId: "merchant-ui",
+          name: "测试店铺",
+          status: "ACTIVE",
+          version: 1,
+        },
+      ],
+    });
+  });
+  await page.goto("/");
+  await page.getByLabel("访问凭据", { exact: true }).fill("fixture-admin");
+  await page.getByRole("button", { name: "进入平台", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "退出", exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    location.hash =
+      "skus?store=chosen-store&tab=product&productAfter=product-20";
+  });
+  release();
+  await expect(
+    page.getByRole("tab", { name: "商品资料（SPU）", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page).toHaveURL(
+    /#skus\?store=chosen-store&tab=product&productAfter=product-20$/,
+  );
+  await page.reload();
+  await expect(
+    page.getByRole("tab", { name: "商品资料（SPU）", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page).toHaveURL(
+    /#skus\?store=chosen-store&tab=product&productAfter=product-20$/,
+  );
+});

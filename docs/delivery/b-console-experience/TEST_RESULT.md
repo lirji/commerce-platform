@@ -1,6 +1,6 @@
 # B端验收记录
 
-日期2026-09-30；基线654d903；任务分支refactor/b-console-experience。当前产品源码和测试SHA256：`344ab3a967cf6e7270e72084b2db0c86a1540ee4bb3489346c228b230865fc2e`。算法为排序后的frontend/src TS/TSX/CSS、frontend/tests TS及两个变更Java文件，以路径和内容、NUL分隔累计SHA256；完整清单在忽略的 `.local/b-console-experience/source-fingerprint.json`。
+日期2026-09-30；基线654d903；任务分支refactor/b-console-experience。当前产品源码和测试SHA256：`00021b340804984a57cc16cf24a3229dea01498ea9d0917f01d4effbb2ffd185`。算法为排序后的frontend/src TS/TSX/CSS、frontend/tests TS及两个变更Java文件，以路径和内容、NUL分隔累计SHA256；完整清单在忽略的 `.local/b-console-experience/source-fingerprint.json`。
 
 ## 可观察验收
 
@@ -8,12 +8,12 @@
 |---|---|---|---|
 | B01 | 刷新身份/查询恢复，退出清除，401失效，503可重试；服务端重新读取 | PASS，浏览器真实操作及请求断言；商品可见筛选、订单深链接/焦点/返回、中央门店页签 | `.local/b-console-experience/behaviors-last.log`、`final-behaviors/browser-results.json`、`central-browser-rerun.log` |
 | B02 | 平台独立登录/刷新，租户403、匿名401，不预取租户目录 | PASS，新PlatformRuntimeAuthorizationTest＋真实MySQL HTTP＋浏览器请求断言和8612实际UI | `backend-verify-rerun.log`、`api-smoke-result.json`、`runtime-capture.json` |
-| B03 | 恢复证据、显式选择、逐项结果、原键重试、审计；试运行绑定范围、真实任务/版本控制 | PASS，交互夹具模拟未知503；实际API验证恢复REJECTED原键相等、空范围创建RUNNING→CANCELLED且版本0→1 | `behaviors-last.log`、`api-smoke.log`、`api-smoke-result.json`、`runtime-last.log` |
+| B03 | 恢复证据、显式选择、逐项结果、原键重试、审计；试运行绑定范围、真实任务/版本控制 | PASS，交互夹具模拟未知503；实际API验证恢复REJECTED原键相等、空范围创建RUNNING→CANCELLED且版本0→1 | `race-browser.log`、`api-smoke.log`、`api-smoke-result.json`、`runtime-last.log` |
 | B04 | 管理/中央页族、桌面/手机、表单/详情/菜单/错误/未保存/分页完整体验 | PASS，29个ADMIN入口1440＋6个390，商品/恢复/重放另验1280；17个中央入口1440＋中央403/菜单390；平台1440/390、关联弹层实际查看 | `capture.json`、`screenshots/`、`central-validation/central-screenshots/`、`runtime-screenshots/`、`real-business/` |
 | B04 | 真实商品图片/缺图、发布/撤权、成长/标签、人群刷新、营销成交退款、旅程入组 | PASS，六项真实经营流程；另商品类目/模板/图片/条码与经营汇总共两项通过 | `operations-last.log`、`real-business-rerun.log`（前两项PASS，旧页签假设首次失败保留）、`real-business/` |
-| B05 | 构建、格式、类型、数据集成、静态差异、产物匹配 | PASS，见下方；Git/远程CI由DELIVERY_RESULT单独记录，未执行前不声称发布 | `build-release-final.log`、`package-last.log`、`format-check.log`、`backend-verify-rerun.log` |
+| B05 | 构建、格式、类型、数据集成、静态差异、产物匹配 | PASS，见下方；Git/远程CI由DELIVERY_RESULT单独记录，未执行前不声称发布 | `race-build.log`、`package-last.log`、`format-check.log`、`backend-verify-rerun.log` |
 
-表内省略的证据前缀均为 `.local/b-console-experience/`。服务端470个测试案例、失败0/错误0/显式性能实验跳过5（三个BackgroundRuntimeBenchmark、EventDispatchProfile、EventSchedulingBenchmark）；实际执行465。前端本轮明确PASS为14交互＋1中央页族＋6经营＋2商品/总览=23个测试案例，中央单个案例遍历17入口。没有将页面截图数量算成测试数量。
+表内省略的证据前缀均为 `.local/b-console-experience/`。服务端470个测试案例、失败0/错误0/显式性能实验跳过5（三个BackgroundRuntimeBenchmark、EventDispatchProfile、EventSchedulingBenchmark）；实际执行465。前端本轮明确PASS为15交互＋1中央页族＋6经营＋2商品/总览=24个测试案例，中央单个案例遍历17入口。没有将页面截图数量算成测试数量。
 
 完整后端命令：加载原runtime.env与已有owned-rules.env后`mvn -B verify`，测试数据库是既有隔离MySQL43308。后端源码在该PASS后未再修改。前端`npm run build --prefix frontend`含TypeScript检查；无新增依赖。with-ui `mvn -B -Pwith-ui package -DskipTests`仅包装已验证版本，不冒充额外测试；逐文件核对jar静态资源与当前dist字节相同。修改前端文件Prettier检查PASS，Java沿既有tabs/中文原因注释；`git diff --check` PASS。未配置ESLint/前端单测，静态检查证据为TypeScript及本轮只读审查，不虚构lint/单测。
 
@@ -39,3 +39,5 @@
 中央壳层的验证通过显式OIDC sessionStorage及公开DTO HTTP边界，只证明UI路径与禁止旧读取，不证明本轮重新交换真实OIDC或新增中央授权。既有中央服务端MySQL契约测试在完整后端中通过。此前中央员工迁移待办不会因此标记完成。
 
 保留限制：既有UI库chunk1,038kB构建警告（gzip332kB）；未单独声明/测量生产性能、跨浏览器认证或全站无障碍合规；五个显式性能实验未运行。Awwwards/Webby/FWA外部奖项或评委认可UNVERIFIED。本轮可观察功能与视觉检查PASS，`implementationStatus=IMPLEMENTATION_COMPLETE_WITH_LIMITATIONS`，无本范围产品阻断。
+
+末轮1280px复核发现规格列逐字换行，明确列宽与表内滚动后重截PASS；同时发现异步店铺默认值使用旧effect路由可覆盖新导航，改为读取当前URL并保留所有查询。新增延迟店铺响应/刷新案例与原回归共15项PASS，证据race-browser.log、capture1280.json、race-capture.log。后端无变化。

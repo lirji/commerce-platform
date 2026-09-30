@@ -273,30 +273,19 @@ export function App() {
   };
   useEffect(() => {
     if (actor && stores.data?.length && !locationState.store) {
-      const orderId = new URLSearchParams(location.hash.split("?")[1]).get(
-        "order",
-      );
-      if (
-        locationState.page === "orders" &&
-        orderId &&
-        actor.role !== "OPERATOR"
-      ) {
-        const query = new URLSearchParams({
-          store: stores.data[0].storeId,
-          order: orderId,
-        });
-        location.hash = "orders?" + query.toString();
-        return;
-      }
-      navigate(
-        locationState.page ||
-          (actor.role === "ADMIN"
-            ? "dashboard"
-            : actor.role === "OPERATOR"
-              ? "skus"
-              : "shop"),
-        stores.data[0].storeId,
-      );
+      // 店铺读取可能晚于用户导航；以当前URL为准，避免旧effect覆盖新页面或已恢复的筛选。
+      const current = route();
+      if (current.store) return;
+      const query = new URLSearchParams(location.hash.split("?")[1]);
+      query.set("store", stores.data[0].storeId);
+      const page =
+        current.page ||
+        (actor.role === "ADMIN"
+          ? "dashboard"
+          : actor.role === "OPERATOR"
+            ? "skus"
+            : "shop");
+      location.hash = page + "?" + query;
     }
   }, [actor, stores.data, locationState.store]);
   useEffect(() => {

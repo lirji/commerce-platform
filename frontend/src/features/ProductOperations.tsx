@@ -167,7 +167,7 @@ export function ProductOperations({ store }: { store: string }) {
                   dataSource={skus.data}
                   loading={skus.loading}
                   pagination={false}
-                  scroll={{ x: 1080 }}
+                  scroll={{ x: 1200 }}
                   columns={[
                     {
                       title: "商品",
@@ -199,6 +199,7 @@ export function ProductOperations({ store }: { store: string }) {
                     },
                     {
                       title: "规格",
+                      width: 220,
                       render: (_, r) =>
                         r.specifications
                           .map((s) => `${s.name}：${s.value}`)
