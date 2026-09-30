@@ -53,6 +53,8 @@ test("经营总览：真实汇总、每日趋势、导航搜索与手机布局",
       ),
     )
     .toBe(true);
+  await page.locator(".dashboard-basis").scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${evidence}/dashboard-mobile.png`,
     fullPage: true,

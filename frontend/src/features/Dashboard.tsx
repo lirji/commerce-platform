@@ -2,29 +2,17 @@ import {
   Alert,
   Button,
   Card,
-  Empty,
   Segmented,
   Space,
   Spin,
   Table,
   Typography,
 } from "antd";
-import { useState } from "react";
+import { useRouteState } from "../shared/routeState";
+import { DailyTrend, type Daily, type TrendMetric } from "./DailyTrend";
 import { encode, useResource } from "../shared/api";
 import { ErrorNotice, PageHead, money, time } from "../shared/ui";
 import { Icon, type IconName } from "../shared/Icon";
-type Daily = {
-  day: string;
-  orders: number;
-  paidOrders: number;
-  received: string;
-  refunded: string;
-  netReceipts: string;
-  discountGranted: string;
-  platformFunding: string;
-  merchantFunding: string;
-  updatedAt?: string;
-};
 type Summary = {
   storeId: string;
   from: string;
@@ -79,22 +67,23 @@ export function Dashboard({
   const data = useResource<Summary>(
     store ? `/admin/dashboard?storeId=${encode(store)}` : null,
   );
-  const [metric, setMetric] = useState<"netReceipts" | "received" | "refunded">(
-    "netReceipts",
-  );
-  const [table, setTable] = useState(false);
+  const [metricQuery, setMetric] = useRouteState("metric", "netReceipts");
+  const metric: TrendMetric =
+    metricQuery === "received" || metricQuery === "refunded"
+      ? metricQuery
+      : "netReceipts";
+  const [tableQuery, setTable] = useRouteState("daily", "");
+  const table = tableQuery === "open";
   if (!store) return <Alert type="info" title="选择门店查看经营总览" />;
   const summary = data.data;
   const daily = summary?.daily ?? [];
   const sums = summary?.totals;
-  const maximum = Math.max(1, ...daily.map((d) => Number(d[metric])));
-  const hasOrders = daily.some((d) => d.orders > 0);
   return (
     <div className="dashboard">
       <PageHead
         eyebrow="经营工作台"
         title="经营总览"
-        description="把会员关系、商品经营与成交结果放在同一个视野。"
+        description="会员、商品与成交，沿着真实数据看清经营。"
         extra={
           <Button onClick={data.refresh} loading={data.loading}>
             刷新总览
@@ -115,32 +104,39 @@ export function Dashboard({
             <div className="metric-grid">
               {[
                 {
+                  label: "净收金额",
+                  value: money(sums.netReceipts),
+                  note: "近30天 · 实收减已知成功退款",
+                  tone: "featured",
+                  mark: "trade",
+                },
+                {
                   label: "会员总数",
                   value: summary.members.total.toLocaleString(),
                   note: `租户范围 · 可用 ${summary.members.active}`,
                   tone: "blue",
+                  mark: "member",
                 },
                 {
                   label: "在售规格",
                   value: summary.catalog.active.toLocaleString(),
                   note: `当前门店 · 全部 ${summary.catalog.total}`,
                   tone: "teal",
+                  mark: "catalog",
                 },
                 {
                   label: "已付订单",
                   value: sums.paidOrders.toLocaleString(),
                   note: "近30天 · 已投影订单",
                   tone: "purple",
-                },
-                {
-                  label: "净收金额",
-                  value: money(sums.netReceipts),
-                  note: "实收减已知成功退款",
-                  tone: "amber",
+                  mark: "trade",
                 },
               ].map((k) => (
                 <Card key={k.label} className={`metric-card metric-${k.tone}`}>
-                  <span className="metric-label">{k.label}</span>
+                  <span className="metric-label">
+                    {k.label}
+                    <Icon name={k.mark as IconName} />
+                  </span>
                   <strong>{k.value}</strong>
                   <span className="metric-note">{k.note}</span>
                 </Card>
@@ -154,7 +150,7 @@ export function Dashboard({
                   <Segmented
                     aria-label="趋势指标"
                     value={metric}
-                    onChange={(v) => setMetric(v as typeof metric)}
+                    onChange={(v) => setMetric(String(v))}
                     options={[
                       { label: "净收", value: "netReceipts" },
                       { label: "实收", value: "received" },
@@ -174,42 +170,11 @@ export function Dashboard({
                     成交优惠 <b>{money(sums.discountGranted)}</b>
                   </span>
                 </div>
-                <div
-                  className="trend-plot"
-                  role="img"
-                  aria-label={`近30天${metric === "netReceipts" ? "净收" : metric === "received" ? "实收" : "退款"}趋势，单位人民币元`}
+                <DailyTrend daily={daily} metric={metric} />
+                <Button
+                  type="link"
+                  onClick={() => setTable(table ? "" : "open")}
                 >
-                  <span className="trend-max">{money(maximum.toFixed(2))}</span>
-                  <div className="trend-bars">
-                    {daily.map((d) => (
-                      <div
-                        key={d.day}
-                        className="trend-column"
-                        title={`${d.day} UTC · ${money(d[metric])}`}
-                      >
-                        <div
-                          style={{
-                            height: `${(Math.max(0, Number(d[metric])) / maximum) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  {!hasOrders && (
-                    <div className="trend-empty">
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="此窗口暂无已投影订单"
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="trend-axis">
-                  <span>{daily[0]?.day}</span>
-                  <span>UTC 下单日期</span>
-                  <span>{daily.at(-1)?.day}</span>
-                </div>
-                <Button type="link" onClick={() => setTable(!table)}>
                   {table ? "收起每日数据" : "查看每日数据"}
                 </Button>
                 {table && (
@@ -239,9 +204,12 @@ export function Dashboard({
                 )}
               </Card>
               <Card title="经营状态" className="state-card">
-                <Typography.Text type="secondary">
-                  会员 · 当前租户
-                </Typography.Text>
+                <div className="state-heading">
+                  <Icon name="member" />
+                  <Typography.Text type="secondary">
+                    会员 · 当前租户
+                  </Typography.Text>
+                </div>
                 <div className="state-total">
                   {summary.members.active}
                   <small>可用会员</small>
@@ -262,9 +230,12 @@ export function Dashboard({
                   <b>{summary.members.closed}</b>
                 </div>
                 <div className="state-divider" />
-                <Typography.Text type="secondary">
-                  商品 · 当前门店
-                </Typography.Text>
+                <div className="state-heading">
+                  <Icon name="catalog" />
+                  <Typography.Text type="secondary">
+                    商品 · 当前门店
+                  </Typography.Text>
+                </div>
                 <div className="state-row">
                   <span>在售规格</span>
                   <b>{summary.catalog.active}</b>
