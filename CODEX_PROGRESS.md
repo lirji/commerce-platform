@@ -2,35 +2,42 @@
 
 ## 任务目标
 
-执行已授权P6首批commerce-platform既有运营租户本地隔离迁移；用户选择2，完整CATALOG能力。详见../auth-platform/CODEX_PROGRESS.md。
+继续商城中央授权接入。已批准完整CATALOG页面补齐；用户追加其他模块，先补能力与权限契约。员工/部门权威OA，目标先本地隔离，生产目标待定。
 
 ## 已完成
 
-- 完整中央经营桥、持久任务引用、服务端权威路由和数据库旧写冻结；原commerce_local及运行8602未切换。
-- 5项新增真实MySQL测试通过：全经营、拒绝/到期/任务、回退、HTTP、并发切换等待旧事务。
-- auth私有rehearsal-a5836d80f8c5真实跨进程31项通过；1真实源拒绝+1独立有限时正向夹具，不混淆生产身份。
-- 最终完整reactor393项（388通过、5可选性能跳过），失败0；新5项包含并发切换，架构依赖测试通过。
+- P6完整CATALOG后端/任务接管基线31dbdcd保持。
+- 新增/operations/catalog固定SSO壳，复用原商品经营组件；中央Bearer及tenant用React请求上下文隔离，不写旧控制台全局凭据。
+- 393项Java验证（388通过/5可选跳过）、前端构建/Prettier、完整打包通过。
+- auth仓隔离演练rehearsal-c9a502b7a77c共34项通过，包括浏览器真实编辑、跨店/跨租户、退出/401/会话过期、源撤权403与依赖503。
+- 1440/390视口、桌面编辑及拒绝/不可用截图已查看；本轮不重测完整PKCE输入密码登录，复用P5。
+- 41c22ae产品提交已从独立任务分支正常合并推送main，远程CI在执行；最终状态以auth仓commerce-readiness/DELIVERY_RESULT.md为准。
 
 ## 已修改文件
 
-- Actor、StoreAccessService、CatalogAuthority与API/Mapper/V48、CentralCatalogService/Configuration、任务重试、错误边界、5项MySQL测试、CI迁移专用连接。
+- frontend/src/iam/{CentralCatalog,CentralProducts,api,session}，main及shared/api。
+- CentralPageController、SecurityConfiguration及AuthorizationCoverageTest。
+- docs/CENTRAL_CATALOG_ENTRY.md，本进度。
 
 ## 未完成
 
-- 无剩余产品代码；hygiene通过，局限为无统一formatter/静态分析未配置。
-- 本文件为实施验收检查点；最终提交/main包含关系/远程CI以auth的phase-6/P6_DELIVERY_RESULT.md与CI_RESULT.md为准，恢复时先查这些文件和Git，不重新实施。
-- SDK钉auth fc82340761b30936f3efde2e28df44f1cb6c3dde。
+- 远程CI收尾。
+- auth仓CONTRACTS_COMMERCE_EXPANSION.md草案尚待业务边界/高风险审批选择；新模块未接管。
+- 真实OA映射/Owner签字、生产目标/SLO/RTO/RPO、发布观察及旧写入收缩未完成。
 
 ## 当前问题
 
-- V48触发器需独立DDL Owner；测试失败迁移已用受控Flyway恢复，不删除数据、不改共享MySQL全局变量。
-- 分支feat/iam-p6-migration，尚未提交；.local私有证据与运行配置保留，不入库。
+- 真实选中旧账号凭据已到期，不能自动续期；本轮读改使用独立有限时正向夹具。
+- 门店入口为编号/深链，没有CATALOG隐含授权门店目录查询。
+- 原8602运行商城未切换/重启；OA用户改动保持；私有演练资源已停止但数据/证据保留。
+- 无新worktree；auth/.local/p0-baselines/commerce历史基线保留。
 
 ## 下一步建议
 
-1. 读取auth进度统一收尾；不要重启原商城。
-2. 运行必要验证、记录测试/候选限制并完成Git交付。
+1. 查看auth仓commerce-readiness/DELIVERY_RESULT.md确认CI实际结果。
+2. 按用户业务选择定稿扩展契约，再实现逐能力接管，禁止把旧ADMIN整体映成中央管理员。
+3. 真实生产迁移仍需明确映射、目标和接受条件；不自动清理私有资源。
 
 ## 恢复 Prompt
 
-读取../auth-platform/CODEX_PROGRESS.md继续P6，用户已确认选项2完整CATALOG，无需再确认；保留原到期拒绝与OA用户改动。
+读取CODEX_PROGRESS.md及auth仓docs/implementation/oa-auth/commerce-readiness/EXECUTION_PLAN.md，从未完成的CI/扩展契约继续。保留原商城和OA改动，不重复P7容量验收。
