@@ -11,7 +11,10 @@ public interface EmployeeAccess {
         MERCHANT_READ("commerce.merchant.read", "DIRECTORY", "merchant"), MERCHANT_CREATE("commerce.merchant.create", "DIRECTORY", "merchant"),
         STORE_DIRECTORY_READ("commerce.store.directory.read", "DIRECTORY", "store"), STORE_CREATE("commerce.store.create", "DIRECTORY", "store"),
         MEMBER_READ("commerce.member.read", "MEMBER_PROFILE", "commerce_member"), MEMBER_CREATE("commerce.member.create", "MEMBER_PROFILE", "commerce_member"),
-        MEMBER_PROFILE_UPDATE("commerce.member.profile.update", "MEMBER_PROFILE", "commerce_member"), MEMBER_STATUS_UPDATE("commerce.member.status.update", "MEMBER_PROFILE", "commerce_member");
+        MEMBER_PROFILE_UPDATE("commerce.member.profile.update", "MEMBER_PROFILE", "commerce_member"), MEMBER_STATUS_UPDATE("commerce.member.status.update", "MEMBER_PROFILE", "commerce_member"),
+        GROWTH_READ("commerce.growth.read", "MEMBER_GROWTH", "commerce_member"), GROWTH_ADJUST("commerce.growth.adjust", "MEMBER_GROWTH", "commerce_member"),
+        GROWTH_RECALCULATE("commerce.growth.recalculate", "MEMBER_GROWTH", "commerce_member"),
+        GROWTH_POLICY_READ("commerce.growth.policy.read", "MEMBER_GROWTH", "commerce_member_policy"), GROWTH_POLICY_PUBLISH("commerce.growth.policy.publish", "MEMBER_GROWTH", "commerce_member_policy");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }

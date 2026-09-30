@@ -14,6 +14,8 @@ import com.lrj.commerce.member.cycle.api.MemberCycleApi;
 import com.lrj.commerce.member.growth.api.MemberGrowthApi;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.event.Outbox;
@@ -22,6 +24,8 @@ import com.lrj.commerce.runtime.serialization.JsonCodec;
 /** 以来源净贡献对账，重复/乱序完成和退款事实不会重复加减成长。 */
 @Service
 public class MemberGrowthService implements MemberGrowthApi {
+
+	private final EmployeeAccess access;
 
 	private final MemberBehaviorApi behavior;
 
@@ -38,7 +42,8 @@ public class MemberGrowthService implements MemberGrowthApi {
 	private final Clock clock;
 
 	public MemberGrowthService(GrowthMapper mapper, MemberMapper members, Commands commands, Outbox outbox, Clock clock,
-			MemberCycleApi cycles, MemberBehaviorApi behavior) {
+			MemberCycleApi cycles, MemberBehaviorApi behavior, EmployeeAccess access) {
+		this.access = access;
 		this.behavior = behavior;
 		this.cycles = cycles;
 		this.mapper = mapper;
@@ -50,7 +55,7 @@ public class MemberGrowthService implements MemberGrowthApi {
 
 	/** 不可变发布防止退款时使用新成长率，生效时间限定新订单。 */
 	public Policy publish(Actor actor, String key, Policy input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, GROWTH_POLICY_PUBLISH);
 		Inputs.require(input != null && input.version() > 0 && input.effectiveFrom() != null, "策略版本或时间无效");
 		Inputs.require(input.levels() != null && !input.levels().isEmpty() && input.levels().size() <= 8, "等级数量需为1至8");
 		Inputs.text(input.growthPerYuan(), 16);
@@ -74,27 +79,33 @@ public class MemberGrowthService implements MemberGrowthApi {
 		Inputs.require(input.levels().getFirst().minimumGrowth() == 0, "首档门槛必须为0");
 		var normalized = new Policy(input.version(), input.effectiveFrom().truncatedTo(ChronoUnit.MILLIS),
 				rate.toPlainString(), List.copyOf(input.levels()));
-		return commands.run(actor, "member.growth.policy", key, normalized, Policy.class, () -> {
+		Object command = permit.identity() == null ? normalized : new Object[] { normalized, permit.identity() };
+		return commands.runGuarded(actor, "member.growth.policy", key, command, Policy.class, () -> access.lock(permit), () -> {
 			Inputs.require(
 					!normalized.effectiveFrom().isBefore(clock.instant().minusSeconds(60))
 							&& !normalized.effectiveFrom().isAfter(clock.instant().plusSeconds(31536000)),
 					"生效时间应为现在或未来一年内");
 			mapper.policy(actor.tenantId(), normalized, JsonCodec.write(normalized));
+			access.audit(actor, permit, "member.growth.policy", key, "growth-policy-" + normalized.version());
 			return normalized;
 		});
 	}
 
 	/** 配置保留版本供审计及回放。 */
 	public List<Policy> policies(Actor actor, long after, int limit) {
-		actor.requireAdmin();
+		var before = access.scope(actor, GROWTH_POLICY_READ);
 		page(after, limit);
-		return mapper.policies(actor.tenantId(), after, limit).stream().map(this::policy).toList();
+		var result = mapper.policies(actor.tenantId(), after, limit).stream().map(this::policy).toList();
+		EmployeeAccess.requireSame(before, access.scope(actor, GROWTH_POLICY_READ));
+		return result;
 	}
 
 	/** 管理读取或本人读取，不允许会员替换memberId。 */
 	public Wallet wallet(Actor actor, String id) {
-		authorize(actor, id);
-		return wallet(actor.tenantId(), id);
+		var permit = authorize(actor, id);
+		var result = wallet(actor.tenantId(), id);
+		recheck(actor, permit);
+		return result;
 	}
 
 	/** 本人档案绑定来自数据库。 */
@@ -104,19 +115,22 @@ public class MemberGrowthService implements MemberGrowthApi {
 
 	/** 账本不可修改，游标查询最多100项。 */
 	public List<Entry> ledger(Actor actor, String id, long after, int limit) {
-		authorize(actor, id);
+		var permit = authorize(actor, id);
 		page(after, limit);
-		return mapper.ledger(actor.tenantId(), id, after, limit);
+		var result = mapper.ledger(actor.tenantId(), id, after, limit);
+		recheck(actor, permit);
+		return result;
 	}
 
 	/** 人工校准独立来源，金额含义不伪装为订单支付。 */
 	public Wallet adjust(Actor actor, String key, String id, Adjustment input) {
-		actor.requireAdmin();
+		var permit = permit(actor, GROWTH_ADJUST, id);
 		Identifiers.require(id);
 		Inputs.require(input != null && input.expectedVersion() >= 0 && input.delta() != 0
 				&& input.delta() >= -1000000000L && input.delta() <= 1000000000L, "调整量或版本无效");
 		Inputs.text(input.reason(), 256);
-		return commands.run(actor, "member.growth.adjust", key, new Object[] { id, input }, Wallet.class, () -> {
+		Object command = permit.scope().identity() == null ? new Object[] { id, input } : new Object[] { id, input, permit.scope().identity() };
+		return commands.runGuarded(actor, "member.growth.adjust", key, command, Wallet.class, () -> lockPermit(actor, permit), () -> {
 			var member = lock(actor.tenantId(), id);
 			Inputs.require(!member.status().equals("CLOSED"), "注销会员不可人工调整");
 			var account = mapper.accountCurrent(actor.tenantId(), id);
@@ -127,19 +141,22 @@ public class MemberGrowthService implements MemberGrowthApi {
 					input.delta());
 			apply(actor.tenantId(), member, account, input.delta(), new BigDecimal(account.netSpend()),
 					"manual-" + JsonCodec.hash(key).substring(0, 32), 0, input.reason(), true);
+			access.audit(actor, permit.scope(), "member.growth.adjust", key, id);
 			return wallet(actor.tenantId(), id);
 		});
 	}
 
 	/** 新门槛不隐含全库更新；运营可对明确会员重算等级。 */
 	public Wallet recalculate(Actor actor, String key, String id) {
-		actor.requireAdmin();
+		var permit = permit(actor, GROWTH_RECALCULATE, id);
 		Identifiers.require(id);
-		return commands.run(actor, "member.growth.recalculate", key, id, Wallet.class, () -> {
+		Object command = permit.scope().identity() == null ? id : new Object[] { id, permit.scope().identity() };
+		return commands.runGuarded(actor, "member.growth.recalculate", key, command, Wallet.class, () -> lockPermit(actor, permit), () -> {
 			var member = lock(actor.tenantId(), id);
 			var account = mapper.accountCurrent(actor.tenantId(), id);
 			apply(actor.tenantId(), member, account, 0, new BigDecimal(account.netSpend()), "recalculate", 0,
 					"按当前策略重算等级", false);
+			access.audit(actor, permit.scope(), "member.growth.recalculate", key, id);
 			return wallet(actor.tenantId(), id);
 		});
 	}
@@ -260,15 +277,40 @@ public class MemberGrowthService implements MemberGrowthApi {
 				a == null ? 0 : a.policyVersion(), a == null ? 0 : a.version());
 	}
 
-	private void authorize(Actor actor, String id) {
+	/** 客户本人读取仍按商城绑定；所有员工分支必须经过本族权威。 */
+	private EmployeeAccess.ResourcePermit authorize(Actor actor, String id) {
 		Identifiers.require(id);
-		if (actor.role() == Actor.Role.ADMIN) {
-			Inputs.found(members.find(actor.tenantId(), id));
-			return;
-		}
-		if (actor.role() != Actor.Role.MEMBER
-				|| !Inputs.found(members.byActor(actor.tenantId(), actor.actorId())).memberId().equals(id))
+		if (actor.role() != Actor.Role.MEMBER) return permit(actor, GROWTH_READ, id);
+		if (!Inputs.found(members.byActor(actor.tenantId(), actor.actorId())).memberId().equals(id))
 			throw new DomainException(DomainException.Code.FORBIDDEN, "不能读取其他会员成长");
+		return null;
+	}
+
+	/** 会员归属和版本来自本域，账户请求参数不能替代Owner事实。 */
+	private EmployeeAccess.ResourcePermit permit(Actor actor, EmployeeAccess.Capability capability, String id) {
+		var scope = access.scope(actor, capability);
+		Identifiers.require(id);
+		return access.resource(actor, scope, fact(Inputs.found(members.find(actor.tenantId(), id))));
+	}
+
+	/** 员工读取返回前复核授权及会员版本，客户本人路径不借员工引用。 */
+	private void recheck(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		if (permit == null) return;
+		EmployeeAccess.requireSame(permit.scope(), access.scope(actor, GROWTH_READ));
+		if (!permit.fact().equals(fact(Inputs.found(members.find(actor.tenantId(), permit.fact().id())))))
+			throw new DomainException(DomainException.Code.CONFLICT, "会员版本已变化，请刷新");
+	}
+
+	/** 路由锁先于会员锁和旧回执；guard不创建账户，失败时没有额外业务效果。 */
+	private void lockPermit(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		access.lock(permit.scope());
+		if (!permit.fact().equals(fact(Inputs.found(members.lock(actor.tenantId(), permit.fact().id())))))
+			throw new DomainException(DomainException.Code.CONFLICT, "会员版本已变化，请刷新");
+		access.lock(permit.scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(MemberApi.View member) {
+		return new EmployeeAccess.ResourceFact(GROWTH_READ.resourceType(), member.memberId(), member.version());
 	}
 
 	private Policy policy(GrowthMapper.PolicyRow row) {

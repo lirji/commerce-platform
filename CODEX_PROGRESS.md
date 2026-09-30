@@ -2,40 +2,41 @@
 
 ## 任务目标
 
-连续完成已批准商城中央员工权限扩展。OA权威；会员/营销真实TENANT_ALL，库存/交易真实门店；高风险独立权限、沿用现有审批。授权任务分支、正常合并推送main，不含生产部署/清理数据。
+连续完成已批准商城中央员工权限扩展。OA为员工/部门权威；会员/营销真实TENANT_ALL，库存/交易真实门店；高风险独立权限、沿用现有业务审批，不新增OA逐笔审批。授权任务分支、正常合并推送main，不含生产部署/清理数据。按原目录串行推进，不生成新工作树，不反复询问继续。
 
 ## 已完成
 
-- CE02、CE03库存I/U、目录D0/D1/D2已交付。D2 auth3a8f7e9 CI被后续P0取消，commerce5587d53 CI36668436980 SUCCESS；包含D2基线的auth P0 dd07223 CI36668768692 SUCCESS。
-- D2验证402项397PASS/5skip；真实隔离99项PASS，目录/库存/CATALOG浏览器及1440/390截图已检查，证据CE03_DIRECTORY.md。
-- CE04-P0协议DONE并已推送dd07223161df6e3dcb6e55756aac7f91369f416d；251单测、4真实PG+graph IT、Boot4/SDK/package PASS。真实Owner登记要求保留；不当作实际会员Owner验收。
+- CE02、CE03库存I/U及目录D0/D1/D2已交付；完整历史见auth commerce-readiness各CE03文档。
+- CE04-P0协议auth dd07223已推送，CI36668768692 SUCCESS。
+- CE04-P1 auth2cb8c11/commerce1bc81f2已推送，CI36669783915/36669785165 SUCCESS。406项401PASS/5skip，真实隔离114PASS（rehearsal-451c622849b4）。V52已在测试/演练应用不可改历史。
+- CE04-P2 auth21380a4/commerce359ac02已推送。407项402PASS/5skip，最终rehearsal-aa0b96471601共137PASS（会员12条浏览器、目录11/库存9/CATALOG9），当前1440/390/表单/历史/未知/冲突/故障截图已实际查看。36项Python/227入口/hygiene无阻断。auth CI36670574749被G0推送取消，commerce CI36670578849 SUCCESS。
+- CE04-G0 auth51f637c7fc9dbff730da369adbd37c73b8a4db0e已推送，CI36670815592 SUCCESS（含P2基线）。成长5能力：member实例3、policy集合2，60秒HUMAN/完整TENANT_ALL，policy resource-check拒绝，独立Owner登记。251既有单测+新增Owner1、5真实PG+graph IT（自有PGf7cc1b4cd6cd已停）、SDK install/Boot4/package/hygiene PASS。正式CONTRACTS_COMMERCE_GROWTH.md已细化G0/G1/G2。
 
 ## 已修改文件
 
-- auth feat/commerce-member-ui-contract：P2契约/227入口/P6会员浏览器阶段/新governance-ce04-member.mjs。
-- commerce feat/central-member-ui：CentralMembers、MemberActionsController三提示、精确路由/SSO白名单、提示与壳负例测试。P1已提交，SDK固定dd07223。
+- auth feat/commerce-growth-owner-contract：已改deploy/governance-p6-rehearsal.py新增--growth真实联调，正式成长契约追加G1锁/兼容细节。
+- commerce feat/central-member-growth：EmployeeAccess成长5能力/MEMBER_GROWTH族；EmployeeAuthority全租户与会员许可；MemberGrowthService政策/钱包/账本/调整/重算；精确过滤/Errors；V53（已在专用MySQL成功应用，不可改历史）；CentralGrowthMySqlTest4项；SDK来源固定51f637c且原安装脚本PASS；CODEX_PROGRESS更新。
 
 ## 未完成
 
-- CE04-P1本地DONE：406项401PASS/5skip；真实隔离rehearsal-451c622849b4共114PASS；36项Python/223入口核对/hygiene无阻断。工具显式--identity-subnet 10.254.81.0/24解决默认网络池耗尽，不删除旧网络。
-- P1 auth2cb8c11/commerce1bc81f2已合并推送，CI36669783915/36669785165均SUCCESS。
-- P2本地DONE：407项402PASS/5skip，最终rehearsal-aa0b96471601共137PASS（会员12条浏览器，目录/库存/CATALOG回归）。当前截图已实际查看，36项Python/227入口/两仓hygiene无阻断；正在按分支提交合并推送。失败e56215a12fb5是Select测试定位问题，修后完整复跑，不删证据。
-- 成长/标签/行为/周期/积分及CE05—08仍未完成。
-- 真实OA映射/Owner签字/永久授权截止/生产SLO RTO/RPO待定，仅阻塞对应动作。
+- G1完整串行growth-verify-serial.log已411项406PASS/5skip，真实rehearsal-fb6d4a99a58b已151PASS，无浏览器；36项Python、227入口及两仓hygiene无阻断。G1本地DONE，Git交付中。
+- 下一G2成长UI：私有草案.local/governance/commerce-contracts/growth-ui-contract-draft.md待正式化，沿用SSO/AntDesign与三个独立写提示，真实浏览器/1440/390截图验收。
+- 成长之外标签/行为/周期/积分、CE05—08仍未完成。真实OA映射/Owner签字/永久授权截止/生产SLO RTO/RPO待定，仅阻塞对应真实动作。
 
 ## 当前问题
 
-- P1首轮编译INVALID_ARGUMENT改为已有INVALID_INPUT。第一次完整回归：故障注入被MANDATORY代理拦截，改用AopTestUtils取得真实spy设置；库存旧测试对现已接入的会员入口应403而非401，已修正。失败日志保留，不声称通过。
-- V52已在专用MySQL成功应用，不可改历史。commerce-inventory-mysql-7841e58190:43308保留运行；source .local/runtime.env后source .local/central-inventory/owned.env，不输出凭据。
-- 原8602与OA脏文件不碰；无新worktree。.local私密证据、停止的演练容器/数据保留不提交不删除。
-- 5秒为本地准入窗口，不宣称跨库瞬时撤权；旧二进制不认识新族，回退需认识该族版本+STOPPED。
+- Docker默认地址池耗尽，不删历史资源。P6支持--identity-subnet明确RFC1918 /24，已用10.254.81/82/83.0/24保留，84已停止进程并保留网络，下一可核对后选85；Docker检查重叠。PG-only协议IT不需新网络。
+- P1初次测试故障注入触发MANDATORY代理，改AopTestUtils设置spy；库存对现会员入口期望401改403。P2 e56215a12fb5到108PASS后Select测试role定位超时，菜单正常，改可见选项定位，最终aa0b96471601完整通过。失败日志/截图均保留。
+- 专用MySQL commerce-inventory-mysql-7841e58190:43308继续运行，凭据只source不输出；测试库commerce_test_20260923。V49—V52已执行不改；V53已应用也不可改历史。原8602/commerce_local不切换、不重启。
+- OA6385a86的既有脏文件不碰。auth他任务782ae3d仅gitignore且已在origin/main，保留其~/.local/share/git-worktrees/auth-platform/gitignore-hygiene工作树；本任务没有新建worktree。
+- .local私密证据/临时源草案、停止的PG/IdP/网络和隔离库保留不提交不删除。旧二进制不认识新能力族，回退需认识族的版本+STOPPED；5秒仅本地准入窗口，不承诺跨库瞬时撤权。
 
 ## 下一步建议
 
-1. P2验证已完成，Git交付并核对远程CI。P1两仓CI已SUCCESS。auth他任务782ae3d仅gitignore且已在origin/main，已保留其工作树，不清理。
-2. 继续CE04-G成长政策/钱包/调整/重算；auth .local/governance/commerce-contracts/member-growth-draft.md已做源码细化草案，需转正式契约后按G0协议/G1 Owner/G2 UI实施。
-3. 连续完成后续已批准片，不因一片完成停止或重复询问。
+1. G1按明确路径提交/普通合并推送两仓并查CI；不修改已验证代码。
+2. G2正式化现有技术草案后实施页面与提示、真实浏览器联调。
+3. 成长完成后继续会员其他能力及CE05—08，不把一片当全部完成。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS和auth docs/implementation/oa-auth/commerce-readiness/EXECUTION_PLAN、CE04_MEMBER，从未完成部分连续执行；边界和Git已授权，保护原商城/OA和私密数据。
+读取CODEX_PROGRESS与auth docs/implementation/oa-auth/commerce-readiness/EXECUTION_PLAN、CE04_MEMBER、CONTRACTS_COMMERCE_GROWTH，从未完成的G1回归/真实联调继续；边界与Git已授权，不重复确认，保护原商城/OA和私密数据。

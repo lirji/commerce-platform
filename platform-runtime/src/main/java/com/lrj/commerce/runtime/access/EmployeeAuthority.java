@@ -58,7 +58,8 @@ public class EmployeeAuthority implements EmployeeAccess {
         var decision = adapter.scope(actor, capability, route.authTenantId());
         if (decision.until().isBefore(until)) until = decision.until();
         if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
-        if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability))
+        if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability)
+                || capability == Capability.GROWTH_POLICY_READ || capability == Capability.GROWTH_POLICY_PUBLISH)
                 && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
         return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
     }
@@ -83,7 +84,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         return new ResourcePermit(new ScopePermit(permit.capability(), permit.tenant(), permit.filter(), permit.route(), permit.identity(), permit.fingerprint(), until), fact);
     }
     private static boolean memberCapability(Capability capability) {
-        return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE).contains(capability);
+        return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE, Capability.GROWTH_READ, Capability.GROWTH_ADJUST, Capability.GROWTH_RECALCULATE).contains(capability);
     }
     /** 集合许可的路由锁先于命令回执与业务写入。 */
     @Override @Transactional(propagation = Propagation.MANDATORY)
