@@ -13,6 +13,7 @@ import {
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { CentralBehavior } from "./CentralBehavior";
 import { CentralTags } from "./CentralTags";
 import { CentralGrowth } from "./CentralGrowth";
 import { CentralMembers } from "./CentralMembers";
@@ -105,19 +106,21 @@ export function CentralProducts() {
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
   const Page =
-    location.pathname === "/operations/member-tags"
-      ? CentralTags
-      : location.pathname === "/operations/member-growth"
-        ? CentralGrowth
-        : location.pathname === "/operations/members"
-          ? CentralMembers
-          : location.pathname === "/operations/directory"
-            ? CentralDirectory
-            : location.pathname === "/operations/inventory"
-              ? CentralInventory
-              : location.pathname === "/operations/catalog"
-                ? CentralCatalog
-                : Products;
+    location.pathname === "/operations/member-behavior"
+      ? CentralBehavior
+      : location.pathname === "/operations/member-tags"
+        ? CentralTags
+        : location.pathname === "/operations/member-growth"
+          ? CentralGrowth
+          : location.pathname === "/operations/members"
+            ? CentralMembers
+            : location.pathname === "/operations/directory"
+              ? CentralDirectory
+              : location.pathname === "/operations/inventory"
+                ? CentralInventory
+                : location.pathname === "/operations/catalog"
+                  ? CentralCatalog
+                  : Products;
   return (
     <Page
       key={`${user.profile.sub}:${tenant}`}
