@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class CentralPageController {
     /** 支持独立应用入口刷新及OIDC回调，URL不携带业务Token。 */
-    @GetMapping({"/operations/point-offers", "/operations/member-points", "/operations/member-cycles", "/operations/member-cycle-benefits", "/operations/member-behavior", "/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products","/collaboration/products","/iam/callback"})
+    @GetMapping({"/operations/coupon-definitions", "/operations/point-offers", "/operations/member-points", "/operations/member-cycles", "/operations/member-cycle-benefits", "/operations/member-behavior", "/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products","/collaboration/products","/iam/callback"})
     public String page(){return "forward:/index.html";}
 }

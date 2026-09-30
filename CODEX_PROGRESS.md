@@ -2,42 +2,39 @@
 
 ## 任务目标
 
-连续完成已批准商城中央员工权限扩展；OA权威，会员/营销TENANT_ALL、库存/交易门店范围，高风险独立权限沿现有业务流程，无OA逐笔审批。独立分支、正常合并推送main已授权，无生产部署/删除授权。原目录串行，不用子Agent或新worktree。
+连续完成已批准商城中央员工权限扩展；OA权威，会员/营销TENANT_ALL、库存/交易门店范围，高风险独立权限沿原业务流程，无OA逐笔审批。独立分支、正常合并推送main已授权，无生产部署/删除授权。原目录串行，不用子Agent或新worktree。
 
 ## 已完成
 
-- CE02/03及CE04会员、成长、标签、行为、周期、积分、积分商品各API/页面纵向片已交付，详细历史见auth CE04_MEMBER。
-- O2 authc823750/commercec027daa：446项441PASS/5skip，真实7fdcde67f634/子网103共450PASS；commerce CI36688830234 SUCCESS，auth取消基线由CD0 SUCCESS包含。
-- O2输入长度独立校准已推送authad9984d/commercebe8f96e：64字符与真实Identifiers一致，build/Prettier/hygiene通过；后续CD2完整浏览器覆盖。
-- CD0 auth471cdb8已推送，252单元/真实PG8908d6c82bcf+图11方法/SDK Boot4/install/hygiene PASS，CI36689152601 SUCCESS。
-- CD1本地DONE：完整452项447PASS/5skip、新6项全部PASS；最终真实aa92413e7500/子网105共415PASS，恰3身份审计/2客户发券/余额100，撤权/503/客户兼容/旧模块回归通过。37工具/250入口、最终package/hygiene和auth1/commerce8摘要一致。
+- CE00—04已完成本地接入与验证；详细历史见auth CE04_MEMBER/EXECUTION_PLAN。
+- CD0 auth471cdb8；CD1 auth700f2c9/commerceb36982e均已正常合并推送，精确CI SUCCESS。
+- CE05-CD2本地DONE：固定SSO券定义目录/创建两Tab、独立创建提示；完整453项448PASS/5既有skip，券定义7项全PASS；真实隔离83d4ad742f53（10.254.106.0/24）493PASS，其中券定义10条浏览器行为，含全部既有员工页回归及O2标识64字校准。37工具/252入口/122能力/34角色、build/Prettier/两仓hygiene与auth4/commerce11源码摘要一致。当前1440/390目录/表单、409、未知结果、退出确认、成功/503截图已查看。5条实际定义身份审计、UI两定义各1条，实际公开领取/受控兑换共2次且余额100。Java formatter/静态分析限制保留，无新迁移；V49—V60不可改。Git交付中，下一CE05-E权益定义/实例技术细化；其他CE05—08与生产2HOLD未完成。
 
 ## 已修改文件
 
-- auth feat/commerce-coupon-definition-rehearsal：P6 --coupon-definitions、COUPON_DEFINITIONS契约（已含CD2细节）、CE05_MARKETING、EXECUTION_PLAN/PROGRESS_STATE。
-- commerce feat/central-coupon-definition-operations：EmployeeAccess/Authority、CouponService、精确HTTP映射/错误边界、V60、CentralCouponDefinitionMySqlTest6方法、SDK ref471cdb8、文档/本进度。
-- 本轮无新worktree；曾临时切独立O2修复分支仅提交它的两文件，再回上述CD1分支快进包含修复，CD1改动未夹带。
+- auth feat/commerce-coupon-definition-ui-contract：P6脚本、CE05浏览器、O2标识回归、252入口契约/清单及进度文档。
+- commerce feat/central-coupon-definition-ui：CentralCouponDefinitions、独立hint及固定SSO/安全路由接线、第7项MySQL测试、文档。
 
 ## 未完成
 
-- CD1正常Git交付中，随后检查精确CI。
-- CD2券定义固定SSO页/独立create-access/hint测试/真实浏览器尚未实施。正式契约已补；私密coupon-definition-ui-implementation-notes.md有准确实施提示（API3+UI2审计5、客户端64字编码、PUBLIC目录断言等）。
-- 其他CE05及CE06—08未完成；下一权益定义/实例私密entitlements-contract-draft.md已有源码调查，未实施。
+- CD2本地DONE，正常Git交付及精确CI待完成。
+- CE05其余营销/权益/旅程；下一权益定义/实例技术细化草案见auth .local/governance/commerce-contracts/entitlements-contract-draft.md。
+- CE06订单/履约/售后/退款，CE07页面/事件/运维，CE08后台执行引用/增量对账/收缩验收。
 - 原63节点生产2HOLD持续，无实际切换/生产部署。
 
 ## 当前问题
 
 - 无环境阻塞；Java formatter/静态分析未配置、5既有skip、5秒本地准入限制保持。
-- CD1首轮449项2夹具错误：INACTIVE非实际FROZEN、ID100非业务64；已修重跑完整通过。首轮cf51bc65d092子网104在378PASS因脚本/revocations错误停止，已按/revoke+200修复，最终415PASS。
-- V49—V60已执行不可改；auth运行Jar必须forceCreation并核验嵌套依赖，SDK install可能更新模块归档。
-- 子网81—105及.local私密证据/数据保留，自有进程finally停止。原8602/commerce_local、OA和其他worktree不动；专用测试MySQL43308。
+- CD2首轮混用runtime.env凭据与43308，第二轮仅owned.env缺地址加密配置；最终必须依次source .local/runtime.env，再source .local/central-inventory/owned.env，完整verify-final PASS。两失败日志保留，不改业务或预算。
+- V49—V60不可改。auth运行Jar须forceCreation并核验嵌套依赖。CD2源码摘要auth4/commerce11一致。
+- 新83d4ad742f53/10.254.106.0/24数据与所有历史私密证据保留，自有进程finally停止；原8602/OA/其他worktree未动。本轮无新worktree。
 
 ## 下一步建议
 
-1. CD1最终显式路径提交/正常合并推送main，记录commit与CI。
-2. 新CD2任务分支接页面（两Tab、nullable金额/布尔/发行方式、未知原键重试），新增hint+shell后工具入口预计252（以工具为准）。完整测试/build/截图/SQL与原页面回归后交付。
-3. 完成其他CE05及CE06—08；真实缺信息/危险操作/权限/环境阻塞才暂停，不要求继续。
+1. 显式路径提交CD2、正常合并推送两仓main并检查精确CI。
+2. 正式细化已批准CE05-E四权益能力契约，依次实施E0中央协议、E1业务Owner/审计、E2两独立页面并验证交付。
+3. 继续CE05其余及CE06—08；不要求用户再次输入继续。
 
 ## 恢复 Prompt
 
-读取本文件与auth CE05_MARKETING/EXECUTION_PLAN，CD1最终415项真实验收通过、Git交付中。立即交付并进入CD2页面，私密实施notes已有核对结果。O2长度修复已独立交付，CD2浏览器顺带回归。不得重跑已完成片或修改V49—V60；保护原环境/私密证据，不重新询问范围。
+读取本文件与auth CE05_MARKETING/EXECUTION_PLAN，从CD2 Git交付接着做。CD2完整453项448PASS/5skip、真实493PASS、10新浏览器行为、截图已看和最终摘要一致；不要重复已完成验证。之后直接推进CE05-E权益已批准契约，不重新确认范围。保护原环境和私密证据，不改历史迁移、不建新worktree/子Agent。

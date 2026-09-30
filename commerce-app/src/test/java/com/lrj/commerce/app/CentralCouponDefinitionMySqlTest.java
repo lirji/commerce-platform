@@ -179,6 +179,17 @@ class CentralCouponDefinitionMySqlTest {
         assertThrows(DomainException.class,()->coupons.create(actor(COUPON_DEFINITION_CREATE),id(),bad));
         assertEquals(0,count("benefit_coupon_definition"));assertEquals(0,count("employee_command_identity"));
     }
+    /** 提示只接受当前中央创建资格，读权限和旧ADMIN不能补齐它。 */
+    @Test void createHintIsIndependentAndFailsClosed() throws Exception {
+        String path="/v1/operations/coupon-definitions/create-access";
+        allowed.remove(COUPON_DEFINITION_READ.code());
+        var response=http("GET",path,"valid",true,null);assertEquals(200,response.statusCode());assertTrue(response.body().contains("\"allowed\":true"));
+        assertEquals(403,http("GET",path,adminToken,false,null).statusCode());assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+        allowed.remove(COUPON_DEFINITION_CREATE.code());assertEquals(403,http("GET",path,"valid",true,null).statusCode());allowed.add(COUPON_DEFINITION_CREATE.code());
+        partial.set(true);assertEquals(403,http("GET",path,"valid",true,null).statusCode());partial.set(false);
+        afterScope.set(()->epoch.incrementAndGet());assertEquals(403,http("GET",path,"valid",true,null).statusCode());
+        unavailable.set(true);assertEquals(503,http("GET",path,"valid",true,null).statusCode());
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);
