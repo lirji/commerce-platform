@@ -15,4 +15,9 @@ public interface MerchantMapper {
 	List<MerchantApi.View> list(@Param("tenant") String tenant, @Param("after") String after,
 			@Param("limit") int limit);
 
+	/** 范围谓词与租户在分页前生效。 */
+	List<MerchantApi.View> listScoped(@Param("tenant") String tenant,
+			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("after") String after, @Param("limit") int limit);
+
 }

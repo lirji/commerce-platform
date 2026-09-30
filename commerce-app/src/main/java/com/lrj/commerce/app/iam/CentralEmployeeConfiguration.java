@@ -38,6 +38,14 @@ public class CentralEmployeeConfiguration {
         String path = r.getRequestURI().substring(r.getContextPath().length());
         if ("GET".equals(r.getMethod()) && ("/v1/admin/inventory".equals(path) || "/v1/operations/inventory/actions".equals(path))) return EmployeeAccess.Capability.INVENTORY_READ;
         if ("POST".equals(r.getMethod()) && "/v1/admin/inventory/receipts".equals(path)) return EmployeeAccess.Capability.INVENTORY_RECEIVE;
+        if ("/v1/admin/merchants".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.MERCHANT_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.MERCHANT_CREATE;
+        }
+        if ("/v1/admin/stores".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_DIRECTORY_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_CREATE;
+        }
         return null;
     }
     private static final class EmployeeFilter extends OncePerRequestFilter {

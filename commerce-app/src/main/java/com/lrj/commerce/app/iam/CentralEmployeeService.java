@@ -44,6 +44,33 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
             throw new DomainException(DomainException.Code.UNAVAILABLE, "中央员工授权暂不可用");
         } catch (AccessDeniedException failure) { throw denied(); }
     }
+    /** 集合引用的范围由中央返回；SQL字段映射仅保留受支持的完整路径。 */
+    @Override public ScopeDecision scope(Actor actor, EmployeeAccess.Capability capability, String tenant) {
+        if (actor.executionId() == null || actor.role() != Actor.Role.OPERATOR) throw denied();
+        try {
+            var plan = client.executionScope(actor.executionId(), check(tenant, capability));
+            if (!"ALLOW".equals(plan.decision())) throw denied();
+            var c = plan.context();
+            var current = bindings.find(tenant, c.principalId(), c.membershipId(), c.membershipGeneration());
+            if (current == null || !current.tenantId().equals(actor.tenantId()) || !current.actorId().equals(actor.actorId())) throw denied();
+            var paths = plan.alternatives().stream().map(a -> {
+                boolean all = false; List<String> storeIds = List.of(), resources = List.of();
+                for (var clause : a.clauses()) {
+                    switch (clause.kind()) {
+                        case TENANT_ALL -> all = true;
+                        case SPECIFIED_STORES -> storeIds = clause.values();
+                        case SPECIFIED_RESOURCES -> resources = clause.values();
+                        default -> throw denied();
+                    }
+                }
+                return new com.lrj.commerce.runtime.api.scope.ScopeQuery.Path(all, storeIds, resources);
+            }).toList();
+            return new ScopeDecision(new EmployeeAccess.Identity(c.principalId(), c.membershipId(), c.membershipGeneration()),
+                    Instant.parse(plan.validUntil()), new com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter(paths), CentralAccessClient.scopeFingerprint(plan));
+        } catch (CentralAccessException failure) {
+            throw new DomainException(DomainException.Code.UNAVAILABLE, "中央目录授权暂不可用");
+        } catch (AccessDeniedException failure) { throw denied(); }
+    }
     /** 提示必须独立检查写能力；再次读取Owner与read防止身份或范围切换后返回旧动作。 */
     public InventoryActions actions(Actor actor, String token, String tenant, String storeId) {
         if (actor.executionId() == null || actor.role() != Actor.Role.OPERATOR) throw denied();
@@ -74,7 +101,7 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
         }
     }
     private Check check(String tenant, EmployeeAccess.Capability capability) {
-        return new Check(tenant, null, UUID.randomUUID().toString(), capability.code(), RESOURCE_TYPE);
+        return new Check(tenant, null, UUID.randomUUID().toString(), capability.code(), capability.resourceType());
     }
     private static DomainException denied() {
         return new DomainException(DomainException.Code.FORBIDDEN, "中央员工授权拒绝");

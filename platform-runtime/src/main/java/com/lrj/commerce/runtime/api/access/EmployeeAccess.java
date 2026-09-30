@@ -7,17 +7,35 @@ import java.time.Instant;
 public interface EmployeeAccess {
     /** 只登记已实现的用例，不能按请求字符串拼能力或迁移单元。 */
     enum Capability {
-        INVENTORY_READ("commerce.inventory.read"), INVENTORY_RECEIVE("commerce.inventory.receive");
-        private final String code;
-        Capability(String code) { this.code = code; }
+        INVENTORY_READ("commerce.inventory.read", "INVENTORY", "store"), INVENTORY_RECEIVE("commerce.inventory.receive", "INVENTORY", "store"),
+        MERCHANT_READ("commerce.merchant.read", "DIRECTORY", "merchant"), MERCHANT_CREATE("commerce.merchant.create", "DIRECTORY", "merchant"),
+        STORE_DIRECTORY_READ("commerce.store.directory.read", "DIRECTORY", "store"), STORE_CREATE("commerce.store.create", "DIRECTORY", "store");
+        private final String code, family, resourceType;
+        Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }
-        public String family() { return "INVENTORY"; }
+        public String family() { return family; }
+        public String resourceType() { return resourceType; }
     }
     /** 首片资源固定为真实门店，不能用SKU编号替代门店Facts。 */
     record StoreFact(String id, long version) {}
     /** 无Token的单次许可；中央身份摘要稳定，执行引用nonce不进入幂等摘要。 */
     record Identity(String principalId, String membershipId, long generation) {}
     record Permit(Capability capability, String tenant, StoreFact fact, Route route, Identity identity, Instant until) {}
+    /** 集合许可没有对象事实；过滤器仅交给拥有业务表的Owner。 */
+    record ScopePermit(Capability capability, String tenant, com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter filter,
+                       Route route, Identity identity, String fingerprint, Instant until) {}
+    /** 集合/创建每次重新复核引用，不缓存ALLOW。 */
+    ScopePermit scope(Actor actor, Capability capability);
+    /** 创建回执同样必须通过当前路由和准入截止检查。 */
+    void lock(ScopePermit permit);
+    /** 记录本事务实际创建目标，不拿待创建目标作为授权事实。 */
+    void audit(Actor actor, ScopePermit permit, String operation, String commandKey, String resourceId);
+    /** 读取后权限或身份变化时拒绝返回旧结果。 */
+    static void requireSame(ScopePermit before, ScopePermit after) {
+        if(!java.util.Objects.equals(before.route(), after.route()) || !java.util.Objects.equals(before.identity(), after.identity())
+                || !java.util.Objects.equals(before.fingerprint(), after.fingerprint()))
+            throw new com.lrj.commerce.kernel.DomainException(com.lrj.commerce.kernel.DomainException.Code.FORBIDDEN, "目录授权上下文已变化");
+    }
     /** 状态持久化，不能由HTTP头或运行开关推断当前权威。 */
     record Route(String tenantId, String authTenantId, String family, String state, boolean everCentral, long version) {}
     /** 每次业务访问都要调用，包括非HTTP入口和重试。 */

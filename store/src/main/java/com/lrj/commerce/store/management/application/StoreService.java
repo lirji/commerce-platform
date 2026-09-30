@@ -3,6 +3,8 @@ package com.lrj.commerce.store.management.application;
 import com.lrj.commerce.store.management.api.StoreApi;
 import com.lrj.commerce.store.management.infrastructure.persistence.StoreMapper;
 import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -18,9 +20,12 @@ public class StoreService implements StoreApi {
 
 	private final Commands commands;
 
+	private final EmployeeAccess access;
+
 	private final MerchantApi merchants;
 
-	public StoreService(StoreMapper mapper, Commands commands, MerchantApi merchants) {
+	public StoreService(StoreMapper mapper, Commands commands, MerchantApi merchants, EmployeeAccess access) {
+		this.access = access;
 		this.mapper = mapper;
 		this.commands = commands;
 		this.merchants = merchants;
@@ -28,13 +33,15 @@ public class StoreService implements StoreApi {
 
 	/** 权威主数据只能通过管理用例创建，输入和审计同事务。 */
 	public View create(Actor actor, String key, Create input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, STORE_CREATE);
 		Inputs.require(input != null, "请求不能为空");
 		Identifiers.require(input.storeId());
 		Inputs.text(input.name(), 128);
-		return commands.run(actor, "store.create", key, input, View.class, () -> {
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "store.create", key, command, View.class, () -> access.lock(permit), () -> {
 			merchants.requireActive(actor, input.merchantId());
 			mapper.insert(actor.tenantId(), input);
+			access.audit(actor, permit, "store.create", key, input.storeId());
 			return requireActive(actor, input.storeId());
 		});
 	}
@@ -59,9 +66,11 @@ public class StoreService implements StoreApi {
 
 	/** 查询同时校验管理权限和分页上限。 */
 	public List<View> list(Actor actor, String after, int limit) {
-		actor.requireAdmin();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		var before = access.scope(actor, STORE_DIRECTORY_READ);
+		var rows = mapper.listScoped(actor.tenantId(), before.filter(), after, limit);
+		EmployeeAccess.requireSame(before, access.scope(actor, STORE_DIRECTORY_READ));
+		return rows;
 	}
 
 	/** 目录不泄露内部配置，认证租户始终参与SQL过滤。 */

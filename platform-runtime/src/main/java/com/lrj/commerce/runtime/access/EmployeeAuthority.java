@@ -40,6 +40,44 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (!until.isAfter(Instant.now())) throw denied();
         return new Permit(capability, actor.tenantId(), fact, route, decision.identity(), until);
     }
+    /** 创建与目录使用集合许可，不能用虚构门店通过旧单资源门禁。 */
+    @Override public ScopePermit scope(Actor actor, Capability capability) {
+        if (capability == Capability.INVENTORY_READ || capability == Capability.INVENTORY_RECEIVE) throw denied();
+        Route route = routes.find(actor.tenantId(), capability.family());
+        State state = route == null ? State.LEGACY : State.valueOf(route.state());
+        Instant until = Instant.now().plusSeconds(5);
+        if (state == State.LEGACY || state == State.SHADOW) {
+            if (actor.executionId() != null) throw denied();
+            actor.requireAdmin();
+            var all = new com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter(java.util.List.of(
+                    new com.lrj.commerce.runtime.api.scope.ScopeQuery.Path(true,java.util.List.of(),java.util.List.of())));
+            return new ScopePermit(capability, actor.tenantId(), all, route, null, "legacy", until);
+        }
+        if (state != State.CENTRAL || actor.role() != Actor.Role.OPERATOR || actor.executionId() == null) throw denied();
+        var adapter = central.getIfAvailable(); if (adapter == null) throw denied();
+        var decision = adapter.scope(actor, capability, route.authTenantId());
+        if (decision.until().isBefore(until)) until = decision.until();
+        if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
+        if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE)
+                && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
+        return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
+    }
+    /** 集合许可的路由锁先于命令回执与业务写入。 */
+    @Override @Transactional(propagation = Propagation.MANDATORY)
+    public void lock(ScopePermit permit) {
+        if (!Objects.equals(routes.lock(permit.tenant(), permit.capability().family()), permit.route())
+                || !permit.until().isAfter(Instant.now())) throw denied();
+    }
+    /** 目录效果与主体归属在原Commands事务中原子提交。 */
+    @Override @Transactional(propagation = Propagation.MANDATORY)
+    public void audit(Actor actor, ScopePermit permit, String operation, String key, String resourceId) {
+        if (permit.identity() == null) return;
+        com.lrj.commerce.kernel.Identifiers.require(resourceId);
+        if (!actor.tenantId().equals(permit.tenant()) || routes.auditScoped(actor, permit, permit.capability().code(),
+                permit.capability().resourceType(), operation, key, resourceId,
+                permit.capability() == Capability.STORE_CREATE ? resourceId : null) != 1)
+            throw new DomainException(DomainException.Code.CONFLICT, "中央目录操作归属记录失败");
+    }
     /** 共享行锁与迁移CAS串行；即使命令已有回执也不能越过切换/停止。 */
     @Override @Transactional(propagation = Propagation.MANDATORY)
     public void lock(Permit permit) {

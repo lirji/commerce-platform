@@ -3,6 +3,8 @@ package com.lrj.commerce.merchant.application;
 import com.lrj.commerce.merchant.api.MerchantApi;
 import com.lrj.commerce.merchant.infrastructure.persistence.MerchantMapper;
 import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -17,20 +19,25 @@ public class MerchantService implements MerchantApi {
 
 	private final Commands commands;
 
-	public MerchantService(MerchantMapper mapper, Commands commands) {
+	private final EmployeeAccess access;
+
+	public MerchantService(MerchantMapper mapper, Commands commands, EmployeeAccess access) {
+		this.access = access;
 		this.mapper = mapper;
 		this.commands = commands;
 	}
 
 	/** 权威主数据只能通过管理用例创建，输入和审计同事务。 */
 	public View create(Actor actor, String key, Create input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, MERCHANT_CREATE);
 		Inputs.require(input != null, "请求不能为空");
 		Identifiers.require(input.merchantId());
 		Inputs.text(input.name(), 128);
-		return commands.run(actor, "merchant.create", key, input, View.class, () -> {
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "merchant.create", key, command, View.class, () -> access.lock(permit), () -> {
 
 			mapper.insert(actor.tenantId(), input);
+			access.audit(actor, permit, "merchant.create", key, input.merchantId());
 			return requireActive(actor, input.merchantId());
 		});
 	}
@@ -46,9 +53,13 @@ public class MerchantService implements MerchantApi {
 
 	/** 查询同时校验管理权限和分页上限。 */
 	public List<View> list(Actor actor, String after, int limit) {
-		actor.requireAdmin();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		var before = access.scope(actor, MERCHANT_READ);
+		if (before.filter().paths().stream().anyMatch(p -> !p.stores().isEmpty()))
+			throw new DomainException(DomainException.Code.FORBIDDEN, "商家范围不能包含门店条件");
+		var rows = mapper.listScoped(actor.tenantId(), before.filter(), after, limit);
+		EmployeeAccess.requireSame(before, access.scope(actor, MERCHANT_READ));
+		return rows;
 	}
 
 }

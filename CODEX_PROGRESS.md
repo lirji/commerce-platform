@@ -1,61 +1,38 @@
 # Codex Progress
 
-## 2026-09-29 最新恢复状态（优先于下方历史）
-
-用户已批准员工权限边界和沿用现有审批。CE03-I b7715ce及auth29052d0已合并推送main，CI36664884967/36664884469 SUCCESS。
-
-当前feat/central-inventory-ui已实现库存SSO页、独立read/receive动作提示和错误恢复。398项Java393PASS/5skip；前端build、Prettier、打包和hygiene通过（保留Java无formatter限制）。auth rehearsal-ba03baa64c88共58PASS，含库存9条浏览器细分与CATALOG9条回归。真实响应丢失同键重试仅增加一次，撤写/跨店/401/503及390视口通过，最终截图已查看。失败历史保留在auth CE03_INVENTORY.md。
-
-本片本地实现验证DONE，Git/CI交付进行中。下一片CE03-D商家门店集合/创建需补执行引用scope-plan协议；CE04—08未做。真实OA映射/Owner/截止与生产目标待定，仅阻塞对应真实动作。原8602与OA脏改动保持，无新worktree；私密配置日志不提交。专用MySQL43308保留供后续切片，P6自有PG/IdP/JVM/Vite已停止且保留数据。
-
 ## 任务目标
 
-继续商城中央授权接入。已批准完整CATALOG页面补齐；用户追加其他模块，先补能力与权限契约。员工/部门权威OA，目标先本地隔离，生产目标待定。
+连续完成已批准商城中央员工权限扩展。OA为员工/部门权威；会员/营销真实TENANT_ALL，库存/交易真实门店；高风险独立权限、沿用现有审批。授权任务分支与普通合并推送main，不含生产部署或删除数据。
 
 ## 已完成
 
-- P6完整CATALOG后端/任务接管基线31dbdcd保持。
-- 新增/operations/catalog固定SSO壳，复用原商品经营组件；中央Bearer及tenant用React请求上下文隔离，不写旧控制台全局凭据。
-- 393项Java验证（388通过/5可选跳过）、前端构建/Prettier、完整打包通过。
-- auth仓隔离演练rehearsal-c9a502b7a77c共34项通过，包括浏览器真实编辑、跨店/跨租户、退出/401/会话过期、源撤权403与依赖503。
-- 1440/390视口、桌面编辑及拒绝/不可用截图已查看；补充90089b33648d已通过真实密码+PKCE完整登录，组织/门店回跳与授权码清除通过。
-- 41c22ae产品提交已从独立任务分支正常合并推送main，对应4b12706的远程CI36660768385已SUCCESS；最终工具补充状态以auth仓commerce-readiness/DELIVERY_RESULT.md为准。
+- CE02契约/协议已交付；库存I/U已交付，两仓CI SUCCESS。
+- D0 auth2557de1已推送，CI36666736638 SUCCESS；250单测/3真实PG+graph IT/Boot4兼容PASS。
+- D1后端本地DONE：401项396PASS/5skip；rehearsal-16693ea0d846真实中央+IdP+商城83PASS；hygiene无阻断。V51成功应用，禁止改历史。
 
 ## 已修改文件
 
-- frontend/src/iam/{CentralCatalog,CentralProducts,api,session}，main及shared/api。
-- CentralPageController、SecurityConfiguration及AuthorizationCoverageTest。
-- docs/CENTRAL_CATALOG_ENTRY.md，本进度。
+- commerce EmployeeAccess/Authority、CentralEmployee适配、Merchant/Store Service与Mapper、V51、CentralDirectoryMySqlTest及CENTRAL_DIRECTORY_ACCESS.md。
+- auth目录契约、P6 --directory隔离验证工具、CE03_DIRECTORY和进度记录。
 
 ## 未完成
 
-- 本轮产品CI已通过；最新纯文档提交与工具追加CI以auth仓交付记录为准。
-- auth仓CONTRACTS_COMMERCE_EXPANSION.md草案尚待业务边界/高风险审批选择；新模块未接管。
-- 真实OA映射/Owner签字、生产目标/SLO/RTO/RPO、发布观察及旧写入收缩未完成。
+- D1 Git交付进行中（auth feat/commerce-directory-owner-contract、commerce feat/central-commerce-directory）。
+- 下一READY D2目录SSO页面；CE04—08未实现，不把D1当全任务完成。
+- 真实OA映射/Owner签字/永久授权截止/生产SLO及RTO/RPO待定，仅阻塞对应真实动作。
 
 ## 当前问题
 
-- 真实选中旧账号凭据已到期，不能自动续期；本轮读改使用独立有限时正向夹具。
-- 门店入口为编号/深链，没有CATALOG隐含授权门店目录查询。
-- 原8602运行商城未切换/重启；OA用户改动保持；私有演练资源已停止但数据/证据保留。
-- 无新worktree；auth/.local/p0-baselines/commerce历史基线保留。
+- 原8602/OA脏改动不触碰；没有新worktree。私密.local与历史失败证据保留不提交。
+- 专用MySQL commerce-inventory-mysql-7841e58190端口43308运行供后续；commerce source .local/runtime.env再source .local/central-inventory/owned.env测试，不输出凭据。
+- D1自有PG/IdP/JVM已由finally停止，数据保留。共享测试库此前V49失败已受控repair并原样应用49/50，空残留改名保留；V51只在专用库应用。
+- 旧CE03-U二进制不检查DIRECTORY，回退必须使用认识该族版本+STOPPED。5秒为事务准入，并非全局瞬时撤权。
 
 ## 下一步建议
 
-1. 查看auth仓commerce-readiness/DELIVERY_RESULT.md确认CI实际结果。
-2. 按用户业务选择定稿扩展契约，再实现逐能力接管，禁止把旧ADMIN整体映成中央管理员。
-3. 真实生产迁移仍需明确映射、目标和接受条件；不自动清理私有资源。
+1. 按已验证D1范围显式stage、提交、正常合并推送main并核对CI。
+2. 补D2动作提示与页面技术契约后实现真实SSO页面和浏览器验证，继续CE04—08。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS.md及auth仓docs/implementation/oa-auth/commerce-readiness/EXECUTION_PLAN.md，从未完成的CI/扩展契约继续。保留原商城和OA改动，不重复P7容量验收。
-
-## 2026-09-29 CE-03-I库存后端
-
-用户已明确采用员工运营端边界、高风险独立权限并沿用现有审批；不再等待业务选择。auth CE-02 main1b1ee01/CI36663171698 SUCCESS。
-
-本仓feat/central-inventory-access实现库存read/receive独立中央能力、OPERATOR执行引用、V49分族路由、V50同事务身份审计；Owner事实锁与Commands.runGuarded防去头回退/旧回执/跨代际。完整397项392通过5可选跳过、hygiene无阻断；auth完整51跨进程验收e068a97301ff通过。详细变更、失败历史及操作边界见docs/CENTRAL_INVENTORY_ACCESS.md及auth仓CE03_INVENTORY.md。
-
-私有新MySQL commerce-inventory-mysql-7841e58190端口43308，.local/central-inventory/owned.env。共享测试库V49失败已限定修复并原样应用49/50，保留employee_authority_route_failed_ce03_20260929空表及本地repair证据；不改成功迁移checksum。原commerce_local/8602运行未切换。
-
-待完成：Git提交合并推送和CI结果；CE-03-U库存员工UI、CE-03-D商家门店、CE-04—08后续模块。真实身份映射/Owner/有效期与生产目标仍未确定；客户与平台身份未接管。未新增worktree、未清理任何保留数据。
+读取CODEX_PROGRESS及auth commerce-readiness/EXECUTION_PLAN，从未完成部分连续推进。已获业务边界和Git授权，不重复确认，保护原商城/OA改动及私密数据。
