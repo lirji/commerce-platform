@@ -33,7 +33,7 @@ public class SecurityConfiguration {
 			.authorizeHttpRequests(
 					c -> c.requestMatchers("/actuator/health", "/", "/index.html", "/assets/**", "/media/**")
 						.permitAll()
-						.requestMatchers(org.springframework.http.HttpMethod.GET, "/operations/member-points", "/operations/member-cycles", "/operations/member-cycle-benefits", "/operations/member-behavior", "/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/operations/point-offers", "/operations/member-points", "/operations/member-cycles", "/operations/member-cycle-benefits", "/operations/member-behavior", "/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")
 						.permitAll()
 						.requestMatchers("/v1/admin/**")
 						.hasAuthority("ADMIN")

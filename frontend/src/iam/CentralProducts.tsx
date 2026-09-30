@@ -13,6 +13,7 @@ import {
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { CentralPointOffers } from "./CentralPointOffers";
 import { CentralPoints } from "./CentralPoints";
 import { CentralCycles } from "./CentralCycles";
 import { CentralBehavior } from "./CentralBehavior";
@@ -107,29 +108,21 @@ export function CentralProducts() {
   const tenant = new URLSearchParams(location.search).get("tenant_id") ?? "";
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
-  const Page =
-    location.pathname === "/operations/member-points"
-      ? CentralPoints
-      : [
-            "/operations/member-cycles",
-            "/operations/member-cycle-benefits",
-          ].includes(location.pathname)
-        ? CentralCycles
-        : location.pathname === "/operations/member-behavior"
-          ? CentralBehavior
-          : location.pathname === "/operations/member-tags"
-            ? CentralTags
-            : location.pathname === "/operations/member-growth"
-              ? CentralGrowth
-              : location.pathname === "/operations/members"
-                ? CentralMembers
-                : location.pathname === "/operations/directory"
-                  ? CentralDirectory
-                  : location.pathname === "/operations/inventory"
-                    ? CentralInventory
-                    : location.pathname === "/operations/catalog"
-                      ? CentralCatalog
-                      : Products;
+  // 固定入口与组件一一对应，新增页面不再加深路由条件分支。
+  const pages: Record<string, typeof Products> = {
+    "/operations/point-offers": CentralPointOffers,
+    "/operations/member-points": CentralPoints,
+    "/operations/member-cycles": CentralCycles,
+    "/operations/member-cycle-benefits": CentralCycles,
+    "/operations/member-behavior": CentralBehavior,
+    "/operations/member-tags": CentralTags,
+    "/operations/member-growth": CentralGrowth,
+    "/operations/members": CentralMembers,
+    "/operations/directory": CentralDirectory,
+    "/operations/inventory": CentralInventory,
+    "/operations/catalog": CentralCatalog,
+  };
+  const Page = pages[location.pathname] ?? Products;
   return (
     <Page
       key={`${user.profile.sub}:${tenant}`}
