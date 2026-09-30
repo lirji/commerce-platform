@@ -56,7 +56,7 @@ type Values = Offer & {
   reason: string;
 };
 const PAGE_SIZE = 50;
-const identifier = /^[A-Za-z0-9_-]{1,100}$/;
+const identifier = /^[A-Za-z0-9_-]{1,64}$/;
 const denied = (e?: Error) =>
   e instanceof ApiError && e.status === HTTP.FORBIDDEN;
 
@@ -69,12 +69,12 @@ function offersClient(context: Context, expired: () => void): typeof request {
     const method = options.method ?? "GET";
     if (!(
       (method === "GET" &&
-        (/^\/admin\/point-offers\?storeId=[A-Za-z0-9_-]{1,100}&after=[A-Za-z0-9_-]{0,100}&limit=50$/.test(
+        (/^\/admin\/point-offers\?storeId=[A-Za-z0-9_-]{1,64}&after=[A-Za-z0-9_-]{0,64}&limit=50$/.test(
           path,
         ) ||
           /^\/operations\/point-offers\/(define|status)-access$/.test(path))) ||
       (method === "POST" &&
-        /^\/admin\/point-offers(\/[A-Za-z0-9_-]{1,100}\/status)?$/.test(path))
+        /^\/admin\/point-offers(\/[A-Za-z0-9_-]{1,64}\/status)?$/.test(path))
     ))
       throw new ApiError(HTTP.FORBIDDEN, "此入口不支持该操作");
     const headers: Record<string, string> = {
@@ -127,11 +127,11 @@ function OfferDirectory() {
             {
               required: true,
               pattern: identifier,
-              message: "请输入1至100位字母、数字、下划线或连字符",
+              message: "请输入1至64位字母、数字、下划线或连字符",
             },
           ]}
         >
-          <Input maxLength={100} />
+          <Input maxLength={64} />
         </Form.Item>
         <Button htmlType="submit" type="primary">
           查询兑换商品
@@ -417,11 +417,11 @@ function OfferCommand({
                 {
                   required: true,
                   pattern: identifier,
-                  message: "请输入1至100位字母、数字、下划线或连字符",
+                  message: "请输入1至64位字母、数字、下划线或连字符",
                 },
               ]}
             >
-              <Input disabled={busy || frozen} maxLength={100} />
+              <Input disabled={busy || frozen} maxLength={64} />
             </Form.Item>
             {action === Action.DEFINE ? (
               <>
@@ -440,7 +440,7 @@ function OfferCommand({
                     },
                   ]}
                 >
-                  <Input disabled={busy || frozen} maxLength={100} />
+                  <Input disabled={busy || frozen} maxLength={64} />
                 </Form.Item>
                 <Form.Item
                   name="name"
@@ -480,7 +480,7 @@ function OfferCommand({
                     },
                   ]}
                 >
-                  <Input disabled={busy || frozen} maxLength={100} />
+                  <Input disabled={busy || frozen} maxLength={64} />
                 </Form.Item>
                 {number("assetVersion", "资产版本", 1)}
                 {number("points", "兑换积分", 1, 1000000000)}
