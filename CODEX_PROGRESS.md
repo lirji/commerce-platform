@@ -2,39 +2,38 @@
 
 ## 任务目标
 
-继续已批准商城中央员工权限扩展至CE08；OA员工权威，会员/营销TENANT_ALL、库存/交易门店范围，高风险独立权限沿原业务流程，无OA逐笔审批。原目录串行，不启子Agent/新worktree。独立分支、正常提交合并推送main已授权，无生产部署/删除授权。
+连续完成已批准商城中央员工权限扩展至CE08。OA员工权威、会员/营销TENANT_ALL、库存/交易门店范围，高风险独立权限沿原业务流程，无OA逐笔审批。原目录串行，无子Agent/新worktree；正常分支提交合并推送main已授权，无生产部署/删除授权。
 
 ## 已完成
 
-- CE00—CE04完成本地纵向接入；CE05券定义CD0/CD1/CD2均已交付。
-- CD2 auth6e3bfc9/commerce0e2ff49已推送；commerce CI36693990527 SUCCESS，auth CD2被E0取消且已由E0成功CI覆盖。
-- E0 auth3a4cef3已推送，CI36694413067 SUCCESS；252单元、真实PG/图12方法、SDK Boot4及最终运行制品校验通过。
-- E1两接管族/实际Owner/事务审计及V61完成；完整entitlements-owner-verify-final.log：460项455PASS/5既有skip，7权益专项及会员并发原样重跑全部PASS；37工具/252入口/122能力/34角色、两仓hygiene及auth1/commerce8源码摘要一致。
+- CE00—04完成本地纵向接入；CE05-CD0/CD1/CD2和E0/E1已正常合并推送。
+- E1 auth4f1a05f/commerceb653130，CI36697025032/36697028441 SUCCESS；460项455PASS/5skip，真实58007c181423共477PASS。
+- CE05-E2本地DONE：权益定义/实例两个固定SSO页、独立create/resolve提示和安全重试。完整461项456PASS/5既有skip、权益8项全PASS；真实0078780a5d6b（10.254.108.0/24）563PASS，其中两个权益页各10条浏览器检查，含所有既有员工页回归。37工具/256入口/122能力/34角色、build/Prettier/两仓hygiene及auth4/commerce11源码摘要一致。1440/390目录/表单及409/未知/取消退出/成功/503截图已查看。恰8身份审计、UI定义和两个补偿各1条；真实客户兑换/核销和撤权后履约兼容。无新迁移，V49—V61不可改。下一CE05-R营销规则细化；其余CE05—08及原生产2HOLD未完成。
 
 ## 已修改文件
 
-- auth feat/commerce-entitlement-owner-rehearsal：deploy/governance-p6-rehearsal.py（--entitlements）及CE05进度文档。
-- commerce feat/central-entitlement-operations：EmployeeAccess/Authority、EntitlementService、中央入口/错误接线、V61、CentralEntitlementMySqlTest、auth-sdk-source.ref、CENTRAL_ENTITLEMENT_ACCESS及本文件。
+- auth feat/commerce-entitlement-ui-contract：P6及新权益浏览器脚本、256入口契约/清单/工具测试、权益契约及进度文档。
+- commerce feat/central-entitlement-ui：CentralEntitlementDefinitions/CentralEntitlements、SSO/安全路由/独立hint/错误接线、第8项MySQL测试、CENTRAL_ENTITLEMENT_ACCESS及本文件。
 
 ## 未完成
 
-- E1本地DONE：真实58007c181423/子网107共477PASS；当前Git交付中，尚未查新CI。
-- E2权益定义和实例页面及hint，然后CE05其余活动/规则/预算/人群/旅程。
-- CE06交易、CE07页面/运维、CE08后台引用/对账/收缩；原生产2HOLD仍缺真实目标/映射/Owner/部署授权。
+- E2本地DONE，当前Git交付中；尚未查新CI。
+- CE05-R营销规则（read/create/publish）技术细化，及活动/审批/预算/人群/定向发券/旅程/效果。
+- CE06交易、CE07页面/事件/运维、CE08后台引用/对账/收缩；生产2HOLD缺实际目标/映射/Owner/部署授权。
 
 ## 当前问题
 
-- 最终验证无失败。首轮新测试两项夹具错误已修复；次轮仅既有MemberGrowthTest 5秒屏障超时。两次定向重跑被父POM显式failIfNoTests阻断，保留所有日志，最终完整原样重跑通过。未改测试预算/业务约束。
-- Java formatter/静态分析未配置，5既有skip与5秒本地准入限制保持。
-- V49—V61已应用不可改。验证需先source commerce .local/runtime.env，再source .local/central-inventory/owned.env。
-- 原8602/OA/其他worktree未触碰；所有私密证据/数据库保留，自有进程finally停止。
+- 当前验证无失败；保留E1两项夹具错误、既有会员并发超时及最终完整通过证据；不改预算。
+- E2脚本hygiene初次闭集字面量阻断已枚举化，最终通过；Java formatter/静态分析未配置、5skip和5秒本地准入限制保持。
+- V49—V61不可改；测试先source commerce .local/runtime.env，再source .local/central-inventory/owned.env。运行Jar需要forceCreation并核对嵌套依赖。
+- 自有进程finally停止，原8602/OA及其他worktree未触碰；私密证据/库保留，无新增worktree。
 
 ## 下一步建议
 
-1. E1真实477PASS已核对5身份审计、2夹具补偿账本和真实客户兑换/核销；完成正常Git交付并查CI。
-2. 更新CE05/权益契约/EXECUTION_PLAN/PROGRESS_STATE及commerce说明，按既有授权Git交付E1并查CI。
-3. E2固定两个页面/两个hint、原键未知结果恢复、实际浏览器1440/390与SQL验收，然后继续CE05—08。
+1. 核对E2最终auth4/commerce11源码摘要后，正常提交合并推送两仓main并查CI。
+2. CE05-R从marketing-runtime的MarketingAssetService/MarketingAssets/AssetMapper及MarketingAssetController/RuleNode继续，三能力marketing_rule/TENANT_ALL；先细化契约再有限协议、Owner和页面。
+3. 继续其他CE05及CE06—08；无需反复确认继续。
 
 ## 恢复 Prompt
 
-读取本文件与auth CE05_MARKETING及CONTRACTS_COMMERCE_ENTITLEMENTS，从E1 Git交付及E2继续。完整460项验证已通过，不重复无关测试；V61不可改。保留私密证据和原环境，正常Git交付后继续E2及后续，不要求反复继续，不启子Agent或新worktree。
+读取本文件与auth CE05_MARKETING，E2本地461测试/真实563PASS完成，进入Git交付后继续CE05-R营销规则。V61不可改，保留原环境/私密证据，无子Agent或新worktree；按已有授权持续推进，不重做已通过的无关验证。

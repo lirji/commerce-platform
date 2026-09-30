@@ -205,6 +205,21 @@ class CentralEntitlementMySqlTest {
         assertThrows(DomainException.class,()->create("blocked"));assertEquals(1,count("benefit_definition"));
         var d=definition("invalid",1,"S1");assertThrows(DomainException.class,()->benefits.create(actor(ENTITLEMENT_DEFINITION_CREATE),id(),new EntitlementApi.Definition(d.benefitId(),1,"S1",d.name(),0,20,d.validFrom(),d.validTo(),7)));
     }
+    /** 两个提示分别校验写能力，不借用读取、客户或旧ADMIN身份。 */
+    @Test void independentActionHintsFailClosedWithoutRead() throws Exception {
+        allowed.remove(ENTITLEMENT_DEFINITION_READ.code());allowed.remove(ENTITLEMENT_READ.code());
+        var paths=List.of("/v1/operations/entitlement-definitions/create-access","/v1/operations/entitlements/resolve-access");
+        for(String path:paths) {
+            assertEquals(200,http("GET",path,"valid",true,null).statusCode());
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+        }
+        allowed.remove(ENTITLEMENT_RESOLVE.code());assertEquals(403,http("GET",paths.get(1),"valid",true,null).statusCode());
+        assertEquals(200,http("GET",paths.get(0),"valid",true,null).statusCode());
+        unavailable.set(true);
+        for(String path:paths)assertEquals(503,http("GET",path,"valid",true,null).statusCode());
+        assertEquals(0,count("employee_command_identity"));
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);

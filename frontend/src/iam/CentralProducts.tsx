@@ -1,3 +1,5 @@
+import { CentralEntitlementDefinitions } from "./CentralEntitlementDefinitions";
+import { CentralEntitlements } from "./CentralEntitlements";
 import {
   Alert,
   App,
@@ -111,6 +113,8 @@ export function CentralProducts() {
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
   // 固定入口与组件一一对应，新增页面不再加深路由条件分支。
   const pages: Record<string, typeof Products> = {
+    "/operations/entitlement-definitions": CentralEntitlementDefinitions,
+    "/operations/entitlements": CentralEntitlements,
     "/operations/coupon-definitions": CentralCouponDefinitions,
     "/operations/point-offers": CentralPointOffers,
     "/operations/member-points": CentralPoints,

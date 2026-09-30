@@ -118,6 +118,8 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DEFINITION_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DEFINITION_CREATE;
         }
+        if ("GET".equals(r.getMethod()) && "/v1/operations/entitlement-definitions/create-access".equals(path)) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_CREATE;
+        if ("GET".equals(r.getMethod()) && "/v1/operations/entitlements/resolve-access".equals(path)) return EmployeeAccess.Capability.ENTITLEMENT_RESOLVE;
         if ("/v1/admin/entitlement-definitions".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.ENTITLEMENT_DEFINITION_CREATE;
