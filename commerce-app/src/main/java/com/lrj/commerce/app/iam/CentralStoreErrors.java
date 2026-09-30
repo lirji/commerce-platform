@@ -23,6 +23,8 @@ import org.springframework.http.ResponseEntity;
     com.lrj.commerce.app.http.member.operations.BehaviorActionsController.class,
     com.lrj.commerce.app.http.member.growth.MemberGrowthController.class,
     com.lrj.commerce.app.http.member.behavior.MemberBehaviorController.class,
+    com.lrj.commerce.app.http.member.cycle.MemberCycleController.class,
+    com.lrj.commerce.app.http.member.benefit.MemberBenefitController.class,
     com.lrj.commerce.app.http.commerce.DirectoryActionsController.class})
 @Order(-100)
 public class CentralStoreErrors {

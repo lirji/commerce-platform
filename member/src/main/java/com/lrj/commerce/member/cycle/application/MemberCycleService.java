@@ -15,6 +15,9 @@ import com.lrj.commerce.member.cycle.api.MemberCycleApi;
 import com.lrj.commerce.member.growth.api.MemberGrowthApi;
 import com.lrj.commerce.member.recovery.application.ItemRetries;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
+import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.runtime.api.recovery.RecoverableWork;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
@@ -40,6 +43,8 @@ public class MemberCycleService implements MemberCycleApi {
 
 	private final Clock clock;
 
+	private final EmployeeAccess access;
+
 	private final TransactionTemplate tx;
 
 	private final TenantRotation assessments;
@@ -54,8 +59,9 @@ public class MemberCycleService implements MemberCycleApi {
 	static final int ROLLOUT_BATCH = 500;
 
 	public MemberCycleService(CycleMapper mapper, GrowthMapper growth, MemberMapper members, Commands commands,
-			Outbox outbox, Clock clock, PlatformTransactionManager manager, WorkLanes lanes, ItemRetries retries) {
+			Outbox outbox, Clock clock, PlatformTransactionManager manager, WorkLanes lanes, ItemRetries retries, EmployeeAccess access) {
 		this.mapper = mapper;
+		this.access = access;
 		this.growth = growth;
 		this.members = members;
 		this.commands = commands;
@@ -81,7 +87,7 @@ public class MemberCycleService implements MemberCycleApi {
 
 	/** 时间和版本不可修改，策略更换显式重新锚定周期，不重写历史快照。 */
 	public Policy publish(Actor actor, String key, Policy input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, MEMBER_CYCLE_POLICY_PUBLISH);
 		Inputs.require(input != null && input.version() > 0 && input.effectiveFrom() != null, "周期策略版本或生效时间无效");
 		Inputs.require(input.periodDays() >= 1 && input.periodDays() <= 366, "周期需为1至366日");
 		Inputs.require(input.levels() != null && !input.levels().isEmpty() && input.levels().size() <= 8, "等级需为1至8档");
@@ -97,47 +103,92 @@ public class MemberCycleService implements MemberCycleApi {
 		Inputs.require(input.levels().getFirst().minimumGrowth() == 0, "首档门槛必须为0");
 		var policy = new Policy(input.version(), input.effectiveFrom().truncatedTo(ChronoUnit.MILLIS),
 				input.periodDays(), List.copyOf(input.levels()));
-		return commands.run(actor, "member.cycle.policy", key, policy, Policy.class, () -> {
+		Object command = permit.identity() == null ? policy : new Object[] { policy, permit.identity() };
+		return commands.runGuarded(actor, "member.cycle.policy", key, command, Policy.class, () -> access.lock(permit), () -> {
 			Inputs.require(
 					!policy.effectiveFrom().isBefore(clock.instant().minusSeconds(60))
 							&& !policy.effectiveFrom().isAfter(clock.instant().plusSeconds(31_536_000)),
 					"生效时间应为现在或未来一年内");
 			mapper.policy(actor.tenantId(), policy, JsonCodec.write(policy));
+			access.audit(actor, permit, "member.cycle.policy", key, "cycle-policy-" + policy.version());
 			return policy;
 		});
 	}
 
 	/** 历史策略按稳定版本游标查询。 */
 	public List<Policy> policies(Actor actor, long after, int limit) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, MEMBER_CYCLE_POLICY_READ);
 		Inputs.require(after >= 0, "游标无效");
 		Inputs.page("", limit);
-		return mapper.policies(actor.tenantId(), after, limit).stream().map(this::policy).toList();
+		var result = mapper.policies(actor.tenantId(), after, limit).stream().map(this::policy).toList();
+		EmployeeAccess.requireSame(permit, access.scope(actor, MEMBER_CYCLE_POLICY_READ));
+		return result;
 	}
 
 	/** 绑定只接受已发布版本，不能依赖当前有效版本猜测历史配置。 */
 	public Policy policy(Actor actor, long version) {
-		actor.requireAdmin();
-		return policy(Inputs.found(mapper.byVersion(actor.tenantId(), version)));
+		var permit = access.scope(actor, MEMBER_CYCLE_POLICY_READ);
+		var result = policy(Inputs.found(mapper.byVersion(actor.tenantId(), version)));
+		EmployeeAccess.requireSame(permit, access.scope(actor, MEMBER_CYCLE_POLICY_READ));
+		return result;
 	}
 
-	/** 运营手动考核与定时考核走相同规则。 */
+	/** 内部版本依赖在调用方事务中读取，不能借员工Actor附赠政策读取权。 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Policy policyForOperation(String tenant, long version) {
+		return policy(Inputs.found(mapper.byVersion(tenant, version)));
+	}
+
+	/** 系统/礼包调用方已持会员锁，沿相同事务读取而不再走员工入口。 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public View viewForOperation(String tenant, String memberId) {
+		return view(tenant, memberId);
+	}
+
+	/** 运营手动考核与定时考核走相同规则，员工许可先于旧回执。 */
 	public View evaluate(Actor actor, String key, String id) {
-		actor.requireAdmin();
-		Identifiers.require(id);
-		return commands.run(actor, "member.cycle.evaluate", key, id, View.class, () -> {
+		var permit = authorize(actor, id, MEMBER_CYCLE_EVALUATE);
+		Object command = permit.scope().identity() == null ? id : new Object[] { id, permit.scope().identity() };
+		return commands.runGuarded(actor, "member.cycle.evaluate", key, command, View.class, () -> lockPermit(actor, permit), () -> {
 			assessLocked(actor.tenantId(), id);
+			access.audit(actor, permit.scope(), "member.cycle.evaluate", key, id);
 			return view(actor.tenantId(), id);
 		});
 	}
 
-	/** 查询不偷偷推进等级；最后考核周期用于展示陈旧状态。 */
+	/** 查询不偷偷推进等级；本人绑定沿旧规则，员工独立判权并复核Owner。 */
 	public View read(Actor actor, String id) {
 		Identifiers.require(id);
-		if (actor.role() != Actor.Role.ADMIN && (actor.role() != Actor.Role.MEMBER
-				|| !Inputs.found(members.byActor(actor.tenantId(), actor.actorId())).memberId().equals(id)))
-			throw new DomainException(DomainException.Code.FORBIDDEN, "不能读取其他会员周期");
-		return view(actor.tenantId(), id);
+		if (actor.role() == Actor.Role.MEMBER) {
+			if (!Inputs.found(members.byActor(actor.tenantId(), actor.actorId())).memberId().equals(id))
+				throw new DomainException(DomainException.Code.FORBIDDEN, "不能读取其他会员周期");
+			return view(actor.tenantId(), id);
+		}
+		var permit = authorize(actor, id, MEMBER_CYCLE_READ);
+		var result = view(actor.tenantId(), id);
+		EmployeeAccess.requireSame(permit.scope(), access.scope(actor, MEMBER_CYCLE_READ));
+		if (!permit.fact().equals(fact(Inputs.found(members.find(actor.tenantId(), id)))))
+			throw new DomainException(DomainException.Code.CONFLICT, "会员版本已变化，请刷新");
+		return result;
+	}
+
+	/** 先取租户集合资格再读取真实Owner，不能用客户端编号拼造事实。 */
+	private EmployeeAccess.ResourcePermit authorize(Actor actor, String id, EmployeeAccess.Capability capability) {
+		Identifiers.require(id);
+		var scope = access.scope(actor, capability);
+		return access.resource(actor, scope, fact(Inputs.found(members.find(actor.tenantId(), id))));
+	}
+
+	/** 路由锁、会员版本和锁等待后的截止复核均早于旧命令回执。 */
+	private void lockPermit(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		access.lock(permit.scope());
+		if (!permit.fact().equals(fact(Inputs.found(members.lock(actor.tenantId(), permit.fact().id())))))
+			throw new DomainException(DomainException.Code.CONFLICT, "会员版本已变化，请刷新");
+		access.lock(permit.scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(MemberApi.View member) {
+		return new EmployeeAccess.ResourceFact(MEMBER_CYCLE_READ.resourceType(), member.memberId(), member.version());
 	}
 
 	/** 本人身份取自数据库绑定。 */

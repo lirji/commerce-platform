@@ -40,7 +40,7 @@ public class MemberCycleController {
 	/** 租户限定的会员考核快照。 */
 	@GetMapping("/admin/member-cycles/{id}")
 	public Object read(@AuthenticationPrincipal Actor actor, @PathVariable String id) {
-		actor.requireAdmin();
+		// 用例核对独立读取能力与真实会员Owner，不能将中央员工等同旧ADMIN。
 		return cycles.read(actor, id);
 	}
 

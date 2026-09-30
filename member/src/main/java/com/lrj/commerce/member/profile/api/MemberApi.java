@@ -6,6 +6,14 @@ import java.util.List;
 /** Member边界只暴露不可变业务投影，表由本模块独占。 */
 public interface MemberApi {
 
+	/** 对外状态沿稳定字符串code，未知状态不能被内部履约视作ACTIVE。 */
+	enum Status {
+		ACTIVE("ACTIVE"), FROZEN("FROZEN"), CLOSED("CLOSED");
+		private final String code;
+		Status(String code) { this.code = code; }
+		public String code() { return code; }
+	}
+
 	record Stats(long total, long active, long frozen, long closed) {
 	}
 

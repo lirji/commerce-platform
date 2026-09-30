@@ -19,7 +19,14 @@ public interface EmployeeAccess {
         MEMBER_TAG_ASSIGN("commerce.member_tag.assign", "MEMBER_TAG", "commerce_member"),
         MEMBER_BEHAVIOR_READ("commerce.member_behavior.read", "MEMBER_BEHAVIOR", "commerce_member"),
         MEMBER_BEHAVIOR_UPDATE("commerce.member_behavior.update", "MEMBER_BEHAVIOR", "commerce_member"),
-        MEMBER_BEHAVIOR_REBUILD("commerce.member_behavior.rebuild", "MEMBER_BEHAVIOR", "commerce_member");
+        MEMBER_BEHAVIOR_REBUILD("commerce.member_behavior.rebuild", "MEMBER_BEHAVIOR", "commerce_member"),
+        MEMBER_CYCLE_POLICY_READ("commerce.member_cycle.policy.read", "MEMBER_CYCLE", "commerce_member_policy"),
+        MEMBER_CYCLE_POLICY_PUBLISH("commerce.member_cycle.policy.publish", "MEMBER_CYCLE", "commerce_member_policy"),
+        MEMBER_CYCLE_READ("commerce.member_cycle.read", "MEMBER_CYCLE", "commerce_member"),
+        MEMBER_CYCLE_EVALUATE("commerce.member_cycle.evaluate", "MEMBER_CYCLE", "commerce_member"),
+        CYCLE_BENEFIT_READ("commerce.cycle_benefit.read", "CYCLE_BENEFIT", "commerce_member_policy"),
+        CYCLE_BENEFIT_DEFINE("commerce.cycle_benefit.define", "CYCLE_BENEFIT", "commerce_member_policy"),
+        CYCLE_BENEFIT_GRANT("commerce.cycle_benefit.grant", "CYCLE_BENEFIT", "commerce_member");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }

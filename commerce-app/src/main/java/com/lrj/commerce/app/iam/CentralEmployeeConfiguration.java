@@ -80,6 +80,17 @@ public class CentralEmployeeConfiguration {
         }
         if ("GET".equals(r.getMethod()) && path.matches("/v1/admin/member-tags/[A-Za-z0-9_-]{1,100}/assignments")) return EmployeeAccess.Capability.MEMBER_TAG_READ;
         if ("POST".equals(r.getMethod()) && path.matches("/v1/admin/member-tags/[A-Za-z0-9_-]{1,100}/assign")) return EmployeeAccess.Capability.MEMBER_TAG_ASSIGN;
+        if ("/v1/admin/member-cycles/policies".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.MEMBER_CYCLE_POLICY_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.MEMBER_CYCLE_POLICY_PUBLISH;
+        }
+        if ("GET".equals(r.getMethod()) && path.matches("/v1/admin/member-cycles/[A-Za-z0-9_-]{1,100}")) return EmployeeAccess.Capability.MEMBER_CYCLE_READ;
+        if ("POST".equals(r.getMethod()) && path.matches("/v1/admin/member-cycles/[A-Za-z0-9_-]{1,100}/evaluate")) return EmployeeAccess.Capability.MEMBER_CYCLE_EVALUATE;
+        if ("/v1/admin/member-cycle-benefits".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.CYCLE_BENEFIT_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.CYCLE_BENEFIT_DEFINE;
+        }
+        if ("POST".equals(r.getMethod()) && path.matches("/v1/admin/member-cycle-benefits/[A-Za-z0-9_-]{1,100}/grant")) return EmployeeAccess.Capability.CYCLE_BENEFIT_GRANT;
         if ("/v1/admin/member-growth/policies".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.GROWTH_POLICY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.GROWTH_POLICY_PUBLISH;

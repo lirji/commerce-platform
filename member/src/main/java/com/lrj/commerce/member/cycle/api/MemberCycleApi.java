@@ -30,6 +30,12 @@ public interface MemberCycleApi {
 	/** 权益绑定读取确切不可变版本，避免遍历历史策略。 */
 	Policy policy(Actor actor, long version);
 
+	/** 已授权礼包或可信系统事务读取确切策略，不隐式要求员工周期读取权限。 */
+	Policy policyForOperation(String tenant, long version);
+
+	/** 可信系统/礼包事务内读取当前周期，调用方保持会员锁与原事务。 */
+	View viewForOperation(String tenant, String memberId);
+
 	/** 显式考核，允许对同一周期重复执行。 */
 	View evaluate(Actor actor, String key, String memberId);
 
