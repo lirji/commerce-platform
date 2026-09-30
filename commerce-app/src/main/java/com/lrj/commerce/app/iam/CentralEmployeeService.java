@@ -71,7 +71,7 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
             throw new DomainException(DomainException.Code.UNAVAILABLE, "中央目录授权暂不可用");
         } catch (AccessDeniedException failure) { throw denied(); }
     }
-    /** 会员Owner先读实际记录；适配层只转换事实并核对原Actor身份。 */
+    /** 业务Owner先读实际记录；适配层只转换事实并核对原Actor身份。 */
     @Override public Decision resource(Actor actor, EmployeeAccess.Capability capability, EmployeeAccess.ResourceFact fact, String tenant) {
         if (fact == null || !capability.resourceType().equals(fact.type()) || actor.executionId() == null || actor.role() != Actor.Role.OPERATOR) throw denied();
         try {

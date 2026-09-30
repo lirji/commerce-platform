@@ -16,7 +16,7 @@ public class PointOfferController {
 		this.offers = offers;
 	}
 
-	/** 创建规则必须管理员。 */
+	/** 定义权限独立，真实目标与身份由业务Owner核验。 */
 	@PostMapping("/admin/point-offers")
 	public Object create(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
 			@RequestBody PointOfferApi.Offer input) {
@@ -30,11 +30,10 @@ public class PointOfferController {
 		return offers.status(actor, key, id, input);
 	}
 
-	/** 管理员查看全部目录。 */
+	/** 员工读取只使用独立目录权限，服务层兼容旧权威。 */
 	@GetMapping("/admin/point-offers")
 	public Object adminList(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
 			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		actor.requireAdmin();
 		return offers.list(actor, storeId, after, limit);
 	}
 

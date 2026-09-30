@@ -31,7 +31,10 @@ public interface EmployeeAccess {
         POINTS_POLICY_PUBLISH("commerce.points.policy.publish", "MEMBER_POINTS", "commerce_member_policy"),
         POINTS_READ("commerce.points.read", "MEMBER_POINTS", "commerce_member"),
         POINTS_ADJUST("commerce.points.adjust", "MEMBER_POINTS", "commerce_member"),
-        POINTS_EXPIRE("commerce.points.expire", "MEMBER_POINTS", "commerce_member");
+        POINTS_EXPIRE("commerce.points.expire", "MEMBER_POINTS", "commerce_member"),
+        POINT_OFFER_READ("commerce.point_offer.read", "POINT_OFFER", "point_offer"),
+        POINT_OFFER_DEFINE("commerce.point_offer.define", "POINT_OFFER", "point_offer"),
+        POINT_OFFER_STATUS_UPDATE("commerce.point_offer.status.update", "POINT_OFFER", "point_offer");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }

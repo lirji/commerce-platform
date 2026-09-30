@@ -13,6 +13,8 @@ import com.lrj.commerce.benefit.pointoffer.api.PointOfferApi;
 import com.lrj.commerce.member.points.api.MemberPointsApi;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
@@ -37,8 +39,10 @@ public class PointOfferService implements PointOfferApi {
 
 	private final Clock clock;
 
+	private final EmployeeAccess access;
+
 	public PointOfferService(PointOfferMapper mapper, MemberApi members, MemberPointsApi points, CouponApi coupons,
-			EntitlementApi entitlements, StoreApi stores, Commands commands, Clock clock) {
+			EntitlementApi entitlements, StoreApi stores, Commands commands, Clock clock, EmployeeAccess access) {
 		this.mapper = mapper;
 		this.members = members;
 		this.points = points;
@@ -47,11 +51,12 @@ public class PointOfferService implements PointOfferApi {
 		this.stores = stores;
 		this.commands = commands;
 		this.clock = clock;
+		this.access = access;
 	}
 
 	/** 资产与价格不可变，更换玩法应创建新兑换项目。 */
 	public View create(Actor actor, String key, Offer input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, POINT_OFFER_DEFINE);
 		Inputs.require(input != null && input.kind() != null && input.assetVersion() > 0, "兑换资产无效");
 		Identifiers.require(input.offerId());
 		Identifiers.require(input.assetId());
@@ -67,7 +72,8 @@ public class PointOfferService implements PointOfferApi {
 		var value = new Offer(input.offerId(), input.storeId(), input.name(), input.kind(), input.assetId(),
 				input.assetVersion(), input.points(), input.quota(), input.perMemberLimit(),
 				input.validFrom().truncatedTo(ChronoUnit.MILLIS), input.validTo().truncatedTo(ChronoUnit.MILLIS));
-		return commands.run(actor, "points.offer.create", key, value, View.class, () -> {
+		Object command = permit.identity() == null ? value : new Object[] { value, permit.identity() };
+		return commands.runGuarded(actor, "points.offer.create", key, command, View.class, () -> access.lock(permit), () -> {
 			stores.requireActive(actor, value.storeId());
 			if (value.kind() == Kind.COUPON)
 				coupons.validateExchange(actor.tenantId(), value.storeId(), value.assetId(), value.assetVersion(),
@@ -77,34 +83,40 @@ public class PointOfferService implements PointOfferApi {
 						new EntitlementApi.Ref(value.assetId(), value.assetVersion()), value.validFrom(),
 						value.validTo());
 			mapper.insert(actor.tenantId(), value, JsonCodec.write(value));
+			access.audit(actor, permit, "points.offer.create", key, value.offerId());
 			return view(mapper.find(actor.tenantId(), value.offerId()));
 		});
 	}
 
 	/** 不删除已发权益，状态修改只影响新兑换。 */
 	public View status(Actor actor, String key, String id, Status input) {
-		actor.requireAdmin();
+		var scope = access.scope(actor, POINT_OFFER_STATUS_UPDATE);
 		Identifiers.require(id);
 		Inputs.require(input != null && input.expectedVersion() >= 0, "版本无效");
 		Inputs.text(input.reason(), 256);
-		return commands.run(actor, "points.offer.status", key, new Object[] { id, input }, View.class, () -> {
+		var current = view(Inputs.found(mapper.find(actor.tenantId(), id)));
+		var permit = access.resource(actor, scope, fact(current));
+		Object command = scope.identity() == null ? new Object[] { id, input } : new Object[] { id, input, scope.identity() };
+		return commands.runGuarded(actor, "points.offer.status", key, command, View.class, () -> lockPermit(actor, permit), () -> {
 			Inputs.found(mapper.lock(actor.tenantId(), id));
 			if (mapper.status(actor.tenantId(), id, input) != 1)
 				throw conflict("兑换项目版本已变化");
+			access.audit(actor, permit.scope(), "points.offer.status", key, id);
 			return view(mapper.lock(actor.tenantId(), id));
 		});
 	}
 
 	/** 受控目录不泄露其他租户或失效活动。 */
 	public List<View> list(Actor actor, String store, String after, int limit) {
-		if (actor.role() != Actor.Role.ADMIN && actor.role() != Actor.Role.MEMBER)
-			throw new DomainException(DomainException.Code.FORBIDDEN, "无兑换目录权限");
+		// 共享客户目录的旧ADMIN入口同样走员工门禁，避免绕过已接管管理接口。
+		boolean customer = actor.role() == Actor.Role.MEMBER;
+		var permit = customer ? null : access.scope(actor, POINT_OFFER_READ);
 		Inputs.page(after, limit);
 		stores.requireActive(actor, store);
-		return mapper.list(actor.tenantId(), store, after, limit, actor.role() == Actor.Role.ADMIN, clock.instant())
-			.stream()
-			.map(this::view)
-			.toList();
+		var result = mapper.list(actor.tenantId(), store, after, limit, !customer, clock.instant())
+			.stream().map(this::view).toList();
+		if (permit != null) EmployeeAccess.requireSame(permit, access.scope(actor, POINT_OFFER_READ));
+		return result;
 	}
 
 	/** 先锁会员再锁项目，避免不同入口对会员和资产的反向持锁。 */
@@ -147,6 +159,18 @@ public class PointOfferService implements PointOfferApi {
 		requireMember(actor);
 		Inputs.page(after, limit);
 		return mapper.receipts(actor.tenantId(), members.current(actor).memberId(), after, limit);
+	}
+
+	/** 权威路由锁先于真实商品锁和命令回执；版本变化时重新判权。 */
+	private void lockPermit(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		access.lock(permit.scope());
+		var locked = view(Inputs.found(mapper.lock(actor.tenantId(), permit.fact().id())));
+		if (!permit.fact().equals(fact(locked))) throw conflict("兑换商品事实已变化，请重新判权");
+		access.lock(permit.scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(View offer) {
+		return new EmployeeAccess.ResourceFact(POINT_OFFER_READ.resourceType(), offer.content().offerId(), offer.version());
 	}
 
 	private void requireMember(Actor actor) {

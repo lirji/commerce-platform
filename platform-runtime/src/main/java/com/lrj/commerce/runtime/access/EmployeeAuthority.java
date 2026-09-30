@@ -59,13 +59,13 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (decision.until().isBefore(until)) until = decision.until();
         if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
         if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability)
-                || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
+                || pointOfferCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
                 && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
         return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
     }
     /** 对象判权追加在可信集合许可上，仍限制相同路由、身份和准入时间。 */
     @Override public ResourcePermit resource(Actor actor, ScopePermit permit, ResourceFact fact) {
-        if (!memberCapability(permit.capability()) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD
+        if ((!memberCapability(permit.capability()) && !pointOfferCapability(permit.capability())) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD || permit.capability() == Capability.POINT_OFFER_DEFINE
                 || !actor.tenantId().equals(permit.tenant()) || fact == null
                 || !permit.capability().resourceType().equals(fact.type()) || fact.version() < 0) throw denied();
         com.lrj.commerce.kernel.Identifiers.require(fact.id());
@@ -82,6 +82,10 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (!until.isAfter(Instant.now()) || !permit.identity().equals(decision.identity())
                 || !Objects.equals(routes.find(permit.tenant(), permit.capability().family()), permit.route())) throw denied();
         return new ResourcePermit(new ScopePermit(permit.capability(), permit.tenant(), permit.filter(), permit.route(), permit.identity(), permit.fingerprint(), until), fact);
+    }
+    /** 积分商品采用租户集合，只有已有商品读取/停启可追加真实对象事实。 */
+    private static boolean pointOfferCapability(Capability capability) {
+        return java.util.Set.of(Capability.POINT_OFFER_READ, Capability.POINT_OFFER_DEFINE, Capability.POINT_OFFER_STATUS_UPDATE).contains(capability);
     }
     private static boolean memberCapability(Capability capability) {
         return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE, Capability.GROWTH_READ, Capability.GROWTH_ADJUST, Capability.GROWTH_RECALCULATE, Capability.MEMBER_TAG_READ, Capability.MEMBER_TAG_DEFINE, Capability.MEMBER_TAG_ASSIGN, Capability.MEMBER_BEHAVIOR_READ, Capability.MEMBER_BEHAVIOR_UPDATE, Capability.MEMBER_BEHAVIOR_REBUILD, Capability.MEMBER_CYCLE_READ, Capability.MEMBER_CYCLE_EVALUATE, Capability.CYCLE_BENEFIT_GRANT, Capability.POINTS_READ, Capability.POINTS_ADJUST, Capability.POINTS_EXPIRE).contains(capability);

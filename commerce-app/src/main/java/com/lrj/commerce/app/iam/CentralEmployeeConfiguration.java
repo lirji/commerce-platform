@@ -109,6 +109,11 @@ public class CentralEmployeeConfiguration {
             if (path.matches("/v1/admin/member-points/[A-Za-z0-9_-]{1,100}/adjust")) return EmployeeAccess.Capability.POINTS_ADJUST;
             if (path.matches("/v1/admin/member-points/[A-Za-z0-9_-]{1,100}/expire")) return EmployeeAccess.Capability.POINTS_EXPIRE;
         }
+        if ("/v1/admin/point-offers".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.POINT_OFFER_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.POINT_OFFER_DEFINE;
+        }
+        if ("POST".equals(r.getMethod()) && path.matches("/v1/admin/point-offers/[A-Za-z0-9_-]{1,100}/status")) return EmployeeAccess.Capability.POINT_OFFER_STATUS_UPDATE;
         if ("/v1/admin/member-growth/policies".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.GROWTH_POLICY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.GROWTH_POLICY_PUBLISH;
