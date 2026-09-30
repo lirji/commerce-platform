@@ -50,6 +50,15 @@ public class CentralEmployeeConfiguration {
             if ("/v1/operations/directory/merchants/create-access".equals(path)) return EmployeeAccess.Capability.MERCHANT_CREATE;
             if ("/v1/operations/directory/stores/create-access".equals(path)) return EmployeeAccess.Capability.STORE_CREATE;
         }
+        if ("/v1/admin/members".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.MEMBER_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.MEMBER_CREATE;
+        }
+        if ("GET".equals(r.getMethod()) && path.matches("/v1/admin/members/[A-Za-z0-9_-]{1,100}/history")) return EmployeeAccess.Capability.MEMBER_READ;
+        if ("POST".equals(r.getMethod())) {
+            if (path.matches("/v1/admin/members/[A-Za-z0-9_-]{1,100}/profile")) return EmployeeAccess.Capability.MEMBER_PROFILE_UPDATE;
+            if (path.matches("/v1/admin/members/[A-Za-z0-9_-]{1,100}/status")) return EmployeeAccess.Capability.MEMBER_STATUS_UPDATE;
+        }
         return null;
     }
     private static final class EmployeeFilter extends OncePerRequestFilter {

@@ -58,9 +58,32 @@ public class EmployeeAuthority implements EmployeeAccess {
         var decision = adapter.scope(actor, capability, route.authTenantId());
         if (decision.until().isBefore(until)) until = decision.until();
         if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
-        if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE)
+        if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability))
                 && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
         return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
+    }
+    /** 对象判权追加在可信集合许可上，仍限制相同路由、身份和准入时间。 */
+    @Override public ResourcePermit resource(Actor actor, ScopePermit permit, ResourceFact fact) {
+        if (!memberCapability(permit.capability()) || permit.capability() == Capability.MEMBER_CREATE
+                || !actor.tenantId().equals(permit.tenant()) || fact == null
+                || !permit.capability().resourceType().equals(fact.type()) || fact.version() < 0) throw denied();
+        com.lrj.commerce.kernel.Identifiers.require(fact.id());
+        if (!permit.until().isAfter(Instant.now()) || !Objects.equals(routes.find(permit.tenant(), permit.capability().family()), permit.route())) throw denied();
+        if (permit.identity() == null) {
+            actor.requireAdmin();
+            if (actor.executionId() != null || (permit.route() != null && !java.util.Set.of(State.LEGACY.name(), State.SHADOW.name()).contains(permit.route().state()))) throw denied();
+            return new ResourcePermit(permit, fact);
+        }
+        if (actor.role() != Actor.Role.OPERATOR || actor.executionId() == null) throw denied();
+        var adapter = central.getIfAvailable(); if (adapter == null) throw denied();
+        var decision = adapter.resource(actor, permit.capability(), fact, permit.route().authTenantId());
+        Instant until = decision.until().isBefore(permit.until()) ? decision.until() : permit.until();
+        if (!until.isAfter(Instant.now()) || !permit.identity().equals(decision.identity())
+                || !Objects.equals(routes.find(permit.tenant(), permit.capability().family()), permit.route())) throw denied();
+        return new ResourcePermit(new ScopePermit(permit.capability(), permit.tenant(), permit.filter(), permit.route(), permit.identity(), permit.fingerprint(), until), fact);
+    }
+    private static boolean memberCapability(Capability capability) {
+        return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE).contains(capability);
     }
     /** 集合许可的路由锁先于命令回执与业务写入。 */
     @Override @Transactional(propagation = Propagation.MANDATORY)

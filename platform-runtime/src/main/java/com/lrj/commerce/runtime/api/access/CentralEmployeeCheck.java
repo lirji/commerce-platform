@@ -11,6 +11,9 @@ public interface CentralEmployeeCheck {
     /** 集合无资源事实，复核引用的原Grant路径交集。 */
     ScopeDecision scope(Actor actor, EmployeeAccess.Capability capability, String authTenant);
 
+    /** 对象与引用能力类型必须匹配；会员事实禁止附带虚构门店字段。 */
+    Decision resource(Actor actor, EmployeeAccess.Capability capability, EmployeeAccess.ResourceFact fact, String authTenant);
+
     record Decision(EmployeeAccess.Identity identity, Instant until) {}
     /** 返回身份必须仍绑定同一本地Actor，错误区分拒绝与依赖故障。 */
     Decision require(Actor actor, EmployeeAccess.Capability capability, EmployeeAccess.StoreFact fact, String authTenant);

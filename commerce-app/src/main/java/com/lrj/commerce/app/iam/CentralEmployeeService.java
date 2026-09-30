@@ -71,6 +71,21 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
             throw new DomainException(DomainException.Code.UNAVAILABLE, "中央目录授权暂不可用");
         } catch (AccessDeniedException failure) { throw denied(); }
     }
+    /** 会员Owner先读实际记录；适配层只转换事实并核对原Actor身份。 */
+    @Override public Decision resource(Actor actor, EmployeeAccess.Capability capability, EmployeeAccess.ResourceFact fact, String tenant) {
+        if (fact == null || !capability.resourceType().equals(fact.type()) || actor.executionId() == null || actor.role() != Actor.Role.OPERATOR) throw denied();
+        try {
+            var result = client.checkExecution(actor.executionId(), check(tenant, capability),
+                    new Facts(tenant, fact.type(), fact.id(), fact.version(), null, null, List.of(), null, null));
+            if (!"ALLOW".equals(result.decision())) throw denied();
+            var c = result.context();
+            var current = bindings.find(tenant, c.principalId(), c.membershipId(), c.membershipGeneration());
+            if (current == null || !current.tenantId().equals(actor.tenantId()) || !current.actorId().equals(actor.actorId())) throw denied();
+            return new Decision(new EmployeeAccess.Identity(c.principalId(), c.membershipId(), c.membershipGeneration()), Instant.parse(result.validUntil()));
+        } catch (CentralAccessException failure) {
+            throw new DomainException(DomainException.Code.UNAVAILABLE, "中央会员授权暂不可用");
+        } catch (AccessDeniedException failure) { throw denied(); }
+    }
     /** 提示必须独立检查写能力；再次读取Owner与read防止身份或范围切换后返回旧动作。 */
     public InventoryActions actions(Actor actor, String token, String tenant, String storeId) {
         if (actor.executionId() == null || actor.role() != Actor.Role.OPERATOR) throw denied();

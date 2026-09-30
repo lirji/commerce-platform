@@ -9,7 +9,9 @@ public interface EmployeeAccess {
     enum Capability {
         INVENTORY_READ("commerce.inventory.read", "INVENTORY", "store"), INVENTORY_RECEIVE("commerce.inventory.receive", "INVENTORY", "store"),
         MERCHANT_READ("commerce.merchant.read", "DIRECTORY", "merchant"), MERCHANT_CREATE("commerce.merchant.create", "DIRECTORY", "merchant"),
-        STORE_DIRECTORY_READ("commerce.store.directory.read", "DIRECTORY", "store"), STORE_CREATE("commerce.store.create", "DIRECTORY", "store");
+        STORE_DIRECTORY_READ("commerce.store.directory.read", "DIRECTORY", "store"), STORE_CREATE("commerce.store.create", "DIRECTORY", "store"),
+        MEMBER_READ("commerce.member.read", "MEMBER_PROFILE", "commerce_member"), MEMBER_CREATE("commerce.member.create", "MEMBER_PROFILE", "commerce_member"),
+        MEMBER_PROFILE_UPDATE("commerce.member.profile.update", "MEMBER_PROFILE", "commerce_member"), MEMBER_STATUS_UPDATE("commerce.member.status.update", "MEMBER_PROFILE", "commerce_member");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }
@@ -18,6 +20,12 @@ public interface EmployeeAccess {
     }
     /** 首片资源固定为真实门店，不能用SKU编号替代门店Facts。 */
     record StoreFact(String id, long version) {}
+    /** 对象事实由对应业务Owner提供，类型不可由HTTP输入猜测。 */
+    record ResourceFact(String type, String id, long version) {}
+    /** 组合许可保留实际目标版本，集合资格本身不能冒充已核对对象。 */
+    record ResourcePermit(ScopePermit scope, ResourceFact fact) {}
+    /** 在已核对集合资格上追加可信对象判权，领域不需要中央协议类型。 */
+    ResourcePermit resource(Actor actor, ScopePermit scope, ResourceFact fact);
     /** 无Token的单次许可；中央身份摘要稳定，执行引用nonce不进入幂等摘要。 */
     record Identity(String principalId, String membershipId, long generation) {}
     record Permit(Capability capability, String tenant, StoreFact fact, Route route, Identity identity, Instant until) {}

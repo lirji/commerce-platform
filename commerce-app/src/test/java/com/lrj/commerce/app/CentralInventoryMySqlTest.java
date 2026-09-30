@@ -93,7 +93,8 @@ class CentralInventoryMySqlTest {
         assertEquals(200,http("GET","/v1/admin/inventory?storeId=S1","valid",true,null).statusCode());
         assertEquals(403,http("GET","/v1/admin/inventory?storeId=S1",adminToken,false,null).statusCode());
         assertEquals(401,http("GET","/v1/admin/inventory?storeId=S1","invalid",true,null).statusCode());
-        assertEquals(401,http("GET","/v1/admin/members","valid",true,null).statusCode());
+        // 会员已接入独立能力：库存上下文不得获得会员权限，已认证但授权不足返回403。
+        assertEquals(403,http("GET","/v1/admin/members","valid",true,null).statusCode());
         assertEquals(200,http("POST","/v1/admin/inventory/receipts","valid",true,new InventoryApi.Receipt("S1","SKU1",1)).statusCode());
     }
     @Test void actionHintUsesIndependentWriteCheckAndDoesNotConcealOutage() throws Exception {
