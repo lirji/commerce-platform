@@ -26,7 +26,12 @@ public interface EmployeeAccess {
         MEMBER_CYCLE_EVALUATE("commerce.member_cycle.evaluate", "MEMBER_CYCLE", "commerce_member"),
         CYCLE_BENEFIT_READ("commerce.cycle_benefit.read", "CYCLE_BENEFIT", "commerce_member_policy"),
         CYCLE_BENEFIT_DEFINE("commerce.cycle_benefit.define", "CYCLE_BENEFIT", "commerce_member_policy"),
-        CYCLE_BENEFIT_GRANT("commerce.cycle_benefit.grant", "CYCLE_BENEFIT", "commerce_member");
+        CYCLE_BENEFIT_GRANT("commerce.cycle_benefit.grant", "CYCLE_BENEFIT", "commerce_member"),
+        POINTS_POLICY_READ("commerce.points.policy.read", "MEMBER_POINTS", "commerce_member_policy"),
+        POINTS_POLICY_PUBLISH("commerce.points.policy.publish", "MEMBER_POINTS", "commerce_member_policy"),
+        POINTS_READ("commerce.points.read", "MEMBER_POINTS", "commerce_member"),
+        POINTS_ADJUST("commerce.points.adjust", "MEMBER_POINTS", "commerce_member"),
+        POINTS_EXPIRE("commerce.points.expire", "MEMBER_POINTS", "commerce_member");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }

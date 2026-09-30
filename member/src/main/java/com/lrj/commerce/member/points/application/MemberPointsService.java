@@ -17,6 +17,8 @@ import com.lrj.commerce.member.points.api.MemberPointsApi;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.member.recovery.application.ItemRetries;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.recovery.RecoverableWork;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
@@ -34,6 +36,8 @@ public class MemberPointsService implements MemberPointsApi {
 	private static final long SOURCE_LIMIT = 1_000_000_000_000L;
 
 	private static final int MUTATION_BATCH_LIMIT = 200;
+
+	private final EmployeeAccess access;
 
 	private final PointsMapper mapper;
 
@@ -55,7 +59,8 @@ public class MemberPointsService implements MemberPointsApi {
 	public static final TenantRotation.Policy EXPIRY = new TenantRotation.Policy(20, 50, Duration.ofMillis(500), 200);
 
 	public MemberPointsService(PointsMapper mapper, GrowthMapper memberLocks, MemberMapper members, Commands commands,
-			Clock clock, PlatformTransactionManager manager, WorkLanes lanes, ItemRetries retries) {
+			Clock clock, PlatformTransactionManager manager, WorkLanes lanes, ItemRetries retries, EmployeeAccess access) {
+		this.access = access;
 		this.mapper = mapper;
 		this.memberLocks = memberLocks;
 		this.members = members;
@@ -81,7 +86,7 @@ public class MemberPointsService implements MemberPointsApi {
 
 	/** 策略发布不赠送积分，未来规则也不会改变历史订单奖励。 */
 	public Policy publish(Actor actor, String key, Policy input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, POINTS_POLICY_PUBLISH);
 		Inputs.require(input != null && input.version() > 0 && input.effectiveFrom() != null, "积分策略版本或时间无效");
 		Inputs.require(input.expiryDays() >= 1 && input.expiryDays() <= 366, "积分有效天数需为1至366");
 		Inputs.require(input.pointsPerYuan() >= 1 && input.pointsPerYuan() <= 100000 && input.maxDeductionBps() >= 0
@@ -98,27 +103,33 @@ public class MemberPointsService implements MemberPointsApi {
 		var normalized = new Policy(input.version(), input.effectiveFrom().truncatedTo(ChronoUnit.MILLIS),
 				rate.toPlainString(), input.expiryDays(), input.spendEnabled(), input.pointsPerYuan(),
 				input.maxDeductionBps());
-		return commands.run(actor, "member.points.policy", key, normalized, Policy.class, () -> {
+		Object command = permit.identity() == null ? normalized : new Object[] { normalized, permit.identity() };
+		return commands.runGuarded(actor, "member.points.policy", key, command, Policy.class, () -> access.lock(permit), () -> {
 			Inputs.require(
 					!normalized.effectiveFrom().isBefore(clock.instant().minusSeconds(60))
 							&& !normalized.effectiveFrom().isAfter(clock.instant().plusSeconds(31_536_000)),
 					"生效时间应为现在或未来一年内");
 			mapper.policy(actor.tenantId(), normalized, JsonCodec.write(normalized));
+			access.audit(actor, permit, "member.points.policy", key, "points-policy-" + normalized.version());
 			return normalized;
 		});
 	}
 
 	/** 历史版本不可变，游标稳定且有界。 */
 	public List<Policy> policies(Actor actor, long after, int limit) {
-		actor.requireAdmin();
+		var before = access.scope(actor, POINTS_POLICY_READ);
 		page(after, limit);
-		return mapper.policies(actor.tenantId(), after, limit).stream().map(this::policy).toList();
+		var result = mapper.policies(actor.tenantId(), after, limit).stream().map(this::policy).toList();
+		EmployeeAccess.requireSame(before, access.scope(actor, POINTS_POLICY_READ));
+		return result;
 	}
 
 	/** 只读钱包按实际时间过滤到期批次，后台延迟不会扩大可用额。 */
 	public Wallet wallet(Actor actor, String memberId) {
-		authorize(actor, memberId);
-		return mapper.walletRead(actor.tenantId(), memberId, clock.instant());
+		var permit = authorize(actor, memberId);
+		var result = mapper.walletRead(actor.tenantId(), memberId, clock.instant());
+		recheck(actor, permit);
+		return result;
 	}
 
 	/** 本人主体来自认证绑定，不接受客户端会员标识。 */
@@ -131,21 +142,24 @@ public class MemberPointsService implements MemberPointsApi {
 
 	/** 账本永不原地改写，运营校准产生新记录。 */
 	public List<Entry> ledger(Actor actor, String memberId, long after, int limit) {
-		authorize(actor, memberId);
+		var permit = authorize(actor, memberId);
 		page(after, limit);
-		return mapper.ledger(actor.tenantId(), memberId, after, limit);
+		var result = mapper.ledger(actor.tenantId(), memberId, after, limit);
+		recheck(actor, permit);
+		return result;
 	}
 
 	/** 校准在会员锁后复核账户版本；扣回优先消耗可用批次，缺口明确记录。 */
 	public Wallet adjust(Actor actor, String key, String memberId, Adjustment input) {
-		actor.requireAdmin();
+		var permit = permit(actor, POINTS_ADJUST, memberId);
 		Identifiers.require(memberId);
 		Inputs.require(input != null && input.expectedVersion() >= 0 && input.delta() != 0
 				&& input.delta() >= -1_000_000_000L && input.delta() <= 1_000_000_000L, "积分校准量或版本无效");
 		Inputs.text(input.reason(), 256);
-		return commands.run(actor, "member.points.adjust", key, new Object[] { memberId, input }, Wallet.class, () -> {
+		Object command = permit.scope().identity() == null ? new Object[] { memberId, input } : new Object[] { memberId, input, permit.scope().identity() };
+		return commands.runGuarded(actor, "member.points.adjust", key, command, Wallet.class, () -> lockPermit(actor, permit), () -> {
 			var member = lock(actor.tenantId(), memberId);
-			if (!member.status().equals("ACTIVE"))
+			if (!MemberApi.Status.ACTIVE.code().equals(member.status()))
 				throw conflict("非活跃会员不可人工校准积分");
 			var account = mapper.account(actor.tenantId(), memberId);
 			if (account.version() != input.expectedVersion())
@@ -163,18 +177,21 @@ public class MemberPointsService implements MemberPointsApi {
 			else
 				debit(actor.tenantId(), memberId, -input.delta());
 			entry(actor.tenantId(), memberId, Action.ADJUST, source, input.delta(), policyVersion, input.reason());
+			access.audit(actor, permit.scope(), "member.points.adjust", key, memberId);
 			return wallet(actor.tenantId(), memberId);
 		});
 	}
 
 	/** 运维可逐批推进过期，单条命令不会扫描全部历史批次。 */
 	public Wallet expire(Actor actor, String key, String memberId) {
-		actor.requireAdmin();
+		var permit = permit(actor, POINTS_EXPIRE, memberId);
 		Identifiers.require(memberId);
-		return commands.run(actor, "member.points.expire", key, memberId, Wallet.class, () -> {
+		Object command = permit.scope().identity() == null ? memberId : new Object[] { memberId, permit.scope().identity() };
+		return commands.runGuarded(actor, "member.points.expire", key, command, Wallet.class, () -> lockPermit(actor, permit), () -> {
 			lock(actor.tenantId(), memberId);
 			for (var lot : mapper.expiredLots(actor.tenantId(), memberId, clock.instant(), 100))
 				expireLot(actor.tenantId(), lot);
+			access.audit(actor, permit.scope(), "member.points.expire", key, memberId);
 			return wallet(actor.tenantId(), memberId);
 		});
 	}
@@ -368,12 +385,40 @@ public class MemberPointsService implements MemberPointsApi {
 				account == null ? 0 : account.version());
 	}
 
-	private void authorize(Actor actor, String member) {
-		Identifiers.require(member);
-		Inputs.found(members.find(actor.tenantId(), member));
-		if (actor.role() != Actor.Role.ADMIN && (actor.role() != Actor.Role.MEMBER
-				|| !Inputs.found(members.byActor(actor.tenantId(), actor.actorId())).memberId().equals(member)))
+	/** 客户本人读取仍按商城绑定；所有员工分支必须经过本族权威。 */
+	private EmployeeAccess.ResourcePermit authorize(Actor actor, String id) {
+		Identifiers.require(id);
+		if (actor.role() != Actor.Role.MEMBER) return permit(actor, POINTS_READ, id);
+		if (!Inputs.found(members.byActor(actor.tenantId(), actor.actorId())).memberId().equals(id))
 			throw new DomainException(DomainException.Code.FORBIDDEN, "不能读取其他会员积分");
+		return null;
+	}
+
+	/** 会员归属和版本来自本域，账户请求参数不能替代Owner事实。 */
+	private EmployeeAccess.ResourcePermit permit(Actor actor, EmployeeAccess.Capability capability, String id) {
+		var scope = access.scope(actor, capability);
+		Identifiers.require(id);
+		return access.resource(actor, scope, fact(Inputs.found(members.find(actor.tenantId(), id))));
+	}
+
+	/** 员工读取返回前复核授权及会员版本，客户本人路径不借员工引用。 */
+	private void recheck(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		if (permit == null) return;
+		EmployeeAccess.requireSame(permit.scope(), access.scope(actor, POINTS_READ));
+		if (!permit.fact().equals(fact(Inputs.found(members.find(actor.tenantId(), permit.fact().id())))))
+			throw new DomainException(DomainException.Code.CONFLICT, "会员版本已变化，请刷新");
+	}
+
+	/** 路由锁先于会员锁和旧回执；guard不创建账户，失败时没有额外业务效果。 */
+	private void lockPermit(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		access.lock(permit.scope());
+		if (!permit.fact().equals(fact(Inputs.found(members.lock(actor.tenantId(), permit.fact().id())))))
+			throw new DomainException(DomainException.Code.CONFLICT, "会员版本已变化，请刷新");
+		access.lock(permit.scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(MemberApi.View member) {
+		return new EmployeeAccess.ResourceFact(POINTS_READ.resourceType(), member.memberId(), member.version());
 	}
 
 	private Policy policy(PointsMapper.PolicyRow row) {

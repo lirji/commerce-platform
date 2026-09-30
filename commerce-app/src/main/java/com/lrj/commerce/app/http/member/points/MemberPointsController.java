@@ -30,10 +30,9 @@ public class MemberPointsController {
 		return points.policies(actor, after, limit);
 	}
 
-	/** 管理员查看本租户钱包。 */
+	/** 员工通过实际会员Owner门禁查看钱包。 */
 	@GetMapping("/admin/member-points/{id}")
 	public Object wallet(@AuthenticationPrincipal Actor actor, @PathVariable String id) {
-		actor.requireAdmin();
 		return points.wallet(actor, id);
 	}
 
@@ -41,7 +40,6 @@ public class MemberPointsController {
 	@GetMapping("/admin/member-points/{id}/ledger")
 	public Object ledger(@AuthenticationPrincipal Actor actor, @PathVariable String id,
 			@RequestParam(defaultValue = "0") long after, @RequestParam(defaultValue = "50") int limit) {
-		actor.requireAdmin();
 		return points.ledger(actor, id, after, limit);
 	}
 
