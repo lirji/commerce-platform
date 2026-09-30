@@ -49,3 +49,5 @@
 2026-09-27 Phase 7 增量同步基线为 `ddf55026bf026f96cec8793556b6559bdc749b72`。当前工作树的营销候选时间过滤/V42 索引、V43 活动券预留、CREDIT/COUPON 执行、竞争预览与滚动开关契约见 `delivery/phase7-marketing-production/CONTRACTS.md`；唯一计划/状态见同目录 `DELIVERY_PLAN.md`、`DELIVERY_STATUS.md`。隔离容量和旧/新二进制证据见 `evidence/phase7-marketing-production/`；本轮不提交、推送或生产部署，不能把本地 schema 验证当作生产生效事实。
 
 2026-09-27 Phase 7 正常Git交付与远程main核对见 delivery/phase7-marketing-production/DELIVERY_RESULT.md。Phase 8 本地实施与必需验收完成，严格状态PHASE_8_COMPLETE_WITH_LIMITATIONS：计划/契约/切片、各片TEST_RESULT、Review/QA及Git/CI实际状态见 delivery/phase8-marketing-journey/；最终报告见 evidence/phase8-marketing-journey/PHASE8_REPORT.md，00–16证据、MATRICES、results和scripts映射固定版本、图校验、历史/恢复、真实进程、兼容、规模与回归。V44逐步历史、V45到期发现索引为扩展迁移，不倒填旧证据或宣称生产部署。
+
+2026-09-30 B端改造及刷新修复：当前设计、真实HTTP端点清单、增量契约、切片见 `design/b-console-experience/`；验收、自查修订和交付见 `delivery/b-console-experience/`。旧S10仅内存凭据约束由本轮用户要求覆盖为标签页sessionStorage＋服务端复核；中央OIDC及独立授权边界继续保留。原中央员工任务进度完整保存为 `delivery/b-console-experience/PREVIOUS_PROGRESS.md`，不把本轮视觉改造当作新增中央授权能力。

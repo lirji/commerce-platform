@@ -6,7 +6,7 @@
 - ADMIN GET /v1/admin/orders/{id}/payment与POST /v1/admin/orders/{id}/payment/reconcile：读取同租户付款尝试/主动核对，与原会员接口同View/核对语义。不得用管理请求提供支付金额或伪造正式渠道结果。
 - AUTHENTICATED GET /v1/stores?after=&limit=50：租户内店铺目录，不含密钥或内部地址；状态字段明确显示，不让冻结店铺进入成交。
 - AUTHENTICATED GET /v1/runtime-capabilities：{sandboxEnabled,workersEnabled}来自类型化配置，用于控制本地沙箱管理入口文案，不是授权替代物。
-- 其余页面只使用S4–S9已发布契约。身份/v1/me返回tenantId/actorId/role；令牌不进入URL、日志、源代码或浏览器持久存储。
+- S10历史交付只使用S4–S9已发布契约；身份/v1/me返回tenantId/actorId/role。当时令牌不进入浏览器存储。2026-09-30用户明确要求修复刷新失去会话，当前覆盖条款见[B端增量契约](../../b-console-experience/CONTRACTS.md)：凭据仅保存于当前标签页sessionStorage，刷新后重新校验身份；令牌仍不进入URL、日志、源代码或localStorage。平台运维使用独立/v1/platform/me，不改变原/me的租户准入。
 
 ## S10分片
 

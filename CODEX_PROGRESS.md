@@ -2,41 +2,40 @@
 
 ## 任务目标
 
-连续完成已批准商城中央员工权限扩展至CE08。OA员工权威，会员/营销TENANT_ALL，库存/交易门店范围；高风险独立权限沿原流程。原目录串行，不启子Agent或新worktree。任务分支提交、正常合并推送main已授权，无生产部署或删除授权。
+按新前端Skill重构和完善当前项目B端页面，先核对真实接口，再补齐UI匹配；修复刷新清除会话/查询上下文。以Awwwards、Webby、FWA为品质追求，反复自查具体视觉与交互问题，不声称已获外部奖项认可。用户已授权正常任务分支提交、合并与推送main，无生产部署授权。
 
 ## 已完成
 
-- CE00—CE04本地纵向接入；CE05券定义CD0/CD1/CD2、权益E0/E1/E2及规则R0/R1已交付。
-- R1 auth8a54b0c/commerce74a5cf4，CI36701575411/36701590580均SUCCESS。
-- R2本地DONE：固定规则页/两个独立hint/两笔原意图分别保留；469项464PASS/5既有skip、规则8专项PASS；最终200dbeb9873c/子网114共609PASS、规则12浏览器检查、精确8审计，原键不重复。
-- 42工具/259入口/122能力/34角色、前端build/Prettier/新package/两仓hygiene及auth4/commerce10摘要通过。1440/390表单/目录与409/未知/成功/503已看；稳定布局后3个窄屏PNG和文档/正文均390。
+- 审查193条原B端/身份HTTP映射；新增平台自身身份后194条，41个Controller。
+- B01–B04已实现：标签页会话恢复、URL状态、平台角色、任务恢复/重放、统一中央壳层与B端视觉。
+- 后端470项，失败0，跳过5个显式性能实验；14项交互回归、中央17入口、6项真实经营流程、商品展示及总览验证通过。
+- 18次真实隔离HTTP联调；桌面/窄屏页面族和关联表单、菜单、错误均有证据及实际图片查看。
+- 历史中央员工任务上下文保存在 `docs/delivery/b-console-experience/PREVIOUS_PROGRESS.md`，历史全局摘要见同目录 `PREVIOUS_PROGRESS_STATE.md`。
 
 ## 已修改文件
 
-- auth feat/commerce-rule-console-rehearsal：P6、新规则浏览器脚本、259入口绑定/清单/断言、规则契约与CE05进度文档。
-- commerce feat/central-rule-console：CentralRules与SSO/页面接线、RuleActionsController/中央入口/错误接线、CentralRuleMySqlTest第8项、CENTRAL_RULE_ACCESS及本文件。
-- 私密后续人群契约草稿与4源码audience-core.patch（apply --check通过），尚未应用。
+- `frontend/src/app/App.tsx`、`shared/{session,routeState,useIntent,api,ui,contracts}`。
+- `frontend/src/features/RuntimeOperations.tsx`、`PlatformRuntime.tsx`、既有B端列表及商品/会员页面、`style.css`。
+- `frontend/src/iam/CentralShell.tsx`、`navigation.ts`、现有中央页面、`main.tsx`、会话路由。
+- 平台Controller及授权测试、浏览器测试；设计/契约/验收/进度文档。
+- 最终准确路径以当前任务Git diff及交付记录为准。
 
 ## 未完成
 
-- R2正常Git交付与精确CI核对。
-- 下一CE05-A0/A1/A2人群快照；其他活动/审批/预算/动态人群/定向发券/旅程/效果。
-- CE06交易、CE07页面/运维、CE08后台引用/对账/收缩。
-- 原生产2HOLD：真实目标、映射、Owner和部署授权缺失。
+- B05最后验收文档及Git交付：分逻辑单元提交，正常合并并推送main，核对对应CI。
 
 ## 当前问题
 
-- 本轮旧测试库容器已不存在；已恢复专用commerce-rules-mysql-698708fb5f/43308。测试先source commerce .local/runtime.env，再source .local/central-inventory/owned-rules.env。旧owned.env保留但失效。
-- V49—V62已应用不可改。运行Jar强制forceCreation并核对嵌套依赖。Java formatter/静态分析限制及5既有skip保持。
-- 隐藏option选择和响应式截图时机问题已修，四轮失败/成功日志及布局诊断保留。布局诊断重放真实库摘要仅用于定位，不作授权证据；最终是真实PKCE/API/SQL和严格390宽度验收。
-- 自有联调进程finally停止，原8602/OA与其他worktree未动；专用测试MySQL保留供后续切片。私密证据/库/依赖不清理。
+- 无产品阻断。首次后端验证有历史200ms批处理测试偶发18/20；未修改业务或降低断言，同版完整重跑通过。
+- 中央壳层验收使用显式OIDC存储与HTTP测试边界；不冒充本轮重新完成真实中央身份交换。
+- 既有Ant/UI包1,038kB构建警告仍在；无新增依赖或框架迁移。外部获奖评价未验证。
 
 ## 下一步建议
 
-1. 源码摘要/远程基线已核对；显式暂存R2路径，正常提交、ff合并推送两仓main并查CI。
-2. auth新任务分支后应用私密audience-core.patch，正式CONTRACTS_COMMERCE_AUDIENCES采用已有HIGH read/create与audience类型，两能力仅集合，真实PG/图/SDK验证后交付A0。
-3. A1原快照/成员/命令/身份审计同事务；A2实际摘要和有界成员输入。再持续推进其他CE05—08。
+1. 读取 `docs/delivery/b-console-experience/TEST_RESULT.md`、`REVIEW.md` 与 `docs/design/b-console-experience/IMPLEMENTATION_SLICES.md`，复核本轮最终源码指纹。
+2. 沿原目录分支 `refactor/b-console-experience` 完成有界Git提交与正常main发布，不新建worktree，不动8602/共享数据库。
+3. 核对Git真实状态和CI，更新本记录与PROGRESS_STATE、DELIVERY_RESULT；若CI失败，修复真实失败并重验。
 
 ## 恢复 Prompt
 
-读取本文件和auth CE05_MARKETING/CONTRACTS_COMMERCE_RULES。R2最终真实200dbeb9873c/子网114共609PASS、469项464PASS/5skip、12浏览器和8精确审计、稳定布局后390截图已通过，当前正常Git交付。之后按私密audience-contract-draft.md与audience-core.patch继续A0/A1/A2；A0补丁尚未应用。测试使用owned-rules.env，旧owned.env失效；V49—V62不可改。保留原8602/OA、其他worktree和私密证据，不启子Agent/新worktree，不反复询问继续。
+请读取 `CODEX_PROGRESS.md`，基于其中的“未完成”和“下一步建议”继续执行。不要重新规划全部任务，不要等待我输入“继续”，除非遇到缺少信息、危险操作或权限问题。

@@ -59,3 +59,9 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 中央`commerce.catalog.operate`覆盖既有完整CATALOG经营API和后台任务。`commerce.iam.catalog.enabled`默认关闭，启用还需store-read私有配置、显式身份桥及数据库CENTRAL路由；旧ADMIN和后台历史身份不能绕过。执行引用不保存用户Token，每步实时复核，目录版本/授权变化按安全边界停止旧任务。
 
 [本仓测试记录](docs/implementation/oa-auth/phase-6/P6_TEST_RESULT.md)和[统一运行说明](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/phase-6/P6_RUNTIME.md)记录V48迁移Owner、冻结/切换/回退和31项真实隔离检查。原8602及commerce_local未切换；生产候选仍HOLD，P7未执行。
+
+### B端工作台与刷新恢复
+
+管理工作台补齐任务恢复、恢复审计和历史重放；平台运维通过独立 `/v1/platform/me` 进入只读运行健康页。中央员工页面统一导航，但每个业务入口仍独立授权。刷新保留当前标签页会话及适用URL筛选、页签、游标，重新读取真实数据；退出与401清除凭据，服务暂不可用时支持恢复重试。
+
+[设计与接口映射](docs/design/b-console-experience/FRONTEND_ARCHITECTURE.md)、[增量契约](docs/design/b-console-experience/CONTRACTS.md)、[验收与品质复核](docs/delivery/b-console-experience/TEST_RESULT.md)记录本轮边界及证据；旧8602容器没有自动更新，源码预览和生产部署分别记录。
