@@ -10,8 +10,8 @@
 - 新增/operations/catalog固定SSO壳，复用原商品经营组件；中央Bearer及tenant用React请求上下文隔离，不写旧控制台全局凭据。
 - 393项Java验证（388通过/5可选跳过）、前端构建/Prettier、完整打包通过。
 - auth仓隔离演练rehearsal-c9a502b7a77c共34项通过，包括浏览器真实编辑、跨店/跨租户、退出/401/会话过期、源撤权403与依赖503。
-- 1440/390视口、桌面编辑及拒绝/不可用截图已查看；本轮不重测完整PKCE输入密码登录，复用P5。
-- 41c22ae产品提交已从独立任务分支正常合并推送main，远程CI在执行；最终状态以auth仓commerce-readiness/DELIVERY_RESULT.md为准。
+- 1440/390视口、桌面编辑及拒绝/不可用截图已查看；补充90089b33648d已通过真实密码+PKCE完整登录，组织/门店回跳与授权码清除通过。
+- 41c22ae产品提交已从独立任务分支正常合并推送main，对应4b12706的远程CI36660768385已SUCCESS；最终工具补充状态以auth仓commerce-readiness/DELIVERY_RESULT.md为准。
 
 ## 已修改文件
 
@@ -21,7 +21,7 @@
 
 ## 未完成
 
-- 远程CI收尾。
+- 本轮产品CI已通过；最新纯文档提交与工具追加CI以auth仓交付记录为准。
 - auth仓CONTRACTS_COMMERCE_EXPANSION.md草案尚待业务边界/高风险审批选择；新模块未接管。
 - 真实OA映射/Owner签字、生产目标/SLO/RTO/RPO、发布观察及旧写入收缩未完成。
 
