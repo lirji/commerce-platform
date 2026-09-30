@@ -12,13 +12,15 @@
 
 ## 已修改文件
 
-- auth feat/commerce-member-owner-contract：CONTRACTS_COMMERCE_MEMBER.md P1细化；P6演练新增 --member（隐含directory/inventory）。
-- commerce feat/central-member-profile：EmployeeAccess ResourcePermit、中央会员四能力精确过滤、MemberService真实对象版本/事务审计、V52、CentralMemberMySqlTest、SDK来源固定dd07223。
+- auth feat/commerce-member-ui-contract：P2契约/227入口/P6会员浏览器阶段/新governance-ce04-member.mjs。
+- commerce feat/central-member-ui：CentralMembers、MemberActionsController三提示、精确路由/SSO白名单、提示与壳负例测试。P1已提交，SDK固定dd07223。
 
 ## 未完成
 
 - CE04-P1本地DONE：406项401PASS/5skip；真实隔离rehearsal-451c622849b4共114PASS；36项Python/223入口核对/hygiene无阻断。工具显式--identity-subnet 10.254.81.0/24解决默认网络池耗尽，不删除旧网络。
-- P1更新验证/进度、hygiene、提交合并推送；然后CE04-P2会员页面。成长/标签/行为/周期/积分及CE05—08仍未完成。
+- P1 auth2cb8c11/commerce1bc81f2已合并推送，CI36669783915/36669785165均SUCCESS。
+- P2本地DONE：407项402PASS/5skip，最终rehearsal-aa0b96471601共137PASS（会员12条浏览器，目录/库存/CATALOG回归）。当前截图已实际查看，36项Python/227入口/两仓hygiene无阻断；正在按分支提交合并推送。失败e56215a12fb5是Select测试定位问题，修后完整复跑，不删证据。
+- 成长/标签/行为/周期/积分及CE05—08仍未完成。
 - 真实OA映射/Owner签字/永久授权截止/生产SLO RTO/RPO待定，仅阻塞对应动作。
 
 ## 当前问题
@@ -30,8 +32,8 @@
 
 ## 下一步建议
 
-1. P1记录已在CE04_MEMBER，进行Git交付和CI；auth新出现他任务782ae3d gitignore提交/工作树，先核对后保留。
-2. P1按完整逻辑交付；P2细化真实API页面/逐动作提示后实现和1440/390浏览器验收。
+1. P2验证已完成，Git交付并核对远程CI。P1两仓CI已SUCCESS。auth他任务782ae3d仅gitignore且已在origin/main，已保留其工作树，不清理。
+2. 继续CE04-G成长政策/钱包/调整/重算；auth .local/governance/commerce-contracts/member-growth-draft.md已做源码细化草案，需转正式契约后按G0协议/G1 Owner/G2 UI实施。
 3. 连续完成后续已批准片，不因一片完成停止或重复询问。
 
 ## 恢复 Prompt

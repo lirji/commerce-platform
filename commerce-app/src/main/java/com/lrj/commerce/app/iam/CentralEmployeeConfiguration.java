@@ -47,6 +47,9 @@ public class CentralEmployeeConfiguration {
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_CREATE;
         }
         if ("GET".equals(r.getMethod())) {
+            if ("/v1/operations/members/create-access".equals(path)) return EmployeeAccess.Capability.MEMBER_CREATE;
+            if ("/v1/operations/members/profile-access".equals(path)) return EmployeeAccess.Capability.MEMBER_PROFILE_UPDATE;
+            if ("/v1/operations/members/status-access".equals(path)) return EmployeeAccess.Capability.MEMBER_STATUS_UPDATE;
             if ("/v1/operations/directory/merchants/create-access".equals(path)) return EmployeeAccess.Capability.MERCHANT_CREATE;
             if ("/v1/operations/directory/stores/create-access".equals(path)) return EmployeeAccess.Capability.STORE_CREATE;
         }

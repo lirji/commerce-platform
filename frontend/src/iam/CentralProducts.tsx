@@ -13,6 +13,7 @@ import {
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { CentralMembers } from "./CentralMembers";
 import { CentralDirectory } from "./CentralDirectory";
 import { CentralInventory } from "./CentralInventory";
 import { CentralCatalog } from "./CentralCatalog";
@@ -86,7 +87,7 @@ export function CentralProducts() {
       <div className="central-products">
         <Card title="商城统一身份登录">
           {error && <Alert type="error" showIcon title={error.message} />}
-          <p>使用企业身份进入已授权门店。</p>
+          <p>使用企业身份进入已授权业务。</p>
           <Button
             type="primary"
             onClick={() =>
@@ -102,13 +103,15 @@ export function CentralProducts() {
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
   const Page =
-    location.pathname === "/operations/directory"
-      ? CentralDirectory
-      : location.pathname === "/operations/inventory"
-        ? CentralInventory
-        : location.pathname === "/operations/catalog"
-          ? CentralCatalog
-          : Products;
+    location.pathname === "/operations/members"
+      ? CentralMembers
+      : location.pathname === "/operations/directory"
+        ? CentralDirectory
+        : location.pathname === "/operations/inventory"
+          ? CentralInventory
+          : location.pathname === "/operations/catalog"
+            ? CentralCatalog
+            : Products;
   return (
     <Page
       key={`${user.profile.sub}:${tenant}`}

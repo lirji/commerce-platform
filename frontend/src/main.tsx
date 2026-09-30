@@ -16,6 +16,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <AntApp>
         {[
           "/operations/products",
+          "/operations/members",
           "/operations/directory",
           "/operations/inventory",
           "/operations/catalog",

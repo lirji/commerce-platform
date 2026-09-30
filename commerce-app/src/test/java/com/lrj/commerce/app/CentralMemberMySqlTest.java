@@ -139,6 +139,22 @@ class CentralMemberMySqlTest {
         forbidden(()->members.list(admin,"",10));
         assertEquals("old",jdbc.queryForObject("SELECT display_name FROM member_record WHERE tenant_id=? AND member_id='M1'",String.class,tenant));
     }
+    @Test void actionHintsRemainIndependentAndNeverAcceptLegacyAdmin() throws Exception {
+        var caps = List.of(MEMBER_CREATE, MEMBER_PROFILE_UPDATE, MEMBER_STATUS_UPDATE);
+        var names = List.of("create", "profile", "status");
+        allowed.remove(MEMBER_READ.code());
+        for (int n=0; n<caps.size(); n++) {
+            String path = "/v1/operations/members/"+names.get(n)+"-access";
+            var response = http("GET",path,"valid",true,null);
+            assertEquals(200,response.statusCode());assertTrue(response.body().contains("\"allowed\":true"));
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+            allowed.remove(caps.get(n).code());assertEquals(403,http("GET",path,"valid",true,null).statusCode());allowed.add(caps.get(n).code());
+        }
+        partial.set(true);assertEquals(403,http("GET","/v1/operations/members/create-access","valid",true,null).statusCode());partial.set(false);
+        afterScope.set(()->epoch.incrementAndGet());assertEquals(403,http("GET","/v1/operations/members/profile-access","valid",true,null).statusCode());
+        unavailable.set(true);assertEquals(503,http("GET","/v1/operations/members/status-access","valid",true,null).statusCode());
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);
