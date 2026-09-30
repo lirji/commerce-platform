@@ -214,6 +214,22 @@ class CentralCycleMySqlTest {
         unavailable.set(true);assertEquals(503,http("GET","/v1/admin/member-cycle-benefits?policyVersion=1","valid",true,null).statusCode());
     }
 
+    /** 四提示相互独立；提示不是可复用许可，不能接受旧ADMIN或不完整租户范围。 */
+    @Test void actionHintsStayIndependentAndFailClosed() throws Exception {
+        var caps=List.of(MEMBER_CYCLE_POLICY_PUBLISH,MEMBER_CYCLE_EVALUATE,CYCLE_BENEFIT_DEFINE,CYCLE_BENEFIT_GRANT);
+        var paths=List.of("member-cycles/publish-access","member-cycles/evaluate-access","member-cycle-benefits/define-access","member-cycle-benefits/grant-access");
+        for(var read:List.of(MEMBER_CYCLE_POLICY_READ,MEMBER_CYCLE_READ,CYCLE_BENEFIT_READ))allowed.remove(read.code());
+        for(int n=0;n<caps.size();n++) {
+            String path="/v1/operations/"+paths.get(n);var result=http("GET",path,"valid",true,null);
+            assertEquals(200,result.statusCode());assertTrue(result.body().contains("\"allowed\":true"));
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+            allowed.remove(caps.get(n).code());assertEquals(403,http("GET",path,"valid",true,null).statusCode());allowed.add(caps.get(n).code());
+        }
+        partial.set(true);assertEquals(403,http("GET","/v1/operations/member-cycle-benefits/define-access","valid",true,null).statusCode());partial.set(false);
+        afterScope.set(()->epoch.incrementAndGet());assertEquals(403,http("GET","/v1/operations/member-cycles/publish-access","valid",true,null).statusCode());
+        unavailable.set(true);assertEquals(503,http("GET","/v1/operations/member-cycles/evaluate-access","valid",true,null).statusCode());
+    }
+
     private MemberCycleApi.Policy policy(long version) {return new MemberCycleApi.Policy(version,Instant.now().minusSeconds(1).truncatedTo(java.time.temporal.ChronoUnit.MILLIS),7,List.of(new MemberCycleApi.Level("BASIC",0),new MemberCycleApi.Level("GOLD",100)));}
     private void definition(Instant from) {entitlements.create(admin,id(),new EntitlementApi.Definition("tea",1,"S1","周期茶",2,10,from.minusSeconds(10),from.plusSeconds(864000),7));}
     private MemberBenefitApi.Bundle bundle(String id,String level,Instant from) {return new MemberBenefitApi.Bundle(id,1,level,"S1",from.plusSeconds(604800),List.of(new EntitlementApi.Ref("tea",1)));}

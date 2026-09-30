@@ -47,6 +47,10 @@ public class CentralEmployeeConfiguration {
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_CREATE;
         }
         if ("GET".equals(r.getMethod())) {
+            if ("/v1/operations/member-cycles/publish-access".equals(path)) return EmployeeAccess.Capability.MEMBER_CYCLE_POLICY_PUBLISH;
+            if ("/v1/operations/member-cycles/evaluate-access".equals(path)) return EmployeeAccess.Capability.MEMBER_CYCLE_EVALUATE;
+            if ("/v1/operations/member-cycle-benefits/define-access".equals(path)) return EmployeeAccess.Capability.CYCLE_BENEFIT_DEFINE;
+            if ("/v1/operations/member-cycle-benefits/grant-access".equals(path)) return EmployeeAccess.Capability.CYCLE_BENEFIT_GRANT;
             if ("/v1/operations/member-behavior/update-access".equals(path)) return EmployeeAccess.Capability.MEMBER_BEHAVIOR_UPDATE;
             if ("/v1/operations/member-behavior/rebuild-access".equals(path)) return EmployeeAccess.Capability.MEMBER_BEHAVIOR_REBUILD;
             if ("/v1/operations/member-tags/define-access".equals(path)) return EmployeeAccess.Capability.MEMBER_TAG_DEFINE;

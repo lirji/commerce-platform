@@ -13,6 +13,7 @@ import {
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { CentralCycles } from "./CentralCycles";
 import { CentralBehavior } from "./CentralBehavior";
 import { CentralTags } from "./CentralTags";
 import { CentralGrowth } from "./CentralGrowth";
@@ -105,8 +106,12 @@ export function CentralProducts() {
   const tenant = new URLSearchParams(location.search).get("tenant_id") ?? "";
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
-  const Page =
-    location.pathname === "/operations/member-behavior"
+  const Page = [
+    "/operations/member-cycles",
+    "/operations/member-cycle-benefits",
+  ].includes(location.pathname)
+    ? CentralCycles
+    : location.pathname === "/operations/member-behavior"
       ? CentralBehavior
       : location.pathname === "/operations/member-tags"
         ? CentralTags
