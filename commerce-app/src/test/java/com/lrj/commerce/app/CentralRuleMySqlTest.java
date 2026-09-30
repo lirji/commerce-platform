@@ -179,6 +179,26 @@ class CentralRuleMySqlTest {
         assertThrows(DomainException.class,()->assets.createRule(creator,id(),input("A",0)));
         assertEquals(0,count("marketing_rule_asset"));assertEquals(0,count("employee_command_identity"));
     }
+    /** 两个提示只认可各自动作，读权限、旧ADMIN和其他提示均不能替代。 */
+    @Test void actionHintsRemainIndependentAndNeverWriteAudit() throws Exception {
+        String create="/v1/operations/rules/create-access",publish="/v1/operations/rules/publish-access";
+        allowed.clear();allowed.add(RULE_CREATE.code());
+        assertEquals(200,http("GET",create,"valid",true,null).statusCode());
+        assertEquals(403,http("GET",publish,"valid",true,null).statusCode());
+        assertEquals(403,http("GET","/v1/admin/rule-fields","valid",true,null).statusCode());
+        allowed.clear();allowed.add(RULE_PUBLISH.code());
+        assertEquals(403,http("GET",create,"valid",true,null).statusCode());
+        assertEquals(200,http("GET",publish,"valid",true,null).statusCode());
+        allowed.add(RULE_READ.code());allowed.remove(RULE_PUBLISH.code());
+        for(String path:List.of(create,publish)) {
+            assertEquals(403,http("GET",path,"valid",true,null).statusCode());
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+        }
+        allowed.add(RULE_CREATE.code());allowed.add(RULE_PUBLISH.code());unavailable.set(true);
+        for(String path:List.of(create,publish))assertEquals(503,http("GET",path,"valid",true,null).statusCode());
+        assertEquals(0,count("employee_command_identity"));assertEquals(0,count("marketing_rule_asset"));
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);

@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
     com.lrj.commerce.app.http.member.points.MemberPointsController.class,
     com.lrj.commerce.app.http.benefit.entitlement.EntitlementController.class,
         com.lrj.commerce.app.http.marketing.asset.MarketingAssetController.class,
+    com.lrj.commerce.app.http.marketing.asset.RuleActionsController.class,
         com.lrj.commerce.app.http.benefit.entitlement.EntitlementActionsController.class,
     com.lrj.commerce.app.http.benefit.coupon.CouponController.class,
     com.lrj.commerce.app.http.benefit.coupon.CouponDefinitionActionsController.class,
