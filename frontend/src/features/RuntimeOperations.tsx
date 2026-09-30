@@ -69,7 +69,14 @@ type Gate = { allowed: boolean; code: string; detail: string };
 function GateDecision({ gate }: { gate: Gate }) {
   return (
     <div>
-      <Tag color={gate.allowed ? "success" : "error"}>
+      <Tag
+        className="runtime-gate-status"
+        style={{
+          color: gate.allowed ? "var(--ok)" : "var(--error)",
+          background: gate.allowed ? "var(--okSoft)" : "var(--errorSoft)",
+          borderColor: "transparent",
+        }}
+      >
         {gate.allowed ? "允许" : "禁止"}
       </Tag>
       {!gate.allowed && (

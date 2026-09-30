@@ -1,6 +1,6 @@
 # B端验收记录
 
-日期2026-09-30；基线654d903；任务分支refactor/b-console-experience。当前产品源码和测试SHA256：`00021b340804984a57cc16cf24a3229dea01498ea9d0917f01d4effbb2ffd185`。算法为排序后的frontend/src TS/TSX/CSS、frontend/tests TS及两个变更Java文件，以路径和内容、NUL分隔累计SHA256；完整清单在忽略的 `.local/b-console-experience/source-fingerprint.json`。
+日期2026-09-30；基线654d903；任务分支refactor/b-console-experience。当前产品源码和测试SHA256：`a366f6d745abea562fd6478612f35d0f6d867fefe388a75b3ab3b5b0274de1a8`。算法为排序后的frontend/src TS/TSX/CSS、frontend/tests TS及两个变更Java文件，以路径和内容、NUL分隔累计SHA256；完整清单在忽略的 `.local/b-console-experience/source-fingerprint.json`。
 
 ## 可观察验收
 
@@ -41,3 +41,5 @@
 保留限制：既有UI库chunk1,038kB构建警告（gzip332kB）；未单独声明/测量生产性能、跨浏览器认证或全站无障碍合规；五个显式性能实验未运行。Awwwards/Webby/FWA外部奖项或评委认可UNVERIFIED。本轮可观察功能与视觉检查PASS，`implementationStatus=IMPLEMENTATION_COMPLETE_WITH_LIMITATIONS`，无本范围产品阻断。
 
 末轮1280px复核发现规格列逐字换行，明确列宽与表内滚动后重截PASS；同时发现异步店铺默认值使用旧effect路由可覆盖新导航，改为读取当前URL并保留所有查询。新增延迟店铺响应/刷新案例与原回归共15项PASS，证据race-browser.log、capture1280.json、race-capture.log。后端无变化。
+
+实际渲染补查：Ant派生允许标签rgb(24,112,79)/rgb(165,176,170)对比不足；本轮用主题okSoft/errorSoft明确浅底，实际标签对比通过>=4.5断言，当前15项交互再次PASS（contrast-browser.log）、类型构建PASS（contrast-build.log）、真实安全矩阵重截图查看PASS（runtime-contrast.log）。白底色板测量不代替实际组件底色，首次不足已保留tag-contrast.log，修正后见tag-contrast-final.log。当前新颜色修订CI按最终HEAD核对。

@@ -395,6 +395,33 @@ test("重放需先试运行，填写标识不丢安全门，修改范围重新�
     reason: "暂停检查",
     expectedVersion: 0,
   });
+  await page.getByRole("button", { name: "返回列表", exact: true }).click();
+  await page.getByRole("tab", { name: "消费者安全矩阵", exact: true }).click();
+  const ratios = await page
+    .locator(".runtime-gate-status")
+    .evaluateAll((nodes) => {
+      const luminance = (color: string) => {
+        const rgb = color
+          .match(/[\d.]+/g)!
+          .slice(0, 3)
+          .map(Number)
+          .map((value) => {
+            const channel = value / 255;
+            return channel <= 0.04045
+              ? channel / 12.92
+              : Math.pow((channel + 0.055) / 1.055, 2.4);
+          });
+        return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+      };
+      return nodes.map((node) => {
+        const style = getComputedStyle(node),
+          a = luminance(style.color),
+          b = luminance(style.backgroundColor);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      });
+    });
+  expect(ratios.length).toBeGreaterThan(0);
+  expect(ratios.every((ratio) => ratio >= 4.5)).toBe(true);
 });
 
 test("390窄屏恢复页和重放表单不溢出，字段校验与焦点可见", async ({ page }) => {
