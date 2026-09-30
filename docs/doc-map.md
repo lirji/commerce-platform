@@ -51,3 +51,5 @@
 2026-09-27 Phase 7 正常Git交付与远程main核对见 delivery/phase7-marketing-production/DELIVERY_RESULT.md。Phase 8 本地实施与必需验收完成，严格状态PHASE_8_COMPLETE_WITH_LIMITATIONS：计划/契约/切片、各片TEST_RESULT、Review/QA及Git/CI实际状态见 delivery/phase8-marketing-journey/；最终报告见 evidence/phase8-marketing-journey/PHASE8_REPORT.md，00–16证据、MATRICES、results和scripts映射固定版本、图校验、历史/恢复、真实进程、兼容、规模与回归。V44逐步历史、V45到期发现索引为扩展迁移，不倒填旧证据或宣称生产部署。
 
 2026-09-30 B端改造及刷新修复：当前设计、真实HTTP端点清单、增量契约、切片见 `design/b-console-experience/`；验收、自查修订和交付见 `delivery/b-console-experience/`。旧S10仅内存凭据约束由本轮用户要求覆盖为标签页sessionStorage＋服务端复核；中央OIDC及独立授权边界继续保留。原中央员工任务进度完整保存为 `delivery/b-console-experience/PREVIOUS_PROGRESS.md`，不把本轮视觉改造当作新增中央授权能力。
+
+2026-09-30 B端第二轮Craft：设计与C01–C05见 `design/b-console-craft/PLAN.md`；源码指纹、实施、跨浏览器/真实接口验证、自查修订和Git/CI见 `delivery/b-console-craft/`。上轮刷新/接口证据保留，当前状态以 `PROGRESS_STATE.json` 为准，无生产部署或外部获奖承诺。

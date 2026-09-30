@@ -2,40 +2,38 @@
 
 ## 任务目标
 
-按新前端Skill重构和完善当前项目B端页面，先核对真实接口，再补齐UI匹配；修复刷新清除会话/查询上下文。以Awwwards、Webby、FWA为品质追求，反复自查具体视觉与交互问题，不声称已获外部奖项认可。用户已授权正常任务分支提交、合并与推送main，无生产部署授权。
+B端接口匹配、刷新恢复及Awwwards/Webby/FWA品质追求，持续完善前端。当前第二轮Craft；允许任务分支正常合并推送main，无生产部署；不把测试通过当作外部获奖证明。
 
 ## 已完成
 
-- 审查193条原B端/身份HTTP映射；新增平台自身身份后194条，41个Controller。
-- B01–B04已实现：标签页会话恢复、URL状态、平台角色、任务恢复/重放、统一中央壳层与B端视觉。
-- 后端470项，失败0，跳过5个显式性能实验；15项交互回归、中央17入口、6项真实经营流程、商品展示及总览验证通过。
-- 18次真实隔离HTTP联调；桌面/窄屏页面族和关联表单、菜单、错误均有证据及实际图片查看。
-- 历史中央员工任务上下文保存在 `docs/delivery/b-console-experience/PREVIOUS_PROGRESS.md`，历史全局摘要见同目录 `PREVIOUS_PROGRESS_STATE.md`。
+- 上轮接口/刷新工程已交付f355c28，原证据保留docs/delivery/b-console-experience/。
+- C01–C05产品实现与自查修订完成：统一壳层、真实正负趋势、SKU操作/详情、中央lazy加载、只读旅程关系图。
+- 构建/格式通过；Chromium19、Firefox/WebKit22、真实业务19、真实HTTP18通过；29管理和17中央入口及手机/详情实际截图复查。
+- 设计/实施/测试/修订证据：docs/design/b-console-craft/PLAN.md及docs/delivery/b-console-craft/。
 
 ## 已修改文件
 
-- `frontend/src/app/App.tsx`、`shared/{session,routeState,useIntent,api,ui,contracts}`。
-- `frontend/src/features/RuntimeOperations.tsx`、`PlatformRuntime.tsx`、既有B端列表及商品/会员页面、`style.css`。
-- `frontend/src/iam/CentralShell.tsx`、`navigation.ts`、现有中央页面、`main.tsx`、会话路由。
-- 平台Controller及授权测试、浏览器测试；设计/契约/验收/进度文档。
-- 最终准确路径以当前任务Git diff及交付记录为准。
+- frontend/src/{app,features,iam,shared}相关B端页面与通用壳层、theme/style/workspace/main。
+- frontend/tests/{b-console-craft,central-workspace,dashboard}.spec.ts。
+- docs/design/b-console-craft/、docs/delivery/b-console-craft/、docs/PROGRESS_STATE.json、README.md、docs/doc-map.md、本文件。
 
 ## 未完成
 
-- 本轮产品及末轮标签对比修订均通过完整CI，已合并推送main。最后报告文档HEAD的实际CI须核对 `.local/b-console-experience/ci-final-status.json` 或远程最新HEAD，如未完成则继续等待/修复，不重做产品设计。
+- 按逻辑单元提交，正常合并推送main。
+- 验证本轮当前HEAD完整CI并记录实际交付结果。
 
 ## 当前问题
 
-- 无产品阻断。首次后端验证有历史200ms批处理测试偶发18/20；未修改业务或降低断言，同版完整重跑通过。
-- 中央壳层验收使用显式OIDC存储与HTTP测试边界；不冒充本轮重新完成真实中央身份交换。
-- 既有Ant/UI包1,038kB构建警告仍在；无新增依赖或框架迁移。外部获奖评价未验证。
+- 无当前功能/布局阻塞；外部评委获奖认可未验证，不能保证。
+- 原8602容器未重建；8611/8613源码预览，8614生产构建预览；8612为隔离API。勿停止用户旧实例。
+- 私有凭据、截图及原始日志在忽略.local/b-console-craft/；非正式生产部署。
 
 ## 下一步建议
 
-1. 读取 `docs/delivery/b-console-experience/TEST_RESULT.md`、`REVIEW.md` 与 `docs/design/b-console-experience/IMPLEMENTATION_SLICES.md`，复核本轮最终源码指纹。
-2. 产品、竞态/颜色修订及关联证据已合并推送main；交付见 `docs/delivery/b-console-experience/DELIVERY_RESULT.json`，报告与进度文档也在同一任务分支发布。
-3. 核对最后报告文档HEAD的CI/工作区即可结束本轮；如继续历史中央迁移，读取PREVIOUS_PROGRESS.md，不把本轮UI导航当新增中央能力。
+1. 读取TEST_RESULT和源码指纹，按C01/C03、C02、C05及文档逻辑提交。
+2. 正常合并推送main，检查精确HEAD完整CI；完善DELIVERY_RESULT和进度。
+3. 核查工作区/旧工作树，不丢弃用户内容，不强推。
 
 ## 恢复 Prompt
 
-请读取 `CODEX_PROGRESS.md`，基于其中的“未完成”和“下一步建议”继续执行。不要重新规划全部任务，不要等待我输入“继续”，除非遇到缺少信息、危险操作或权限问题。
+请读取CODEX_PROGRESS.md和docs/PROGRESS_STATE.json，从Git/CI交付继续，勿重复实施已完成切片，不等待继续；外部获奖不是已验证事实。

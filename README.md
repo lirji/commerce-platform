@@ -65,3 +65,5 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 管理工作台补齐任务恢复、恢复审计和历史重放；平台运维通过独立 `/v1/platform/me` 进入只读运行健康页。中央员工页面统一导航，但每个业务入口仍独立授权。刷新保留当前标签页会话及适用URL筛选、页签、游标，重新读取真实数据；退出与401清除凭据，服务暂不可用时支持恢复重试。
 
 [设计与接口映射](docs/design/b-console-experience/FRONTEND_ARCHITECTURE.md)、[增量契约](docs/design/b-console-experience/CONTRACTS.md)、[验收与品质复核](docs/delivery/b-console-experience/TEST_RESULT.md)记录本轮边界及证据；旧8602容器没有自动更新，源码预览和生产部署分别记录。
+
+B端第二轮品质迭代：统一经营壳层、正负金额趋势探索、旅程版本关系图、SKU操作与中央按页加载。见[迭代方案](docs/design/b-console-craft/PLAN.md)、[验证与限制](docs/delivery/b-console-craft/TEST_RESULT.md)、[实际自查修订](docs/delivery/b-console-craft/REVIEW.md)。刷新会话和URL上下文恢复契约继续保留。
