@@ -7,7 +7,7 @@
     "taskBranch": "refactor/b-console-experience",
     "targetBranch": "main",
     "remote": "origin",
-    "sourceCommit": "869d72b007fd736635d3b9ed676f00f8feb0842e",
+    "sourceCommit": "0a50091a5e49d0ac669ba88fe0ea31781b6411a5",
     "commits": [
       {
         "id": "e12551e533039e70e63164efd6b0cb67932e998b",
@@ -24,6 +24,14 @@
       {
         "id": "869d72b007fd736635d3b9ed676f00f8feb0842e",
         "message": "fix(console): 避免异步店铺覆盖导航并修正窄桌面规格列"
+      },
+      {
+        "id": "d6ef5cd7b6ccad7bc59483fd09cc10296119214b",
+        "message": "docs(console): 记录B端改造的Git与完整CI交付结果"
+      },
+      {
+        "id": "0a50091a5e49d0ac669ba88fe0ea31781b6411a5",
+        "message": "fix(console): 提升运行时安全标签的实际颜色对比"
       }
     ],
     "merge": "PASS, fast-forward",
@@ -38,9 +46,9 @@
     "gate": "PASS",
     "ref": {
       "type": "commit",
-      "value": "869d72b007fd736635d3b9ed676f00f8feb0842e"
+      "value": "0a50091a5e49d0ac669ba88fe0ea31781b6411a5"
     },
-    "url": "https://github.com/lirji/commerce-platform/actions/runs/36710991438",
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36712819574",
     "checks": [
       {
         "name": "Build and verify real MySQL semantics",

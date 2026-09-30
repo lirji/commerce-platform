@@ -4,9 +4,9 @@
   "gate": "PASS",
   "ref": {
     "type": "commit",
-    "value": "869d72b007fd736635d3b9ed676f00f8feb0842e"
+    "value": "0a50091a5e49d0ac669ba88fe0ea31781b6411a5"
   },
-  "url": "https://github.com/lirji/commerce-platform/actions/runs/36710991438",
+  "url": "https://github.com/lirji/commerce-platform/actions/runs/36712819574",
   "checks": [
     {
       "name": "Build and verify real MySQL semantics",

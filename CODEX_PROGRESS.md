@@ -22,7 +22,7 @@
 
 ## 未完成
 
-- 末轮真实对比检查修正了Ant派生允许标签底色；代码及15项交互本地PASS。新修订HEAD的实际CI须核对 `.local/b-console-experience/ci-final-status.json` 或远程最新HEAD，如未完成则继续等待/修复，不重做产品设计。
+- 本轮产品及末轮标签对比修订均通过完整CI，已合并推送main。最后报告文档HEAD的实际CI须核对 `.local/b-console-experience/ci-final-status.json` 或远程最新HEAD，如未完成则继续等待/修复，不重做产品设计。
 
 ## 当前问题
 
@@ -33,7 +33,7 @@
 ## 下一步建议
 
 1. 读取 `docs/delivery/b-console-experience/TEST_RESULT.md`、`REVIEW.md` 与 `docs/design/b-console-experience/IMPLEMENTATION_SLICES.md`，复核本轮最终源码指纹。
-2. 产品和4个逻辑提交已合并推送main；交付见 `docs/delivery/b-console-experience/DELIVERY_RESULT.json`，报告与进度文档也在同一任务分支发布。
+2. 产品、竞态/颜色修订及关联证据已合并推送main；交付见 `docs/delivery/b-console-experience/DELIVERY_RESULT.json`，报告与进度文档也在同一任务分支发布。
 3. 核对最后报告文档HEAD的CI/工作区即可结束本轮；如继续历史中央迁移，读取PREVIOUS_PROGRESS.md，不把本轮UI导航当新增中央能力。
 
 ## 恢复 Prompt

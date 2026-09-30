@@ -15,3 +15,5 @@ Runtime需求：复用现有本地API与数据库；需要后端新增身份接�
 完成端点是以上可观察条件和页面族覆盖全部通过，不以自称获奖为验收；每轮审查记录具体偏差及修订。每片验证后更新状态与证据，完整逻辑单元分批提交。
 
 2026-09-30：B01–B04的当前验收、源码摘要和限制见 ../../delivery/b-console-experience/TEST_RESULT.md；B05产品交付与完整CI完成，固定ref及后续文档提交核对策略见实际DELIVERY_RESULT。
+
+末轮实际组件颜色修订：对比>=4.5实测PASS、15交互PASS、当前产品完整CI PASS，固定ref见CI_RESULT.json。
