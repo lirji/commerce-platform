@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -132,7 +133,7 @@ function Directory() {
   );
 }
 function DefinitionList({ store }: { store: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("DefinitionList.after", "");
   const rows = useResource<DefinitionView[]>(
     `/admin/entitlement-definitions?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );
@@ -462,6 +463,10 @@ export function CentralEntitlementDefinitions({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    "directory",
+  );
   const [expired, setExpired] = useState(false),
     dirty = useRef(false);
   const { modal } = App.useApp();
@@ -513,6 +518,8 @@ export function CentralEntitlementDefinitions({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   {
                     key: "directory",

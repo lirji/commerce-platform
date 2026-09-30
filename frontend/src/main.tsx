@@ -1,4 +1,5 @@
 import React from "react";
+import { centralRoutes } from "./iam/navigation";
 import ReactDOM from "react-dom/client";
 import { ConfigProvider, App as AntApp } from "antd";
 import zhCN from "antd/locale/zh_CN";
@@ -14,26 +15,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       theme={consoleTheme}
     >
       <AntApp>
-        {[
-          "/operations/products",
-          "/operations/rules",
-          "/operations/entitlement-definitions",
-          "/operations/entitlements",
-          "/operations/coupon-definitions",
-          "/operations/point-offers",
-          "/operations/member-points",
-          "/operations/member-cycles",
-          "/operations/member-cycle-benefits",
-          "/operations/member-behavior",
-          "/operations/member-tags",
-          "/operations/member-growth",
-          "/operations/members",
-          "/operations/directory",
-          "/operations/inventory",
-          "/operations/catalog",
-          "/collaboration/products",
-          "/iam/callback",
-        ].includes(location.pathname) ? (
+        {[...centralRoutes, "/iam/callback"].includes(location.pathname) ? (
           <CentralProducts />
         ) : (
           <App />

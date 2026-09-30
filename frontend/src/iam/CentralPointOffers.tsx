@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -142,7 +143,7 @@ function OfferDirectory() {
   );
 }
 function OfferList({ store }: { store: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("OfferList.after", "");
   const rows = useResource<OfferView[]>(
     `/admin/point-offers?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );
@@ -593,6 +594,10 @@ export function CentralPointOffers({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    "directory",
+  );
   const [expired, setExpired] = useState(false);
   const dirty = useRef(new Set<Action>());
   const { modal } = App.useApp();
@@ -644,6 +649,8 @@ export function CentralPointOffers({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   {
                     key: "directory",

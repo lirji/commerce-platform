@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import {
   Alert,
@@ -249,7 +250,7 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
   );
 }
 export function OpsPages({ store }: { store: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
   const r = useResource<Governed<PageDefinition>[]>(
     `/admin/ops-pages?after=${encode(after)}`,
   );
@@ -384,7 +385,7 @@ export function OpsPages({ store }: { store: string }) {
         open={editing}
         onClose={closing.requestClose}
         keyboard={!command.busy}
-        maskClosable={!command.busy}
+        mask={{ closable: !command.busy }}
         footer={
           <FormActions onCancel={closing.requestClose} busy={command.busy}>
             <Button

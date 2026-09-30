@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { Alert, Button, Card, Form, Input, Space, Table, Tabs } from "antd";
 import { LifecycleEffects } from "./LifecycleEffects";
@@ -41,13 +42,14 @@ type Journey = {
   notificationSuppressed: number;
 };
 export function MarketingEffects({ store }: { store: string }) {
+  const [tab, setTab] = useRouteState("tab", "campaigns");
   const [range, setRange] = useState({
     from: instant(initialDate(-86400 * 30)),
     to: instant(initialDate(86400)),
   });
-  const [after, setAfter] = useState("");
-  const [journeyAfter, setJourneyAfter] = useState("");
-  const [cursor, setCursor] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
+  const [journeyAfter, setJourneyAfter] = useRouteState("journeyAfter", "");
+  const [cursor, setCursor] = useRouteState("cursor", "");
   const [rebuildDone, setRebuildDone] = useState(false);
   const query = `storeId=${encode(store)}&from=${encode(range.from)}&to=${encode(range.to)}`;
   const report = useResource<Report>(
@@ -101,6 +103,8 @@ export function MarketingEffects({ store }: { store: string }) {
       <ErrorNotice error={report.error} />
       <ErrorNotice error={journeys.error} />
       <Tabs
+        activeKey={tab}
+        onChange={setTab}
         items={[
           {
             key: "campaigns",

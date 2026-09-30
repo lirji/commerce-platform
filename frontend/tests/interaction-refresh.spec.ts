@@ -203,8 +203,7 @@ test("订单完整详情保留翻页位置、焦点与深链接，浏览器后�
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "完整详情", exact: true }).click();
   await page.reload();
-  await page.getByLabel("访问凭据", { exact: true }).fill("ui-test-credential");
-  await page.getByRole("button", { name: "进入平台", exact: true }).click();
+  await expect(page.getByLabel("访问凭据", { exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "订单完整详情", exact: true }),
   ).toBeVisible();

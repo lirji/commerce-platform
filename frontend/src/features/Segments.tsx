@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import { Alert, Button, Form, Modal, Space, Table } from "antd";
 import { useState } from "react";
@@ -49,7 +50,7 @@ type Run = {
 
 /** 运营看到真实检查点；刷新任务与已发布受众版本在界面上明确区分。 */
 export function Segments() {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
   const [selected, setSelected] = useState<Segment>();
   const [runAfter, setRunAfter] = useState("");
   const [open, setOpen] = useState(false);
@@ -291,7 +292,7 @@ export function Segments() {
         open={open}
         onCancel={closing.requestClose}
         keyboard={!command.busy}
-        maskClosable={!command.busy}
+        mask={{ closable: !command.busy }}
         footer={
           <FormActions onCancel={closing.requestClose} busy={command.busy}>
             <Button

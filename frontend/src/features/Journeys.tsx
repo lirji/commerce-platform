@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import {
   Button,
@@ -271,7 +272,7 @@ const triggerLabels: Record<Journey["trigger"], string> = {
   CART_ABANDONED: "加购挽回",
 };
 export function Journeys({ store }: { store: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
   const resource = useResource<Governed<Journey>[]>(
     `/admin/journeys?after=${encode(after)}`,
   );
@@ -463,7 +464,7 @@ export function Journeys({ store }: { store: string }) {
         open={open}
         onClose={closing.requestClose}
         keyboard={!command.busy}
-        maskClosable={!command.busy}
+        mask={{ closable: !command.busy }}
         footer={
           <FormActions onCancel={closing.requestClose} busy={command.busy}>
             <Button

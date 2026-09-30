@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -102,6 +103,10 @@ export function CentralTags({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    "dictionary",
+  );
   const [expired, setExpired] = useState(false);
   const dirty = useRef(new Set<Action>());
   const { modal } = App.useApp();
@@ -153,6 +158,8 @@ export function CentralTags({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   {
                     key: "dictionary",
@@ -189,7 +196,7 @@ export function CentralTags({
 }
 
 function TagDictionary() {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("TagDictionary.after", "");
   const rows = useResource<Definition[]>(
     `/admin/member-tags?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );
@@ -275,7 +282,7 @@ function AssignmentSearch() {
 }
 
 function Assignments({ member }: { member: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("Assignments.after", "");
   const rows = useResource<Assignment[]>(
     `/admin/member-tags/${encodeURIComponent(member)}/assignments?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );

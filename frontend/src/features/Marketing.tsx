@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { Button, Form, Modal, Table } from "antd";
 import { useState } from "react";
 import type { Campaign, Governed, Rule } from "../shared/contracts";
@@ -21,7 +22,7 @@ import { MarketingDetails } from "./MarketingDetails";
 import { CampaignPreview } from "./CampaignPreview";
 import { CampaignEditor, Governance, RuleEditor } from "../shared/marketing";
 export function Marketing({ kind, store }: { kind: string; store: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
   const path = kind === "rules" ? "/admin/rules" : "/admin/campaigns";
   const resource = useResource<
     Governed<
@@ -174,7 +175,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
         open={open}
         onCancel={closing.requestClose}
         keyboard={!command.busy}
-        maskClosable={!command.busy}
+        mask={{ closable: !command.busy }}
         footer={
           <FormActions onCancel={closing.requestClose} busy={command.busy}>
             <Button

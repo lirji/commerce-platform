@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Button,
   Card,
@@ -45,7 +46,7 @@ export function Orders({
   admin: boolean;
   capabilities: Capabilities;
 }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
   const [selected, setSelected] = useState<string>();
   const [workspaceId, setWorkspaceId] = useState(workspaceOrder);
   const listRef = useRef<HTMLDivElement>(null);

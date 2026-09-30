@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -124,6 +125,7 @@ export function CentralMembers({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState("workspaceTab", "list");
   const [expired, setExpired] = useState(false);
   const dirty = useRef(new Set<Action>());
   const { modal } = App.useApp();
@@ -175,6 +177,8 @@ export function CentralMembers({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   { key: "list", label: "会员档案", children: <MemberList /> },
                   ...Object.values(Action).map((action) => ({
@@ -202,7 +206,7 @@ export function CentralMembers({
 }
 
 function MemberList() {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("MemberList.after", "");
   const rows = useResource<Member[]>(
     `/admin/members?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );
@@ -275,7 +279,7 @@ function MemberList() {
 }
 
 function MemberHistory({ member }: { member: Member }) {
-  const [after, setAfter] = useState(0);
+  const [after, setAfter] = useRouteState("MemberHistory.after", 0);
   const rows = useResource<History[]>(
     `/admin/members/${encodeURIComponent(member.memberId)}/history?after=${after}&limit=${PAGE_SIZE}`,
   );

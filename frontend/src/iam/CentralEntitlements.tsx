@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -111,7 +112,7 @@ function entitlementClient(
 }
 
 function Directory() {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("Directory.after", "");
   const rows = useResource<Entitlement[]>(
     `/admin/entitlements?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );
@@ -384,6 +385,10 @@ export function CentralEntitlements({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    "directory",
+  );
   const [expired, setExpired] = useState(false),
     dirty = useRef(false);
   const { modal } = App.useApp();
@@ -435,6 +440,8 @@ export function CentralEntitlements({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   {
                     key: "directory",

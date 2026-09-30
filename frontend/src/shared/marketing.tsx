@@ -428,7 +428,7 @@ export function CampaignEditor({
         open={open}
         onClose={closing.requestClose}
         keyboard={!command.busy}
-        maskClosable={!command.busy}
+        mask={{ closable: !command.busy }}
         footer={
           <FormActions onCancel={closing.requestClose} busy={command.busy}>
             <Button

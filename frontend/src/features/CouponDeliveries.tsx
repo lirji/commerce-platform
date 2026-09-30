@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import { Alert, Button, Space, Table } from "antd";
@@ -53,7 +54,7 @@ type Audience = {
 };
 /** 发券和撤销进度均来自持久任务，不能把按钮点击当作完成。 */
 export function CouponDeliveries({ store }: { store: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
   const [selected, setSelected] = useState<Batch>();
   const [recipientAfter, setRecipientAfter] = useState("");
   const batches = useResource<Batch[]>(

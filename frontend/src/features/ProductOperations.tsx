@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import {
   BatchCatalogAction,
@@ -5,6 +6,7 @@ import {
   ChannelPrices,
 } from "./CatalogScheduling";
 import { Alert, Button, Space, Table, Tabs } from "antd";
+import { Icon } from "../shared/Icon";
 import {
   BarcodeEditor,
   CatalogFilters,
@@ -37,6 +39,7 @@ type Product = {
   version: number;
 };
 type Sku = {
+  images?: { url: string; alt: string }[];
   skuId: string;
   storeId: string;
   title: string;
@@ -67,11 +70,12 @@ const skuFields: Field[] = [
 
 /** 操作入口相同，但每次请求由服务端重新判断实际门店授权。 */
 export function ProductOperations({ store }: { store: string }) {
+  const [tab, setTab] = useRouteState("tab", "sku");
   const [batch, setBatch] = useState<Sku[]>([]);
   const [channelSku, setChannelSku] = useState<Sku>();
-  const [productAfter, setProductAfter] = useState("");
-  const [skuAfter, setSkuAfter] = useState("");
-  const [filters, setFilters] = useState("");
+  const [productAfter, setProductAfter] = useRouteState("productAfter", "");
+  const [skuAfter, setSkuAfter] = useRouteState("skuAfter", "");
+  const [filters, setFilters] = useRouteState("filters", "");
   const [presentation, setPresentation] = useState<Product>();
   const [barcode, setBarcode] = useState<Sku>();
   const categories = useResource<Category[]>(
@@ -117,6 +121,8 @@ export function ProductOperations({ store }: { store: string }) {
       <ErrorNotice error={products.error} />
       <ErrorNotice error={skus.error} />
       <Tabs
+        activeKey={tab}
+        onChange={setTab}
         items={[
           {
             key: "sku",
@@ -135,6 +141,7 @@ export function ProductOperations({ store }: { store: string }) {
                       <Button onClick={refresh}>刷新</Button>
                     </Space>
                     <CatalogFilters
+                      query={filters}
                       categories={categories.data ?? []}
                       operations
                       onSearch={(query) => {
@@ -164,9 +171,25 @@ export function ProductOperations({ store }: { store: string }) {
                   columns={[
                     {
                       title: "商品",
-                      width: 190,
+                      width: 250,
                       render: (_, r) => (
-                        <PrimaryCell title={r.title} subtitle={r.skuId} />
+                        <div className="catalog-identity">
+                          <span className="catalog-thumbnail">
+                            {r.images?.[0] ? (
+                              <img
+                                src={r.images[0].url}
+                                alt={r.images[0].alt || r.title}
+                                loading="lazy"
+                                onError={(event) => {
+                                  event.currentTarget.hidden = true;
+                                }}
+                              />
+                            ) : (
+                              <Icon name="image" />
+                            )}
+                          </span>
+                          <PrimaryCell title={r.title} subtitle={r.skuId} />
+                        </div>
                       ),
                     },
                     {
@@ -183,6 +206,7 @@ export function ProductOperations({ store }: { store: string }) {
                     },
                     {
                       title: "售价",
+                      align: "right",
                       dataIndex: "unitPrice",
                       render: money,
                       width: 100,

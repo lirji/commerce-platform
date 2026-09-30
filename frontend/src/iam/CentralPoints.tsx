@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -134,7 +135,7 @@ function pointsClient(context: Context, expired: () => void): typeof request {
 }
 
 function PolicyList() {
-  const [after, setAfter] = useState(0);
+  const [after, setAfter] = useRouteState("PolicyList.after", 0);
   const rows = useResource<Policy[]>(
     `/admin/member-points/policies?after=${after}&limit=${PAGE_SIZE}`,
   );
@@ -248,7 +249,7 @@ function WalletSearch() {
 }
 
 function WalletDetails({ member }: { member: string }) {
-  const [after, setAfter] = useState(0);
+  const [after, setAfter] = useRouteState("WalletDetails.after", 0);
   const wallet = useResource<Wallet>(
     `/admin/member-points/${encodeURIComponent(member)}`,
   );
@@ -672,6 +673,10 @@ export function CentralPoints({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    "policies",
+  );
   const [expired, setExpired] = useState(false);
   const dirty = useRef(new Set<Action>());
   const { modal } = App.useApp();
@@ -723,6 +728,8 @@ export function CentralPoints({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   {
                     key: "policies",

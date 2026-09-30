@@ -161,6 +161,7 @@ test("门店运营：商品规格、调价上下架与当前会话即时撤权",
 test("成长经营：真实账本、升级与标签撤销恢复", async ({ page }) => {
   await login(page);
   await nav(page, "会员成长");
+  await page.getByRole("tab", { name: "成长与账本", exact: true }).click();
   await page.getByLabel("查询会员成长", { exact: true }).fill("ops-member");
   await page.getByRole("button", { name: "查询会员", exact: true }).click();
   await expect(page.getByText("BASIC", { exact: true })).toBeVisible();

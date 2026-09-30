@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
 import { Button, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
@@ -405,7 +406,7 @@ export function AdminData({
   onStoresChanged: () => void;
 }) {
   const spec = specs[kind];
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("after", "");
   const [detail, setDetail] = useState<Row>();
   const query =
     spec.path +
@@ -641,6 +642,28 @@ export function AdminData({
               title: label,
               dataIndex: key,
               ellipsis: true,
+              align: [
+                "available",
+                "held",
+                "sold",
+                "units",
+                "quota",
+                "issued",
+                "reserved",
+                "remainingUnits",
+                "debtUnits",
+                "memberCount",
+                "unitPrice",
+                "discountAmount",
+                "minimumSpend",
+                "refundAmount",
+                "amount",
+                "cap",
+                "spent",
+                "attempts",
+              ].includes(key)
+                ? ("right" as const)
+                : ("left" as const),
               render: (v: unknown, r: Row) =>
                 index === 0 ? (
                   <PrimaryCell

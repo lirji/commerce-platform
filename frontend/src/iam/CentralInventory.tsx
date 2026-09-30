@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -205,7 +206,7 @@ function Inventory({
   client: typeof request;
   markDirty: (v: boolean) => void;
 }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("Inventory.after", "");
   const rows = useResource<Stock[]>(
     `/admin/inventory?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );

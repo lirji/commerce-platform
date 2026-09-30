@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -177,6 +178,10 @@ export function CentralCycles({
       ? Family.BENEFIT
       : Family.CYCLE;
   const title = family === Family.CYCLE ? "会员周期管理" : "周期权益管理";
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    family === Family.CYCLE ? "policies" : "bundles",
+  );
   const [expired, setExpired] = useState(false),
     dirty = useRef(new Set<Action>());
   const { modal } = App.useApp();
@@ -242,6 +247,8 @@ export function CentralCycles({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={
                   family === Family.CYCLE
                     ? [
@@ -278,7 +285,7 @@ export function CentralCycles({
 }
 
 function Policies() {
-  const [after, setAfter] = useState(0),
+  const [after, setAfter] = useRouteState("Policies.after", 0),
     rows = useResource<Policy[]>(
       `/admin/member-cycles/policies?after=${after}&limit=${PAGE_SIZE}`,
     );

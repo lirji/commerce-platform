@@ -1,24 +1,7 @@
 import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 export const enabled = import.meta.env.VITE_IAM_ENABLED === "true";
-export const routes = [
-  "/operations/products",
-  "/collaboration/products",
-  "/operations/rules",
-  "/operations/entitlement-definitions",
-  "/operations/entitlements",
-  "/operations/coupon-definitions",
-  "/operations/point-offers",
-  "/operations/member-points",
-  "/operations/member-cycles",
-  "/operations/member-cycle-benefits",
-  "/operations/member-behavior",
-  "/operations/member-tags",
-  "/operations/member-growth",
-  "/operations/members",
-  "/operations/directory",
-  "/operations/inventory",
-  "/operations/catalog",
-];
+export { centralRoutes as routes } from "./navigation";
+import { centralRoutes as routes } from "./navigation";
 export const manager = enabled
   ? new UserManager({
       authority: import.meta.env.VITE_IAM_AUTHORITY,

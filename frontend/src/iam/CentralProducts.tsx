@@ -28,6 +28,7 @@ import { CentralDirectory } from "./CentralDirectory";
 import { CentralInventory } from "./CentralInventory";
 import { CentralCatalog } from "./CentralCatalog";
 import { ProductExport } from "./ProductExport";
+import { CentralShell } from "./CentralShell";
 import type { User } from "oidc-client-ts";
 import { enabled, login, manager, session } from "./session";
 import { central, CentralError, HTTP, useCentral, type Context } from "./api";
@@ -132,14 +133,16 @@ export function CentralProducts() {
   };
   const Page = pages[location.pathname] ?? Products;
   return (
-    <Page
-      key={`${user.profile.sub}:${tenant}`}
-      context={{ token: user.access_token, tenant }}
-      onLogout={async () => {
-        await manager?.removeUser();
-        setUser(null);
-      }}
-    />
+    <CentralShell tenant={tenant} subject={user.profile.sub}>
+      <Page
+        key={`${user.profile.sub}:${tenant}`}
+        context={{ token: user.access_token, tenant }}
+        onLogout={async () => {
+          await manager?.removeUser();
+          setUser(null);
+        }}
+      />
+    </CentralShell>
   );
 }
 function Products({

@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
 import {
@@ -64,10 +65,11 @@ export function MemberGrowth({
   admin: boolean;
   store: string;
 }) {
-  const [member, setMember] = useState("");
-  const [tagAfter, setTagAfter] = useState("");
-  const [after, setAfter] = useState(0);
-  const [policyAfter, setPolicyAfter] = useState(0);
+  const [tab, setTab] = useRouteState("tab", "behavior");
+  const [member, setMember] = useRouteState("member", "");
+  const [tagAfter, setTagAfter] = useRouteState("tagAfter", "");
+  const [after, setAfter] = useRouteState("after", 0);
+  const [policyAfter, setPolicyAfter] = useRouteState("policyAfter", 0);
   const base = admin
     ? member
       ? "/admin/member-growth/" + encode(member)
@@ -101,6 +103,8 @@ export function MemberGrowth({
       <ErrorNotice error={ledger.error} />
       <ErrorNotice error={policies.error} />
       <Tabs
+        activeKey={tab}
+        onChange={setTab}
         defaultActiveKey="wallet"
         items={[
           {
@@ -131,6 +135,7 @@ export function MemberGrowth({
                 {admin && (
                   <Input.Search
                     aria-label="查询会员成长"
+                    defaultValue={member}
                     placeholder="输入会员标识查看成长"
                     enterButton="查询会员"
                     onSearch={(v) => {

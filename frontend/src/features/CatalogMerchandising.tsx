@@ -623,7 +623,7 @@ export function VariantCreator({
         open={open}
         onClose={closing.requestClose}
         keyboard={!command.busy}
-        maskClosable={!command.busy}
+        mask={{ closable: !command.busy }}
         footer={
           <FormActions onCancel={closing.requestClose} busy={command.busy}>
             <Button
@@ -659,15 +659,34 @@ export function CatalogFilters({
   operations = false,
   className,
   shopMode = false,
+  query,
 }: {
   categories: Category[];
   onSearch: (query: string) => void;
   operations?: boolean;
   className?: string;
   shopMode?: boolean;
+  query?: string;
 }) {
+  const [form] = Form.useForm();
+  useEffect(() => {
+    if (query === undefined) return;
+    const params = new URLSearchParams(query);
+    form.setFieldsValue({
+      q: params.get("q") ?? undefined,
+      categoryId: params.get("categoryId") ?? undefined,
+      minimumPrice: params.has("minimumPrice")
+        ? Number(params.get("minimumPrice"))
+        : undefined,
+      maximumPrice: params.has("maximumPrice")
+        ? Number(params.get("maximumPrice"))
+        : undefined,
+      status: params.get("status") ?? undefined,
+    });
+  }, [query, form]);
   return (
     <Form
+      form={form}
       layout="inline"
       onFinish={(v) => {
         const params = new URLSearchParams();

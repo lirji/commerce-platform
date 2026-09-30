@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -143,6 +144,7 @@ export function CentralBehavior({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState("workspaceTab", "read");
   const [expired, setExpired] = useState(false);
   const dirty = useRef(new Set<Action>());
   const { modal } = App.useApp();
@@ -194,6 +196,8 @@ export function CentralBehavior({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   {
                     key: "read",
@@ -268,7 +272,7 @@ function BehaviorSearch() {
 }
 
 function BehaviorDetail({ member }: { member: string }) {
-  const [after, setAfter] = useState(0);
+  const [after, setAfter] = useRouteState("BehaviorDetail.after", 0);
   const detail = useResource<Detail>(
     `/admin/member-behavior/${encodeURIComponent(member)}`,
   );

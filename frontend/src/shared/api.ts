@@ -6,7 +6,8 @@ import {
   useRef,
   useState,
 } from "react";
-let accessToken = "";
+import { savedCredential, saveCredential, SESSION_EXPIRED } from "./session";
+let accessToken = savedCredential();
 export function setAccessToken(value: string) {
   accessToken = value;
 }
@@ -39,13 +40,30 @@ export async function request<T>(
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     signal: options.signal ?? AbortSignal.timeout(15000),
   });
-  const result = await response.json();
+  const result =
+    response.status === 204
+      ? undefined
+      : await response.json().catch(() => {
+          if (response.ok)
+            throw new Error("服务未返回可确认的结果，请稍后重试");
+          return {};
+        });
+  if (
+    response.status === 401 &&
+    accessToken &&
+    headers.Authorization === `Bearer ${accessToken}`
+  ) {
+    accessToken = "";
+    saveCredential("");
+    dispatchEvent(new Event(SESSION_EXPIRED));
+  }
   if (!response.ok)
     throw new ApiError(
       response.status,
       result.message ?? "请求未能完成",
       result.traceId,
     );
+  if (response.status === 204) return undefined as T;
   return result as T;
 }
 /** 每个中央页面注入自己的身份上下文，旧控制台仍使用原客户端。 */

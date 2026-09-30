@@ -160,7 +160,7 @@ export function PageHead({
     <div className="page-head">
       <div>
         {eyebrow && <div className="page-eyebrow">{eyebrow}</div>}
-        <Typography.Title level={2}>{title}</Typography.Title>
+        <Typography.Title level={1}>{title}</Typography.Title>
         <Typography.Text type="secondary">{description}</Typography.Text>
       </div>
       <Space wrap className="page-head-actions">
@@ -809,7 +809,7 @@ export function CommandModal({
         afterClose={() => form.resetFields()}
         onCancel={closing.requestClose}
         keyboard={!command.busy}
-        maskClosable={!command.busy}
+        mask={{ closable: !command.busy }}
         footer={
           <div className="form-actions">
             <Button disabled={command.busy} onClick={closing.requestClose}>

@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -88,6 +89,10 @@ export function CentralDirectory({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    Kind.MERCHANT,
+  );
   const [expired, setExpired] = useState(false);
   const dirty = useRef(new Set<Kind>());
   const { modal } = App.useApp();
@@ -139,6 +144,8 @@ export function CentralDirectory({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={Object.values(Kind).map((kind) => ({
                   key: kind,
                   label: kind === Kind.MERCHANT ? "商家目录" : "门店目录",
@@ -173,7 +180,7 @@ function DirectorySection({
 }) {
   const merchant = kind === Kind.MERCHANT,
     label = merchant ? "商家" : "门店";
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState(`DirectorySection.${kind}.after`, "");
   const rows = useResource<Entry[]>(
     `/admin/${kind}?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );

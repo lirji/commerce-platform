@@ -1,3 +1,4 @@
+import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -113,7 +114,7 @@ function ruleClient(context: Context, expired: () => void): typeof request {
 }
 
 function Directory() {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useRouteState("Directory.after", "");
   const rows = useResource<RuleView[]>(
     `/admin/rules?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );
@@ -429,6 +430,10 @@ export function CentralRules({
   context: Context;
   onLogout: () => Promise<void>;
 }) {
+  const [workspaceTab, setWorkspaceTab] = useRouteState(
+    "workspaceTab",
+    "directory",
+  );
   const [expired, setExpired] = useState(false),
     dirty = useRef(new Set<Operation>());
   const { modal } = App.useApp();
@@ -484,6 +489,8 @@ export function CentralRules({
           ) : (
             <RequestContext.Provider value={client}>
               <Tabs
+                activeKey={workspaceTab}
+                onChange={setWorkspaceTab}
                 items={[
                   {
                     key: "directory",
