@@ -1,0 +1,72 @@
+{
+  "skill": "task-git-delivery",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "authorization": "用户AGENTS.md持续授权任务分支、正常提交、合并及push main；不授权生产部署",
+  "git": {
+    "taskBranch": "refactor/b-console-experience",
+    "targetBranch": "main",
+    "remote": "origin",
+    "sourceCommit": "869d72b007fd736635d3b9ed676f00f8feb0842e",
+    "commits": [
+      {
+        "id": "e12551e533039e70e63164efd6b0cb67932e998b",
+        "message": "feat(runtime): 提供独立的平台运维身份读取"
+      },
+      {
+        "id": "00072cefcfa23de3d6f5bc98098a288d4c9f1d7c",
+        "message": "refactor(console): 统一B端工作台并补齐恢复重放与刷新体验"
+      },
+      {
+        "id": "fbdffc324f7753d0011c4b41d6348afbb3b24e25",
+        "message": "docs(console): 同步B端接口映射与验收修订证据"
+      },
+      {
+        "id": "869d72b007fd736635d3b9ed676f00f8feb0842e",
+        "message": "fix(console): 避免异步店铺覆盖导航并修正窄桌面规格列"
+      }
+    ],
+    "merge": "PASS, fast-forward",
+    "push": "PASS",
+    "excludedDirtyPaths": [],
+    "newWorktrees": []
+  },
+  "validation": "docs/delivery/b-console-experience/TEST_RESULT.md",
+  "ci": {
+    "skill": "ci-cd-gate",
+    "status": "COMPLETED",
+    "gate": "PASS",
+    "ref": {
+      "type": "commit",
+      "value": "869d72b007fd736635d3b9ed676f00f8feb0842e"
+    },
+    "url": "https://github.com/lirji/commerce-platform/actions/runs/36710991438",
+    "checks": [
+      {
+        "name": "Build and verify real MySQL semantics",
+        "result": "PASS"
+      },
+      {
+        "name": "Audit frontend dependencies",
+        "result": "PASS"
+      },
+      {
+        "name": "Start packaged application",
+        "result": "PASS"
+      },
+      {
+        "name": "Browser fixtures and Chromium",
+        "result": "PASS"
+      },
+      {
+        "name": "Real browser commerce acceptance",
+        "result": "PASS"
+      }
+    ],
+    "deployment": "NOT_EXECUTED",
+    "note": "本记录绑定最后产品变更提交；后续报告/进度文档提交的CI以远程最新ref为准，不用旧SHA冒充新HEAD。"
+  },
+  "reportCommit": "本文件所在后续文档提交；最终HEAD的CI在.local/b-console-experience/ci-final-status.json及远程workflow核对",
+  "deployment": "NOT_EXECUTED",
+  "cleanup": "保留.local/b-console-experience证据、独立私密凭据/脚本和预览配置；未创建worktree，已有auth-platform旧detached worktree不属于本任务"
+}

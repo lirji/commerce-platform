@@ -1,0 +1,34 @@
+{
+  "skill": "ci-cd-gate",
+  "status": "COMPLETED",
+  "gate": "PASS",
+  "ref": {
+    "type": "commit",
+    "value": "869d72b007fd736635d3b9ed676f00f8feb0842e"
+  },
+  "url": "https://github.com/lirji/commerce-platform/actions/runs/36710991438",
+  "checks": [
+    {
+      "name": "Build and verify real MySQL semantics",
+      "result": "PASS"
+    },
+    {
+      "name": "Audit frontend dependencies",
+      "result": "PASS"
+    },
+    {
+      "name": "Start packaged application",
+      "result": "PASS"
+    },
+    {
+      "name": "Browser fixtures and Chromium",
+      "result": "PASS"
+    },
+    {
+      "name": "Real browser commerce acceptance",
+      "result": "PASS"
+    }
+  ],
+  "deployment": "NOT_EXECUTED",
+  "note": "本记录绑定最后产品变更提交；后续报告/进度文档提交的CI以远程最新ref为准，不用旧SHA冒充新HEAD。"
+}

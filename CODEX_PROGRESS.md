@@ -22,7 +22,7 @@
 
 ## 未完成
 
-- B05最后验收文档及Git交付：分逻辑单元提交，正常合并并推送main，核对对应CI。
+- 本轮产品无待实现项；产品Git/CI通过。最后文档提交的实际CI须核对 `.local/b-console-experience/ci-final-status.json` 或远程最新HEAD，如未完成则继续等待/修复，不重做产品设计。
 
 ## 当前问题
 
@@ -33,8 +33,8 @@
 ## 下一步建议
 
 1. 读取 `docs/delivery/b-console-experience/TEST_RESULT.md`、`REVIEW.md` 与 `docs/design/b-console-experience/IMPLEMENTATION_SLICES.md`，复核本轮最终源码指纹。
-2. 沿原目录分支 `refactor/b-console-experience` 完成有界Git提交与正常main发布，不新建worktree，不动8602/共享数据库。
-3. 核对Git真实状态和CI，更新本记录与PROGRESS_STATE、DELIVERY_RESULT；若CI失败，修复真实失败并重验。
+2. 产品和4个逻辑提交已合并推送main；交付见 `docs/delivery/b-console-experience/DELIVERY_RESULT.json`，报告与进度文档也在同一任务分支发布。
+3. 核对最后报告文档HEAD的CI/工作区即可结束本轮；如继续历史中央迁移，读取PREVIOUS_PROGRESS.md，不把本轮UI导航当新增中央能力。
 
 ## 恢复 Prompt
 
