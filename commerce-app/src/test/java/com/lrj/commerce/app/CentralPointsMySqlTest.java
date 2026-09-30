@@ -175,6 +175,22 @@ class CentralPointsMySqlTest {
         var expire=actor(POINTS_EXPIRE);String expiry=id();points.expire(expire,expiry,"M1");afterResource.set(()->jdbc.update("UPDATE employee_authority_route SET state='STOPPED',version=version+1 WHERE tenant_id=?",tenant));forbidden(()->points.expire(expire,expiry,"M1"));
         assertEquals(10,points.current(customer()).available());
     }
+    @Test void actionHintsRemainIndependentAndNeverAcceptLegacyAdmin() throws Exception {
+        var caps = List.of(POINTS_POLICY_PUBLISH, POINTS_ADJUST, POINTS_EXPIRE);
+        var names = List.of("policy", "adjust", "expire");
+        allowed.remove(POINTS_READ.code());allowed.remove(POINTS_POLICY_READ.code());
+        for (int n=0; n<caps.size(); n++) {
+            String path = "/v1/operations/member-points/"+names.get(n)+"-access";
+            var response = http("GET",path,"valid",true,null);
+            assertEquals(200,response.statusCode());assertTrue(response.body().contains("\"allowed\":true"));
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+            allowed.remove(caps.get(n).code());assertEquals(403,http("GET",path,"valid",true,null).statusCode());allowed.add(caps.get(n).code());
+        }
+        partial.set(true);assertEquals(403,http("GET","/v1/operations/member-points/policy-access","valid",true,null).statusCode());partial.set(false);
+        afterScope.set(()->epoch.incrementAndGet());assertEquals(403,http("GET","/v1/operations/member-points/adjust-access","valid",true,null).statusCode());
+        unavailable.set(true);assertEquals(503,http("GET","/v1/operations/member-points/expire-access","valid",true,null).statusCode());
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);

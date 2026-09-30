@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
     com.lrj.commerce.app.http.member.operations.MemberOperationsController.class,
     com.lrj.commerce.app.http.member.operations.MemberActionsController.class,
     com.lrj.commerce.app.http.member.operations.GrowthActionsController.class,
+    com.lrj.commerce.app.http.member.operations.PointsActionsController.class,
     com.lrj.commerce.app.http.member.operations.TagActionsController.class,
     com.lrj.commerce.app.http.member.operations.BehaviorActionsController.class,
     com.lrj.commerce.app.http.member.operations.CycleActionsController.class,

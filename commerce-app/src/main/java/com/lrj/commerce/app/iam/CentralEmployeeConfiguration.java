@@ -95,6 +95,11 @@ public class CentralEmployeeConfiguration {
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.CYCLE_BENEFIT_DEFINE;
         }
         if ("POST".equals(r.getMethod()) && path.matches("/v1/admin/member-cycle-benefits/[A-Za-z0-9_-]{1,100}/grant")) return EmployeeAccess.Capability.CYCLE_BENEFIT_GRANT;
+        if ("GET".equals(r.getMethod())) {
+            if ("/v1/operations/member-points/policy-access".equals(path)) return EmployeeAccess.Capability.POINTS_POLICY_PUBLISH;
+            if ("/v1/operations/member-points/adjust-access".equals(path)) return EmployeeAccess.Capability.POINTS_ADJUST;
+            if ("/v1/operations/member-points/expire-access".equals(path)) return EmployeeAccess.Capability.POINTS_EXPIRE;
+        }
         if ("/v1/admin/member-points/policies".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.POINTS_POLICY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.POINTS_POLICY_PUBLISH;
