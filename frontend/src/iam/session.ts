@@ -1,6 +1,10 @@
 import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 export const enabled = import.meta.env.VITE_IAM_ENABLED === "true";
-export const routes = ["/operations/products", "/collaboration/products"];
+export const routes = [
+  "/operations/products",
+  "/collaboration/products",
+  "/operations/catalog",
+];
 export const manager = enabled
   ? new UserManager({
       authority: import.meta.env.VITE_IAM_AUTHORITY,
@@ -21,7 +25,11 @@ export function safeReturn(value: unknown) {
   if (url.origin !== location.origin || !routes.includes(url.pathname))
     return "/operations/products";
   const result = new URL(url.pathname, location.origin);
-  for (const name of ["tenant_id", "environment"]) {
+  for (const name of [
+    "tenant_id",
+    "environment",
+    ...(url.pathname === "/operations/catalog" ? ["store_id"] : []),
+  ]) {
     const value = url.searchParams.get(name);
     if (value && /^[A-Za-z0-9_-]{1,100}$/.test(value))
       result.searchParams.set(name, value);

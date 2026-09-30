@@ -13,6 +13,7 @@ import {
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { CentralCatalog } from "./CentralCatalog";
 import { ProductExport } from "./ProductExport";
 import type { User } from "oidc-client-ts";
 import { enabled, login, manager, session } from "./session";
@@ -98,8 +99,10 @@ export function CentralProducts() {
   const tenant = new URLSearchParams(location.search).get("tenant_id") ?? "";
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
+  const Page =
+    location.pathname === "/operations/catalog" ? CentralCatalog : Products;
   return (
-    <Products
+    <Page
       key={`${user.profile.sub}:${tenant}`}
       context={{ token: user.access_token, tenant }}
       onLogout={async () => {

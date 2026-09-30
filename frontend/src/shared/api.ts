@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 let accessToken = "";
 export function setAccessToken(value: string) {
   accessToken = value;
@@ -41,10 +48,13 @@ export async function request<T>(
     );
   return result as T;
 }
+/** 每个中央页面注入自己的身份上下文，旧控制台仍使用原客户端。 */
+export const RequestContext = createContext(request);
 export const post = <T>(path: string, body?: unknown, key?: string) =>
   request<T>(path, { method: "POST", body, key });
 /** 页面读取隔离生命周期，旧请求不能覆盖新的路由数据。 */
 export function useResource<T>(path: string | null) {
+  const client = useContext(RequestContext);
   const [data, setData] = useState<T>();
   const [error, setError] = useState<Error>();
   const [loading, setLoading] = useState(false);
@@ -59,7 +69,7 @@ export function useResource<T>(path: string | null) {
       return;
     }
     setLoading(true);
-    request<T>(path, { signal: controller.signal })
+    client<T>(path, { signal: controller.signal })
       .then((value) => {
         if (!controller.signal.aborted) setData(value);
       })
@@ -70,11 +80,12 @@ export function useResource<T>(path: string | null) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [path, revision]);
+  }, [path, revision, client]);
   return { data, error, loading, refresh };
 }
 /** 相同未完成意图复用键；输入改变或成功后才生成下一命令键。 */
 export function useCommand() {
+  const client = useContext(RequestContext);
   const prior = useRef<{ fingerprint: string; key: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
@@ -88,7 +99,11 @@ export function useCommand() {
     if (prior.current?.fingerprint !== fingerprint)
       prior.current = { fingerprint, key: crypto.randomUUID() };
     try {
-      const result = await post<T>(path, body, prior.current.key);
+      const result = await client<T>(path, {
+        method: "POST",
+        body,
+        key: prior.current.key,
+      });
       prior.current = null;
       return result;
     } catch (e) {

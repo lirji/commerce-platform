@@ -33,7 +33,7 @@ public class SecurityConfiguration {
 			.authorizeHttpRequests(
 					c -> c.requestMatchers("/actuator/health", "/", "/index.html", "/assets/**", "/media/**")
 						.permitAll()
-						.requestMatchers(org.springframework.http.HttpMethod.GET, "/operations/products", "/collaboration/products", "/iam/callback")
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")
 						.permitAll()
 						.requestMatchers("/v1/admin/**")
 						.hasAuthority("ADMIN")

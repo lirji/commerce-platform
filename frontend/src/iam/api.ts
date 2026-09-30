@@ -3,6 +3,7 @@ export const HTTP = {
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   CONFLICT: 409,
+  UNAVAILABLE: 503,
 } as const;
 export class CentralError extends Error {
   constructor(

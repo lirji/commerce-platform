@@ -16,6 +16,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <AntApp>
         {[
           "/operations/products",
+          "/operations/catalog",
           "/collaboration/products",
           "/iam/callback",
         ].includes(location.pathname) ? (
