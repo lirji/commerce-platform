@@ -12,7 +12,8 @@ import org.springframework.http.ResponseEntity;
 @RestControllerAdvice(assignableTypes = {StoreAccessController.class,com.lrj.commerce.app.http.store.CentralScopeController.class,
     com.lrj.commerce.app.http.catalog.product.ProductOperationsController.class,
     com.lrj.commerce.app.http.catalog.job.CatalogSchedulingController.class,
-    com.lrj.commerce.app.http.catalog.merchandising.CatalogMerchandisingController.class})
+    com.lrj.commerce.app.http.catalog.merchandising.CatalogMerchandisingController.class,
+    com.lrj.commerce.app.http.order.OrderController.class})
 @Order(-100)
 public class CentralStoreErrors {
     /** 明确拒绝与上游不可用分开。 */

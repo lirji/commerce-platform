@@ -49,6 +49,14 @@ public class StoreService implements StoreApi {
 		return value;
 	}
 
+	/** Owner持有行锁直到库存命令提交，不能用旧版本许可写入变更后的归属。 */
+	@org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+	public void lockCurrent(Actor actor, View expected) {
+		var current = mapper.lock(actor.tenantId(), expected.storeId());
+		if (!expected.equals(current))
+			throw new DomainException(DomainException.Code.CONFLICT, "门店事实已变化，请重新判权");
+	}
+
 	/** 查询同时校验管理权限和分页上限。 */
 	public List<View> list(Actor actor, String after, int limit) {
 		actor.requireAdmin();

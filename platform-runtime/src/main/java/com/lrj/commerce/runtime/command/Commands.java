@@ -27,11 +27,18 @@ public class Commands {
 	/** 唯一键争用在数据库内串行；相同键不同业务输入不得重新执行。 */
 	public <T> T run(Actor actor, String operation, String commandKey, Object input, Class<T> type,
 			Supplier<T> action) {
+		return runGuarded(actor, operation, commandKey, input, type, () -> {}, action);
+	}
+
+	/** 权威切换栅栏先于旧回执读取，防止幂等重试绕过当前资源与身份限制。 */
+	public <T> T runGuarded(Actor actor, String operation, String commandKey, Object input, Class<T> type,
+			Runnable guard, Supplier<T> action) {
 		Identifiers.require(commandKey);
 		Identifiers.require(operation);
 		var key = new CommandMapper.Key(actor.tenantId(), actor.actorId(), operation, commandKey);
 		String hash = JsonCodec.hash(JsonCodec.write(input));
 		return transaction.execute(status -> {
+			guard.run();
 			mapper.claim(key, hash);
 			var previous = mapper.lock(key);
 			if (!previous.requestHash().equals(hash)) {

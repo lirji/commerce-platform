@@ -12,6 +12,8 @@ public interface StoreMapper {
 
 	StoreApi.View find(@Param("tenant") String tenant, @Param("id") String id);
 
+	StoreApi.View lock(@Param("tenant") String tenant, @Param("id") String id);
+
 	List<StoreApi.View> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
 
 }

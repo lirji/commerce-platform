@@ -1,6 +1,8 @@
 package com.lrj.commerce.inventory.application;
 
 import com.lrj.commerce.inventory.api.InventoryApi;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.inventory.infrastructure.persistence.InventoryMapper;
 import com.lrj.commerce.catalog.assortment.api.CatalogApi;
 import com.lrj.commerce.store.management.api.StoreApi;
@@ -12,7 +14,7 @@ import org.springframework.transaction.annotation.*;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 
-/** 库存没有远程调用，在订单事务内有条件扣减防止超卖。 */
+/** 员工经营先实时判权；内部订单库存仍在同一事务内有条件扣减防止超卖。 */
 @Service
 public class InventoryService implements InventoryApi {
 
@@ -24,7 +26,10 @@ public class InventoryService implements InventoryApi {
 
 	private final StoreApi stores;
 
-	public InventoryService(InventoryMapper mapper, Commands commands, CatalogApi catalog, StoreApi stores) {
+	private final EmployeeAccess access;
+
+	public InventoryService(InventoryMapper mapper, Commands commands, CatalogApi catalog, StoreApi stores, EmployeeAccess access) {
+		this.access = access;
 		this.mapper = mapper;
 		this.commands = commands;
 		this.catalog = catalog;
@@ -33,22 +38,54 @@ public class InventoryService implements InventoryApi {
 
 	/** 收货不是前端直接改库存，使用受审计的增量命令。 */
 	public Stock receive(Actor actor, String key, Receipt input) {
-		actor.requireAdmin();
 		Inputs.require(input != null && input.quantity() > 0 && input.quantity() <= 1000000, "入库数量无效");
-		return commands.run(actor, "inventory.receive", key, input, Stock.class, () -> {
+		var store = centralStore(actor, input.storeId());
+		var permit = access.require(actor, INVENTORY_RECEIVE, fact(store));
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "inventory.receive", key, command, Stock.class, () -> {
+			access.lock(permit);
+			if (store != null) stores.lockCurrent(actor, store);
+			// Owner行锁可能等待，取得全部本地锁后再次核对五秒许可。
+			access.lock(permit);
+		}, () -> {
 			stores.requireActive(actor, input.storeId());
 			catalog.published(actor, input.storeId(), List.of(input.skuId()));
+			access.audit(actor, permit, "inventory.receive", key);
 			mapper.receive(actor.tenantId(), input);
 			return mapper.find(actor.tenantId(), input.storeId(), input.skuId());
 		});
 	}
 
-	/** 仅管理员可看到租户库存总量。 */
+	/** 必填单门店，在SQL分页前完成该门店能力检查，读取后复核当前授权。 */
 	public List<Stock> list(Actor actor, String storeId, String after, int limit) {
-		actor.requireAdmin();
 		Identifiers.require(storeId);
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), storeId, after, limit);
+		var store = centralStore(actor, storeId);
+		var before = access.require(actor, INVENTORY_READ, fact(store));
+		var rows = mapper.list(actor.tenantId(), storeId, after, limit);
+		var afterPermit = access.require(actor, INVENTORY_READ, fact(centralStore(actor, storeId)));
+		if (!java.util.Objects.equals(before.route(), afterPermit.route())
+				|| !java.util.Objects.equals(before.fact(), afterPermit.fact())
+				|| !java.util.Objects.equals(before.identity(), afterPermit.identity()))
+			throw new DomainException(DomainException.Code.FORBIDDEN, "库存授权上下文已变化");
+		return rows;
+	}
+
+	/** 旧路径保留原资源行为；中央路径跨租户缺失不暴露资源存在性。 */
+	private StoreApi.View centralStore(Actor actor, String storeId) {
+		if (actor.executionId() == null) return null;
+		if (actor.role() != Actor.Role.OPERATOR)
+			throw new DomainException(DomainException.Code.FORBIDDEN, "需要中央运营身份");
+		try { return stores.requireActive(actor, storeId); }
+		catch (DomainException failure) {
+			if (failure.code() == DomainException.Code.NOT_FOUND)
+				throw new DomainException(DomainException.Code.FORBIDDEN, "没有该门店库存权限");
+			throw failure;
+		}
+	}
+
+	private EmployeeAccess.StoreFact fact(StoreApi.View store) {
+		return store == null ? null : new EmployeeAccess.StoreFact(store.storeId(), store.version());
 	}
 
 	/** 订单用例已按SKU排序；一项不足抛出异常回滚此前所有项。 */

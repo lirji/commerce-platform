@@ -3,5 +3,6 @@
 <mapper namespace="com.lrj.commerce.store.management.infrastructure.persistence.StoreMapper">
   <insert id="insert">INSERT INTO store_record(tenant_id,store_id,merchant_id,name,status,version) VALUES(#{tenant},#{input.storeId},#{input.merchantId},#{input.name},'ACTIVE',0)</insert>
   <select id="find" resultType="com.lrj.commerce.store.management.api.StoreApi$View">SELECT store_id,merchant_id,name,status,version FROM store_record WHERE tenant_id=#{tenant} AND store_id=#{id}</select>
+  <select id="lock" resultType="com.lrj.commerce.store.management.api.StoreApi$View">SELECT store_id,merchant_id,name,status,version FROM store_record WHERE tenant_id=#{tenant} AND store_id=#{id} FOR SHARE</select>
   <select id="list" resultType="com.lrj.commerce.store.management.api.StoreApi$View">SELECT store_id,merchant_id,name,status,version FROM store_record WHERE tenant_id=#{tenant} AND store_id &gt; #{after} ORDER BY store_id LIMIT #{limit}</select>
 </mapper>
