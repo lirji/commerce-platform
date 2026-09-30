@@ -34,7 +34,9 @@ public interface EmployeeAccess {
         POINTS_EXPIRE("commerce.points.expire", "MEMBER_POINTS", "commerce_member"),
         POINT_OFFER_READ("commerce.point_offer.read", "POINT_OFFER", "point_offer"),
         POINT_OFFER_DEFINE("commerce.point_offer.define", "POINT_OFFER", "point_offer"),
-        POINT_OFFER_STATUS_UPDATE("commerce.point_offer.status.update", "POINT_OFFER", "point_offer");
+        POINT_OFFER_STATUS_UPDATE("commerce.point_offer.status.update", "POINT_OFFER", "point_offer"),
+        COUPON_DEFINITION_READ("commerce.coupon_definition.read", "COUPON_DEFINITION", "coupon_definition"),
+        COUPON_DEFINITION_CREATE("commerce.coupon_definition.create", "COUPON_DEFINITION", "coupon_definition");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }

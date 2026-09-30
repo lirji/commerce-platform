@@ -59,7 +59,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (decision.until().isBefore(until)) until = decision.until();
         if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
         if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability)
-                || pointOfferCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
+                || pointOfferCapability(capability) || couponDefinitionCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
                 && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
         return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
     }
@@ -86,6 +86,10 @@ public class EmployeeAuthority implements EmployeeAccess {
     /** 积分商品采用租户集合，只有已有商品读取/停启可追加真实对象事实。 */
     private static boolean pointOfferCapability(Capability capability) {
         return java.util.Set.of(Capability.POINT_OFFER_READ, Capability.POINT_OFFER_DEFINE, Capability.POINT_OFFER_STATUS_UPDATE).contains(capability);
+    }
+    /** 券定义只支持完整租户的目录/创建集合，不能拼接指定门店或会员范围。 */
+    private static boolean couponDefinitionCapability(Capability capability) {
+        return capability == Capability.COUPON_DEFINITION_READ || capability == Capability.COUPON_DEFINITION_CREATE;
     }
     private static boolean memberCapability(Capability capability) {
         return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE, Capability.GROWTH_READ, Capability.GROWTH_ADJUST, Capability.GROWTH_RECALCULATE, Capability.MEMBER_TAG_READ, Capability.MEMBER_TAG_DEFINE, Capability.MEMBER_TAG_ASSIGN, Capability.MEMBER_BEHAVIOR_READ, Capability.MEMBER_BEHAVIOR_UPDATE, Capability.MEMBER_BEHAVIOR_REBUILD, Capability.MEMBER_CYCLE_READ, Capability.MEMBER_CYCLE_EVALUATE, Capability.CYCLE_BENEFIT_GRANT, Capability.POINTS_READ, Capability.POINTS_ADJUST, Capability.POINTS_EXPIRE).contains(capability);

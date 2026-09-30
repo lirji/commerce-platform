@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.*;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 
@@ -29,17 +31,20 @@ public class CouponService implements CouponApi {
 
 	private final Clock clock;
 
-	public CouponService(CouponMapper mapper, MemberApi members, StoreApi stores, Commands commands, Clock clock) {
+	private final EmployeeAccess access;
+
+	public CouponService(CouponMapper mapper, MemberApi members, StoreApi stores, Commands commands, Clock clock, EmployeeAccess access) {
 		this.mapper = mapper;
 		this.members = members;
 		this.stores = stores;
 		this.commands = commands;
 		this.clock = clock;
+		this.access = access;
 	}
 
 	/** 定义版本创建后不可修改，配额在领取事务中扣减。 */
 	public DefinitionView create(Actor actor, String key, Definition input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, COUPON_DEFINITION_CREATE);
 		Inputs.require(input != null && input.version() > 0 && input.quota() > 0 && input.quota() <= 1000000
 				&& input.validFrom() != null && input.validTo() != null && input.validFrom().isBefore(input.validTo()),
 				"券定义无效");
@@ -53,21 +58,29 @@ public class CouponService implements CouponApi {
 		Inputs.text(input.name(), 128);
 		money(input.minimumSpend());
 		Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO) > 0, "券金额必须大于零");
-		return commands.run(actor, "coupon.definition", key, input, DefinitionView.class, () -> {
+		// 保留旧模式原始输入摘要；中央主体代际稳定绑定，临时执行引用不影响原键重试。
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "coupon.definition", key, command, DefinitionView.class, () -> access.lock(permit), () -> {
 			stores.requireActive(actor, input.storeId());
 			mapper.definition(actor.tenantId(), input);
+			access.audit(actor, permit, "coupon.definition", key, input.definitionId());
 			return definition(mapper.definitionFind(actor.tenantId(), input.definitionId(), input.version()));
 		});
 	}
 
 	/** 消费者可见本店定义，但领取仍需服务端资格校验。 */
 	public List<DefinitionView> definitions(Actor actor, String store, String after, int limit) {
+		// 共享客户目录的非会员同样执行员工门禁，接管后旧ADMIN不能从别名入口旁路。
+		boolean customer = actor.role() == Actor.Role.MEMBER;
+		var permit = customer ? null : access.scope(actor, COUPON_DEFINITION_READ);
 		stores.requireActive(actor, store);
 		Inputs.page(after, limit);
-		return mapper.definitions(actor.tenantId(), store, after, limit, actor.role() == Actor.Role.ADMIN)
+		var result = mapper.definitions(actor.tenantId(), store, after, limit, !customer)
 			.stream()
 			.map(this::definition)
 			.toList();
+		if (permit != null) EmployeeAccess.requireSame(permit, access.scope(actor, COUPON_DEFINITION_READ));
+		return result;
 	}
 
 	/** 锁定义序列化配额，当前读检查是否已领，重试不能多占额度。 */
