@@ -12,6 +12,8 @@ import java.util.*;
 import java.time.*;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
@@ -21,6 +23,7 @@ import com.lrj.commerce.runtime.serialization.JsonCodec;
 public class MarketingEffectsService implements MarketingEffectsApi, EventHandler {
 
 	private final Clock clock;
+	private final EmployeeAccess access;
 
 	private final EffectsMapper mapper;
 
@@ -35,7 +38,8 @@ public class MarketingEffectsService implements MarketingEffectsApi, EventHandle
 	private final Commands commands;
 
 	public MarketingEffectsService(EffectsMapper mapper, OrderApi orders, QuoteApi quotes, RefundApi refunds,
-			StoreApi stores, Commands commands, Clock clock) {
+			StoreApi stores, Commands commands, Clock clock, EmployeeAccess access) {
+		this.access=access;
 		this.clock = clock;
 		this.mapper = mapper;
 		this.orders = orders;
@@ -47,8 +51,8 @@ public class MarketingEffectsService implements MarketingEffectsApi, EventHandle
 
 	/** 有界UTC窗口由Controller生成，接口仍防止内部调用无界扫描。 */
 	public List<Daily> daily(Actor actor, String store, Instant from, Instant to) {
-		check(actor, store, from, to, "", 100);
-		return mapper.daily(actor.tenantId(), store, from, to);
+		var permit=check(actor, store, from, to, "", 100);
+		var result=mapper.daily(actor.tenantId(), store, from, to);after(actor,permit);return result;
 	}
 
 	public String consumer() {
@@ -80,49 +84,51 @@ public class MarketingEffectsService implements MarketingEffectsApi, EventHandle
 
 	/** 时间窗口限制扫描，列表结果使用稳定聚合游标。 */
 	public Report report(Actor actor, String store, Instant from, Instant to, String after, int limit) {
-		actor.requireAdmin();
-		stores.requireActive(actor, store);
-		Inputs.page(after, limit);
-		Inputs.require(from != null && to != null && to.isAfter(from)
-				&& Duration.between(from, to).compareTo(Duration.ofDays(93)) <= 0, "分析窗口需为93天内");
-		return new Report(mapper.report(actor.tenantId(), store, from, to, after, limit),
+		var permit=check(actor,store,from,to,after,limit);
+		var result=new Report(mapper.report(actor.tenantId(), store, from, to, after, limit),
 				"按下单UTC时间选择订单，扣除截至最后投影时已知成功退款（含窗口外退款）", "仅覆盖已消费事件或已重建的订单；历史订单可分批补齐，事件积压会产生延迟",
 				"优惠承担为成交快照，退款不自动恢复预算；不含货品、支付及渠道成本，不等于利润或因果ROI");
+		after(actor,permit);return result;
 	}
 
 	/** 入组后的成交只是关联结果；同订单可出现在不同版本，明确拒绝伪造因果ROI。 */
 	public JourneyReport journeys(Actor actor, String store, Instant from, Instant to, String after, int limit) {
-		check(actor, store, from, to, after, limit);
-		return new JourneyReport(mapper.journeys(actor.tenantId(), store, from, to, after, limit, clock.instant()),
+		var permit=check(actor, store, from, to, after, limit);
+		var result=new JourneyReport(mapper.journeys(actor.tenantId(), store, from, to, after, limit, clock.instant()),
 				"按入组UTC时间选择队列；每会员同版本首次入组为锚点，统计观察窗内下单且已付订单；跨行不可相加，不代表因果提升",
 				"仅已消费/重建且具有会员归属的订单；完整观察会员仍可能受事件延迟影响，成功退款包含窗口外退款", "优惠承担来自成交快照，不含权益货品、支付或渠道成本，不等于利润或ROI");
+		after(actor,permit);return result;
 	}
 
 	/** 批次券按钱包ID关联，订单其他优惠不混入券成本。 */
 	public DeliveryReport deliveries(Actor actor, String store, Instant from, Instant to, String after, int limit) {
-		check(actor, store, from, to, after, limit);
-		return new DeliveryReport(mapper.deliveries(actor.tenantId(), store, from, to, after, limit),
+		var permit=check(actor, store, from, to, after, limit);
+		var result=new DeliveryReport(mapper.deliveries(actor.tenantId(), store, from, to, after, limit),
 				"按批次创建UTC时间选择；仅实际使用该批次券的已付订单，扣除全部已知成功退款", "新批次与已消费/重建的订单可关联；升级前创建时间未知的批次不计入时间窗，事件积压可能延迟",
 				"券优惠为成交时该券自身优惠，退款不自动恢复补贴；不含其他活动、积分或货品渠道成本");
+		after(actor,permit);return result;
 	}
 
-	private void check(Actor actor, String store, Instant from, Instant to, String after, int limit) {
-		actor.requireAdmin();
+	private EmployeeAccess.ScopePermit check(Actor actor, String store, Instant from, Instant to, String after, int limit) {
+		var permit=access.scope(actor,MARKETING_EFFECT_READ);
 		stores.requireActive(actor, store);
 		Inputs.page(after, limit);
 		Inputs.require(from != null && to != null && to.isAfter(from)
 				&& Duration.between(from, to).compareTo(Duration.ofDays(93)) <= 0, "分析窗口需为93天内");
+		return permit;
 	}
+	private void after(Actor actor,EmployeeAccess.ScopePermit permit){EmployeeAccess.requireSame(permit,access.scope(actor,permit.capability()));}
 
 	/** 可重复补齐历史，断开后从返回游标继续，或从头安全重跑。 */
 	public RebuildResult rebuild(Actor actor, String key, Rebuild input) {
-		actor.requireAdmin();
+		var permit=access.scope(actor,MARKETING_EFFECT_REBUILD);
 		Inputs.require(input != null, "重建参数缺失");
 		Inputs.page(input.after(), input.limit());
-		return commands.run(actor, "marketing.effects.rebuild", key, input, RebuildResult.class, () -> {
-			var batch = orders.adminList(actor, input.after(), input.limit());
+		return commands.runGuarded(actor, "marketing.effects.rebuild", key, permit.identity()==null?input:new Object[]{permit.identity(),input}, RebuildResult.class, ()->access.lock(permit), () -> {
+			var batch = orders.listForEffects(actor.tenantId(), null, null, null, input.after(), input.limit());
 			if (!batch.isEmpty())
 				project(actor.tenantId(), batch);
+			access.audit(actor,permit,"marketing.effects.rebuild",key,key);access.lock(permit);
 			return new RebuildResult(batch.size(), batch.isEmpty() ? input.after() : batch.getLast().orderId(),
 					batch.size() == input.limit());
 		});

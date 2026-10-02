@@ -13,6 +13,8 @@ import com.lrj.commerce.kernel.Money;
 import com.lrj.commerce.marketing.api.DecisionModels;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.MARKETING_EXECUTION_READ;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.event.EventInspection;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
@@ -32,6 +34,7 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 	}
 
 	private final CampaignExecutionMapper executions;
+	private final EmployeeAccess access;
 
 	private final CampaignMapper campaigns;
 
@@ -41,7 +44,8 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 	private final EventInspection events;
 
 	public CampaignExecutionService(CampaignExecutionMapper executions, CampaignMapper campaigns,
-			EntitlementApi entitlements, EventInspection events, CouponApi coupons) {
+			EntitlementApi entitlements, EventInspection events, CouponApi coupons, EmployeeAccess access) {
+		this.access=access;
 		this.executions = executions;
 		this.campaigns = campaigns;
 		this.entitlements = entitlements;
@@ -146,21 +150,23 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 	/** 精确详情将持久参与、权益权威状态与运行时失败证据合并，不触发重试。 */
 	@Override
 	public View find(Actor actor, String orderId, String campaignId) {
-		actor.require(Actor.Capability.MARKETING_EXECUTION_READ);
+		var permit=access.scope(actor,MARKETING_EXECUTION_READ);
 		Identifiers.require(orderId);
 		Identifiers.require(campaignId);
-		return view(Inputs.found(executions.find(actor.tenantId(), orderId, campaignId)), actor.tenantId(), true);
+		var result=view(Inputs.found(executions.find(actor.tenantId(), orderId, campaignId)), actor.tenantId(), true);
+		EmployeeAccess.requireSame(permit,access.scope(actor,MARKETING_EXECUTION_READ));return result;
 	}
 
 	/** 列表只查询本租户审计表，避免逐行加载权益和事件导致N+1。 */
 	@Override
 	public List<View> list(Actor actor, String afterOrder, int limit) {
-		actor.require(Actor.Capability.MARKETING_EXECUTION_READ);
+		var permit=access.scope(actor,MARKETING_EXECUTION_READ);
 		Inputs.page(afterOrder, limit);
-		return executions.list(actor.tenantId(), afterOrder, limit)
+		var result=executions.list(actor.tenantId(), afterOrder, limit)
 			.stream()
 			.map(row -> view(row, actor.tenantId(), false))
 			.toList();
+		EmployeeAccess.requireSame(permit,access.scope(actor,MARKETING_EXECUTION_READ));return result;
 	}
 
 	private View view(CampaignExecutionMapper.Row row, String tenant, boolean detail) {

@@ -421,6 +421,15 @@ public class OrderService implements OrderApi {
 		return mapper.behaviorSources(tenant, after, limit);
 	}
 
+	/** 效果重建只读内部 Owner 端口，资金与地址不可由返回值修改。 */
+	public List<View> listForEffects(String tenant, String store, java.time.Instant from, java.time.Instant to, String after, int limit) {
+		Identifiers.require(tenant);
+		if (store != null) Identifiers.require(store);
+		Inputs.require(((from == null && to == null) || (from != null && to != null && from.isBefore(to))) && limit >= 1 && limit <= 100, "效果订单窗口或批次无效");
+		Inputs.page(after, limit);
+		return mapper.listForEffects(tenant, store, from, to, after, limit).stream().map(this::view).toList();
+	}
+
 	/** 与本人列表分开，不能通过可选参数放大会员查询范围。 */
 	public List<View> adminList(Actor actor, String after, int limit) {
 		actor.requireAdmin();

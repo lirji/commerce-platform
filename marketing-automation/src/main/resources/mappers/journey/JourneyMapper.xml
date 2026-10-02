@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.journey.infrastructure.persistence.JourneyMapper">
+  <select id="policy" resultType="string">SELECT published_policy_json FROM journey_definition WHERE tenant_id=#{tenant} AND journey_id=#{id} AND version=#{version}</select>
+  <update id="publishPolicy">UPDATE journey_definition SET published_policy_json=#{json} WHERE tenant_id=#{tenant} AND journey_id=#{id} AND version=#{version} AND published_policy_json IS NULL</update>
+  <select id="source" resultType="string">SELECT execution_source_json FROM journey_instance WHERE tenant_id=#{tenant} AND instance_id=#{id}</select>
+  <update id="sourceOnce">UPDATE journey_instance SET execution_source_json=#{json} WHERE tenant_id=#{tenant} AND instance_id=#{id} AND execution_source_json IS NULL</update>
+  <select id="findScan" resultType="com.lrj.commerce.journey.api.JourneyApi$Scan">SELECT <include refid="scanColumns"/> FROM journey_lifecycle_scan s WHERE tenant_id=#{tenant} AND journey_id=#{id} AND journey_version=#{version}</select>
   <insert id="ensureCap">INSERT INTO journey_member_cap(tenant_id,journey_id,member_id) VALUES(#{tenant},#{journey},#{member}) ON DUPLICATE KEY UPDATE member_id=member_id</insert>
   <select id="lockCap" resultType="com.lrj.commerce.journey.infrastructure.persistence.JourneyMapper$Cap">SELECT entry_window,entries,notification_window,notifications FROM journey_member_cap WHERE tenant_id=#{tenant} AND journey_id=#{journey} AND member_id=#{member} FOR UPDATE</select>
   <update id="cap">UPDATE journey_member_cap SET <choose><when test="notification">notification_window=#{window},notifications=#{count},suppressed_notifications=suppressed_notifications+IF(#{suppressed},1,0)</when><otherwise>entry_window=#{window},entries=#{count},suppressed_entries=suppressed_entries+IF(#{suppressed},1,0)</otherwise></choose> WHERE tenant_id=#{tenant} AND journey_id=#{journey} AND member_id=#{member}</update>
