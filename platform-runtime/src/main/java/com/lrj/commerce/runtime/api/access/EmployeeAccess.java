@@ -68,9 +68,63 @@ public interface EmployeeAccess {
         COUPON_DELIVERY_CREATE("commerce.coupon_delivery.create", "COUPON_DELIVERY", "coupon_delivery"),
         COUPON_DELIVERY_READ("commerce.coupon_delivery.read", "COUPON_DELIVERY", "coupon_delivery"),
         COUPON_DELIVERY_CONTROL("commerce.coupon_delivery.control", "COUPON_DELIVERY", "coupon_delivery"),
-        COUPON_DELIVERY_PUMP("commerce.coupon_delivery.pump", "COUPON_DELIVERY", "coupon_delivery");
+        COUPON_DELIVERY_PUMP("commerce.coupon_delivery.pump", "COUPON_DELIVERY", "coupon_delivery"),
+        JOURNEY_CREATE("commerce.journey.create", "JOURNEY", "journey"),
+        JOURNEY_VALIDATE("commerce.journey.validate", "JOURNEY", "journey"),
+        JOURNEY_PREVIEW("commerce.journey.preview", "JOURNEY", "journey"),
+        JOURNEY_READ("commerce.journey.read", "JOURNEY", "journey"),
+        JOURNEY_SUBMIT("commerce.journey.submit", "JOURNEY", "journey"),
+        JOURNEY_APPROVE("commerce.journey.approve", "JOURNEY", "journey"),
+        JOURNEY_REJECT("commerce.journey.reject", "JOURNEY", "journey"),
+        JOURNEY_PUBLISH("commerce.journey.publish", "JOURNEY", "journey"),
+        JOURNEY_PAUSE("commerce.journey.pause", "JOURNEY", "journey"),
+        JOURNEY_PUMP("commerce.journey.pump", "JOURNEY", "journey"),
+        JOURNEY_INSTANCE_CREATE("commerce.journey_instance.create", "JOURNEY", "journey_instance", 2592060),
+        JOURNEY_INSTANCE_READ("commerce.journey_instance.read", "JOURNEY", "journey_instance"),
+        JOURNEY_INSTANCE_CONTROL("commerce.journey_instance.control", "JOURNEY", "journey_instance"),
+        JOURNEY_SCAN_READ("commerce.journey_scan.read", "JOURNEY", "journey_scan"),
+        JOURNEY_SCAN_RETRY("commerce.journey_scan.retry", "JOURNEY", "journey_scan"),
+        MARKETING_EFFECT_READ("commerce.marketing_effect.read", "MARKETING_REPORT", "marketing_report"),
+        MARKETING_EFFECT_REBUILD("commerce.marketing_effect.rebuild", "MARKETING_REPORT", "marketing_report"),
+        MARKETING_EXECUTION_READ("commerce.marketing_execution.read", "MARKETING_REPORT", "marketing_report"),
+        ORDER_READ("commerce.order.read", "ORDER", "store"),
+        ORDER_EXPIRE("commerce.order.expire", "ORDER", "store"),
+        ORDER_EXPIRY_RETRY("commerce.order.expiry.retry", "ORDER", "store"),
+        PAYMENT_READ("commerce.payment.read", "PAYMENT", "store"),
+        PAYMENT_RECONCILE("commerce.payment.reconcile", "PAYMENT", "store"),
+        FULFILLMENT_READ("commerce.fulfillment.read", "FULFILLMENT", "store"),
+        FULFILLMENT_SHIP("commerce.fulfillment.ship", "FULFILLMENT", "store"),
+        FULFILLMENT_DELIVER("commerce.fulfillment.deliver", "FULFILLMENT", "store"),
+        AFTERSALE_READ("commerce.aftersale.read", "AFTERSALE", "store"),
+        AFTERSALE_APPROVE("commerce.aftersale.approve", "AFTERSALE", "store"),
+        AFTERSALE_REJECT("commerce.aftersale.reject", "AFTERSALE", "store"),
+        AFTERSALE_RECEIVE_RETURN("commerce.aftersale.receive_return", "AFTERSALE", "store"),
+        REFUND_READ("commerce.refund.read", "REFUND", "store"),
+        REFUND_RECONCILE("commerce.refund.reconcile", "REFUND", "store"),
+        OPS_PAGE_READ("commerce.ops_page.read", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_CREATE("commerce.ops_page.create", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_PREVIEW("commerce.ops_page.preview", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_SUBMIT("commerce.ops_page.submit", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_APPROVE("commerce.ops_page.approve", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_REJECT("commerce.ops_page.reject", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_PUBLISH("commerce.ops_page.publish", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_PAUSE("commerce.ops_page.pause", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_ROLLBACK("commerce.ops_page.rollback", "OPS_PAGE", "ops_page"),
+        OPS_PAGE_EXECUTE("commerce.ops_page.execute", "OPS_PAGE", "ops_page"),
+        EVENT_READ("commerce.event.read", "EVENT", "commerce_runtime"),
+        EVENT_RETRY("commerce.event.retry", "EVENT", "commerce_runtime"),
+        EVENT_PUMP("commerce.event.pump", "EVENT", "commerce_runtime"),
+        RUNTIME_READ("commerce.runtime.read", "RUNTIME", "commerce_runtime"),
+        RUNTIME_RECOVER("commerce.runtime.recover", "RUNTIME", "commerce_runtime"),
+        RUNTIME_REPLAY_PREVIEW("commerce.runtime.replay.preview", "RUNTIME", "commerce_runtime"),
+        RUNTIME_REPLAY_CREATE("commerce.runtime.replay.create", "RUNTIME", "commerce_runtime", 86460),
+        RUNTIME_REPLAY_CONTROL("commerce.runtime.replay.control", "RUNTIME", "commerce_runtime");
         private final String code, family, resourceType;
-        Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
+        private final long referenceSeconds;
+        Capability(String code, String family, String resourceType) { this(code, family, resourceType, 60); }
+        Capability(String code, String family, String resourceType, long referenceSeconds) { this.code=code; this.family=family; this.resourceType=resourceType; this.referenceSeconds=referenceSeconds; }
+        /** 精确能力决定引用上限；同步资格永远不能继承长期来源。 */
+        public long referenceSeconds() { return referenceSeconds; }
         public String code() { return code; }
         public String family() { return family; }
         public String resourceType() { return resourceType; }
@@ -122,6 +176,15 @@ public interface EmployeeAccess {
     SegmentPolicyPermit segmentPolicy(String tenant, Route approvedRoute);
     /** 系统政策提交也与停止/切换串行，Owner另行核验真实政策和固定定义。 */
     void lock(SegmentPolicyPermit permit);
+    /** 有限任务原来源无Token；能力单独绑定，持久记录不可由后来控制/推进覆盖。 */
+    record FiniteExecution(Identity identity, Route route, String applicationId, String environment,
+                           String callerServiceId, long membershipVersion, long principalVersion, Instant expiresAt) {}
+    void rememberExecution(Actor actor, Capability capability, FiniteExecution source);
+    FiniteExecution execution(Actor actor, Capability capability);
+    /** Owner证明真实已批准固定政策，运行时只提供同分区权威与有界提交栅栏。 */
+    record PolicyPermit(String tenant, Capability capability, Route route, Instant until) {}
+    PolicyPermit policy(String tenant, Capability capability, Route approvedRoute);
+    void lock(PolicyPermit permit);
     /** 状态持久化，不能由HTTP头或运行开关推断当前权威。 */
     record Route(String tenantId, String authTenantId, String family, String state, boolean everCentral, long version) {}
     /** 每次业务访问都要调用，包括非HTTP入口和重试。 */

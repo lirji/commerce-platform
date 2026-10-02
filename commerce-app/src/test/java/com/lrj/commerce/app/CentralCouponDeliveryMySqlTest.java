@@ -35,7 +35,7 @@ import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 class CentralCouponDeliveryMySqlTest {
     @DynamicPropertySource static void database(DynamicPropertyRegistry r) {
         String url=System.getenv("COMMERCE_TEST_DB_URL");
-        if(url==null||!url.contains("/commerce_test_20260923?"))throw new IllegalStateException("必须使用隔离测试库");
+        if(url==null||!url.matches("jdbc:mysql://127\\.0\\.0\\.1:[0-9]+/commerce_test_20260923(?:_[a-z0-9]+)?\\?.*"))throw new IllegalStateException("必须使用隔离测试库");
         r.add("spring.datasource.url",()->url);r.add("spring.datasource.username",()->System.getenv("COMMERCE_DB_USER"));r.add("spring.datasource.password",()->System.getenv("COMMERCE_DB_PASSWORD"));
         r.add("commerce.sandbox-enabled",()->true);r.add("commerce.workers-enabled",()->false);
     }
