@@ -34,6 +34,7 @@ export const centralGroups = [
       ["/operations/rules", "动态规则"],
       ["/operations/audiences", "人群快照"],
       ["/operations/segments", "动态人群"],
+      ["/operations/coupon-deliveries", "定向发券"],
       ["/operations/campaigns", "活动管理"],
       ["/operations/campaign-budgets", "活动预算"],
     ],

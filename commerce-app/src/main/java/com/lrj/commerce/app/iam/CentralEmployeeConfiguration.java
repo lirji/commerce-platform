@@ -114,6 +114,11 @@ public class CentralEmployeeConfiguration {
             if ("/v1/operations/point-offers/status-access".equals(path)) return EmployeeAccess.Capability.POINT_OFFER_STATUS_UPDATE;
         }
         if ("GET".equals(r.getMethod()) && "/v1/operations/coupon-definitions/create-access".equals(path)) return EmployeeAccess.Capability.COUPON_DEFINITION_CREATE;
+        if ("GET".equals(r.getMethod())) {
+            if ("/v1/operations/coupon-deliveries/create-access".equals(path)) return EmployeeAccess.Capability.COUPON_DELIVERY_CREATE;
+            if ("/v1/operations/coupon-deliveries/control-access".equals(path)) return EmployeeAccess.Capability.COUPON_DELIVERY_CONTROL;
+            if ("/v1/operations/coupon-deliveries/pump-access".equals(path)) return EmployeeAccess.Capability.COUPON_DELIVERY_PUMP;
+        }
         if ("/v1/admin/coupon-deliveries".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DELIVERY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DELIVERY_CREATE;

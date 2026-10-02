@@ -293,6 +293,47 @@ class CentralCouponDeliveryMySqlTest {
         assertTrue(references.get(reference(row("B").issueSourceJson())).expires().isAfter(Instant.now().plusSeconds(600000)));
     }
 
+    /** 登录前只开放精确页面GET；不能因加载SPA而开放业务API、变更方法或相邻路径。 */
+    @Test void anonymousStaticShellDoesNotOpenBusinessOrNeighborPaths() throws Exception {
+        var shell=http("GET","/operations/coupon-deliveries",null,false,null);
+        assertEquals(200,shell.statusCode());
+        assertTrue(shell.headers().firstValue("Content-Type").orElse("").contains("text/html"));
+        assertTrue(shell.body().contains("id=\"root\""));
+        for(String method:List.of("POST","PUT","PATCH","DELETE"))
+            assertEquals(401,http(method,"/operations/coupon-deliveries",null,false,null).statusCode());
+        for(String path:List.of("/operations/coupon-deliveries-other","/operations/coupon-deliveries/unknown",
+                "/v1/admin/coupon-deliveries","/v1/admin/coupon-deliveries/B",
+                "/v1/admin/coupon-deliveries/B/recipients","/v1/operations/coupon-deliveries/create-access",
+                "/v1/operations/coupon-deliveries/control-access","/v1/operations/coupon-deliveries/pump-access"))
+            assertEquals(401,http("GET",path,null,false,null).statusCode(),path);
+        for(String path:List.of("/v1/admin/coupon-deliveries","/v1/admin/coupon-deliveries/pump",
+                "/v1/admin/coupon-deliveries/B/control"))
+            assertEquals(401,http("POST",path,null,false,Map.of()).statusCode(),path);
+        assertEquals(0,count("automation_coupon_batch"));assertEquals(0,count("employee_command_identity"));
+    }
+
+    /** GET提示采用短引用且不写业务或持久来源；各写岗位不能借用其他能力或旧ADMIN。 */
+    @Test void independentReadOnlyHintsNeverCreateDurableTaskAuthority() throws Exception {
+        var paths=Map.of(COUPON_DELIVERY_CREATE,"create",COUPON_DELIVERY_CONTROL,"control",COUPON_DELIVERY_PUMP,"pump");
+        int commandsBefore=jdbc.queryForObject("SELECT COUNT(*) FROM platform_command WHERE tenant_id=?",Integer.class,tenant);
+        for(var entry:paths.entrySet()) {
+            allowed.clear();allowed.add(entry.getKey().code());
+            String path="/v1/operations/coupon-deliveries/"+entry.getValue()+"-access";
+            var response=http("GET",path,"valid",true,null);
+            assertEquals(200,response.statusCode());assertEquals(Boolean.TRUE,JsonCodec.read(response.body(),Map.class).get("allowed"));
+            for(var other:paths.entrySet())if(other.getKey()!=entry.getKey())
+                assertEquals(403,http("GET","/v1/operations/coupon-deliveries/"+other.getValue()+"-access","valid",true,null).statusCode());
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            assertEquals(403,http("GET","/v1/admin/coupon-deliveries?storeId=store","valid",true,null).statusCode());
+        }
+        assertTrue(references.values().stream().allMatch(ref->ref.expires().isBefore(Instant.now().plusSeconds(61))));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM employee_coupon_delivery_execution WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(commandsBefore,jdbc.queryForObject("SELECT COUNT(*) FROM platform_command WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(0,count("automation_coupon_batch"));assertEquals(0,count("employee_command_identity"));
+        unavailable.set(true);
+        assertEquals(503,http("GET","/v1/operations/coupon-deliveries/pump-access","valid",true,null).statusCode());
+    }
+
     /** 创建事务末尾也检查新来源期限，已做业务验证不等于允许保存过期的新任务和成功回执。 */
     @Test void expiredNewSourceCannotCommitBatchIdentityOrCommandReceipt() {
         sourceSeconds.set(2);

@@ -1035,3 +1035,21 @@
     justify-content: flex-end;
   }
 }
+
+/* 批次与固定来源编号在窄屏完整可读，复用活动弹层的独立正文滚动。 */
+.delivery-modal .ant-descriptions-item-content,
+.delivery-receipt .ant-descriptions-item-content,
+.delivery-id {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* 任务状态码也须在描述项内换行，不能被弹层横向裁切隐藏。 */
+.delivery-modal .ant-tag,
+.delivery-receipt .ant-tag {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

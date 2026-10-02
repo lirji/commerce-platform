@@ -33,7 +33,9 @@ public class SecurityConfiguration {
 			.authorizeHttpRequests(
 					c -> c.requestMatchers("/actuator/health", "/", "/index.html", "/assets/**", "/media/**")
 						.permitAll()
-						// 登录前须能加载固定SPA壳；只放行这三个GET，业务API仍由独立中央链判权。
+						// 登录前须能加载固定SPA壳；仅逐条放行已注册页面GET，业务API仍由独立中央链判权。
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/operations/coupon-deliveries")
+						.permitAll()
 						.requestMatchers(org.springframework.http.HttpMethod.GET, "/operations/campaigns", "/operations/campaign-budgets", "/operations/audiences", "/operations/segments", "/operations/rules", "/operations/entitlement-definitions", "/operations/entitlements", "/operations/coupon-definitions", "/operations/point-offers", "/operations/member-points", "/operations/member-cycles", "/operations/member-cycle-benefits", "/operations/member-behavior", "/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")
 						.permitAll()
 						.requestMatchers("/v1/admin/**")
