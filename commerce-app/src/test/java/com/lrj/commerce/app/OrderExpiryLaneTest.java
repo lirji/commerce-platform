@@ -66,6 +66,8 @@ class OrderExpiryLaneTest {
 		jdbc.update("DELETE FROM platform_event WHERE tenant_id LIKE ?", prefix + "%");
 		jdbc.update("DELETE FROM inventory_hold WHERE tenant_id LIKE ?", prefix + "%");
 		jdbc.update("DELETE FROM order_record WHERE tenant_id LIKE ?", prefix + "%");
+		jdbc.update("DELETE FROM store_record WHERE tenant_id LIKE ?", prefix + "%");
+		jdbc.update("DELETE FROM merchant_record WHERE tenant_id LIKE ?", prefix + "%");
 	}
 
 	/** 场景F（订单到期）：同租户一个坏订单不再让整批20单回滚；5次非瞬时失败后停止自动取消并可审计重试。 */
@@ -102,6 +104,9 @@ class OrderExpiryLaneTest {
 			.quarantined() >= 1);
 		// 修复数据后人工重试：只清计数与退避，最近失败证据保留，随后正常取消。
 		var admin = new Actor(tenant, "admin", Actor.Role.ADMIN);
+		// Worker 原责任不依赖门店目录；人工重试新授权边界则必须有原订单对应的真实 Owner 门店事实。
+		jdbc.update("INSERT INTO merchant_record(tenant_id,merchant_id,name,status,version) VALUES(?,'merchant','到期重试夹具','ACTIVE',0)", tenant);
+		jdbc.update("INSERT INTO store_record(tenant_id,store_id,merchant_id,name,status,version) VALUES(?,'s1','merchant','到期原门店','ACTIVE',0)", tenant);
 		jdbc.update("DELETE FROM inventory_hold WHERE tenant_id=? AND order_id=?", tenant, poison);
 		assertEquals(1, orders.retryExpiry(admin, "retry-" + prefix, poison));
 		assertEquals(0, expiry(tenant, poison, "expiry_attempts"));

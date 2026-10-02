@@ -28,6 +28,19 @@ public interface OrderMapper {
 	List<Row> listForEffects(@Param("tenant") String tenant, @Param("store") String store,
 			@Param("from") Instant from, @Param("to") Instant to, @Param("after") String after, @Param("limit") int limit);
 
+	/** 员工列表与批次按 Owner 的真实门店列在 LIMIT 前过滤。 */
+	List<Row> scopedList(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("after") String after, @Param("limit") int limit);
+	List<Row> expiredScoped(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("now") Instant now, @Param("max") int max, @Param("transientMax") int transientMax);
+	/** 旧批次回执仍以原目标复核当前能力，不从新的候选集重建来源。 */
+	record ExpiryFact(String orderId, String storeId, long storeVersion) {}
+	List<ExpiryFact> expiryFacts(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("key") String key);
+
+	/** 批次命令唯一归属与逐单真实门店证据共用事务。 */
+	void expiryFact(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("key") String key,
+			@Param("order") String order, @Param("store") String store, @Param("version") long version);
+
 	/** 租户与游标在SQL中过滤，只取投影所需列。 */
 	List<com.lrj.commerce.ordering.order.api.OrderApi.BehaviorSource> behaviorSources(
 			@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);

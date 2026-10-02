@@ -24,4 +24,9 @@ public interface FulfillmentMapper {
 	int block(@Param("tenant") String tenant, @Param("order") String order, @Param("blocked") boolean blocked,
 			@Param("status") String status, @Param("version") long version);
 
+	/** 只读订单归属投影，不写跨模块表；实际门店过滤先于分页。 */
+	List<View> scopedList(@Param("tenant") String tenant,
+			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("after") String after, @Param("limit") int limit);
+
 }

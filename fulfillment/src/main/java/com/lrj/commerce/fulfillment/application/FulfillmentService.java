@@ -10,12 +10,18 @@ import org.springframework.transaction.annotation.*;
 import java.util.*;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 
 /** 履约与订单生命周期经端口同事务协作，远程证明在命令事务前取得。 */
 @Service
 public class FulfillmentService implements FulfillmentApi, EventHandler {
+
+	/** 生产容器强制注入，每个员工入口使用独立能力；后台责任不依赖此门禁。 */
+	@org.springframework.beans.factory.annotation.Autowired
+	private EmployeeAccess access;
 
 	private final FulfillmentMapper mapper;
 
@@ -38,20 +44,24 @@ public class FulfillmentService implements FulfillmentApi, EventHandler {
 	}
 
 	public List<View> list(Actor actor, String after, int limit) {
-		actor.requireAdmin();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		var permit = access.scope(actor, FULFILLMENT_READ);
+		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit);
+		EmployeeAccess.requireSame(permit, access.scope(actor, FULFILLMENT_READ));
+		return result;
 	}
 
 	/** 发货与售后阻拦争同一履约锁；单个包裹只允许一个不可覆盖运单号。 */
 	public View ship(Actor actor, String key, String order, Ship input) {
-		actor.requireAdmin();
 		Identifiers.require(order);
 		Inputs.require(input != null, "缺少发货信息");
 		Inputs.text(input.trackingNo(), 64);
-		orders.internalRead(actor.tenantId(), order);
+		var permit = orders.authorize(actor, FULFILLMENT_SHIP, order);
 		var proof = wms.shipment(actor.tenantId(), order, input.trackingNo());
-		return commands.run(actor, "fulfillment.ship", key, Map.of("order", order, "input", input), View.class, () -> {
+		return commands.runGuarded(actor, "fulfillment.ship", key,
+				permit.permit().identity() == null ? Map.of("order", order, "input", input) : Arrays.asList(order, input, permit.permit().identity()), View.class,
+				() -> orders.lockAuthorization(actor, permit), () -> {
+			access.audit(actor, permit.permit(), "fulfillment.ship", key);
 			ensurePaid(actor.tenantId(), order);
 			var current = mapper.lock(actor.tenantId(), order);
 			if (Set.of("SHIPPED", "DELIVERED").contains(current.status())) {
@@ -68,11 +78,14 @@ public class FulfillmentService implements FulfillmentApi, EventHandler {
 
 	/** 已送达再次证明不重复推进订单。 */
 	public View deliver(Actor actor, String key, String order) {
-		actor.requireAdmin();
 		Identifiers.require(order);
+		var permit = orders.authorize(actor, FULFILLMENT_DELIVER, order);
 		var row = Inputs.found(mapper.find(actor.tenantId(), order));
 		wms.delivered(actor.tenantId(), order, row.trackingNo());
-		return commands.run(actor, "fulfillment.deliver", key, order, View.class, () -> {
+		return commands.runGuarded(actor, "fulfillment.deliver", key,
+				permit.permit().identity() == null ? order : Arrays.asList(order, permit.permit().identity()), View.class,
+				() -> orders.lockAuthorization(actor, permit), () -> {
+			access.audit(actor, permit.permit(), "fulfillment.deliver", key);
 			var current = Inputs.found(mapper.lock(actor.tenantId(), order));
 			if (current.status().equals("DELIVERED"))
 				return current;

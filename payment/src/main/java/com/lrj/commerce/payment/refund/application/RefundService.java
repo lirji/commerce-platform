@@ -15,6 +15,8 @@ import com.lrj.commerce.payment.charge.application.PaymentService;
 import com.lrj.commerce.payment.refund.api.RefundApi;
 import com.lrj.commerce.payment.refund.application.port.RefundChannel;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.event.Outbox;
@@ -27,6 +29,10 @@ import com.lrj.commerce.runtime.work.WorkLanes;
 /** 退款先预留实收额度，再在事务外核对渠道；未知占用额度防止重试超退。 */
 @Service
 public class RefundService implements RefundApi {
+
+	/** 生产容器强制注入，每个员工入口使用独立能力；后台责任不依赖此门禁。 */
+	@org.springframework.beans.factory.annotation.Autowired
+	private EmployeeAccess access;
 
 	private final RefundMapper mapper;
 
@@ -98,39 +104,54 @@ public class RefundService implements RefundApi {
 	}
 
 	public List<View> list(Actor actor, String after, int limit) {
-		actor.requireAdmin();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		var permit = access.scope(actor, REFUND_READ);
+		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit);
+		EmployeeAccess.requireSame(permit, access.scope(actor, REFUND_READ));
+		return result;
 	}
 
 	public View reconcile(Actor actor, String id) {
-		actor.requireAdmin();
 		Identifiers.require(id);
-		return reconcileInternal(actor.tenantId(), id);
+		var attempt = internalRead(actor.tenantId(), id);
+		var permit = orders.authorize(actor, REFUND_RECONCILE, attempt.orderId());
+		return reconcileInternal(actor.tenantId(), id, actor, permit);
 	}
 
 	private View reconcileInternal(String tenant, String id) {
+		return reconcileInternal(tenant, id, null, null);
+	}
+
+	/** 员工只核对原退款承诺；渠道在事务外，原来源资金责任不依赖员工离职。 */
+	private View reconcileInternal(String tenant, String id, Actor actor, OrderApi.Authorization permit) {
 		var attempt = internalRead(tenant, id);
-		if (attempt.status().equals("SUCCEEDED"))
-			return attempt;
-		channel.ensure(tenant, attempt);
-		var proof = channel.observe(tenant, id);
-		if (!proof.tenantId().equals(tenant) || !proof.refundId().equals(id)
-				|| !proof.orderId().equals(attempt.orderId()) || !proof.currency().equals(attempt.currency())
-				|| new BigDecimal(proof.amount()).compareTo(new BigDecimal(attempt.amount())) != 0)
-			throw conflict();
-		if (!proof.status().equals("SUCCEEDED"))
-			return attempt;
-		Inputs.text(proof.transactionId(), 64);
-		return tx.execute(s -> {
+		RefundChannel.Evidence proof = null;
+		if (!attempt.status().equals("SUCCEEDED")) {
+			channel.ensure(tenant, attempt);
+			proof = channel.observe(tenant, id);
+			if (!proof.tenantId().equals(tenant) || !proof.refundId().equals(id)
+					|| !proof.orderId().equals(attempt.orderId()) || !proof.currency().equals(attempt.currency())
+					|| new BigDecimal(proof.amount()).compareTo(new BigDecimal(attempt.amount())) != 0) throw conflict();
+			if (proof.status().equals("SUCCEEDED")) Inputs.text(proof.transactionId(), 64);
+		}
+		var observed = proof;
+		java.util.function.Supplier<View> apply = () -> {
 			var current = Inputs.found(mapper.lock(tenant, id));
-			if (current.status().equals("SUCCEEDED"))
-				return current;
-			if (mapper.succeed(tenant, id, proof.transactionId(), JsonCodec.write(proof)) != 1)
-				throw conflict();
+			if (current.status().equals("SUCCEEDED") || observed == null || !observed.status().equals("SUCCEEDED")) return current;
+			if (mapper.succeed(tenant, id, observed.transactionId(), JsonCodec.write(observed)) != 1) throw conflict();
 			var done = mapper.find(tenant, id);
 			outbox.append(tenant, "refund.succeeded.v1", id, done.version(), done);
 			return done;
+		};
+		if (actor == null) return tx.execute(status -> apply.get());
+		// 原接口无客户端键，保留显式每次核对；资金条件更新不会重复退款或重复终态事件。
+		String key = UUID.randomUUID().toString();
+		return commands.runGuarded(actor, "refund.reconcile", key,
+				Arrays.asList(id, permit.permit().identity()), View.class,
+				() -> orders.lockAuthorization(actor, permit), () -> {
+			var result = apply.get();
+			access.audit(actor, permit.permit(), "refund.reconcile", key);
+			return result;
 		});
 	}
 

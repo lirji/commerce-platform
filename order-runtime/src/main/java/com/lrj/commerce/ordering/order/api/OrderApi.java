@@ -44,6 +44,19 @@ public interface OrderApi {
 	/** 内部按租户查询，不接受客户端替换租户。 */
 	View internalRead(String tenant, String id);
 
+	/** 订单 Owner 证明真实门店归属，调用模块只选择自身闭集能力，不借 order.read。 */
+	record Authorization(String orderId, com.lrj.commerce.store.management.api.StoreApi.View store,
+			com.lrj.commerce.runtime.api.access.EmployeeAccess.Permit permit) {}
+
+	/** 事务外取得当前门店版本及员工许可；不接受调用者声明的门店。 */
+	Authorization authorize(Actor actor, com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability capability, String orderId);
+
+	/** 同一用例事务内先锁订单及门店事实，再锁授权路由；旧回执也经过此栅栏。 */
+	void lockAuthorization(Actor actor, Authorization authorization);
+
+	/** 读取结束重新判权，身份、路由、真实门店版本变化时丢弃结果。 */
+	void checkAuthorization(Actor actor, Authorization authorization);
+
 	/** 生命周期仅判断本门店加购后的已付订单，不暴露订单资料。 */
 	boolean hasPaidSince(String tenant, String member, String store, Instant since);
 

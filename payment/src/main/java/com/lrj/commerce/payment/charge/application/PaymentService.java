@@ -12,6 +12,8 @@ import com.lrj.commerce.payment.charge.api.PaymentApi;
 import com.lrj.commerce.payment.charge.application.port.PaymentChannel;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.event.Outbox;
@@ -24,6 +26,10 @@ import com.lrj.commerce.runtime.work.WorkLanes;
 /** 支付意图、渠道观察和资金事实分开提交；任何超时都保留可重查的尝试。 */
 @Service
 public class PaymentService implements PaymentApi, EventHandler {
+
+	/** 生产容器强制注入，每个员工入口使用独立能力；后台责任不依赖此门禁。 */
+	@org.springframework.beans.factory.annotation.Autowired
+	private EmployeeAccess access;
 
 	private final PaymentMapper mapper;
 
@@ -89,12 +95,17 @@ public class PaymentService implements PaymentApi, EventHandler {
 	}
 
 	private View reconcileInternal(String tenant, String orderId) {
+		return reconcileInternal(tenant, orderId, null, null);
+	}
+
+	/** 渠道调用在短事务外；员工提交与原资金 CAS/Outbox 原子，后台原承诺不借员工引用。 */
+	private View reconcileInternal(String tenant, String orderId, Actor actor, OrderApi.Authorization permit) {
 		var order = orders.internalRead(tenant, orderId);
 		var attempt = Inputs.found(mapper.byOrder(tenant, orderId));
 		channel.ensure(tenant, attempt);
 		var proof = order.status().equals("CLOSING") ? channel.close(tenant, attempt.paymentId())
 				: channel.observe(tenant, attempt.paymentId());
-		return tx.execute(s -> {
+		java.util.function.Supplier<View> apply = () -> {
 			var current = Inputs.found(mapper.lock(tenant, attempt.paymentId()));
 			if (!proof.tenantId().equals(tenant) || !proof.orderId().equals(orderId)
 					|| !proof.paymentId().equals(current.paymentId()) || !proof.currency().equals(current.currency())
@@ -118,6 +129,16 @@ public class PaymentService implements PaymentApi, EventHandler {
 				outbox.append(tenant, updated.status() == Status.PAID ? "payment.paid.v1" : "payment.closed.v1",
 						updated.paymentId(), updated.version(), updated);
 			return updated;
+		};
+		if (actor == null) return tx.execute(status -> apply.get());
+		// 原协议没有客户端命令键，每次显式核对留一个服务端命令；资金终态仍由原 CAS 幂等。
+		String key = UUID.randomUUID().toString();
+		return commands.runGuarded(actor, "payment.reconcile", key,
+				Arrays.asList(orderId, permit.permit().identity()), View.class,
+				() -> orders.lockAuthorization(actor, permit), () -> {
+			var result = apply.get();
+			access.audit(actor, permit.permit(), "payment.reconcile", key);
+			return result;
 		});
 	}
 
@@ -227,14 +248,16 @@ public class PaymentService implements PaymentApi, EventHandler {
 
 	/** 复用订单权限边界，不凭客户端支付ID越权。 */
 	public View adminRead(Actor actor, String orderId) {
-		orders.adminRead(actor, orderId);
-		return Inputs.found(mapper.byOrder(actor.tenantId(), orderId));
+		var permit = orders.authorize(actor, PAYMENT_READ, orderId);
+		var result = Inputs.found(mapper.byOrder(actor.tenantId(), orderId));
+		orders.checkAuthorization(actor, permit);
+		return result;
 	}
 
 	/** 渠道核对仍在数据库事务外，管理权限不允许直接写成功状态。 */
 	public View adminReconcile(Actor actor, String orderId) {
-		orders.adminRead(actor, orderId);
-		return reconcileInternal(actor.tenantId(), orderId);
+		var permit = orders.authorize(actor, PAYMENT_RECONCILE, orderId);
+		return reconcileInternal(actor.tenantId(), orderId, actor, permit);
 	}
 
 }
