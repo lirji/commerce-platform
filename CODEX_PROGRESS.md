@@ -1,3 +1,44 @@
+# 当前并行 CE06—08 终态（2026-10-02，优先于历史）
+
+## 任务目标
+
+完整O1/O2/P1/R1/D1/R2：订单/资金/履约/售后/到期、OpsPage/event/runtime/Dashboard及12车道责任。仅本任务两隔离树；私密Maven；本地逻辑提交由root统一集成，不自行main merge/push。
+
+## 已完成
+
+- 33精准能力Owner与9真实页面，V71/V72追加、Modal/脏输入/未知原键保护；真实可信store、CAS/原幂等/原资金责任保留。
+- 544项归档539PASS、5既有性能实验skip；16窄实库/HTTP全PASS。当前149真实Auth/SQL检查、3晚段子权限撤权屏障、7真实tenant/store/action-only边界PASS。
+- genuine 6秒原Source自然到期及未到期撤回后新Grant ACTIVE不能复活；原reference/Grant/role/身份tuple真实PG/MySQLjoin。停用员工和实际Auth停服后原资金/到期继续，manualSource/cursor/attempts不变。
+- 九页108+异常27=135当前图，1440/390/320实看；六错误/失响应同path/body/key最后SQL各1audit/command；event int1及非幂等pump明确新调用保留原未知。
+- 当前945source前后/终态一致，18模块819类/Mapper/迁移与真实JAR全字节一致；本域源码新SDK/protocol target/privateRepo/nested全BYTE MATCH。
+- 正式 TEST_RESULT/12lane/122candidate/34role映射落盘；私密终态路径 Commerce .local/order-operations/real-runtime/rehearsal-2b5bb1c0f07a/terminal-owner-result.json。
+
+## 已修改文件
+
+- 本域Order/Payment/Refund/Fulfillment/Aftersale/Store Owner及Mapper；OpsPage/Prepared Campaign/Coupon/Dashboard/Catalog聚合；Event/Runtime/Replay Source；33短hint；9中央页面/client/command/独立样式、原路由共享Owner批准patch；2新MySQL测试与必要原LEGACY夹具；V71/V72。
+- Auth docs/design/oa-auth-unification/CONTRACTS_COMMERCE_ORDER_OPERATIONS.md 与 docs/implementation/oa-auth/commerce-order-operations 的切片/验证/12lane/全候选角色映射。
+
+## 未完成
+
+- 本地产品完整逻辑提交已完成：O1 ef0c8c3 → P1/R1/D1 b053485 → O2 76dfe81；root进行D2/Journey/九路由共享源语义合并及affected验证/精确CI。
+- IR实际122全目录/42菜单/34角色出版为独立Owner在途；本片不提前宣称出版DONE，不自动Grant。
+
+## 当前问题
+
+- 无产品阻塞。五个既有条件性能skip明确保留，不提供新容量/SLO声明。保留全部早期seed/schema/DTO及旧protocol归档差异FAIL证据；新当前终态关闭本片发现。
+- 当前应用/Proxy/SPI20661/62/63/65/66已正常停止，独占基础组件/私密SQL/源码tar/图片为审计保留；不清共享或生产数据。
+
+## 下一步建议
+
+1. 使用已验证本地产品提交及owner-menu-map-final-v1.json精确SHA交root/Journey/IR；私密terminal记录仍绑定验证时源码，不改旧before/source证据。
+2. root集成时保留D2 Tag换行、Journey五路由及本片九路由；IR按精确final SHA实际出版后统一main CI。
+
+## 恢复 Prompt
+
+读取本顶节及正式TEST_RESULT，从本地Git/terminal receipt交付收尾继续；产品与945源已冻结验证，勿重复544未变回归、勿另建树/Agent、勿改原root/IR共享源、勿自行main push。按实际PASS与Owner职责说明剩余出版和集成边界。
+
+---
+
 # Codex Progress
 
 ## 任务目标
