@@ -46,6 +46,10 @@ public interface CouponApi {
 
 	DefinitionView create(Actor actor, String key, Definition input);
 
+	/** 内部组合用例只执行已冻结输入与真实事实，准备阶段必须在事务外。 */
+	@FunctionalInterface interface PreparedCreation { DefinitionView execute(); }
+	PreparedCreation prepareDefinition(Actor actor, String key, Definition input);
+
 	List<DefinitionView> definitions(Actor actor, String store, String after, int limit);
 
 	/** 受控兑换的定义必须禁止公开领取。 */

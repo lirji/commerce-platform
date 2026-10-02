@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.concurrent.atomic.LongAdder;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.recovery.RecoveryAudit;
@@ -65,6 +67,10 @@ public class EventReplay {
 
 	private static final Logger log = LoggerFactory.getLogger(EventReplay.class);
 
+	/** 中央短资格与原任务有限来源不同，控制引用不会续期创建来源。 */
+	@org.springframework.beans.factory.annotation.Autowired private EmployeeAccess access;
+	@org.springframework.beans.factory.annotation.Autowired private ReplayAuthorization authorization;
+
 	private final ReplayMapper mapper;
 
 	private final Map<String, EventHandler> handlers = new HashMap<>();
@@ -112,7 +118,9 @@ public class EventReplay {
 
 	/** 试运行只读：给出安全门结论、各类型事件数（至多上限+1条）与该消费者已处理数，不改变任何状态。 */
 	public DryRun dryRun(Actor actor, Scope scope) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		var permit = access.scope(actor, RUNTIME_REPLAY_PREVIEW);
+		if (permit.identity() == null) actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		Inputs.require(scope != null, "重放预览参数缺失");
 		var s = validate(scope.consumer(), scope.eventTypes(), scope.from(), scope.to(), scope.mode(),
 				scope.maxEvents());
 		var gate = ReplayGate.check(handlers.get(s.consumer()), s.mode());
@@ -122,11 +130,13 @@ public class EventReplay {
 		boolean capped = events > s.maxEvents();
 		long scoped = Math.min(events, s.maxEvents());
 		long would = !gate.allowed() ? 0 : s.mode() == ReplayGate.Mode.REPROCESS ? scoped : Math.max(0, scoped - done);
+		EmployeeAccess.requireSame(permit, access.scope(actor, RUNTIME_REPLAY_PREVIEW));
 		return new DryRun(s.consumer(), s.mode().name(), gate, counts, events, done, would, capped, s.maxEvents());
 	}
 
 	public ReplayMapper.Job create(Actor actor, String key, Create input) {
-		actor.require(Actor.Capability.RUNTIME_REPLAY_EXECUTE);
+		var permit = access.scope(actor, RUNTIME_REPLAY_CREATE);
+		if (permit.identity() == null) actor.require(Actor.Capability.RUNTIME_REPLAY_EXECUTE);
 		Inputs.require(input != null, "重放参数缺失");
 		Identifiers.require(input.jobId());
 		Inputs.text(input.reason(), 256);
@@ -140,7 +150,13 @@ public class EventReplay {
 		}
 		var normalized = new Create(input.jobId(), s.consumer(), s.eventTypes(), s.from(), s.to(), s.mode(),
 				s.maxEvents(), input.reason());
-		return commands.run(actor, "runtime.replay.create", key, normalized, ReplayMapper.Job.class, () -> {
+		var source = authorization.create(actor, permit, input.jobId(), key, clock.instant());
+		var existing = mapper.find(actor.tenantId(), input.jobId());
+		var original = existing == null ? null : authorization.gate(actor.tenantId(), existing);
+		Object command = permit.identity() == null ? normalized : new Object[] {normalized, permit.identity()};
+		return commands.runGuarded(actor, "runtime.replay.create", key, command, ReplayMapper.Job.class,
+				() -> { access.lock(permit); if (original != null) authorization.lock(original); },
+				result -> { if (original == null || !input.jobId().equals(result.jobId())) throw new DomainException(DomainException.Code.FORBIDDEN, "回放原来源缺失"); authorization.fresh(original); }, () -> {
 			if (mapper.active(actor.tenantId()) >= MAX_ACTIVE)
 				throw new DomainException(DomainException.Code.LIMIT_EXCEEDED, "同时进行的重放任务已达上限");
 			if (mapper.find(actor.tenantId(), input.jobId()) != null)
@@ -149,6 +165,8 @@ public class EventReplay {
 					new ReplayMapper.Job(input.jobId(), s.consumer(), String.join(",", s.eventTypes()), s.mode().name(),
 							s.from(), s.to(), s.maxEvents(), "RUNNING", null, null, 0, 0, 0, 0, null, input.reason(),
 							actor.actorId(), 0, null, null));
+			mapper.insertSource(actor.tenantId(), input.jobId(), com.lrj.commerce.runtime.serialization.JsonCodec.write(source));
+			access.audit(actor, permit, "runtime.replay.create", key, input.jobId());
 			audit.record(actor, "runtime.replay.create", key, "event.replay", input.jobId(), "REPLAY_CREATE", null,
 					"RUNNING", null, input.reason(), RecoveryAudit.APPLIED, null);
 			return mapper.find(actor.tenantId(), input.jobId());
@@ -157,15 +175,19 @@ public class EventReplay {
 
 	/** 暂停、恢复（重新校验安全门）与取消；版本不符拒绝，已终结任务不可控制。 */
 	public ReplayMapper.Job control(Actor actor, String key, String id, Control input) {
-		actor.require(Actor.Capability.RUNTIME_REPLAY_EXECUTE);
+		var permit = access.scope(actor, RUNTIME_REPLAY_CONTROL);
+		if (permit.identity() == null) actor.require(Actor.Capability.RUNTIME_REPLAY_EXECUTE);
 		Identifiers.require(id);
 		Inputs.require(
 				input != null && input.expectedVersion() >= 0
 						&& Set.of("PAUSE", "RESUME", "CANCEL").contains(Objects.toString(input.action(), "")),
 				"重放控制参数无效");
 		Inputs.text(input.reason(), 256);
-		return commands.run(actor, "runtime.replay.control", key, new Object[] { id, input }, ReplayMapper.Job.class,
-				() -> {
+		var candidate = Inputs.found(mapper.find(actor.tenantId(), id));
+		var original = input.action().equals("RESUME") ? authorization.gate(actor.tenantId(), candidate) : null;
+		Object command = permit.identity() == null ? new Object[] {id, input} : new Object[] {id, input, permit.identity()};
+		return commands.runGuarded(actor, "runtime.replay.control", key, command, ReplayMapper.Job.class,
+				() -> { access.lock(permit); if (original != null) authorization.lock(original); }, () -> {
 					var job = Inputs.found(mapper.lock(actor.tenantId(), id));
 					if (job.version() != input.expectedVersion())
 						throw new DomainException(DomainException.Code.CONFLICT, "重放任务版本已变化");
@@ -195,20 +217,25 @@ public class EventReplay {
 						throw new DomainException(DomainException.Code.CONFLICT, "重放任务并发修改");
 					audit.record(actor, "runtime.replay.control", key, "event.replay", id, "REPLAY_" + input.action(),
 							job.status(), target, null, input.reason(), RecoveryAudit.APPLIED, null);
+					access.audit(actor, permit, "runtime.replay.control", key, id);
 					return mapper.find(actor.tenantId(), id);
 				});
 	}
 
 	public List<ReplayMapper.Job> list(Actor actor, String after, int limit) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		var permit = readPermit(actor);
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		var result = mapper.list(actor.tenantId(), after, limit);
+		EmployeeAccess.requireSame(permit, readPermit(actor));
+		return result;
 	}
 
 	public ReplayMapper.Job find(Actor actor, String id) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		var permit = readPermit(actor);
 		Identifiers.require(id);
-		return Inputs.found(mapper.find(actor.tenantId(), id));
+		var result = Inputs.found(mapper.find(actor.tenantId(), id));
+		EmployeeAccess.requireSame(permit, readPermit(actor));
+		return result;
 	}
 
 	/** 后台车道：实时事件积压高时整轮让路；否则按租户轮转推进每个租户最早的运行中任务。 */
@@ -229,15 +256,20 @@ public class EventReplay {
 		int count = 0;
 		for (int i = 0, limit = run.limit(); i < limit && !run.exhausted(); i++) {
 			var attempted = new String[1];
-			run.attempted();
 			try {
-				Boolean more = tx.execute(s -> step(tenant, id, attempted));
+				var candidate = mapper.find(tenant, id);
+				if (candidate == null || !candidate.status().equals("RUNNING")) break;
+				var original = authorization.gate(tenant, candidate);
+				run.attempted();
+				Boolean more = tx.execute(s -> step(tenant, id, attempted, original));
 				count++;
 				run.succeeded();
 				if (!Boolean.TRUE.equals(more))
 					break;
 			}
 			catch (RuntimeException failure) {
+				// 撤权/到期不消耗消费者失败预算或推进游标；已提交效果保留，原来源不替换。
+				if (failure instanceof DomainException domain && domain.code() == DomainException.Code.FORBIDDEN) break;
 				var type = FailureClass.of(failure);
 				// 瞬时失败不跳过事件也不计入任务失败，结束本次访问；连续发生时由车道熔断。
 				if (type.transientFailure()) {
@@ -254,7 +286,8 @@ public class EventReplay {
 	}
 
 	/** 一项：锁任务行，复核状态与安全门，取游标后的下一条事件并按模式执行，最后推进游标；返回任务是否仍在运行。 */
-	private boolean step(String tenant, String id, String[] attempted) {
+	private boolean step(String tenant, String id, String[] attempted, ReplayAuthorization.Gate original) {
+		authorization.lock(original);
 		var job = mapper.lock(tenant, id);
 		if (job == null || !job.status().equals("RUNNING"))
 			return false;
@@ -296,6 +329,7 @@ public class EventReplay {
 				job.toAt(), job.maxEvents(), job.status(), next.createdAt(), next.eventId(), job.examined() + 1,
 				executed, already, job.failed(), job.lastError(), job.reason(), job.createdBy(), job.version(),
 				job.createdAt(), job.updatedAt());
+		authorization.fresh(original);
 		if (mapper.progress(tenant, advanced) != 1)
 			throw new DomainException(DomainException.Code.CONFLICT, "重放任务并发推进");
 		return true;
@@ -313,7 +347,10 @@ public class EventReplay {
 		log.warn("replay item failed job={} event={} failureClass={} errorType={}", id, eventId, type,
 				failure.getClass().getSimpleName());
 		try {
+			var candidate = Inputs.found(mapper.find(tenant, id));
+			var original = authorization.gate(tenant, candidate);
 			tx.executeWithoutResult(s -> {
+				authorization.lock(original);
 				var job = mapper.lock(tenant, id);
 				if (job == null || !job.status().equals("RUNNING"))
 					return;
@@ -340,6 +377,12 @@ public class EventReplay {
 						job.toAt(), job.maxEvents(), status, job.cursorCreatedAt(), job.cursorEventId(), job.examined(),
 						job.executed(), job.alreadyProcessed(), job.failed(), error, job.reason(), job.createdBy(),
 						job.version(), job.createdAt(), job.updatedAt()));
+	}
+
+	private EmployeeAccess.ScopePermit readPermit(Actor actor) {
+		var permit = access.scope(actor, RUNTIME_READ);
+		if (permit.identity() == null) actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		return permit;
 	}
 
 	private record Valid(String consumer, List<String> eventTypes, Instant from, Instant to, ReplayGate.Mode mode,
@@ -381,13 +424,15 @@ public class EventReplay {
 	}
 
 	public List<Classification> classifications(Actor actor) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
-		return handlers.values().stream().sorted(Comparator.comparing(EventHandler::consumer)).map(h -> {
+		var permit = readPermit(actor);
+		var result = handlers.values().stream().sorted(Comparator.comparing(EventHandler::consumer)).map(h -> {
 			var s = h.replaySafety();
 			return new Classification(h.consumer(), new TreeSet<>(h.types()), s == null ? Set.of() : s.effects(),
 					s == null ? null : s.evidence(), ReplayGate.check(h, ReplayGate.Mode.UNPROCESSED),
 					ReplayGate.check(h, ReplayGate.Mode.REPROCESS));
 		}).toList();
+		EmployeeAccess.requireSame(permit, readPermit(actor));
+		return result;
 	}
 
 }

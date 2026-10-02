@@ -28,6 +28,7 @@ import com.lrj.commerce.runtime.event.Outbox;
  */
 @SpringBootTest
 class EventFailureSemanticsTest {
+    @org.springframework.beans.factory.annotation.Autowired com.lrj.commerce.runtime.api.access.EmployeeAccess directEventAccess;
 
 	@DynamicPropertySource
 	static void database(DynamicPropertyRegistry registry) {
@@ -227,6 +228,7 @@ class EventFailureSemanticsTest {
 			}
 		};
 		var dispatcher = new EventDispatcher(mapper, List.of(other), transactions, commands, BUDGET, List.of(declared));
+        org.springframework.test.util.ReflectionTestUtils.setField(dispatcher, "access", directEventAccess);
 		assertEquals(1, dispatcher.health(prefix + "a").unrouted(), "未声明且无消费者：计入unrouted并告警");
 		String skipped = jdbc.queryForObject("SELECT event_id FROM platform_event WHERE event_type=?", String.class,
 				type + ".none");
@@ -268,7 +270,9 @@ class EventFailureSemanticsTest {
 	}
 
 	private EventDispatcher dispatcher(EventHandler... handlers) {
-		return new EventDispatcher(mapper, List.of(handlers), transactions, commands, BUDGET);
+		var dispatcher = new EventDispatcher(mapper, List.of(handlers), transactions, commands, BUDGET);
+        org.springframework.test.util.ReflectionTestUtils.setField(dispatcher, "access", directEventAccess);
+        return dispatcher;
 	}
 
 	private EventHandler handler(String name) {

@@ -12,6 +12,9 @@ public interface CatalogApi {
 	/** 当前门店规格总量和销售状态分布。 */
 	Stats stats(Actor actor, String store);
 
+    /** 内部仪表盘只统计已由中央 product.read 证明的商品/门店交集，不向 HTTP 开放过滤器。 */
+    Stats statsScoped(Actor actor, com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope, String store);
+
 	record Create(String skuId, String storeId, String title, String unitPrice) {
 	}
 

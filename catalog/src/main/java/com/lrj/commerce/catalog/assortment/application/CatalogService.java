@@ -37,6 +37,13 @@ public class CatalogService implements CatalogApi {
 		return mapper.stats(actor.tenantId(), store);
 	}
 
+    /** 规格使用实际 product_id 归属过滤；不把 SKU 或门店编号冒充商品资源。 */
+    public Stats statsScoped(Actor actor, com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope, String store) {
+        com.lrj.commerce.runtime.api.scope.ScopeQuery.validate(actor, scope, "", "", 1);
+        stores.requireActive(actor, store);
+        return mapper.statsScoped(actor.tenantId(), store, scope);
+    }
+
 	/** 初始发布快照不可变，重复命令返回原创建结果。 */
 	public View create(Actor actor, String key, Create input) {
 		actor.requireAdmin();

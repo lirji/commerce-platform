@@ -24,6 +24,7 @@ import com.lrj.commerce.runtime.api.identity.Actor;
  */
 @SpringBootTest
 class EventSchedulingFairnessTest {
+    @org.springframework.beans.factory.annotation.Autowired com.lrj.commerce.runtime.api.access.EmployeeAccess directEventAccess;
 
 	@DynamicPropertySource
 	static void database(DynamicPropertyRegistry registry) {
@@ -226,7 +227,9 @@ class EventSchedulingFairnessTest {
 	}
 
 	private EventDispatcher dispatcher(EventHandler... handlers) {
-		return new EventDispatcher(mapper, List.of(handlers), transactions, commands, BUDGET);
+		var dispatcher = new EventDispatcher(mapper, List.of(handlers), transactions, commands, BUDGET);
+        org.springframework.test.util.ReflectionTestUtils.setField(dispatcher, "access", directEventAccess);
+        return dispatcher;
 	}
 
 	private EventHandler handler(String name) {

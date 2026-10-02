@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.LongAdder;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.event.UnconsumedEventType;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.recovery.RecoveryAudit;
@@ -53,6 +55,9 @@ public class EventDispatcher {
 			long maxLatencyMillis, Instant lastTickAt, Instant lastDeliveredAt, long transientFailures,
 			long breakerTrips, boolean breakerOpen) {
 	}
+
+	/** 员工触发与系统既有事件责任独立，系统 tick 不复制员工授权。 */
+	@Autowired private EmployeeAccess access;
 
 	private final EventMapper mapper;
 
@@ -150,11 +155,16 @@ public class EventDispatcher {
 
 	/** 管理员只可触发自己租户的持久事件。 */
 	public int pump(Actor actor) {
-		actor.requireAdmin();
-		return pumpTenant(actor.tenantId(), rotation.manual());
+		access.scope(actor, EVENT_PUMP);
+		return pumpTenant(actor.tenantId(), rotation.manual(), actor, UUID.randomUUID().toString());
 	}
 
 	private int pumpTenant(String tenant, TenantRotation.Run run) {
+		return pumpTenant(tenant, run, null, null);
+	}
+
+	/** 每消费者短事务保留原隔离语义；手工触发每次准入单独实时重验，故障不消耗事件毒失败预算。 */
+	private int pumpTenant(String tenant, TenantRotation.Run run, Actor actor, String invocation) {
 		if (types.isEmpty())
 			return 0;
 		int count = 0;
@@ -168,9 +178,11 @@ public class EventDispatcher {
 			for (int i = 0; i < consumers.size(); i++) {
 				var h = consumers.get(i);
 				boolean finish = failures.length() == 0 && i == consumers.size() - 1;
+				var permit = actor == null ? null : access.scope(actor, EVENT_PUMP);
+				String key = actor == null ? null : com.lrj.commerce.runtime.serialization.JsonCodec.hash(invocation + "/" + candidate.eventId() + "/" + h.consumer());
 				try {
 					// 每个消费者重新领取事件行锁；已有Inbox的消费者在重试时跳过，不重复产生效果。
-					Boolean locked = tx.execute(status -> {
+					java.util.function.Supplier<Boolean> consume = () -> {
 						var event = mapper.lock(tenant, candidate.eventId());
 						if (event == null)
 							return false;
@@ -180,7 +192,15 @@ public class EventDispatcher {
 						if (finish && mapper.delivered(event.eventId()) != 1)
 							throw new IllegalStateException("事件投递版本冲突");
 						return true;
-					});
+					};
+					Boolean locked = actor == null ? tx.execute(status -> consume.get())
+							: commands.runGuarded(actor, "event.pump", key,
+									Arrays.asList(candidate.eventId(), h.consumer(), permit.identity()), Boolean.class,
+									() -> access.lock(permit), () -> {
+										var result = consume.get();
+										if (Boolean.TRUE.equals(result)) access.audit(actor, permit, "event.pump", key, candidate.eventId());
+										return result;
+									});
 					if (!Boolean.TRUE.equals(locked)) {
 						claimed = false;
 						break;
@@ -188,6 +208,8 @@ public class EventDispatcher {
 					done = finish;
 				}
 				catch (RuntimeException error) {
+					if (actor != null && error instanceof DomainException domain
+							&& (domain.code() == DomainException.Code.FORBIDDEN || domain.code() == DomainException.Code.UNAVAILABLE)) throw error;
 					// 只回滚该消费者事务，其他消费者继续；只保留消费者与异常类型，不保存异常文本避免载荷泄漏。
 					var type = FailureClass.of(error);
 					failure = failure == null || failure.transientFailure() && !type.transientFailure() ? type
@@ -252,9 +274,11 @@ public class EventDispatcher {
 
 	/** 运维查询只返回元信息与失败证据，不返回业务载荷或异常内容。 */
 	public List<EventMapper.EventView> list(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, EVENT_READ);
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		var result = mapper.list(actor.tenantId(), after, limit);
+		EmployeeAccess.requireSame(permit, access.scope(actor, EVENT_READ));
+		return result;
 	}
 
 	/**
@@ -262,10 +286,11 @@ public class EventDispatcher {
 	 * 重放只执行尚无Inbox的消费者。当前没有消费者的类型不能重放，否则只会变成永远无人处理的PENDING。
 	 */
 	public int retry(Actor actor, String key, String id) {
-		actor.requireAdmin();
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);
+		var permit = access.scope(actor, EVENT_RETRY);
+		if (permit.identity() == null) actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);
 		Identifiers.require(id);
-		return commands.run(actor, "event.retry", key, id, Integer.class, () -> {
+		Object command = permit.identity() == null ? id : List.of(id, permit.identity());
+		return commands.runGuarded(actor, "event.retry", key, command, Integer.class, () -> access.lock(permit), () -> {
 			var before = mapper.lockView(actor.tenantId(), id);
 			var event = mapper.find(actor.tenantId(), id);
 			if (event != null && !types.contains(event.eventType()))
@@ -275,6 +300,7 @@ public class EventDispatcher {
 			if (audit != null)
 				audit.record(actor, "event.retry", key, EventRecovery.WORK_TYPE, id, "RETRY", before.status(),
 						"PENDING", before.failureClass(), null, RecoveryAudit.APPLIED, null);
+			access.audit(actor, permit, "event.retry", key, id);
 			return 1;
 		});
 	}
@@ -286,8 +312,10 @@ public class EventDispatcher {
 
 	/** 本租户积压诊断：只统计有消费者的事件类型，不含载荷；租户标识不进入指标标签。 */
 	public EventMapper.Health health(Actor actor) {
-		actor.requireAdmin();
-		return health(actor.tenantId());
+		var permit = access.scope(actor, EVENT_READ);
+		var result = health(actor.tenantId());
+		EmployeeAccess.requireSame(permit, access.scope(actor, EVENT_READ));
+		return result;
 	}
 
 	/** 全局积压健康，tenant为空表示全部租户；无消费者且未声明的类型单独计为unrouted，不计入积压与最老年龄。 */

@@ -31,6 +31,7 @@ import com.lrj.commerce.payment.charge.application.PaymentService;
 /** 真实MySQL与HTTP验证，不用Mock证明事务或身份隔离。 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class PersistedCommerceTest {
+    @org.springframework.beans.factory.annotation.Autowired com.lrj.commerce.runtime.api.access.EmployeeAccess directEventAccess;
 
 	@DynamicPropertySource
 	static void database(DynamicPropertyRegistry registry) {
@@ -779,6 +780,7 @@ class PersistedCommerceTest {
 			}
 		};
 		var dispatcher = new EventDispatcher(eventMapper, List.of(failing), transactions, commands);
+        org.springframework.test.util.ReflectionTestUtils.setField(dispatcher, "access", directEventAccess);
 		assertEquals(0, dispatcher.pump(new Actor(tenant, "admin", Actor.Role.ADMIN)));
 		assertEquals("PAYMENT_IN_PROGRESS", readOrder(order).path("status").asString());
 		assertEquals(1, stockValue("held"));

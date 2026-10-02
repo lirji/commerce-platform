@@ -44,6 +44,14 @@ public class CouponService implements CouponApi {
 
 	/** 定义版本创建后不可修改，配额在领取事务中扣减。 */
 	public DefinitionView create(Actor actor, String key, Definition input) {
+		return prepareDefinition(actor, key, input).execute();
+	}
+
+	/** 组合页面不得在持有页面/业务锁时远程判权；冻结深层输入与真实门店版本。 */
+	public PreparedCreation prepareDefinition(Actor actor, String key, Definition requested) {
+		Inputs.require(requested != null, "请求不能为空");
+		final var input = com.lrj.commerce.runtime.serialization.JsonCodec.read(
+				com.lrj.commerce.runtime.serialization.JsonCodec.write(requested), Definition.class);
 		var permit = access.scope(actor, COUPON_DEFINITION_CREATE);
 		Inputs.require(input != null && input.version() > 0 && input.quota() > 0 && input.quota() <= 1000000
 				&& input.validFrom() != null && input.validTo() != null && input.validFrom().isBefore(input.validTo()),
@@ -60,8 +68,10 @@ public class CouponService implements CouponApi {
 		Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO) > 0, "券金额必须大于零");
 		// 保留旧模式原始输入摘要；中央主体代际稳定绑定，临时执行引用不影响原键重试。
 		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
-		return commands.runGuarded(actor, "coupon.definition", key, command, DefinitionView.class, () -> access.lock(permit), () -> {
-			stores.requireActive(actor, input.storeId());
+		var preparedStore = stores.requireActive(actor, input.storeId());
+		return () -> commands.runGuarded(actor, "coupon.definition", key, command, DefinitionView.class,
+				() -> { stores.lockCurrent(actor, preparedStore); access.lock(permit); }, () -> {
+
 			mapper.definition(actor.tenantId(), input);
 			access.audit(actor, permit, "coupon.definition", key, input.definitionId());
 			return definition(mapper.definitionFind(actor.tenantId(), input.definitionId(), input.version()));

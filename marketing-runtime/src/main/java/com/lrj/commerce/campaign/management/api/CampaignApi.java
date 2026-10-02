@@ -57,6 +57,10 @@ public interface CampaignApi {
 
 	View create(Actor actor, String key, Draft input);
 
+	/** 内部组合用例只执行已冻结输入与真实事实，准备阶段必须在事务外。 */
+	@FunctionalInterface interface PreparedCreation { View execute(); }
+	PreparedCreation prepareCreate(Actor actor, String key, Draft input);
+
 	View publish(Actor actor, String key, String id, long version, long expectedVersion);
 
 	View pause(Actor actor, String key, String id, long version, long expectedVersion);

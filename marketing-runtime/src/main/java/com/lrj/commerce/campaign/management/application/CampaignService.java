@@ -77,6 +77,14 @@ public class CampaignService implements CampaignApi {
 
 	/** 草稿内容不可变，修改必须创建新版本。 */
 	public View create(Actor actor, String key, Draft input) {
+		return prepareCreate(actor, key, input).execute();
+	}
+
+	/** 组合页面不得在持有页面/业务锁时远程判权；冻结深层输入与真实门店版本。 */
+	public PreparedCreation prepareCreate(Actor actor, String key, Draft requested) {
+		Inputs.require(requested != null, "请求不能为空");
+		final var input = com.lrj.commerce.runtime.serialization.JsonCodec.read(
+				com.lrj.commerce.runtime.serialization.JsonCodec.write(requested), Draft.class);
 		var permit = access.scope(actor, CAMPAIGN_CREATE);
 		Inputs.require(input != null, "请求不能为空");
 		Identifiers.require(input.campaignId());
@@ -106,8 +114,10 @@ public class CampaignService implements CampaignApi {
 		Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO) > 0, "优惠必须大于零");
 		// 旧模式保留原摘要；中央只加入稳定主体，执行nonce不参与重试意图。
 		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
-		return commands.runGuarded(actor, "campaign.create", key, command, View.class, () -> access.lock(permit), () -> {
-			var store = stores.requireActive(actor, input.storeId());
+		var preparedStore = stores.requireActive(actor, input.storeId());
+		return () -> commands.runGuarded(actor, "campaign.create", key, command, View.class,
+				() -> { stores.lockCurrent(actor, preparedStore); access.lock(permit); }, () -> {
+			var store = preparedStore;
 			RuleNode rule = input.rule();
 			if (input.policy() != null) {
 				if (input.policy().rule() != null)

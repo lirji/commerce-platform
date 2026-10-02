@@ -27,4 +27,7 @@
   <!-- 只计有消费者的类型：无消费者的遗留PENDING由EVENT_NO_REQUIRED_CONSUMER告警处理，不应永久阻塞重放。 -->
   <select id="liveDue" resultType="int">SELECT COUNT(*) FROM (SELECT 1 FROM platform_event FORCE INDEX(ix_event_delivery) WHERE status='PENDING' AND available_at&lt;=CURRENT_TIMESTAMP(3) AND <include refid="types"/> LIMIT #{cap}) d</select>
   <select id="backlog" resultType="com.lrj.commerce.runtime.replay.persistence.ReplayMapper$Backlog">SELECT COALESCE(SUM(status='RUNNING'),0) running,MIN(IF(status='RUNNING',created_at,NULL)) oldest_running,COALESCE(SUM(status='FAILED'),0) failed FROM platform_replay WHERE status IN ('RUNNING','FAILED')</select>
+  <insert id="insertSource">INSERT INTO employee_runtime_replay_source(tenant_id,job_id,source_json) VALUES(#{tenant},#{id},#{json})</insert>
+  <select id="source" resultType="string">SELECT source_json FROM employee_runtime_replay_source WHERE tenant_id=#{tenant} AND job_id=#{id}</select>
+  <select id="sourceLock" resultType="string">SELECT source_json FROM employee_runtime_replay_source WHERE tenant_id=#{tenant} AND job_id=#{id} FOR UPDATE</select>
 </mapper>
