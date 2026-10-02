@@ -69,6 +69,7 @@ public interface EmployeeAccess {
         COUPON_DELIVERY_READ("commerce.coupon_delivery.read", "COUPON_DELIVERY", "coupon_delivery"),
         COUPON_DELIVERY_CONTROL("commerce.coupon_delivery.control", "COUPON_DELIVERY", "coupon_delivery"),
         COUPON_DELIVERY_PUMP("commerce.coupon_delivery.pump", "COUPON_DELIVERY", "coupon_delivery"),
+        DASHBOARD_READ("commerce.dashboard.read", "DASHBOARD", "commerce_tenant"),
         JOURNEY_CREATE("commerce.journey.create", "JOURNEY", "journey"),
         JOURNEY_VALIDATE("commerce.journey.validate", "JOURNEY", "journey"),
         JOURNEY_PREVIEW("commerce.journey.preview", "JOURNEY", "journey"),

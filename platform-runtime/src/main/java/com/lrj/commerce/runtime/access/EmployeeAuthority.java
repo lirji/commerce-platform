@@ -138,7 +138,7 @@ public class EmployeeAuthority implements EmployeeAccess {
     }
     /** 新接管租户资源仍完整租户；门店仅为业务查询条件。 */
     private static boolean newTenantCapability(Capability cap) {
-        return java.util.Set.of("JOURNEY", "MARKETING_REPORT", "OPS_PAGE", "EVENT", "RUNTIME").contains(cap.family());
+        return java.util.Set.of("JOURNEY", "MARKETING_REPORT", "OPS_PAGE", "EVENT", "RUNTIME", "DASHBOARD").contains(cap.family());
     }
     private static boolean newStoreCapability(Capability cap) {
         return java.util.Set.of("ORDER", "PAYMENT", "FULFILLMENT", "AFTERSALE", "REFUND").contains(cap.family());
