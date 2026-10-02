@@ -16,7 +16,7 @@
 
 ## 未完成
 
-- S1正常Git任务分支提交、合并推main及精确CI；正式本地Validation已PASS。任务分支Auth feat/commerce-segment-owner-rehearsal（基线290ce1b）、Commerce feat/central-segment-operations（基线d0d6296）复用。
+- S1产品Git/精确CI成功；当前纯metadata收尾。正式本地Validation已PASS。任务分支Auth feat/commerce-segment-owner-rehearsal（基线290ce1b）、Commerce feat/central-segment-operations（基线d0d6296）复用。
 - S2完整动态人群页：已真实DTO/交互技术细化、未改UI，须等待S1 Git/CI。
 - 全部剩余CE05发券/旅程/效果、CE06/07/08和Auth实际菜单/资源展示与选择，122候选能力/34岗位未批量发布。
 
@@ -28,12 +28,16 @@
 
 ## 下一步建议
 
-1. 复核最终指纹/显式Git范围，正常提交、任务分支及main推送，核验精确CI；不无理由重复504全仓或已终态真实演练。
+1. 两精确产品CI已SUCCESS，完成纯metadata收尾后继续S2；不无理由重复504全仓或已终态真实演练。
 2. S1 GitCI完成后串行S2及所有剩余切片，保持完整目标。
 
 ## 恢复 Prompt
 
-读取本节与Auth CONTRACTS_COMMERCE_SEGMENTS/CE05_SEGMENTS及私密segments-owner-test-result.json。最终37270/89f465b97213已exit0、784检查点（129segment）PASS、21实际正版本审计一致，13产品/3harness源及JAR一致，V65已应用不可改。当前下一Git/精确CI；之后S2和全部剩余CE05—08/Auth资源目标，不重复已终态演练、不新Agent/工作树、不清理数据，不要求反复继续。
+读取本节与Auth CONTRACTS_COMMERCE_SEGMENTS/CE05_SEGMENTS及私密segments-owner-test-result.json。最终37270/89f465b97213已exit0、784检查点（129segment）PASS、21实际正版本审计一致，13产品/3harness源及JAR一致，V65已应用不可改。当前两精确CI已SUCCESS，下一纯metadata收尾及S2；之后S2和全部剩余CE05—08/Auth资源目标，不重复已终态演练、不新Agent/工作树、不清理数据，不要求反复继续。
+
+## S1当前Git与CI
+
+S1完整产品Git/CI DONE：Auth e7c54e45409510e2bdad619c737c59f5deadd805/CI36973121732、Commerce de93c5264cd82f44afb35fdd050190b7df924bf2/CI36973103953均completed/SUCCESS，head精确核对；两个产品已正常提交、任务分支推送、ff合并推main。最终37270/89f465b97213 exit0/784PASS及21真实正版本审计、13源码/JAR与3演练源码保持。本轮收尾仅交付状态元数据，不把纯文档提交当新产品CI。S2已满足产品依赖门禁，完整S2及其余CE05—08/Auth菜单资源目标active；V65不可改，原数据/失败/恢复证据保留，无新工作树/Agent。
 
 ## 先前记录（以上方S1为当前状态）
 
