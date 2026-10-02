@@ -26,6 +26,9 @@ public interface EmployeeAuthorityMapper {
     int rememberCouponDeliveryExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor,
                                        @Param("capability") String capability, @Param("json") String json);
     String couponDeliveryExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("capability") String capability);
+    /** 原有限来源一次持久化，供不同进程读取；没有可替换更新入口。 */
+    int rememberExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("capability") String capability, @Param("json") String json);
+    String execution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("capability") String capability);
     Route find(@Param("tenant") String tenant, @Param("family") String family);
     Route lock(@Param("tenant") String tenant, @Param("family") String family);
     Route central(@Param("authTenant") String authTenant, @Param("family") String family);
