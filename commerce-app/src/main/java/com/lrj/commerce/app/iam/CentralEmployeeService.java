@@ -29,7 +29,8 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
         if (route == null) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
         boolean couponSource = durableRequest && (capability == EmployeeAccess.Capability.COUPON_DELIVERY_CREATE
                 || capability == EmployeeAccess.Capability.COUPON_DELIVERY_CONTROL);
-        long seconds = capability == EmployeeAccess.Capability.SEGMENT_REFRESH ? EmployeeAccess.SEGMENT_REFRESH_REFERENCE_SECONDS
+        boolean finiteSource = durableRequest && java.util.Set.of(EmployeeAccess.Capability.JOURNEY_INSTANCE_CREATE,EmployeeAccess.Capability.RUNTIME_REPLAY_CREATE).contains(capability);
+        long seconds = finiteSource ? capability.referenceSeconds() : capability == EmployeeAccess.Capability.SEGMENT_REFRESH ? EmployeeAccess.SEGMENT_REFRESH_REFERENCE_SECONDS
                 : couponSource ? EmployeeAccess.COUPON_DELIVERY_REFERENCE_SECONDS : 60;
         var ref = client.issueExecution(token, check(tenant, capability), Instant.now().plusSeconds(seconds).truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
         var c = ref.context();
@@ -54,6 +55,15 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
                     Instant.parse(ref.expiresAt())));
             } catch (DomainException failure) {
                 if (failure.code() == DomainException.Code.FORBIDDEN) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
+                throw new CentralAccessException(503);
+            }
+        }
+        if (finiteSource) {
+            try { access.rememberExecution(result, capability, new EmployeeAccess.FiniteExecution(
+                    new EmployeeAccess.Identity(c.principalId(),c.membershipId(),c.membershipGeneration()),route,
+                    c.applicationId(),c.environment(),c.callerServiceId(),c.membershipVersion(),c.principalVersion(),Instant.parse(ref.expiresAt())));
+            } catch(DomainException failure) {
+                if(failure.code()==DomainException.Code.FORBIDDEN)throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
                 throw new CentralAccessException(503);
             }
         }

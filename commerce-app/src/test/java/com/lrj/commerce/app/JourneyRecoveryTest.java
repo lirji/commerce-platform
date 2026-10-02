@@ -92,7 +92,7 @@ class JourneyRecoveryTest {
 				bean(com.lrj.commerce.aftersales.api.AftersaleApi.class), bean(com.lrj.commerce.marketing.api.RuleDecisionPort.class),
 				Clock.systemUTC(), manager, bean(com.lrj.commerce.member.growth.api.MemberGrowthApi.class),
 				bean(com.lrj.commerce.campaign.asset.api.MarketingAssets.class), bean(com.lrj.commerce.member.behavior.api.MemberBehaviorApi.class),
-				bean(com.lrj.commerce.benefit.coupon.api.CouponApi.class), new WorkLanes());
+				bean(com.lrj.commerce.benefit.coupon.api.CouponApi.class), new WorkLanes(), bean(com.lrj.commerce.journey.application.JourneyAuthorization.class));
 	}
 
 	private <T> T bean(Class<T> type) {

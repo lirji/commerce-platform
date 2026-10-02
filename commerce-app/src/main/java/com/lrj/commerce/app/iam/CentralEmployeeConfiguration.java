@@ -36,6 +36,8 @@ public class CentralEmployeeConfiguration {
     }
     private static EmployeeAccess.Capability capability(HttpServletRequest r) {
         String path = r.getRequestURI().substring(r.getContextPath().length());
+        var extension = extensionCapability(r);
+        if (extension != null) return extension;
         if ("GET".equals(r.getMethod()) && ("/v1/admin/inventory".equals(path) || "/v1/operations/inventory/actions".equals(path))) return EmployeeAccess.Capability.INVENTORY_READ;
         if ("POST".equals(r.getMethod()) && "/v1/admin/inventory/receipts".equals(path)) return EmployeeAccess.Capability.INVENTORY_RECEIVE;
         if ("/v1/admin/merchants".equals(path)) {
@@ -212,9 +214,125 @@ public class CentralEmployeeConfiguration {
         }
         return null;
     }
+    /** 新能力按真实封闭路由登记，静态hint不授予目标事实或持久任务来源。 */
+    private static EmployeeAccess.Capability extensionCapability(HttpServletRequest r) {
+        String path=r.getServletPath(), verb=r.getMethod();
+        if ("GET".equals(verb) && "/v1/admin/fulfillments".equals(path)) return EmployeeAccess.Capability.FULFILLMENT_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/fulfillments/[A-Za-z0-9_.:-]{1,64}/ship")) return EmployeeAccess.Capability.FULFILLMENT_SHIP;
+        if ("POST".equals(verb) && path.matches("/v1/admin/fulfillments/[A-Za-z0-9_.:-]{1,64}/deliver")) return EmployeeAccess.Capability.FULFILLMENT_DELIVER;
+        if ("GET".equals(verb) && "/v1/admin/aftersales".equals(path)) return EmployeeAccess.Capability.AFTERSALE_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/aftersales/[A-Za-z0-9_.:-]{1,64}/approve")) return EmployeeAccess.Capability.AFTERSALE_APPROVE;
+        if ("POST".equals(verb) && path.matches("/v1/admin/aftersales/[A-Za-z0-9_.:-]{1,64}/reject")) return EmployeeAccess.Capability.AFTERSALE_REJECT;
+        if ("POST".equals(verb) && path.matches("/v1/admin/aftersales/[A-Za-z0-9_.:-]{1,64}/receive-return")) return EmployeeAccess.Capability.AFTERSALE_RECEIVE_RETURN;
+        if ("GET".equals(verb) && "/v1/admin/refunds".equals(path)) return EmployeeAccess.Capability.REFUND_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/refunds/[A-Za-z0-9_.:-]{1,64}/reconcile")) return EmployeeAccess.Capability.REFUND_RECONCILE;
+        if ("GET".equals(verb) && "/v1/admin/marketing-executions".equals(path)) return EmployeeAccess.Capability.MARKETING_EXECUTION_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/marketing-executions/[A-Za-z0-9_.:-]{1,64}/[A-Za-z0-9_.:-]{1,64}")) return EmployeeAccess.Capability.MARKETING_EXECUTION_READ;
+        if ("GET".equals(verb) && "/v1/admin/marketing-effects".equals(path)) return EmployeeAccess.Capability.MARKETING_EFFECT_READ;
+        if ("GET".equals(verb) && "/v1/admin/marketing-effects/journeys".equals(path)) return EmployeeAccess.Capability.MARKETING_EFFECT_READ;
+        if ("GET".equals(verb) && "/v1/admin/marketing-effects/deliveries".equals(path)) return EmployeeAccess.Capability.MARKETING_EFFECT_READ;
+        if ("POST".equals(verb) && "/v1/admin/marketing-effects/rebuild".equals(path)) return EmployeeAccess.Capability.MARKETING_EFFECT_REBUILD;
+        if ("GET".equals(verb) && "/v1/admin/journey-effects".equals(path)) return EmployeeAccess.Capability.MARKETING_EFFECT_READ;
+        if ("POST".equals(verb) && "/v1/admin/journeys".equals(path)) return EmployeeAccess.Capability.JOURNEY_CREATE;
+        if ("GET".equals(verb) && "/v1/admin/journeys".equals(path)) return EmployeeAccess.Capability.JOURNEY_READ;
+        if ("POST".equals(verb) && "/v1/admin/journeys/validate".equals(path)) return EmployeeAccess.Capability.JOURNEY_VALIDATE;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journeys/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/preview")) return EmployeeAccess.Capability.JOURNEY_PREVIEW;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journeys/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/approve")) return EmployeeAccess.Capability.JOURNEY_APPROVE;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journeys/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/pause")) return EmployeeAccess.Capability.JOURNEY_PAUSE;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journeys/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/publish")) return EmployeeAccess.Capability.JOURNEY_PUBLISH;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journeys/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/reject")) return EmployeeAccess.Capability.JOURNEY_REJECT;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journeys/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/submit")) return EmployeeAccess.Capability.JOURNEY_SUBMIT;
+        if ("POST".equals(verb) && "/v1/admin/journey-instances".equals(path)) return EmployeeAccess.Capability.JOURNEY_INSTANCE_CREATE;
+        if ("GET".equals(verb) && "/v1/admin/journey-instances".equals(path)) return EmployeeAccess.Capability.JOURNEY_INSTANCE_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/journey-instances/[A-Za-z0-9_.:-]{1,64}/history")) return EmployeeAccess.Capability.JOURNEY_INSTANCE_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journey-instances/[A-Za-z0-9_.:-]{1,64}/(cancel|retry)")) return EmployeeAccess.Capability.JOURNEY_INSTANCE_CONTROL;
+        if ("POST".equals(verb) && "/v1/admin/journeys/pump".equals(path)) return EmployeeAccess.Capability.JOURNEY_PUMP;
+        if ("GET".equals(verb) && "/v1/admin/journey-scans".equals(path)) return EmployeeAccess.Capability.JOURNEY_SCAN_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/journey-scans/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/retry")) return EmployeeAccess.Capability.JOURNEY_SCAN_RETRY;
+        if ("GET".equals(verb) && "/v1/admin/orders".equals(path)) return EmployeeAccess.Capability.ORDER_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/orders/[A-Za-z0-9_.:-]{1,64}")) return EmployeeAccess.Capability.ORDER_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/orders/[A-Za-z0-9_.:-]{1,64}/payment")) return EmployeeAccess.Capability.PAYMENT_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/orders/[A-Za-z0-9_.:-]{1,64}/payment/reconcile")) return EmployeeAccess.Capability.PAYMENT_RECONCILE;
+        if ("POST".equals(verb) && "/v1/admin/ops-pages".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_CREATE;
+        if ("GET".equals(verb) && "/v1/admin/ops-pages".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_READ;
+        if ("POST".equals(verb) && "/v1/admin/ops-pages/preview".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_PREVIEW;
+        if ("GET".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/render")) return EmployeeAccess.Capability.OPS_PAGE_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/versions")) return EmployeeAccess.Capability.OPS_PAGE_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/approve")) return EmployeeAccess.Capability.OPS_PAGE_APPROVE;
+        if ("POST".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/pause")) return EmployeeAccess.Capability.OPS_PAGE_PAUSE;
+        if ("POST".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/publish")) return EmployeeAccess.Capability.OPS_PAGE_PUBLISH;
+        if ("POST".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/reject")) return EmployeeAccess.Capability.OPS_PAGE_REJECT;
+        if ("POST".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/rollback")) return EmployeeAccess.Capability.OPS_PAGE_ROLLBACK;
+        if ("POST".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/submit")) return EmployeeAccess.Capability.OPS_PAGE_SUBMIT;
+        if ("POST".equals(verb) && path.matches("/v1/admin/ops-pages/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/actions/[A-Za-z0-9_.:-]{1,64}")) return EmployeeAccess.Capability.OPS_PAGE_EXECUTE;
+        if ("POST".equals(verb) && "/v1/admin/orders/expire".equals(path)) return EmployeeAccess.Capability.ORDER_EXPIRE;
+        if ("POST".equals(verb) && path.matches("/v1/admin/orders/[A-Za-z0-9_.:-]{1,64}/expiry/retry")) return EmployeeAccess.Capability.ORDER_EXPIRY_RETRY;
+        if ("POST".equals(verb) && "/v1/admin/events/pump".equals(path)) return EmployeeAccess.Capability.EVENT_PUMP;
+        if ("GET".equals(verb) && "/v1/admin/events".equals(path)) return EmployeeAccess.Capability.EVENT_READ;
+        if ("GET".equals(verb) && "/v1/admin/events/health".equals(path)) return EmployeeAccess.Capability.EVENT_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/events/[A-Za-z0-9_.:-]{1,64}/retry")) return EmployeeAccess.Capability.EVENT_RETRY;
+        if ("GET".equals(verb) && "/v1/admin/runtime/work-types".equals(path)) return EmployeeAccess.Capability.RUNTIME_READ;
+        if ("GET".equals(verb) && "/v1/admin/runtime/stopped".equals(path)) return EmployeeAccess.Capability.RUNTIME_READ;
+        if ("POST".equals(verb) && "/v1/admin/runtime/recoveries".equals(path)) return EmployeeAccess.Capability.RUNTIME_RECOVER;
+        if ("GET".equals(verb) && "/v1/admin/runtime/recoveries".equals(path)) return EmployeeAccess.Capability.RUNTIME_READ;
+        if ("GET".equals(verb) && "/v1/admin/runtime/replay/classifications".equals(path)) return EmployeeAccess.Capability.RUNTIME_READ;
+        if ("POST".equals(verb) && "/v1/admin/runtime/replay/dry-run".equals(path)) return EmployeeAccess.Capability.RUNTIME_REPLAY_PREVIEW;
+        if ("POST".equals(verb) && "/v1/admin/runtime/replays".equals(path)) return EmployeeAccess.Capability.RUNTIME_REPLAY_CREATE;
+        if ("GET".equals(verb) && "/v1/admin/runtime/replays".equals(path)) return EmployeeAccess.Capability.RUNTIME_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/runtime/replays/[A-Za-z0-9_.:-]{1,64}")) return EmployeeAccess.Capability.RUNTIME_READ;
+        if ("POST".equals(verb) && path.matches("/v1/admin/runtime/replays/[A-Za-z0-9_.:-]{1,64}/control")) return EmployeeAccess.Capability.RUNTIME_REPLAY_CONTROL;
+        if ("GET".equals(verb) && "/v1/admin/dashboard".equals(path)) return EmployeeAccess.Capability.DASHBOARD_READ;
+        if ("GET".equals(verb) && "/v1/operations/dashboard/read-access".equals(path)) return EmployeeAccess.Capability.DASHBOARD_READ;
+        if ("GET".equals(verb) && "/v1/operations/orders/read-access".equals(path)) return EmployeeAccess.Capability.ORDER_READ;
+        if ("GET".equals(verb) && "/v1/operations/orders/expire-access".equals(path)) return EmployeeAccess.Capability.ORDER_EXPIRE;
+        if ("GET".equals(verb) && "/v1/operations/orders/expiry-retry-access".equals(path)) return EmployeeAccess.Capability.ORDER_EXPIRY_RETRY;
+        if ("GET".equals(verb) && "/v1/operations/payments/read-access".equals(path)) return EmployeeAccess.Capability.PAYMENT_READ;
+        if ("GET".equals(verb) && "/v1/operations/payments/reconcile-access".equals(path)) return EmployeeAccess.Capability.PAYMENT_RECONCILE;
+        if ("GET".equals(verb) && "/v1/operations/fulfillments/read-access".equals(path)) return EmployeeAccess.Capability.FULFILLMENT_READ;
+        if ("GET".equals(verb) && "/v1/operations/fulfillments/ship-access".equals(path)) return EmployeeAccess.Capability.FULFILLMENT_SHIP;
+        if ("GET".equals(verb) && "/v1/operations/fulfillments/deliver-access".equals(path)) return EmployeeAccess.Capability.FULFILLMENT_DELIVER;
+        if ("GET".equals(verb) && "/v1/operations/aftersales/read-access".equals(path)) return EmployeeAccess.Capability.AFTERSALE_READ;
+        if ("GET".equals(verb) && "/v1/operations/aftersales/approve-access".equals(path)) return EmployeeAccess.Capability.AFTERSALE_APPROVE;
+        if ("GET".equals(verb) && "/v1/operations/aftersales/reject-access".equals(path)) return EmployeeAccess.Capability.AFTERSALE_REJECT;
+        if ("GET".equals(verb) && "/v1/operations/aftersales/receive-return-access".equals(path)) return EmployeeAccess.Capability.AFTERSALE_RECEIVE_RETURN;
+        if ("GET".equals(verb) && "/v1/operations/refunds/read-access".equals(path)) return EmployeeAccess.Capability.REFUND_READ;
+        if ("GET".equals(verb) && "/v1/operations/refunds/reconcile-access".equals(path)) return EmployeeAccess.Capability.REFUND_RECONCILE;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/read-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_READ;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/create-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_CREATE;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/preview-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_PREVIEW;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/submit-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_SUBMIT;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/approve-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_APPROVE;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/reject-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_REJECT;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/publish-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_PUBLISH;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/pause-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_PAUSE;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/rollback-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_ROLLBACK;
+        if ("GET".equals(verb) && "/v1/operations/ops-pages/execute-access".equals(path)) return EmployeeAccess.Capability.OPS_PAGE_EXECUTE;
+        if ("GET".equals(verb) && "/v1/operations/events/read-access".equals(path)) return EmployeeAccess.Capability.EVENT_READ;
+        if ("GET".equals(verb) && "/v1/operations/events/pump-access".equals(path)) return EmployeeAccess.Capability.EVENT_PUMP;
+        if ("GET".equals(verb) && "/v1/operations/events/retry-access".equals(path)) return EmployeeAccess.Capability.EVENT_RETRY;
+        if ("GET".equals(verb) && "/v1/operations/runtime/read-access".equals(path)) return EmployeeAccess.Capability.RUNTIME_READ;
+        if ("GET".equals(verb) && "/v1/operations/runtime/recover-access".equals(path)) return EmployeeAccess.Capability.RUNTIME_RECOVER;
+        if ("GET".equals(verb) && "/v1/operations/runtime/replay-preview-access".equals(path)) return EmployeeAccess.Capability.RUNTIME_REPLAY_PREVIEW;
+        if ("GET".equals(verb) && "/v1/operations/runtime/replay-create-access".equals(path)) return EmployeeAccess.Capability.RUNTIME_REPLAY_CREATE;
+        if ("GET".equals(verb) && "/v1/operations/runtime/replay-control-access".equals(path)) return EmployeeAccess.Capability.RUNTIME_REPLAY_CONTROL;
+        if ("GET".equals(verb) && "/v1/operations/journeys/create-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_CREATE;
+        if ("GET".equals(verb) && "/v1/operations/journeys/validate-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_VALIDATE;
+        if ("GET".equals(verb) && "/v1/operations/journeys/preview-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_PREVIEW;
+        if ("GET".equals(verb) && "/v1/operations/journeys/submit-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_SUBMIT;
+        if ("GET".equals(verb) && "/v1/operations/journeys/approve-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_APPROVE;
+        if ("GET".equals(verb) && "/v1/operations/journeys/reject-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_REJECT;
+        if ("GET".equals(verb) && "/v1/operations/journeys/publish-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_PUBLISH;
+        if ("GET".equals(verb) && "/v1/operations/journeys/pause-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_PAUSE;
+        if ("GET".equals(verb) && "/v1/operations/journeys/pump-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_PUMP;
+        if ("GET".equals(verb) && "/v1/operations/journey-instances/create-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_INSTANCE_CREATE;
+        if ("GET".equals(verb) && "/v1/operations/journey-instances/control-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_INSTANCE_CONTROL;
+        if ("GET".equals(verb) && "/v1/operations/journey-scans/retry-access".equals(path)) return EmployeeAccess.Capability.JOURNEY_SCAN_RETRY;
+        if ("GET".equals(verb) && "/v1/operations/marketing-effects/rebuild-access".equals(path)) return EmployeeAccess.Capability.MARKETING_EFFECT_REBUILD;
+        return null;
+    }
     /** 只有准确业务POST允许保存长期来源；后续GET资格提示仍使用短引用。 */
-    private static boolean couponDeliveryPost(HttpServletRequest request) {
-        return "POST".equals(request.getMethod()) && ("/v1/admin/coupon-deliveries".equals(request.getServletPath())
+    private static boolean durablePost(HttpServletRequest request) {
+        return "POST".equals(request.getMethod()) && ("/v1/admin/journey-instances".equals(request.getServletPath()) || "/v1/admin/runtime/replays".equals(request.getServletPath()) || "/v1/admin/coupon-deliveries".equals(request.getServletPath())
                 || request.getServletPath().matches("/v1/admin/coupon-deliveries/[A-Za-z0-9_.:-]{1,64}/control"));
     }
     private static final class EmployeeFilter extends OncePerRequestFilter {
@@ -225,7 +343,7 @@ public class CentralEmployeeConfiguration {
             try {
                 String header = single(request, "Authorization"), tenant = single(request, "X-Tenant-Id");
                 if (!header.startsWith("Bearer ")) throw new CentralAccessException(401);
-                var actor = service.authenticate(header.substring(7), tenant, capability(request), couponDeliveryPost(request));
+                var actor = service.authenticate(header.substring(7), tenant, capability(request), durablePost(request));
                 var context = SecurityContextHolder.createEmptyContext();
                 context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(actor, null, List.of(new SimpleGrantedAuthority("CENTRAL_EMPLOYEE"))));
                 SecurityContextHolder.setContext(context);

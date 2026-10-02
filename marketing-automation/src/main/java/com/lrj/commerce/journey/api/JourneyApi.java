@@ -107,6 +107,10 @@ public interface JourneyApi {
 	record View(Definition content, String status, long lockVersion) {
 	}
 
+	/** 仅内部受控调用：准备在业务事务外判权，execute只进入原原子命令边界。 */
+	@FunctionalInterface interface PreparedEnrollment { Instance execute(); }
+	PreparedEnrollment prepareEnroll(Actor actor, String key, Start input);
+
 	record Start(String journeyId, long version, String memberId, String eventKey) {
 	}
 

@@ -28,6 +28,31 @@ import { enabled, login, manager, session } from "./session";
 import { central, CentralError, HTTP, useCentral, type Context } from "./api";
 
 // 登录与单一工作区不提前下载其他中央能力；权限仍由各页面的原客户端独立核验。
+const CentralJourneys = lazy(() =>
+  import("./CentralJourneys").then((module) => ({
+    default: module.CentralJourneys,
+  })),
+);
+const CentralJourneyInstances = lazy(() =>
+  import("./CentralJourneys").then((module) => ({
+    default: module.CentralJourneyInstances,
+  })),
+);
+const CentralJourneyScans = lazy(() =>
+  import("./CentralJourneys").then((module) => ({
+    default: module.CentralJourneyScans,
+  })),
+);
+const CentralMarketingEffects = lazy(() =>
+  import("./CentralJourneys").then((module) => ({
+    default: module.CentralMarketingEffects,
+  })),
+);
+const CentralMarketingExecutions = lazy(() =>
+  import("./CentralJourneys").then((module) => ({
+    default: module.CentralMarketingExecutions,
+  })),
+);
 const CentralCampaigns = lazy(() =>
   import("./CentralCampaigns").then((module) => ({
     default: module.CentralCampaigns,
@@ -202,6 +227,11 @@ export function CentralProducts() {
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
   // 固定入口与组件一一对应，新增页面不再加深路由条件分支。
   const pages: Record<string, ComponentType<Parameters<typeof Products>[0]>> = {
+    "/operations/journeys": CentralJourneys,
+    "/operations/journey-instances": CentralJourneyInstances,
+    "/operations/journey-scans": CentralJourneyScans,
+    "/operations/marketing-effects": CentralMarketingEffects,
+    "/operations/marketing-executions": CentralMarketingExecutions,
     "/operations/campaigns": CentralCampaigns,
     "/operations/campaign-budgets": CentralCampaignBudgets,
     "/operations/audiences": CentralAudiences,

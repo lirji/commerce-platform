@@ -65,6 +65,9 @@ public interface OrderApi {
 	/** 仅内部已授权重建用例调用，租户来自实际Actor；每批最多50单。 */
 	List<BehaviorSource> behaviorSources(String tenant, String after, int limit);
 
+	/** 仅效果 Owner 已授权重建内部调用；不借 order.read 或伪造管理员，每批最多100单，沿用原重建窗口。 */
+	List<View> listForEffects(String tenant, String store, Instant from, Instant to, String after, int limit);
+
 	/** 管理查询仅同租户投影，不暴露收货地址。 */
 	List<View> adminList(Actor actor, String after, int limit);
 

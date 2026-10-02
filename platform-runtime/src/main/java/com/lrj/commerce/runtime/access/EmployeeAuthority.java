@@ -28,7 +28,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         State state = route == null ? State.LEGACY : State.valueOf(route.state());
         Instant until = Instant.now().plusSeconds(5);
         if (state == State.LEGACY || state == State.SHADOW) {
-            if (actor.executionId() != null) throw denied();
+            if (actor.executionId() != null || (newStoreCapability(capability) && route != null && route.everCentral())) throw denied();
             actor.requireAdmin();
             return new Permit(capability, actor.tenantId(), fact, route, null, until);
         }
@@ -47,7 +47,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         State state = route == null ? State.LEGACY : State.valueOf(route.state());
         Instant until = Instant.now().plusSeconds(5);
         if (state == State.LEGACY || state == State.SHADOW) {
-            if (actor.executionId() != null || ((segmentCapability(capability) || couponDeliveryCapability(capability)) && route != null && route.everCentral())) throw denied();
+            if (actor.executionId() != null || ((segmentCapability(capability) || couponDeliveryCapability(capability) || newTenantCapability(capability) || newStoreCapability(capability)) && route != null && route.everCentral())) throw denied();
             actor.requireAdmin();
             var all = new com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter(java.util.List.of(
                     new com.lrj.commerce.runtime.api.scope.ScopeQuery.Path(true,java.util.List.of(),java.util.List.of())));
@@ -59,7 +59,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (decision.until().isBefore(until)) until = decision.until();
         if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
         if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability)
-                || pointOfferCapability(capability) || couponDefinitionCapability(capability) || entitlementCapability(capability) || ruleCapability(capability) || audienceCapability(capability) || campaignCapability(capability) || segmentCapability(capability) || couponDeliveryCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
+                || pointOfferCapability(capability) || couponDefinitionCapability(capability) || entitlementCapability(capability) || ruleCapability(capability) || audienceCapability(capability) || campaignCapability(capability) || segmentCapability(capability) || couponDeliveryCapability(capability) || newTenantCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
                 && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
         return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
     }
@@ -68,10 +68,10 @@ public class EmployeeAuthority implements EmployeeAccess {
         if ((!memberCapability(permit.capability()) && !pointOfferCapability(permit.capability())
                 && permit.capability() != Capability.ENTITLEMENT_READ && permit.capability() != Capability.ENTITLEMENT_RESOLVE
                 && permit.capability() != Capability.RULE_READ && permit.capability() != Capability.RULE_PUBLISH
-                && !campaignAction(permit.capability()) && !segmentObject(permit.capability()) && !couponDeliveryObject(permit.capability())) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD || permit.capability() == Capability.POINT_OFFER_DEFINE
+                && !campaignAction(permit.capability()) && !segmentObject(permit.capability()) && !couponDeliveryObject(permit.capability()) && !newTenantObject(permit.capability()) && !runtimeObject(permit.capability())) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD || permit.capability() == Capability.POINT_OFFER_DEFINE
                 || !actor.tenantId().equals(permit.tenant()) || fact == null
                 || !permit.capability().resourceType().equals(fact.type()) || fact.version() < 0
-                || ((campaignAction(permit.capability()) || segmentObject(permit.capability()) || couponDeliveryObject(permit.capability())) && fact.version() == 0)) throw denied();
+                || ((campaignAction(permit.capability()) || segmentObject(permit.capability()) || couponDeliveryObject(permit.capability()) || newTenantObject(permit.capability())) && fact.version() == 0)) throw denied();
         com.lrj.commerce.kernel.Identifiers.require(fact.id());
         if (!permit.until().isAfter(Instant.now()) || !Objects.equals(routes.find(permit.tenant(), permit.capability().family()), permit.route())) throw denied();
         if (permit.identity() == null) {
@@ -135,6 +135,63 @@ public class EmployeeAuthority implements EmployeeAccess {
     }
     private static boolean couponDeliveryDurable(Capability capability) {
         return capability == Capability.COUPON_DELIVERY_CREATE || capability == Capability.COUPON_DELIVERY_CONTROL;
+    }
+    /** 新接管租户资源仍完整租户；门店仅为业务查询条件。 */
+    private static boolean newTenantCapability(Capability cap) {
+        return java.util.Set.of("JOURNEY", "MARKETING_REPORT", "OPS_PAGE", "EVENT", "RUNTIME", "DASHBOARD").contains(cap.family());
+    }
+    private static boolean newStoreCapability(Capability cap) {
+        return java.util.Set.of("ORDER", "PAYMENT", "FULFILLMENT", "AFTERSALE", "REFUND").contains(cap.family());
+    }
+    /** 只有实际内容对象允许追加Facts；集合创建/校验/目录/报告不伪造对象。 */
+    private static boolean newTenantObject(Capability cap) {
+        return java.util.Set.of(Capability.JOURNEY_PREVIEW, Capability.JOURNEY_SUBMIT, Capability.JOURNEY_APPROVE,
+                Capability.JOURNEY_REJECT, Capability.JOURNEY_PUBLISH, Capability.JOURNEY_PAUSE,
+                Capability.JOURNEY_INSTANCE_READ, Capability.JOURNEY_INSTANCE_CONTROL, Capability.JOURNEY_SCAN_RETRY,
+                Capability.OPS_PAGE_READ, Capability.OPS_PAGE_PREVIEW, Capability.OPS_PAGE_SUBMIT, Capability.OPS_PAGE_APPROVE,
+                Capability.OPS_PAGE_REJECT, Capability.OPS_PAGE_PUBLISH, Capability.OPS_PAGE_PAUSE,
+                Capability.OPS_PAGE_ROLLBACK, Capability.OPS_PAGE_EXECUTE).contains(cap);
+    }
+    /** 运行时对象由真实事件/恢复/重放Owner给出；没有内容正版本声明时保留原事实版本。 */
+    private static boolean runtimeObject(Capability cap) {
+        return java.util.Set.of(Capability.EVENT_READ,Capability.EVENT_RETRY,Capability.RUNTIME_READ,Capability.RUNTIME_RECOVER,Capability.RUNTIME_REPLAY_CONTROL).contains(cap);
+    }
+    /** 只有本片明确登记的长期任务能力保存来源，其余同步请求没有持久执行权。 */
+    @Override @Transactional
+    public void rememberExecution(Actor actor, Capability capability, FiniteExecution source) {
+        if (!java.util.Set.of(Capability.JOURNEY_INSTANCE_CREATE,Capability.RUNTIME_REPLAY_CREATE).contains(capability) || actor.role()!=Actor.Role.OPERATOR || actor.executionId()==null
+                || source==null || source.identity()==null || source.route()==null || source.expiresAt()==null
+                || !actor.tenantId().equals(source.route().tenantId()) || !capability.family().equals(source.route().family())
+                || !State.CENTRAL.name().equals(source.route().state()) || !source.expiresAt().isAfter(Instant.now())
+                || source.expiresAt().isAfter(Instant.now().plusSeconds(capability.referenceSeconds()))
+                || !Objects.equals(routes.lock(actor.tenantId(),capability.family()),source.route())) throw denied();
+        if(routes.rememberExecution(actor,capability.code(),com.lrj.commerce.runtime.serialization.JsonCodec.write(source))!=1)
+            throw new DomainException(DomainException.Code.CONFLICT,"原有限执行来源保存失败");
+    }
+    /** 精确Actor/引用/能力读取元数据，到期不能借重新登录续期。 */
+    @Override public FiniteExecution execution(Actor actor, Capability capability) {
+        if(!java.util.Set.of(Capability.JOURNEY_INSTANCE_CREATE,Capability.RUNTIME_REPLAY_CREATE).contains(capability) || actor.role()!=Actor.Role.OPERATOR || actor.executionId()==null) throw denied();
+        var json=routes.execution(actor,capability.code());if(json==null)throw denied();
+        var source=com.lrj.commerce.runtime.serialization.JsonCodec.read(json,FiniteExecution.class);
+        if(!actor.tenantId().equals(source.route().tenantId()) || !source.expiresAt().isAfter(Instant.now()))throw denied();
+        return source;
+    }
+    /** 已提交自动旅程政策不借发布人Grant；停止权威仍立即阻断未准入节点。 */
+    @Override public PolicyPermit policy(String tenant, Capability capability, Route approvedRoute) {
+        if(capability!=Capability.JOURNEY_PUBLISH)throw denied();
+        var route=routes.find(tenant,capability.family());
+        if(approvedRoute==null) {
+            if(route!=null && (route.everCentral() || !java.util.Set.of(State.LEGACY.name(),State.SHADOW.name()).contains(route.state())))throw denied();
+        } else if(route==null || !State.CENTRAL.name().equals(route.state()) || !route.everCentral()
+                || !State.CENTRAL.name().equals(approvedRoute.state()) || !capability.family().equals(approvedRoute.family())
+                || !tenant.equals(approvedRoute.tenantId()) || !Objects.equals(route.authTenantId(),approvedRoute.authTenantId())
+                || route.version()<approvedRoute.version())throw denied();
+        return new PolicyPermit(tenant,capability,route,Instant.now().plusSeconds(5));
+    }
+    /** 事务内权威共享锁先于业务行，截止不跨越真实Owner锁等待。 */
+    @Override @Transactional(propagation=Propagation.MANDATORY)
+    public void lock(PolicyPermit permit) {
+        if(!Objects.equals(routes.lock(permit.tenant(),permit.capability().family()),permit.route()) || !permit.until().isAfter(Instant.now()))throw denied();
     }
     /** 签发结果来自中央适配层；写入前锁定对应中央路由，不把Token或ALLOW缓存持久化。 */
     @Override @Transactional
@@ -216,8 +273,8 @@ public class EmployeeAuthority implements EmployeeAccess {
     /** 创建使用可信提交结果，已有动作使用Owner版本；与业务、预算和回执共用事务。 */
     @Override @Transactional(propagation = Propagation.MANDATORY)
     public void auditVersion(Actor actor, ScopePermit permit, String operation, String key, String resourceId, long contentVersion) {
-        if ((permit.capability() != Capability.CAMPAIGN_CREATE && !campaignAction(permit.capability())
-                && !java.util.Set.of(Capability.SEGMENT_CREATE, Capability.SEGMENT_SCHEDULE, Capability.SEGMENT_REFRESH, Capability.SEGMENT_CONTROL, Capability.COUPON_DELIVERY_CREATE, Capability.COUPON_DELIVERY_CONTROL).contains(permit.capability())) || contentVersion <= 0 || !actor.tenantId().equals(permit.tenant())) throw denied();
+        if ((permit.capability() != Capability.CAMPAIGN_CREATE && !campaignAction(permit.capability()) && !newTenantObject(permit.capability())
+                && !java.util.Set.of(Capability.SEGMENT_CREATE, Capability.SEGMENT_SCHEDULE, Capability.SEGMENT_REFRESH, Capability.SEGMENT_CONTROL, Capability.COUPON_DELIVERY_CREATE, Capability.COUPON_DELIVERY_CONTROL, Capability.OPS_PAGE_CREATE, Capability.JOURNEY_CREATE, Capability.JOURNEY_INSTANCE_CREATE, Capability.JOURNEY_INSTANCE_CONTROL, Capability.JOURNEY_SCAN_RETRY).contains(permit.capability())) || contentVersion <= 0 || !actor.tenantId().equals(permit.tenant())) throw denied();
         com.lrj.commerce.kernel.Identifiers.require(resourceId);
         if (permit.identity() == null) return;
         if (routes.auditVersioned(actor, permit, permit.capability().code(), operation, key, resourceId, contentVersion) != 1)
@@ -226,6 +283,7 @@ public class EmployeeAuthority implements EmployeeAccess {
     /** 集合操作记录真实业务目标分类，不把字典或持久批次命令伪装成会员。 */
     private static String auditType(Capability capability) {
         return switch (capability) {
+            case ORDER_EXPIRE -> "order_expiry_batch";
             case MEMBER_TAG_DEFINE -> "commerce_member_tag";
             case MEMBER_BEHAVIOR_REBUILD -> "commerce_member_behavior_batch";
             case CYCLE_BENEFIT_DEFINE -> "commerce_cycle_benefit";

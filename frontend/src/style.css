@@ -1768,3 +1768,37 @@ textarea {
     padding: 20px 12px;
   }
 }
+
+/* 旅程经营页复用既有Craft组件；长记录只在内容区滚动。 */
+.central-journey-actions {
+  margin-block: 8px 20px;
+}
+.central-journey-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 55vh;
+  overflow: auto;
+  padding: 16px;
+  background: var(--surface-soft, #f7f8fa);
+  border-radius: 8px;
+}
+.central-journey-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+.central-journey-fields .ant-form-item {
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .central-journey-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .central-app .ant-card-extra {
+    max-width: 65%;
+  }
+  .central-app .ant-modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+}

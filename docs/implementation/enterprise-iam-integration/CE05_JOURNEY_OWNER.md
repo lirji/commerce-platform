@@ -1,0 +1,11 @@
+# CE05 J1/EF1 Owner实现
+
+依赖共享Provider4ca6acc与Auth c834d38/ad09213。完整旅程定义、状态、手工入组、实例列表/固定历史、控制、安全取消、事件/生命周期SYSTEM与扫描恢复均接入原Owner。MANUAL原Actor/精确FiniteExecution和SYSTEM实际publish固定政策写入私有字段，不改变公开JSON；固定内容版本与进度CAS分别处理。每节点远程核验在事务外；事务内路线锁/来源/固定实例、效果和检查点同提交，截止在效果后再次核验并回滚，取消不逆转已提交效果。
+
+PreparedEnrollment prepareEnroll(actor,key,input)完成事务外准入后返回execute()闭包，OpsPage可在原原子事务使用；传入必须是准确journey_instance.create子Actor，不能复用OpsPage引用。当前控制与原引用均检查，原回执亦经过来源栅栏；新来源不覆盖既有执行源。
+
+report按实际bindings：journey-effects与营销效果为marketing_effect.read，CampaignExecution两个实际读入口为marketing_execution.read；独立MARKETING_REPORT族，store仅业务过滤，原UTC93天/金额/覆盖/游标保留。同步rebuild复用CE06 Owner提供内部有界订单端口，最多100、不借ORDER_READ/伪ADMIN、不新增JSON字段。内部订单事实四文件由CE06协作patch提供，root后续按同等端口语义合并。
+
+验证：私有Mavenrepo完整reactor install通过；真实独占MySQL49309新bin schema68迁移。CentralJourney8、JourneyRecovery7、LifecycleJourney6、MarketingEffects1、MemberJourneyEffects4共26项零失败/错误/跳过。新增测试验证13独立literal hints、无GET长期来源/审计、固定版本、原键/原源、撤权安全取消、真实2秒到期后券/step/进度原子回滚、STOPPED、SYSTEM实际注册事件不依赖publish Grant、生命周期扫描与固定内容/CAS。未用Mock证明数据库事务；中央桩只证明适配，跨进程Auth与真实PKCE/视觉是下一UI片，未声明已完成。
+
+不可变证据`.local/journeys/j1-evidence-v1`含5XML、build/MySQL日志、源SHA和TEST_RESULT。code-hygiene为IMPLEMENTATION_COMPLETE_WITH_LIMITATIONS，仅既有格式化工具缺失，源码diff/编译/测试通过。共享Provider验证在含在途Owner工作树执行；本片将对应Owner及测试落为完整逻辑提交，后续root受影响回归复核。

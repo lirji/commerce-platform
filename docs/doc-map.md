@@ -65,3 +65,5 @@
 2026-10-02 CE05-S2动态人群页面完整DONE（含产品Git/精确CI），入口 `/operations/segments`；最终真实编译PKCE演练0b2c9e9dd22a已exit0、1128检查点/终态SQL与60张当前关联截图实看PASS，正式Validation COMPLETED/PASS，Authd35e6d5/CI36989740786及Commerce2946279/CI36989725617均精确SUCCESS。权威技术与验证继续使用上方SEGMENTS契约/验收链接；完整CE05—08与Auth菜单资源目标未完成。
 
 定向发券 CE05-D1 完整DONE，正式Validation及产品Git/精确CI PASS，四独立能力与持久双方向来源沿用[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_COUPON_DELIVERIES.md)及[验收记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_COUPON_DELIVERIES.md)。21实际MySQL专项及520全仓测试通过（5既有条件跳过）；真实Auth跨进程878检查点及终态SQL PASS，Commerce2a75235/CI36997466878、Auth2ad3bad/CI36997489481均SUCCESS；D2页面READY、尚未实施，完整其余CE05—08/Auth选择目标继续。
+
+2026-10-02 CE05-Journey/效果Owner与五个真实中央SSO页面：契约 `design/enterprise-iam-integration/CONTRACTS_JOURNEYS.md`；J1/EF1真实MySQL、固定原来源与SYSTEM政策见 `implementation/enterprise-iam-integration/CE05_JOURNEY_OWNER.md`；J2/EF2真实PKCE/授权/SQL/未知回执与最终视觉证据见 `implementation/enterprise-iam-integration/CE05_JOURNEY_UI.md`。Dashboard共享登记单独见 `SHARED_DASHBOARD_PROVIDER.md`；本地验收与整体应用发布状态分别记录。
