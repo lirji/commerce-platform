@@ -1,5 +1,69 @@
 # Codex Progress
 
+## 任务目标
+
+完整中央旅程/效果/执行权限及真实SSO页面；原D2目录仍冻结，本任务只在隔离树。
+
+## 已完成
+
+- Auth J0 c834d38、共享CE06/07 ad09213已验证。
+- Commerce共享Provider4ca6acc；真实MySQL68迁移/14 CD回归。
+- CE05 Journey/效果/执行Owner与PreparedEnrollment；独占MySQL26项通过，证据.local/journeys/j1-evidence-v1。
+
+## 已修改文件
+
+- JourneyApi/Service/Authorization/Mapper、JourneyAccessController；EffectsService、CampaignExecutionService；内部OrderApi四文件、真实测试、安全隔离URL。
+
+## 未完成
+
+- J2/EF2五页面已在途，需完成路由/客户端/视觉、真实PKCE/跨进程Auth与SQL验收。
+- 共享dashboard.read闭集/迁移/hints给CE06 Owner；本任务不宣布全122已发布。
+
+## 当前问题
+
+- 49308及49309初始schema默认collation曾失败V29，保留证据；另建同实例唯一utf8mb4_bin库后68迁移通过。
+- 所有Maven必须本Auth工作树.local/maven-repository；禁共享m2 install及D2端口。
+
+## 下一步建议
+
+1. 完成共享dashboard闭集小提交供其他Owner继续。
+2. 完成五真实页面与隔离PKCE/SQL/视觉，按实际证据更新，不等待继续。
+
+## 恢复 Prompt
+
+请读取本CODEX_PROGRESS及CE05_JOURNEY_OWNER，继续J2/EF2，保留原D2freeze，不新增Agent/worktree，不推main。
+
+---
+
+# Codex Progress
+
+## 任务目标
+完整CE05-J旅程/效果Owner与真实SSO页面，配对Auth协议及共享CE06/07有限注册；仅本隔离树，原目录D2保留，主Agent统一集成push。
+
+## 已完成
+- Auth J0 c834d38本地Validation/逻辑提交（254单元、18PG/图方法、Boot4 SDK1）。
+- 本树正式CONTRACTS_JOURNEYS落盘；J1-D正在实施runtime原来源/政策与共享闭集注册。
+
+## 已修改文件
+- runtime EmployeeAccess/EmployeeAuthority/Mapper/XML；app CentralEmployeeService；CONTRACTS_JOURNEYS。
+
+## 未完成
+- J1-D/I/S、J2、EF1/EF2产品与MySQL/真实PKCE/视觉验证；共享CE06/07注册独立交付。
+
+## 当前问题
+- 无已证明阻塞；专属端口19532/19544/49308/19661/19662/19665已声明，禁止D2/shared资源写。
+
+## 下一步建议
+1. 完成单Owner共享注册、V67/V68及Journey Owner，再沿切片完整验证/提交。
+
+## 恢复 Prompt
+读取本进度与CONTRACTS_JOURNEYS，从当前共享runtime/iam差异继续全部J1/J2/EF，勿要求反复继续；与CE06/07单Owner协调，主Agent统一集成push。
+
+
+---
+
+# Codex Progress
+
 ## 当前发券Owner验证检查点（2026-10-02，优先于历史摘要）
 
 CE05-D1完整DONE，正式implementation-validation COMPLETED/PASS；产品Commerce2a752355f84faa0ef23166f611462ca3acb8a234/Auth2ad3bad43afb23671e83b717ac7e3d7714333bc9已正常任务分支push/ff main/main push。精确main CI Commerce36997466878/Auth36997489481均completed/SUCCESS（17/28步骤），D2 READY。21实际MySQL专项（14新增/7既有）及520全仓（515PASS/5既有条件skip）零fail/error；最终JAR731b76865ed7及17完整归档/源码15+4摘要一致。真实隔离fbefa05c7b47实际exit0、878检查点（88发券）全PASS；恰5身份审计/正内容版本1、29收件人、15撤回/14保留券，原ISSUE及首次REVOKE不换源，实际Auth停服HTTP503/后台零效果/attempts0。明确六秒新任务引用实际到期，未冒充Owner POST等待七天；V66实际checksum579464248注释/旧迁移不变。自有六端口释放，原8602/OA/旧数据/卷/失败证据保留，无新工作树/Agent或生产部署。完整剩余CE05—08及Auth实际发布菜单资源目标继续active，不缩减。

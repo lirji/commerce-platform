@@ -17,6 +17,7 @@ import java.time.*;
 import java.util.*;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.recovery.RecoveryAudit;
@@ -35,6 +36,8 @@ public class JourneyService implements JourneyApi, EventHandler {
 	private final com.lrj.commerce.benefit.coupon.api.CouponApi coupons;
 
 	private final JourneyMapper mapper;
+	private final JourneyAuthorization authorization;
+	private final TransactionTemplate readTx;
 
 	private final JourneyActions actions;
 
@@ -71,7 +74,9 @@ public class JourneyService implements JourneyApi, EventHandler {
 			PlatformTransactionManager manager, com.lrj.commerce.member.growth.api.MemberGrowthApi memberGrowth,
 			com.lrj.commerce.campaign.asset.api.MarketingAssets assets,
 			com.lrj.commerce.member.behavior.api.MemberBehaviorApi behavior,
-			com.lrj.commerce.benefit.coupon.api.CouponApi coupons, WorkLanes lanes) {
+			com.lrj.commerce.benefit.coupon.api.CouponApi coupons, WorkLanes lanes, JourneyAuthorization authorization) {
+		this.authorization=authorization;
+		readTx=new TransactionTemplate(manager);readTx.setReadOnly(true);readTx.setTimeout(10);readTx.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
 		this.behavior = behavior;
 		this.coupons = coupons;
 		this.assets = assets;
@@ -94,14 +99,16 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 图必须有界、无环、可达且所有分支收敛到终止节点。 */
 	public View create(Actor actor, String key, Definition input) {
-		actor.requireAdmin();
+		var permit=authorization.scope(actor,JOURNEY_CREATE);
 		validate(input);
-		return commands.run(actor, "journey.create", key, input, View.class, () -> {
+		return commands.runGuarded(actor, "journey.create", key, authorization.input(permit,input), View.class, ()->authorization.lock(permit), () -> {
 			stores.requireActive(actor, input.storeId());
 			validateBindings(actor, input);
 			if (mapper.find(actor.tenantId(), input.journeyId(), input.version()) != null)
 				throw conflict("旅程内容版本已存在，修改必须创建新版本");
 			mapper.definition(actor.tenantId(), input, JsonCodec.write(input));
+			authorization.audit(actor,permit,"journey.create",key,input.journeyId(),input.version());
+			authorization.lock(permit);
 			return view(mapper.find(actor.tenantId(), input.journeyId(), input.version()));
 		});
 	}
@@ -126,21 +133,23 @@ public class JourneyService implements JourneyApi, EventHandler {
 	/** 不产生草稿、命令或权益效果；无效结构以稳定配置码返回。 */
 	@Override
 	public Validation validate(Actor actor, Definition definition) {
-		actor.requireAdmin();
+		var permit=authorization.scope(actor,JOURNEY_VALIDATE);
 		var result = com.lrj.commerce.journey.domain.JourneyGraph.validate(definition);
 		if (result.valid()) {
 			stores.requireActive(actor, definition.storeId());
 			validateBindings(actor, definition);
 		}
+		authorization.after(actor,permit);
 		return result;
 	}
 
 	/** 与运行时共用图、可信事实和规则判定；WAIT后的可变事实不能在预览时预测。 */
 	@Override
 	public PreviewResult preview(Actor actor, String id, long version, Preview input) {
-		actor.requireAdmin();
 		Identifiers.require(id);
 		Inputs.require(version > 0 && input != null, "预览参数无效");
+		Inputs.found(mapper.find(actor.tenantId(),id,version));
+		var permit=authorization.object(actor,JOURNEY_PREVIEW,id,version).scope();
 		Identifiers.require(input.memberId());
 		var definition = view(Inputs.found(mapper.find(actor.tenantId(), id, version))).content();
 		validate(definition);
@@ -177,8 +186,10 @@ public class JourneyService implements JourneyApi, EventHandler {
 				case GRANT, COUPON, NOTIFY -> decision = "ACTION_NOT_EXECUTED";
 			}
 			path.add(new PreviewStep(node.id(), node.kind(), decision, next));
-			if (stop != null)
+			if (stop != null) {
+				authorization.after(actor,permit);
 				return new PreviewResult(id, version, at, List.copyOf(path), stop);
+			}
 			current = next;
 		}
 		throw conflict("旅程预览超过图上限");
@@ -186,18 +197,21 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 查询每个旅程的最新内容版本，实例仍保留自己的旧版本。 */
 	public List<View> definitions(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		var permit=authorization.scope(actor,JOURNEY_READ);
 		Inputs.page(after, limit);
-		return mapper.definitions(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var result=mapper.definitions(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		authorization.after(actor,permit);return result;
 	}
 
 	/** 审批状态和乐观版本共同约束发布，已暂停版本可重新启用。 */
 	public View change(Actor actor, String key, String id, long version, long expected, String action) {
-		actor.requireAdmin();
 		Identifiers.require(id);
 		Inputs.require(version > 0 && expected >= 0
 				&& Set.of("submit", "approve", "reject", "publish", "pause").contains(action), "旅程审批参数无效");
-		return commands.run(actor, "journey." + action, key, List.of(id, version, expected), View.class, () -> {
+		var capability=switch(action) {case "submit"->JOURNEY_SUBMIT;case "approve"->JOURNEY_APPROVE;case "reject"->JOURNEY_REJECT;case "publish"->JOURNEY_PUBLISH;default->JOURNEY_PAUSE;};
+		Inputs.found(mapper.find(actor.tenantId(),id,version));
+		var permit=authorization.object(actor,capability,id,version).scope();
+		return commands.runGuarded(actor, "journey." + action, key, authorization.input(permit,List.of(id, version, expected)), View.class, ()->authorization.lock(permit), () -> {
 			var row = mapper.group(actor.tenantId(), id)
 				.stream()
 				.filter(r -> r.version() == version)
@@ -232,28 +246,46 @@ public class JourneyService implements JourneyApi, EventHandler {
 				throw conflict("旅程并发修改");
 			if (action.equals("publish")) {
 				var definition = view(row).content();
+				authorization.publish(actor,permit,definition,key,now());
 				if (lifecycle(definition.trigger()))
 					mapper.ensureScan(actor.tenantId(), definition, now());
 			}
+			authorization.audit(actor,permit,"journey."+action,key,id,version);
+			authorization.lock(permit);
 			return view(mapper.find(actor.tenantId(), id, version));
 		});
 	}
 
 	/** 相同触发键只产生一个实例，换会员重用该键属于冲突。 */
-	public Instance enroll(Actor actor, String key, Start input) {
-		actor.requireAdmin();
+	public Instance enroll(Actor actor, String key, Start input) { return prepareEnroll(actor,key,input).execute(); }
+
+	/** 先完成实时引用与原来源核验，供OpsPage在自己的原子事务中调用闭包。 */
+	@Override public PreparedEnrollment prepareEnroll(Actor actor,String key,Start input) {
+		var permit=authorization.scope(actor,JOURNEY_INSTANCE_CREATE);
 		Inputs.require(input != null && input.version() > 0, "入组参数无效");
 		Identifiers.require(input.journeyId());
 		Identifiers.require(input.memberId());
 		Identifiers.require(input.eventKey());
-		return commands.run(actor, "journey.enroll", key, input, Instance.class, () -> {
+		var request=authorization.input(permit,input);
+		var definition=Inputs.found(mapper.find(actor.tenantId(),input.journeyId(),input.version()));
+		var source=authorization.manual(actor,permit,view(definition).content(),key,now());
+		var receipt=commands.completedReceipt(actor,"journey.enroll",key,request,Instance.class);
+		var existing=receipt==null?mapper.byEvent(actor.tenantId(),input.journeyId(),input.version(),input.eventKey()):receipt;
+		var original=existing==null?null:authorization.gate(actor.tenantId(),authorization.source(actor.tenantId(),existing));
+		return ()->commands.runGuarded(actor, "journey.enroll", key, request, Instance.class, ()->{authorization.lock(permit);if(original!=null)authorization.lock(original);}, result->{
+			if(original==null)throw conflict("入组回执来源在并发期间变化，请以原键重试");
+			authorization.requireFresh(original);
+		}, () -> {
 			var row = Inputs.found(mapper.find(actor.tenantId(), input.journeyId(), input.version()));
 			var d = view(row).content();
 			if (!row.status().equals("PUBLISHED") || d.trigger() != Trigger.MANUAL)
 				throw conflict("旅程不允许手工入组");
 			requireWindow(d);
 			members.requireActive(actor, input.memberId());
-			return start(actor.tenantId(), d, input.memberId(), null, input.eventKey());
+			var result=start(actor.tenantId(), d, input.memberId(), null, input.eventKey(),false,source);
+			authorization.audit(actor,permit,"journey.enroll",key,result.instanceId(),result.journeyVersion());
+			authorization.lock(permit);
+			return result;
 		});
 	}
 
@@ -263,11 +295,13 @@ public class JourneyService implements JourneyApi, EventHandler {
 			throw conflict("旅程不在入组窗口");
 	}
 
-	private Instance start(String tenant, Definition d, String member, String order, String event) {
-		return start(tenant, d, member, order, event, false);
-	}
-
 	private Instance start(String tenant, Definition d, String member, String order, String event, boolean automatic) {
+		var source=authorization.system(tenant,d,event,now());
+		var gate=authorization.gate(tenant,source);authorization.lock(gate);
+		var result=start(tenant,d,member,order,event,automatic,source);
+		authorization.requireFresh(gate);return result;
+	}
+	private Instance start(String tenant, Definition d, String member, String order, String event, boolean automatic, JourneyAuthorization.Source source) {
 		if (!behavior.journeyAllowed(tenant, member)) {
 			if (automatic)
 				return null;
@@ -299,8 +333,10 @@ public class JourneyService implements JourneyApi, EventHandler {
 		var now = now();
 		mapper.instance(tenant, UUID.randomUUID().toString(), d, member, order, event, now,
 				now.plusSeconds(d.maxDurationSeconds()));
+		var inserted=mapper.byEvent(tenant,d.journeyId(),d.version(),event);
+		if(mapper.sourceOnce(tenant,inserted.instanceId(),JsonCodec.write(source))!=1)throw conflict("旅程原来源不能覆盖");
 		mapper.effect(tenant, effect, d, member, "ENROLLED", now);
-		return mapper.byEvent(tenant, d.journeyId(), d.version(), event);
+		return inserted;
 	}
 
 	private long window(int seconds) {
@@ -311,24 +347,31 @@ public class JourneyService implements JourneyApi, EventHandler {
 	/** 按认证身份限制实例列表，不开放任意memberId过滤。 */
 	public List<Instance> instances(Actor actor, String after, int limit) {
 		Inputs.page(after, limit);
-		String member = actor.role() == Actor.Role.ADMIN ? null : members.current(actor).memberId();
-		return mapper.instances(actor.tenantId(), member, after, limit);
+		if(actor.role()==Actor.Role.MEMBER)return mapper.instances(actor.tenantId(),members.current(actor).memberId(),after,limit);
+		var permit=authorization.scope(actor,JOURNEY_INSTANCE_READ);
+		var result=mapper.instances(actor.tenantId(),null,after,limit);
+		authorization.after(actor,permit);return result;
 	}
 
 	/** 一个短只读快照同时读取检查点和历史，避免推进期间误报历史覆盖缺口。 */
 	@Override
-	@Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ, timeout = 10)
 	public History history(Actor actor, String id, long afterVersion, int limit) {
 		Identifiers.require(id);
 		Inputs.require(afterVersion >= -1 && limit >= 1 && limit <= 50, "历史分页参数无效");
+		var candidate=Inputs.found(mapper.findInstance(actor.tenantId(),id));
+		var permit=actor.role()==Actor.Role.MEMBER?null:authorization.object(actor,JOURNEY_INSTANCE_READ,id,candidate.journeyVersion()).scope();
+		var result=readTx.execute(status->{
 		var row = Inputs.found(mapper.findInstance(actor.tenantId(), id));
-		if (actor.role() != Actor.Role.ADMIN && !members.current(actor).memberId().equals(row.memberId()))
+		if (actor.role() == Actor.Role.MEMBER && !members.current(actor).memberId().equals(row.memberId()))
 			throw new DomainException(DomainException.Code.NOT_FOUND, "旅程实例不存在");
 		var definition = view(Inputs.found(mapper.find(actor.tenantId(), row.journeyId(), row.journeyVersion()))).content();
 		String coverage = mapper.traceOrigin(actor.tenantId(), id) == null ? "LEGACY_PARTIAL"
 				: mapper.recordedSteps(actor.tenantId(), id) == row.steps() ? "COMPLETE" : "PARTIAL";
 		return new History(row, definition, mapper.triggerKey(actor.tenantId(), id), coverage,
 				mapper.history(actor.tenantId(), id, afterVersion, limit));
+		});
+		if(permit!=null)authorization.after(actor,permit);
+		return result;
 	}
 
 	/** 运维恢复审计：重试、取消等对停止工作的人工干预与状态变更同一事务记录。 */
@@ -341,10 +384,12 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 取消不逆转已执行效果；隔离重试必须仍在截止时间内。 */
 	public Instance control(Actor actor, String key, String id, String action) {
-		actor.requireAdmin();
 		Identifiers.require(id);
 		Inputs.require(Set.of("cancel", "retry").contains(action), "实例动作无效");
-		return commands.run(actor, "journey." + action, key, id, Instance.class, () -> {
+		var candidate=Inputs.found(mapper.findInstance(actor.tenantId(),id));
+		var permit=authorization.object(actor,JOURNEY_INSTANCE_CONTROL,id,candidate.journeyVersion()).scope();
+		var source=action.equals("retry")?authorization.gate(actor.tenantId(),authorization.source(actor.tenantId(),candidate)):null;
+		return commands.runGuarded(actor, "journey." + action, key, authorization.input(permit,id), Instance.class, ()->{authorization.lock(permit);if(source!=null)authorization.lock(source);}, () -> {
 			var old = Inputs.found(mapper.lock(actor.tenantId(), id));
 			if (action.equals("retry")) {
 				if (old.status() != State.ISOLATED || !now().isBefore(old.deadline()))
@@ -359,6 +404,8 @@ public class JourneyService implements JourneyApi, EventHandler {
 					action.equals("retry") ? "RETRY" : "CANCEL", old.status().name(),
 					action.equals("retry") ? "RUNNING" : "CANCELLED", null, null,
 					com.lrj.commerce.runtime.recovery.RecoveryAudit.APPLIED, null);
+			authorization.audit(actor,permit,"journey."+action,key,id,old.journeyVersion());
+			authorization.lock(permit);if(source!=null)authorization.requireFresh(source);
 			return mapper.findInstance(actor.tenantId(), id);
 		});
 	}
@@ -470,8 +517,9 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 管理台只能触发当前租户的有限批次。 */
 	public int pump(Actor actor) {
-		actor.requireAdmin();
-		return pumpTenant(actor.tenantId(), journeys.manual());
+		var permit=authorization.scope(actor,JOURNEY_PUMP);
+		var result=pumpTenant(actor.tenantId(),journeys.manual());
+		authorization.after(actor,permit);return result;
 	}
 
 	/** 瞬时失败（依赖不可用、锁冲突、超时）只延后不计次数，实例截止时间终止重试；其他失败计次，5次隔离。 */
@@ -484,13 +532,18 @@ public class JourneyService implements JourneyApi, EventHandler {
 			// 领取前的候选可能已被另一执行器推进，失败计数必须绑定真正执行的节点版本。
 			var attempted = new java.util.concurrent.atomic.AtomicReference<>(candidate);
 			try {
+				var source=authorization.source(tenant,candidate);
+				var gate=authorization.gate(tenant,source);
 				if (Boolean.TRUE.equals(tx.execute(s -> {
+					authorization.lock(gate);
 					behavior.journeyAllowed(tenant, candidate.memberId());
 					var row = mapper.dueLock(tenant, candidate.instanceId(), now());
 					if (row == null)
 						return false;
 					attempted.set(row);
+					if(!Objects.equals(source,authorization.source(tenant,row)))throw conflict("旅程原来源已变化");
 					execute(tenant, row);
+					authorization.requireFresh(gate);
 					return true;
 				})))
 					count++;
@@ -614,12 +667,17 @@ public class JourneyService implements JourneyApi, EventHandler {
 				var attempted = new java.util.concurrent.atomic.AtomicReference<>(candidate);
 				run.attempted();
 				try {
+					var definition=view(Inputs.found(mapper.find(tenant,candidate.journeyId(),candidate.journeyVersion()))).content();
+					var source=authorization.system(tenant,definition,"scan",now());
+					var gate=authorization.gate(tenant,source);
 					if (!Boolean.TRUE.equals(tx.execute(status -> {
+						authorization.lock(gate);
 						var scan = mapper.scanLock(tenant, candidate.journeyId(), candidate.journeyVersion());
 						if (scan == null || scan.status().equals("ISOLATED") || scan.nextDue().isAfter(now()))
 							return false;
 						attempted.set(scan);
-						return scanStep(tenant, scan);
+						var result=scanStep(tenant,scan);
+						authorization.requireFresh(gate);return result;
 					})))
 						break;
 					count++;
@@ -708,18 +766,21 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 管理员可看到隔离原因和扫描边界，状态读取不会推进任务。 */
 	public List<Scan> scans(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		var permit=authorization.scope(actor,JOURNEY_SCAN_READ);
 		Inputs.page(after, limit);
-		return mapper.scans(actor.tenantId(), after, limit);
+		var result=mapper.scans(actor.tenantId(),after,limit);authorization.after(actor,permit);return result;
 	}
 
 	/** 只重试明确隔离版本，保留原游标且不撤销已提交的入组。 */
 	public Scan retryScan(Actor actor, String key, String id, long version, ScanRetry input) {
-		actor.requireAdmin();
 		Identifiers.require(id);
 		Inputs.require(version > 0 && input != null && input.expectedVersion() >= 0, "扫描恢复参数无效");
 		Inputs.text(input.reason(), 256);
-		return commands.run(actor, "journey.scan.retry", key, new Object[] { id, version, input }, Scan.class, () -> {
+		Inputs.found(mapper.findScan(actor.tenantId(),id,version));
+		var permit=authorization.object(actor,JOURNEY_SCAN_RETRY,id,version).scope();
+		var fixed=view(Inputs.found(mapper.find(actor.tenantId(),id,version))).content();
+		var gate=authorization.gate(actor.tenantId(),authorization.system(actor.tenantId(),fixed,"scan",now()));
+		return commands.runGuarded(actor, "journey.scan.retry", key, authorization.input(permit,new Object[] { id, version, input }), Scan.class, ()->{authorization.lock(permit);authorization.lock(gate);}, () -> {
 			var scan = Inputs.found(mapper.scanLock(actor.tenantId(), id, version));
 			if (!scan.status().equals("ISOLATED") || scan.version() != input.expectedVersion())
 				throw conflict("扫描状态或版本已变化");
@@ -733,18 +794,20 @@ public class JourneyService implements JourneyApi, EventHandler {
 			audit.record(actor, "journey.scan.retry", key, "journey.scan", id + "/" + version, "RETRY", scan.status(),
 					after.status(), null, input.reason(), com.lrj.commerce.runtime.recovery.RecoveryAudit.APPLIED,
 					null);
+			authorization.audit(actor,permit,"journey.scan.retry",key,id,version);
+			authorization.lock(permit);authorization.requireFresh(gate);
 			return after;
 		});
 	}
 
 	/** 执行计数与商业收入分析分开，避免将触达次数伪装为营销增量效果。 */
 	public List<EffectSummary> effects(Actor actor, String store, Instant from, Instant to, String after, int limit) {
-		actor.requireAdmin();
+		var permit=authorization.scope(actor,MARKETING_EFFECT_READ);
 		stores.requireActive(actor, store);
 		Inputs.page(after, limit);
 		Inputs.require(from != null && to != null && to.isAfter(from)
 				&& Duration.between(from, to).compareTo(Duration.ofDays(93)) <= 0, "分析窗口需为93天内");
-		return mapper.effects(actor.tenantId(), store, from, to, after, limit);
+		var result=mapper.effects(actor.tenantId(),store,from,to,after,limit);authorization.after(actor,permit);return result;
 	}
 
 	private void advance(String tenant, Instance old, String node, State status, Instant due, String result) {

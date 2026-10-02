@@ -9,6 +9,12 @@ import java.util.List;
 @Mapper
 public interface JourneyMapper {
 
+	String policy(String tenant, String id, long version);
+	int publishPolicy(String tenant, String id, long version, String json);
+	String source(String tenant, String id);
+	int sourceOnce(String tenant, String id, String json);
+	Scan findScan(String tenant, String id, long version);
+
 	void ensureScan(String tenant, Definition definition, Instant now);
 
 	List<Scan> dueScans(String tenant, Instant now);

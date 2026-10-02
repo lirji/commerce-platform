@@ -13,7 +13,7 @@ final class Phase4Properties {
 
 	static void register(DynamicPropertyRegistry registry) {
 		String url = System.getenv("COMMERCE_TEST_DB_URL");
-		if (url == null || !url.contains("/commerce_test_20260923?"))
+		if (url == null || !url.matches("jdbc:mysql://127\\.0\\.0\\.1:[0-9]+/commerce_test_20260923(?:_[a-z0-9]+)?\\?.*"))
 			throw new IllegalStateException("必须显式指定本项目隔离测试库");
 		registry.add("spring.datasource.url", () -> url);
 		registry.add("commerce.sandbox-enabled", () -> true);

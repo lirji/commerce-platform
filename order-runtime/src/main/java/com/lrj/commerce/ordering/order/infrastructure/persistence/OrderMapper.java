@@ -24,6 +24,10 @@ public interface OrderMapper {
 	List<Row> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
 			@Param("limit") int limit);
 
+	/** 实际创建时间范围、稳定订单游标，效果 Owner 内部授权先于调用。 */
+	List<Row> listForEffects(@Param("tenant") String tenant, @Param("store") String store,
+			@Param("from") Instant from, @Param("to") Instant to, @Param("after") String after, @Param("limit") int limit);
+
 	/** 租户与游标在SQL中过滤，只取投影所需列。 */
 	List<com.lrj.commerce.ordering.order.api.OrderApi.BehaviorSource> behaviorSources(
 			@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
