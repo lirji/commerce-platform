@@ -54,10 +54,12 @@ class CentralOperationsRuntimeMySqlTest {
     private Actor admin;
     @Autowired com.lrj.commerce.ops.api.OpsPageApi pages;
     @Autowired com.lrj.commerce.benefit.coupon.api.CouponApi coupons;
+    @Autowired com.lrj.commerce.campaign.management.api.CampaignApi campaigns;
     @Autowired com.lrj.commerce.runtime.replay.EventReplay replay;
     @Autowired com.lrj.commerce.runtime.recovery.RuntimeRecovery recovery;
     @Autowired com.lrj.commerce.runtime.event.EventDispatcher events;
     @Autowired EmployeeAccess access;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean com.lrj.commerce.store.management.api.StoreApi actualStores;
     private final AtomicReference<Runnable> laterEffect=new AtomicReference<>(),laterCampaign=new AtomicReference<>();
     private final Map<String,Integer> scopeCalls=new ConcurrentHashMap<>();
     private final Set<String> productIds=ConcurrentHashMap.newKeySet();
@@ -198,6 +200,115 @@ class CentralOperationsRuntimeMySqlTest {
         jdbc.update("UPDATE platform_event SET status='ISOLATED',attempts=8 WHERE event_id=?",event);only(RUNTIME_RECOVER);
         var request=new com.lrj.commerce.runtime.recovery.RuntimeRecovery.Request("event",com.lrj.commerce.runtime.api.recovery.RecoverableWork.Action.RETRY,List.of(event),"BUSINESS_REJECTED","原停止事件重新放回");String recoveryKey=id();assertEquals(1,recovery.recover(actor(RUNTIME_RECOVER),recoveryKey,request).applied());assertEquals(1,recovery.recover(actor(RUNTIME_RECOVER),recoveryKey,request).applied());assertEquals(1,audits("runtime.recovery"));
         assertEquals("prior-evidence",jdbc.queryForObject("SELECT last_error FROM platform_event WHERE event_id=?",String.class,event));
+    }
+    /** 门店变化不能取消已提交回执；新意图与当前撤权仍分别拒绝，SQL证明没有重复效果/审计。 */
+    @Test void completedCampaignReceiptSurvivesFrozenStoreButNewIntentAndRevocationAreDenied() throws Exception {
+        only(CAMPAIGN_CREATE);String key=id();var input=campaign("frozen-campaign");
+        var first=http("POST","/v1/admin/campaigns","valid",true,input,key);assertEquals(200,first.statusCode());
+        freezeStore();var repeated=http("POST","/v1/admin/campaigns","valid",true,input,key);
+        assertEquals(200,repeated.statusCode());assertEquals(first.body(),repeated.body());
+        assertEquals(409,http("POST","/v1/admin/campaigns","valid",true,input,id()).statusCode());
+        assertCreateCounts("campaign.create",key,"marketing_campaign",1);
+        allowed.clear();assertEquals(403,http("POST","/v1/admin/campaigns","valid",true,input,key).statusCode());
+        assertCreateCounts("campaign.create",key,"marketing_campaign",1);
+    }
+    /** 券定义与活动使用各自能力，旧回执不被 ACTIVE 前提扩大成新创建。 */
+    @Test void completedCouponReceiptSurvivesFrozenStoreButNewIntentAndRevocationAreDenied() throws Exception {
+        only(COUPON_DEFINITION_CREATE);String key=id();var input=coupon("frozen-coupon");
+        var first=http("POST","/v1/admin/coupon-definitions","valid",true,input,key);assertEquals(200,first.statusCode());
+        freezeStore();var repeated=http("POST","/v1/admin/coupon-definitions","valid",true,input,key);
+        assertEquals(200,repeated.statusCode());assertEquals(first.body(),repeated.body());
+        assertEquals(409,http("POST","/v1/admin/coupon-definitions","valid",true,input,id()).statusCode());
+        assertCreateCounts("coupon.definition",key,"benefit_coupon_definition",1);
+        allowed.clear();assertEquals(403,http("POST","/v1/admin/coupon-definitions","valid",true,input,key).statusCode());
+        assertCreateCounts("coupon.definition",key,"benefit_coupon_definition",1);
+    }
+    /** prepare时无回执，另一个请求随后提交并冻结门店；命令锁后的旧回执优先于首次写入条件。 */
+    @Test void preparedLoserReadsConcurrentCompletedReceiptAfterStoreFreeze() {
+        String campaignKey=id(),couponKey=id();var c=campaign("race-campaign");var d=coupon("race-coupon");
+        var cp=campaigns.prepareCreate(actor(CAMPAIGN_CREATE),campaignKey,c);
+        var dp=coupons.prepareDefinition(actor(COUPON_DEFINITION_CREATE),couponKey,d);
+        var cw=campaigns.create(actor(CAMPAIGN_CREATE),campaignKey,c);
+        var dw=coupons.create(actor(COUPON_DEFINITION_CREATE),couponKey,d);
+        freezeStore();assertEquals(JsonCodec.write(cw),JsonCodec.write(cp.execute()));
+        assertEquals(JsonCodec.write(dw),JsonCodec.write(dp.execute()));
+        assertCreateCounts("campaign.create",campaignKey,"marketing_campaign",1);
+        assertCreateCounts("coupon.definition",couponKey,"benefit_coupon_definition",1);
+    }
+    /** 预读已完成回执后被并发删除时，fallback必须回滚claim，不能重新创建或留下新审计。 */
+    @Test void removedCompletedReceiptNeverFallsBackToNewCreateOrRetainsClaim() {
+        String ck=id(),dk=id();var c=campaign("removed-campaign");var d=coupon("removed-coupon");
+        campaigns.create(actor(CAMPAIGN_CREATE),ck,c);coupons.create(actor(COUPON_DEFINITION_CREATE),dk,d);
+        var cp=campaigns.prepareCreate(actor(CAMPAIGN_CREATE),ck,c);
+        var dp=coupons.prepareDefinition(actor(COUPON_DEFINITION_CREATE),dk,d);
+        // 真实FK要求先清理关联身份行；保留原业务审计，用真实合法清理顺序模拟回执消失。
+        assertEquals(2,jdbc.update("DELETE FROM employee_command_identity WHERE tenant_id=? AND command_key IN (?,?)",tenant,ck,dk));
+        assertEquals(2,jdbc.update("DELETE FROM platform_command WHERE tenant_id=? AND actor_id='operator' AND command_key IN (?,?)",tenant,ck,dk));
+        assertEquals(DomainException.Code.CONFLICT,assertThrows(DomainException.class,cp::execute).code());
+        assertEquals(DomainException.Code.CONFLICT,assertThrows(DomainException.class,dp::execute).code());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_command WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(0,audits("campaign.create"));assertEquals(0,audits("coupon.definition"));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM platform_audit WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM marketing_campaign WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon_definition WHERE tenant_id=?",Integer.class,tenant));
+    }
+    /** 只spy真实Store读取时序：初次无回执后winner真实提交并冻结，失败后的唯一补读返回guarded原回执。 */
+    @Test void concurrentCompletionBeforeActiveStoreReadReturnsReceiptWithoutNewEffect() {
+        var atStore=new AtomicReference<Runnable>();var winner=new AtomicReference<String>();
+        doAnswer(call->{var effect=atStore.getAndSet(null);if(effect!=null)effect.run();return call.callRealMethod();})
+            .when(actualStores).requireActive(any(Actor.class),eq("S1"));
+        String ck=id();var c=campaign("before-active-campaign");
+        atStore.set(()->{winner.set(JsonCodec.write(campaigns.create(actor(CAMPAIGN_CREATE),ck,c)));freezeStore();});
+        assertEquals(winnerValueAfterCall(winner,()->JsonCodec.write(campaigns.create(actor(CAMPAIGN_CREATE),ck,c))),winner.get());
+        assertCreateCounts("campaign.create",ck,"marketing_campaign",1);
+        assertEquals(1,jdbc.update("UPDATE store_record SET status='ACTIVE',version=version+1 WHERE tenant_id=? AND store_id='S1'",tenant));
+        String dk=id();var d=coupon("before-active-coupon");
+        atStore.set(()->{winner.set(JsonCodec.write(coupons.create(actor(COUPON_DEFINITION_CREATE),dk,d)));freezeStore();});
+        assertEquals(winnerValueAfterCall(winner,()->JsonCodec.write(coupons.create(actor(COUPON_DEFINITION_CREATE),dk,d))),winner.get());
+        assertCreateCounts("coupon.definition",dk,"benefit_coupon_definition",1);
+    }
+    private String winnerValueAfterCall(AtomicReference<String> winner,java.util.function.Supplier<String> actual) {
+        winner.set(null);String result=actual.get();assertNotNull(winner.get(),"必须在真实Store读取前实际完成winner事务");return result;
+    }
+    /** 没有旧回执的真实首次写仍使用准备时ACTIVE快照，门店后来冻结或改变必须整笔回滚。 */
+    @Test void newPreparedCreateStillRejectsChangedStoreAndRollsBackClaim() {
+        String ck=id(),dk=id();var cp=campaigns.prepareCreate(actor(CAMPAIGN_CREATE),ck,campaign("new-campaign"));
+        var dp=coupons.prepareDefinition(actor(COUPON_DEFINITION_CREATE),dk,coupon("new-coupon"));
+        freezeStore();assertEquals(DomainException.Code.CONFLICT,assertThrows(DomainException.class,cp::execute).code());
+        assertEquals(DomainException.Code.CONFLICT,assertThrows(DomainException.class,dp::execute).code());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM platform_command WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(0,audits("campaign.create"));assertEquals(0,audits("coupon.definition"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM marketing_campaign WHERE tenant_id=?",Integer.class,tenant));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM benefit_coupon_definition WHERE tenant_id=?",Integer.class,tenant));
+    }
+    /** 两个真实事务争用同键，各Owner只提交一份内容和一份业务/身份审计；线程池有界并验证退出。 */
+    @Test void concurrentNewCampaignAndCouponCommandsHaveOneEffectAndAudit() throws Exception {
+        var pool=Executors.newFixedThreadPool(2);
+        try {
+            String ck=id(),dk=id();var c=campaign("concurrent-campaign");var d=coupon("concurrent-coupon");
+            var cr=pool.invokeAll(List.<Callable<String>>of(
+                ()->JsonCodec.write(campaigns.create(actor(CAMPAIGN_CREATE),ck,c)),
+                ()->JsonCodec.write(campaigns.create(actor(CAMPAIGN_CREATE),ck,c))),20,TimeUnit.SECONDS);
+            assertEquals(cr.get(0).get(5,TimeUnit.SECONDS),cr.get(1).get(5,TimeUnit.SECONDS));
+            var dr=pool.invokeAll(List.<Callable<String>>of(
+                ()->JsonCodec.write(coupons.create(actor(COUPON_DEFINITION_CREATE),dk,d)),
+                ()->JsonCodec.write(coupons.create(actor(COUPON_DEFINITION_CREATE),dk,d))),20,TimeUnit.SECONDS);
+            assertEquals(dr.get(0).get(5,TimeUnit.SECONDS),dr.get(1).get(5,TimeUnit.SECONDS));
+            assertCreateCounts("campaign.create",ck,"marketing_campaign",1);
+            assertCreateCounts("coupon.definition",dk,"benefit_coupon_definition",1);
+        } finally {pool.shutdownNow();assertTrue(pool.awaitTermination(5,TimeUnit.SECONDS),"本用例线程必须停止");}
+    }
+    private com.lrj.commerce.campaign.management.api.CampaignApi.Draft campaign(String id) {
+        var rule=new com.lrj.commerce.campaign.rule.api.RuleNode("COMPARE","memberLevel","EQ","TEXT","BASIC",null);
+        return new com.lrj.commerce.campaign.management.api.CampaignApi.Draft(id,1,"S1","原活动",Instant.now().minusSeconds(30),Instant.now().plusSeconds(7200),"0.00","1.00",rule,null);
+    }
+    private void freezeStore(){assertEquals(1,jdbc.update("UPDATE store_record SET status='FROZEN',version=version+1 WHERE tenant_id=? AND store_id='S1'",tenant));}
+    private void assertCreateCounts(String operation,String key,String table,int commands) {
+        assertEquals(commands,jdbc.queryForObject("SELECT COUNT(*) FROM platform_command WHERE tenant_id=? AND operation=? AND command_key=?",Integer.class,tenant,operation,key));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM platform_audit WHERE tenant_id=? AND operation=? AND command_key=?",Integer.class,tenant,operation,key));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM employee_command_identity WHERE tenant_id=? AND operation=? AND command_key=?",Integer.class,tenant,operation,key));
+        assertTrue(Set.of("marketing_campaign","benefit_coupon_definition").contains(table));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM "+table+" WHERE tenant_id=?",Integer.class,tenant));
     }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body,String key)throws Exception {
         var r=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
