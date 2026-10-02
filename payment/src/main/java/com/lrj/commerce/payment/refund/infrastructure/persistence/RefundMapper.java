@@ -49,4 +49,9 @@ public interface RefundMapper {
 
 	int claim(@Param("check") Check check, @Param("delay") int delay);
 
+	/** 只读订单归属投影，不写跨模块表；实际门店过滤先于分页。 */
+	List<RefundApi.View> scopedList(@Param("tenant") String tenant,
+			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("after") String after, @Param("limit") int limit);
+
 }

@@ -32,4 +32,9 @@ public interface AftersaleMapper {
 	int change(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version,
 			@Param("status") String status, @Param("refundId") String refundId);
 
+	/** 只读订单归属投影，不写跨模块表；实际门店过滤先于分页。 */
+	List<Row> scopedList(@Param("tenant") String tenant,
+			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("after") String after, @Param("limit") int limit);
+
 }

@@ -31,6 +31,8 @@ import com.lrj.commerce.runtime.work.WorkLanes;
  */
 @SpringBootTest
 class CrashRecoveryTest {
+	@org.springframework.beans.factory.annotation.Autowired com.lrj.commerce.runtime.api.access.EmployeeAccess replayAccess;
+	@org.springframework.beans.factory.annotation.Autowired com.lrj.commerce.runtime.replay.ReplayAuthorization replayAuthorization;
 
 	@DynamicPropertySource
 	static void database(DynamicPropertyRegistry registry) {
@@ -74,6 +76,7 @@ class CrashRecoveryTest {
 		jdbc.update("DELETE FROM platform_inbox WHERE consumer_id LIKE ?", prefix + "%");
 		jdbc.update("DELETE FROM platform_audit WHERE actor_id=?", prefix);
 		jdbc.update("DELETE FROM platform_event WHERE event_type=?", type);
+		jdbc.update("DELETE FROM employee_runtime_replay_source WHERE tenant_id LIKE ?", prefix + "%");
 		jdbc.update("DELETE FROM platform_replay WHERE tenant_id LIKE ?", prefix + "%");
 	}
 
@@ -165,9 +168,17 @@ class CrashRecoveryTest {
 				tenant, prefix + "proj", type, Timestamp.from(Instant.now().minusSeconds(600)),
 				Timestamp.from(Instant.now().plusSeconds(1)));
 		var projection = replayHandler("proj");
+		// 崩溃夹具模拟旧任务迁移，准确记录原 created_by；缺来源应停止，不能靠新 Worker 授权继续。
+		jdbc.update("INSERT INTO employee_runtime_replay_source(tenant_id,job_id,source_json,created_at) "
+				+ "SELECT tenant_id,job_id,JSON_OBJECT('kind','LEGACY','tenant',tenant_id,'jobId',job_id,"
+				+ "'actor',JSON_OBJECT('tenantId',tenant_id,'actorId',created_by,'role','ADMIN','channel','WEB','executionId',NULL),"
+				+ "'execution',NULL,'key',NULL,'createdAt',DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.%fZ')),created_at "
+				+ "FROM platform_replay WHERE tenant_id=? AND job_id='j1'", tenant);
 		// 第2次提交（第二个事件的效果与游标推进）前终止。
 		var crashing = new EventReplay(replayMapper, List.of(projection), commands, audit,
 				new CrashingTransactions(transactions, -1, 2), Clock.systemUTC(), new WorkLanes(), 1_000_000);
+		org.springframework.test.util.ReflectionTestUtils.setField(crashing, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(crashing, "authorization", replayAuthorization);
 		assertThrows(Crash.class, crashing::tick);
 		var job = replayMapper.find(tenant, "j1");
 		assertEquals(1, job.examined());
@@ -175,6 +186,8 @@ class CrashRecoveryTest {
 		assertEquals(1, ids.stream().mapToInt(id -> effects("proj", id)).sum(), "只有已提交项的效果存在");
 		var restarted = new EventReplay(replayMapper, List.of(projection), commands, audit, transactions,
 				Clock.systemUTC(), new WorkLanes(), 1_000_000);
+		org.springframework.test.util.ReflectionTestUtils.setField(restarted, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(restarted, "authorization", replayAuthorization);
 		for (int i = 0; i < 10 && replayMapper.find(tenant, "j1").status().equals("RUNNING"); i++)
 			restarted.tick();
 		job = replayMapper.find(tenant, "j1");

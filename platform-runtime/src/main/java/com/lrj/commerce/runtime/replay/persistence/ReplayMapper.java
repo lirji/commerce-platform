@@ -21,6 +21,11 @@ public interface ReplayMapper {
 	record Backlog(long running, Instant oldestRunning, long failed) {
 	}
 
+	/** 原员工来源只创建一次，控制与重试没有替换入口。 */
+	void insertSource(@Param("tenant") String tenant, @Param("id") String id, @Param("json") String json);
+	String source(@Param("tenant") String tenant, @Param("id") String id);
+	String sourceLock(@Param("tenant") String tenant, @Param("id") String id);
+
 	void insert(@Param("tenant") String tenant, @Param("j") Job job);
 
 	Job find(@Param("tenant") String tenant, @Param("id") String id);

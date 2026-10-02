@@ -13,6 +13,8 @@ import java.math.*;
 import java.util.*;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.event.Outbox;
@@ -21,6 +23,10 @@ import com.lrj.commerce.runtime.serialization.JsonCodec;
 /** 申请、退货、退款三个事实分开，只有可信退款成功消费后才完成售后。 */
 @Service
 public class AftersaleService implements AftersaleApi, EventHandler {
+
+	/** 生产容器强制注入，每个员工入口使用独立能力；后台责任不依赖此门禁。 */
+	@org.springframework.beans.factory.annotation.Autowired
+	private EmployeeAccess access;
 
 	private final com.lrj.commerce.member.points.spend.api.PointsSpendApi points;
 
@@ -125,15 +131,22 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 	}
 
 	public List<View> adminList(Actor actor, String after, int limit) {
-		actor.requireAdmin();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), null, after, limit).stream().map(this::view).toList();
+		var permit = access.scope(actor, AFTERSALE_READ);
+		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit).stream().map(this::view).toList();
+		EmployeeAccess.requireSame(permit, access.scope(actor, AFTERSALE_READ));
+		return result;
 	}
 
 	/** 批准未发货退款直接释放可售；已发货必须等收回实物。 */
 	public View approve(Actor actor, String key, String id) {
-		actor.requireAdmin();
-		return commands.run(actor, "aftersale.approve", key, id, View.class, () -> {
+		Identifiers.require(id);
+		var fact = Inputs.found(mapper.find(actor.tenantId(), id));
+		var permit = orders.authorize(actor, AFTERSALE_APPROVE, fact.orderId());
+		return commands.runGuarded(actor, "aftersale.approve", key,
+				permit.permit().identity() == null ? id : Arrays.asList(id, permit.permit().identity()), View.class,
+				() -> orders.lockAuthorization(actor, permit), () -> {
+			access.audit(actor, permit.permit(), "aftersale.approve", key);
 			var row = Inputs.found(mapper.lock(actor.tenantId(), id));
 			requireState(row, "REQUESTED");
 			if (row.returnRequired())
@@ -145,8 +158,13 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 	}
 
 	public View reject(Actor actor, String key, String id) {
-		actor.requireAdmin();
-		return commands.run(actor, "aftersale.reject", key, id, View.class, () -> {
+		Identifiers.require(id);
+		var fact = Inputs.found(mapper.find(actor.tenantId(), id));
+		var permit = orders.authorize(actor, AFTERSALE_REJECT, fact.orderId());
+		return commands.runGuarded(actor, "aftersale.reject", key,
+				permit.permit().identity() == null ? id : Arrays.asList(id, permit.permit().identity()), View.class,
+				() -> orders.lockAuthorization(actor, permit), () -> {
+			access.audit(actor, permit.permit(), "aftersale.reject", key);
 			var row = Inputs.found(mapper.lock(actor.tenantId(), id));
 			requireState(row, "REQUESTED");
 			change(actor.tenantId(), row, "REJECTED", null);
@@ -157,8 +175,13 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 
 	/** 收货事实和库存回补同事务，退款未知不妨碍记录已经收回的实物。 */
 	public View receiveReturn(Actor actor, String key, String id) {
-		actor.requireAdmin();
-		return commands.run(actor, "aftersale.receive", key, id, View.class, () -> {
+		Identifiers.require(id);
+		var fact = Inputs.found(mapper.find(actor.tenantId(), id));
+		var permit = orders.authorize(actor, AFTERSALE_RECEIVE_RETURN, fact.orderId());
+		return commands.runGuarded(actor, "aftersale.receive", key,
+				permit.permit().identity() == null ? id : Arrays.asList(id, permit.permit().identity()), View.class,
+				() -> orders.lockAuthorization(actor, permit), () -> {
+			access.audit(actor, permit.permit(), "aftersale.receive", key);
 			var row = Inputs.found(mapper.lock(actor.tenantId(), id));
 			requireState(row, "WAIT_RETURN");
 			startRefund(actor.tenantId(), row);

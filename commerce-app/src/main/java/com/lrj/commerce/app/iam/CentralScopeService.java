@@ -35,6 +35,19 @@ public final class CentralScopeService {
         var p=client.requireScope(token,check(tenant,null,type));Actor actor=binding(p);
         return new CentralStoreIdentity(token,tenant,p.context().membershipGeneration(),actor);
     }
+    /** 仪表盘复用真实商品 read 范围；父能力不能代替商品能力，身份核对在查询前完成。 */
+    public CatalogAggregation prepareCatalogStats(CentralStoreIdentity identity,
+            Actor parent, com.lrj.commerce.runtime.api.access.EmployeeAccess.Identity expected, String store,
+            com.lrj.commerce.catalog.assortment.api.CatalogApi catalog) {
+        var a=authorize(identity,ScopeDtos.PRODUCT_RESOURCE_TYPE);var c=a.plan().context();
+        if(parent==null||expected==null||!parent.tenantId().equals(a.actor().tenantId())||!parent.actorId().equals(a.actor().actorId())
+                ||parent.role()!=Actor.Role.OPERATOR||!expected.principalId().equals(c.principalId())
+                ||!expected.membershipId().equals(c.membershipId())||expected.generation()!=c.membershipGeneration())throw denied();
+        var stats=catalog.statsScoped(a.actor(),a.filter(),store);
+        recheck(identity,ScopeDtos.PRODUCT_RESOURCE_TYPE,a);return new CatalogAggregation(stats,()->recheck(identity,ScopeDtos.PRODUCT_RESOURCE_TYPE,a));
+    }
+    /** 聚合最终返回前仅重核原商品范围，不重新查询或默许新的Grant扩大既有结果。 */
+    public record CatalogAggregation(com.lrj.commerce.catalog.assortment.api.CatalogApi.Stats value, Runnable verify) {}
     /** 列表/搜索/count/统计共享SQL谓词，结果返回前再次验证整个授权上下文。 */
     public Page page(CentralStoreIdentity identity,String type,String cursor,int limit,String search){
         validateQuery(limit,search);var a=authorize(identity,type);String after="";

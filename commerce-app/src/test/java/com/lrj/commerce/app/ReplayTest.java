@@ -32,6 +32,8 @@ import com.lrj.commerce.runtime.work.WorkLanes;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ReplayTest {
+	@org.springframework.beans.factory.annotation.Autowired com.lrj.commerce.runtime.api.access.EmployeeAccess replayAccess;
+	@org.springframework.beans.factory.annotation.Autowired com.lrj.commerce.runtime.replay.ReplayAuthorization replayAuthorization;
 
 	@DynamicPropertySource
 	static void database(DynamicPropertyRegistry registry) {
@@ -283,6 +285,8 @@ class ReplayTest {
 				create("yield-1", EFFECTS, List.of(CREATED), "REPROCESS"));
 		var yielding = new EventReplay(replayMapper, handlers, commands, audit, transactions, Clock.systemUTC(),
 				new WorkLanes(), 1);
+		org.springframework.test.util.ReflectionTestUtils.setField(yielding, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(yielding, "authorization", replayAuthorization);
 		// 制造一条有消费者的实时到期事件（测试关闭Worker，它保持PENDING）。
 		String live = UUID.randomUUID().toString();
 		jdbc.update(
@@ -306,6 +310,8 @@ class ReplayTest {
 				e -> calls.incrementAndGet());
 		var instance = new EventReplay(replayMapper, List.of(unsafe), commands, audit, transactions, Clock.systemUTC(),
 				new WorkLanes(), 1_000_000);
+		org.springframework.test.util.ReflectionTestUtils.setField(instance, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(instance, "authorization", replayAuthorization);
 		insertJob("gate-1", "stub-unsafe-v1", "UNPROCESSED");
 		for (int i = 0; i < 3; i++)
 			instance.tick();
@@ -328,6 +334,8 @@ class ReplayTest {
 		});
 		var instance = new EventReplay(replayMapper, List.of(flaky), commands, audit, transactions, Clock.systemUTC(),
 				new WorkLanes(), 1_000_000);
+		org.springframework.test.util.ReflectionTestUtils.setField(instance, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(instance, "authorization", replayAuthorization);
 		insertJob("flaky-1", "stub-flaky-v1", "UNPROCESSED");
 		for (int i = 0; i < 50 && replayMapper.find(tenant, "flaky-1").status().equals("RUNNING"); i++)
 			instance.tick();
@@ -347,6 +355,8 @@ class ReplayTest {
 		});
 		var failing = new EventReplay(replayMapper, List.of(broken), commands, audit, transactions, Clock.systemUTC(),
 				new WorkLanes(), 1_000_000);
+		org.springframework.test.util.ReflectionTestUtils.setField(failing, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(failing, "authorization", replayAuthorization);
 		insertJob("broken-1", "stub-broken-v1", "UNPROCESSED");
 		for (int i = 0; i < 50 && replayMapper.find(tenant, "broken-1").status().equals("RUNNING"); i++)
 			failing.tick();
@@ -364,8 +374,12 @@ class ReplayTest {
 				e -> executed.computeIfAbsent(e.eventId(), k -> new AtomicInteger()).incrementAndGet());
 		var a = new EventReplay(replayMapper, List.of(counting), commands, audit, transactions, Clock.systemUTC(),
 				new WorkLanes(), 1_000_000);
+		org.springframework.test.util.ReflectionTestUtils.setField(a, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(a, "authorization", replayAuthorization);
 		var b = new EventReplay(replayMapper, List.of(counting), commands, audit, transactions, Clock.systemUTC(),
 				new WorkLanes(), 1_000_000);
+		org.springframework.test.util.ReflectionTestUtils.setField(b, "access", replayAccess);
+		org.springframework.test.util.ReflectionTestUtils.setField(b, "authorization", replayAuthorization);
 		insertJob("multi-1", "stub-count-v1", "UNPROCESSED");
 		var pool = Executors.newFixedThreadPool(2);
 		try {
@@ -467,6 +481,12 @@ class ReplayTest {
 				"INSERT INTO platform_replay(tenant_id,job_id,consumer_id,event_types,mode,from_at,to_at,max_events,status,reason,created_by) VALUES(?,?,?,?,?,?,?,1000,'RUNNING','测试任务','tester')",
 				tenant, id, consumer, CREATED, mode, java.sql.Timestamp.from(started),
 				java.sql.Timestamp.from(Instant.now()));
+		// 此夹具模拟迁移前的真实 ADMIN 任务；须同时保留原创建者来源，不能由 Worker 补成 SYSTEM。
+		jdbc.update("INSERT INTO employee_runtime_replay_source(tenant_id,job_id,source_json,created_at) "
+				+ "SELECT tenant_id,job_id,JSON_OBJECT('kind','LEGACY','tenant',tenant_id,'jobId',job_id,"
+				+ "'actor',JSON_OBJECT('tenantId',tenant_id,'actorId',created_by,'role','ADMIN','channel','WEB','executionId',NULL),"
+				+ "'execution',NULL,'key',NULL,'createdAt',DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.%fZ')),created_at "
+				+ "FROM platform_replay WHERE tenant_id=? AND job_id=?", tenant, id);
 	}
 
 	private static EventHandler stub(String consumer, ReplaySafety safety,

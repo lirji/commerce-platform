@@ -54,6 +54,21 @@ public interface OpsPageApi {
 
 	View change(Actor actor, String key, String id, long version, long expected, String action);
 
+	/** 聚合预先列出实际定义需要的读能力，每一段分别签发精确引用。 */
+	interface PreparedRender {
+		java.util.Set<com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability> capabilities();
+		Render render(java.util.Map<com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability, Actor> actors);
+	}
+	PreparedRender preparePreview(Actor actor, Definition input);
+	PreparedRender prepareRender(Actor actor, String id);
+
+	/** 内嵌动作目标来自实际发布内容，不接受请求指定能力或 SYSTEM 来源。 */
+	interface PreparedExecution {
+		com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability capability();
+		ActionResult execute(Actor childActor);
+	}
+	PreparedExecution prepareExecution(Actor actor, String key, String id, long version, String action, ActionInput input);
+
 	Render preview(Actor actor, Definition input);
 
 	Render render(Actor actor, String id);

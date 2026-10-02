@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import java.time.Clock;
 import java.util.*;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.recovery.RecoverableWork;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
@@ -37,6 +39,9 @@ public class RuntimeRecovery {
 
 	private final Map<String, RecoverableWork> works = new TreeMap<>();
 
+	/** 与平台运维及旧管理员资格区分，中央员工只得到闭集 tenant runtime 能力。 */
+	@org.springframework.beans.factory.annotation.Autowired private EmployeeAccess access;
+
 	private final Commands commands;
 
 	private final RecoveryAudit audit;
@@ -57,28 +62,35 @@ public class RuntimeRecovery {
 	}
 
 	public List<WorkType> workTypes(Actor actor) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
-		return works.values().stream().map(w -> new WorkType(w.workType(), w.actions())).toList();
+		var permit = readPermit(actor);
+		var result = works.values().stream().map(w -> new WorkType(w.workType(), w.actions())).toList();
+		EmployeeAccess.requireSame(permit, readPermit(actor));
+		return result;
 	}
 
 	/** 本租户停止项，failureClass为空时不过滤。 */
 	public List<RecoverableWork.Stopped> stopped(Actor actor, String workType, String failureClass, String after,
 			int limit) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		var permit = readPermit(actor);
 		Inputs.page(after, limit);
-		return work(workType).stopped(actor.tenantId(), failureClass(failureClass), after, limit);
+		var result = work(workType).stopped(actor.tenantId(), failureClass(failureClass), after, limit);
+		EmployeeAccess.requireSame(permit, readPermit(actor));
+		return result;
 	}
 
 	/** 恢复审计历史，可按工作类型与标识过滤。 */
 	public List<RecoveryMapper.Row> history(Actor actor, String workType, String workId, long after, int limit) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		var permit = readPermit(actor);
 		Inputs.require(after >= 0, "游标无效");
 		Inputs.page("", limit);
-		return history.list(actor.tenantId(), workType, workId, after, limit);
+		var result = history.list(actor.tenantId(), workType, workId, after, limit);
+		EmployeeAccess.requireSame(permit, readPermit(actor));
+		return result;
 	}
 
 	public Result recover(Actor actor, String key, Request input) {
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);
+		var permit = access.scope(actor, RUNTIME_RECOVER);
+		if (permit.identity() == null) actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);
 		Inputs.require(input != null && input.action() != null && input.workIds() != null && !input.workIds().isEmpty()
 				&& input.workIds().size() <= MAX_ITEMS, "恢复需要1至" + MAX_ITEMS + "个显式工作标识");
 		var work = work(input.workType());
@@ -91,7 +103,8 @@ public class RuntimeRecovery {
 			Inputs.require(ids.add(id), "工作标识不能重复");
 		}
 		var normalized = new Request(work.workType(), input.action(), List.copyOf(ids), expected, input.reason());
-		return commands.run(actor, "runtime.recovery", key, normalized, Result.class, () -> {
+		Object command = permit.identity() == null ? normalized : new Object[] {normalized, permit.identity()};
+		return commands.runGuarded(actor, "runtime.recovery", key, command, Result.class, () -> access.lock(permit), () -> {
 			var outcomes = new ArrayList<Outcome>();
 			int applied = 0;
 			for (var id : ids) {
@@ -101,6 +114,7 @@ public class RuntimeRecovery {
 				if (outcome.result().equals(RecoveryAudit.APPLIED))
 					applied++;
 			}
+			access.audit(actor, permit, "runtime.recovery", key, key);
 			return new Result(work.workType(), input.action().name(), applied, outcomes.size() - applied, outcomes);
 		});
 	}
@@ -148,6 +162,12 @@ public class RuntimeRecovery {
 		if (work == null)
 			throw new DomainException(DomainException.Code.NOT_FOUND, "未知工作类型");
 		return work;
+	}
+
+	private EmployeeAccess.ScopePermit readPermit(Actor actor) {
+		var permit = access.scope(actor, RUNTIME_READ);
+		if (permit.identity() == null) actor.require(Actor.Capability.RUNTIME_RECOVERY_READ);
+		return permit;
 	}
 
 	private static String failureClass(String value) {

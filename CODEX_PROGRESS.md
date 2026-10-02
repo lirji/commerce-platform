@@ -1,3 +1,108 @@
+# 当前并行 CE06—08 终态（2026-10-02，优先于历史）
+
+## 任务目标
+
+完整O1/O2/P1/R1/D1/R2：订单/资金/履约/售后/到期、OpsPage/event/runtime/Dashboard及12车道责任。仅本任务两隔离树；私密Maven；本地逻辑提交由root统一集成，不自行main merge/push。
+
+## 已完成
+
+- 33精准能力Owner与9真实页面，V71/V72追加、Modal/脏输入/未知原键保护；真实可信store、CAS/原幂等/原资金责任保留。
+- 544项归档539PASS、5既有性能实验skip；16窄实库/HTTP全PASS。当前149真实Auth/SQL检查、3晚段子权限撤权屏障、7真实tenant/store/action-only边界PASS。
+- genuine 6秒原Source自然到期及未到期撤回后新Grant ACTIVE不能复活；原reference/Grant/role/身份tuple真实PG/MySQLjoin。停用员工和实际Auth停服后原资金/到期继续，manualSource/cursor/attempts不变。
+- 九页108+异常27=135当前图，1440/390/320实看；六错误/失响应同path/body/key最后SQL各1audit/command；event int1及非幂等pump明确新调用保留原未知。
+- 当前945source前后/终态一致，18模块819类/Mapper/迁移与真实JAR全字节一致；本域源码新SDK/protocol target/privateRepo/nested全BYTE MATCH。
+- 正式 TEST_RESULT/12lane/122candidate/34role映射落盘；私密终态路径 Commerce .local/order-operations/real-runtime/rehearsal-2b5bb1c0f07a/terminal-owner-result.json。
+
+## 已修改文件
+
+- 本域Order/Payment/Refund/Fulfillment/Aftersale/Store Owner及Mapper；OpsPage/Prepared Campaign/Coupon/Dashboard/Catalog聚合；Event/Runtime/Replay Source；33短hint；9中央页面/client/command/独立样式、原路由共享Owner批准patch；2新MySQL测试与必要原LEGACY夹具；V71/V72。
+- Auth docs/design/oa-auth-unification/CONTRACTS_COMMERCE_ORDER_OPERATIONS.md 与 docs/implementation/oa-auth/commerce-order-operations 的切片/验证/12lane/全候选角色映射。
+
+## 未完成
+
+- 本地产品完整逻辑提交已完成：O1 ef0c8c3 → P1/R1/D1 b053485 → O2 76dfe81；root进行D2/Journey/九路由共享源语义合并及affected验证/精确CI。
+- IR实际122全目录/42菜单/34角色出版为独立Owner在途；本片不提前宣称出版DONE，不自动Grant。
+
+## 当前问题
+
+- 无产品阻塞。五个既有条件性能skip明确保留，不提供新容量/SLO声明。保留全部早期seed/schema/DTO及旧protocol归档差异FAIL证据；新当前终态关闭本片发现。
+- 当前应用/Proxy/SPI20661/62/63/65/66已正常停止，独占基础组件/私密SQL/源码tar/图片为审计保留；不清共享或生产数据。
+
+## 下一步建议
+
+1. 使用已验证本地产品提交及owner-menu-map-final-v1.json精确SHA交root/Journey/IR；私密terminal记录仍绑定验证时源码，不改旧before/source证据。
+2. root集成时保留D2 Tag换行、Journey五路由及本片九路由；IR按精确final SHA实际出版后统一main CI。
+
+## 恢复 Prompt
+
+读取本顶节及正式TEST_RESULT，从本地Git/terminal receipt交付收尾继续；产品与945源已冻结验证，勿重复544未变回归、勿另建树/Agent、勿改原root/IR共享源、勿自行main push。按实际PASS与Owner职责说明剩余出版和集成边界。
+
+---
+
+# Codex Progress
+
+## 任务目标
+
+完整中央旅程/效果/执行权限及真实SSO页面；原D2目录仍冻结，本任务只在隔离树。
+
+## 已完成
+
+- Auth J0 c834d38、共享CE06/07 ad09213已验证。
+- Commerce共享Provider4ca6acc；真实MySQL68迁移/14 CD回归。
+- CE05 Journey/效果/执行Owner与PreparedEnrollment；独占MySQL26项通过，证据.local/journeys/j1-evidence-v1。
+
+## 已修改文件
+
+- JourneyApi/Service/Authorization/Mapper、JourneyAccessController；EffectsService、CampaignExecutionService；内部OrderApi四文件、真实测试、安全隔离URL。
+
+## 未完成
+
+- J2/EF2五页面已在途，需完成路由/客户端/视觉、真实PKCE/跨进程Auth与SQL验收。
+- Dashboard共享闭集/V70/hints已验证；实际聚合与页面由CE07 Owner继续，本任务不宣布全122已发布。
+
+## 当前问题
+
+- 49308及49309初始schema默认collation曾失败V29，保留证据；另建同实例唯一utf8mb4_bin库后68迁移通过。
+- 所有Maven必须本Auth工作树.local/maven-repository；禁共享m2 install及D2端口。
+
+## 下一步建议
+
+1. Dashboard共享短集合已交付；继续五真实页面及PKCE/SQL/视觉。
+2. 完成五真实页面与隔离PKCE/SQL/视觉，按实际证据更新，不等待继续。
+
+## 恢复 Prompt
+
+请读取本CODEX_PROGRESS及CE05_JOURNEY_OWNER，继续J2/EF2，保留原D2freeze，不新增Agent/worktree，不推main。
+
+---
+
+# Codex Progress
+
+## 任务目标
+完整CE05-J旅程/效果Owner与真实SSO页面，配对Auth协议及共享CE06/07有限注册；仅本隔离树，原目录D2保留，主Agent统一集成push。
+
+## 已完成
+- Auth J0 c834d38本地Validation/逻辑提交（254单元、18PG/图方法、Boot4 SDK1）。
+- 本树正式CONTRACTS_JOURNEYS落盘；J1-D正在实施runtime原来源/政策与共享闭集注册。
+
+## 已修改文件
+- runtime EmployeeAccess/EmployeeAuthority/Mapper/XML；app CentralEmployeeService；CONTRACTS_JOURNEYS。
+
+## 未完成
+- J1-D/I/S、J2、EF1/EF2产品与MySQL/真实PKCE/视觉验证；共享CE06/07注册独立交付。
+
+## 当前问题
+- 无已证明阻塞；专属端口19532/19544/49308/19661/19662/19665已声明，禁止D2/shared资源写。
+
+## 下一步建议
+1. 完成单Owner共享注册、V67/V68及Journey Owner，再沿切片完整验证/提交。
+
+## 恢复 Prompt
+读取本进度与CONTRACTS_JOURNEYS，从当前共享runtime/iam差异继续全部J1/J2/EF，勿要求反复继续；与CE06/07单Owner协调，主Agent统一集成push。
+
+
+---
+
 # Codex Progress
 
 ## 当前恢复检查点（2026-10-02，后文为历史归档）

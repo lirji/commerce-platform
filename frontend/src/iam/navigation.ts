@@ -1,5 +1,9 @@
 /** 已接线的中央页面目录仅表示入口，不表示持有任何业务授权。 */
 export const centralGroups = [
+  {key:"overview", label:"经营总览", pages:[["/operations/dashboard","经营总览"]]},
+  {key:"trade", label:"交易协作", pages:[["/operations/orders","订单"],["/operations/payments","支付"],["/operations/fulfillments","履约"],["/operations/aftersales","售后"],["/operations/refunds","退款"]]},
+  {key:"platform", label:"运营与运行", pages:[["/operations/ops-pages","运营页面"],["/operations/events","事件处理"],["/operations/runtime","运行恢复"]]},
+
   {
     key: "member",
     label: "会员经营",

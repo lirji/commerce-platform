@@ -17,6 +17,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import com.lrj.commerce.ordering.expiry.application.OrderExpiryRecovery;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.event.Outbox;
@@ -45,6 +47,10 @@ public class OrderService implements OrderApi {
 	private final com.lrj.commerce.campaign.execution.api.CampaignExecutionApi executions;
 
 	private final com.lrj.commerce.benefit.coupon.api.CouponApi coupons;
+
+	/** 生产容器强制注入，单独构造的后台车道测试不执行员工入口。 */
+	@org.springframework.beans.factory.annotation.Autowired
+	private EmployeeAccess access;
 
 	private final OrderMapper mapper;
 
@@ -254,14 +260,30 @@ public class OrderService implements OrderApi {
 		return view(Inputs.found(mapper.internalRead(tenant, id)));
 	}
 
-	/** 管理员批量到期仍是一个幂等命令事务，最多20单；退避中与已停止自动处理的订单不在其中，超时不是未支付证明。 */
+	/** 手工到期仅选择当前授权门店，最多20单；所有远程判权在事务外，事务内逐单核对原事实。 */
 	public int expire(Actor actor, String key) {
-		actor.requireAdmin();
-		return commands.run(actor, "order.expire", key, "expire", Integer.class, () -> {
-			var rows = mapper.expired(actor.tenantId(), clock.instant(), RetryPolicy.POISON.budget(),
-					RetryPolicy.TRANSIENT.budget());
-			rows.forEach(row -> expireRow(actor.tenantId(), row));
-			return rows.size();
+		var scope = access.scope(actor, ORDER_EXPIRE);
+		var candidates = mapper.expiredScoped(actor.tenantId(), scope.filter(), clock.instant(),
+				RetryPolicy.POISON.budget(), RetryPolicy.TRANSIENT.budget());
+		// 原回执重新核对原批次目标，不因目标已离开到期队列而失去逐店授权栅栏。
+		var prior = mapper.expiryFacts(actor, key);
+		var ids = prior.isEmpty() ? candidates.stream().map(OrderMapper.Row::orderId).toList()
+				: prior.stream().map(OrderMapper.ExpiryFact::orderId).toList();
+		var permits = ids.stream().map(id -> authorize(actor, ORDER_EXPIRE, id)).toList();
+		Object command = scope.identity() == null ? "expire" : Arrays.asList("expire", scope.identity(), scope.fingerprint());
+		return commands.runGuarded(actor, "order.expire", key, command, Integer.class,
+				() -> { access.lock(scope); permits.forEach(p -> lockAuthorization(actor, p)); }, () -> {
+			int count = 0;
+			for (var permit : permits) {
+				var row = mapper.expiredLock(actor.tenantId(), permit.orderId(), clock.instant(),
+						RetryPolicy.POISON.budget(), RetryPolicy.TRANSIENT.budget());
+				if (row == null) continue;
+				expireRow(actor.tenantId(), row);
+				mapper.expiryFact(actor, key, row.orderId(), permit.store().storeId(), permit.store().version());
+				count++;
+			}
+			access.audit(actor, scope, "order.expire", key, key);
+			return count;
 		});
 	}
 
@@ -331,10 +353,13 @@ public class OrderService implements OrderApi {
 
 	/** 停止自动取消的订单修复数据后由管理员审计重试，只清计数与退避，保留最近失败证据；恢复审计记录前后状态与分类。 */
 	public int retryExpiry(Actor actor, String key, String id) {
-		actor.requireAdmin();
-		actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);
 		Identifiers.require(id);
-		return commands.run(actor, "order.expiry.retry", key, id, Integer.class, () -> {
+		var permit = authorize(actor, ORDER_EXPIRY_RETRY, id);
+		// 旧管理员路由仍保留平台恢复资格；中央员工使用独立 order.expiry.retry。
+		if (permit.permit().identity() == null) actor.require(Actor.Capability.RUNTIME_RECOVERY_EXECUTE);
+		return commands.runGuarded(actor, "order.expiry.retry", key,
+				permit.permit().identity() == null ? id : Arrays.asList(id, permit.permit().identity()), Integer.class,
+				() -> lockAuthorization(actor, permit), () -> {
 			var before = mapper.expiryStoppedOne(actor.tenantId(), id, RetryPolicy.POISON.budget(),
 					RetryPolicy.TRANSIENT.budget());
 			if (mapper.expiryRetry(actor.tenantId(), id, RetryPolicy.POISON.budget(),
@@ -344,6 +369,7 @@ public class OrderService implements OrderApi {
 				audit.record(actor, "order.expiry.retry", key, OrderExpiryRecovery.WORK_TYPE, id, "RETRY",
 						OrderExpiryRecovery.STOPPED, OrderExpiryRecovery.READY,
 						OrderExpiryRecovery.failureClass(before.expiryError()), null, RecoveryAudit.APPLIED, null);
+			access.audit(actor, permit.permit(), "order.expiry.retry", key);
 			return 1;
 		});
 	}
@@ -430,18 +456,52 @@ public class OrderService implements OrderApi {
 		return mapper.listForEffects(tenant, store, from, to, after, limit).stream().map(this::view).toList();
 	}
 
-	/** 与本人列表分开，不能通过可选参数放大会员查询范围。 */
+	/** 与本人列表分开，SQL 在 LIMIT 前使用实际 store_id；不返回地址。 */
 	public List<View> adminList(Actor actor, String after, int limit) {
-		actor.requireAdmin();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), null, after, limit).stream().map(this::view).toList();
+		var before = access.scope(actor, ORDER_READ);
+		var result = mapper.scopedList(actor.tenantId(), before.filter(), after, limit).stream().map(this::view).toList();
+		EmployeeAccess.requireSame(before, access.scope(actor, ORDER_READ));
+		return result;
 	}
 
-	/** 管理员只读取本租户商业快照，不返回加密地址。 */
+	/** 只读取本租户商业快照，不返回加密地址。 */
 	public View adminRead(Actor actor, String id) {
-		actor.requireAdmin();
+		var permit = authorize(actor, ORDER_READ, id);
+		var result = internalRead(actor.tenantId(), id);
+		checkAuthorization(actor, permit);
+		return result;
+	}
+
+	/** 模块边界使用实际订单与门店 Owner 事实，调用者不能替换门店或版本。 */
+	public Authorization authorize(Actor actor, EmployeeAccess.Capability capability, String id) {
 		Identifiers.require(id);
-		return internalRead(actor.tenantId(), id);
+		var order = Inputs.found(mapper.internalRead(actor.tenantId(), id));
+		var store = stores.fact(actor, order.storeId());
+		var permit = access.require(actor, capability, new EmployeeAccess.StoreFact(store.storeId(), store.version()));
+		return new Authorization(id, store, permit);
+	}
+
+	/** 与订单生命周期相同加锁顺序；门店改变或路由停止时整条命令回滚。 */
+	@org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+	public void lockAuthorization(Actor actor, Authorization authorization) {
+		var order = Inputs.found(mapper.internalLock(actor.tenantId(), authorization.orderId()));
+		if (!order.storeId().equals(authorization.store().storeId())) throw authorizationChanged();
+		stores.lockCurrent(actor, authorization.store());
+		access.lock(authorization.permit());
+	}
+
+	/** 读路径两次实时门禁不以五秒准入资格作为结果缓存。 */
+	public void checkAuthorization(Actor actor, Authorization authorization) {
+		var after = authorize(actor, authorization.permit().capability(), authorization.orderId());
+		var before = authorization.permit();
+		if (!Objects.equals(before.identity(), after.permit().identity())
+				|| !Objects.equals(before.route(), after.permit().route())
+				|| !Objects.equals(before.fact(), after.permit().fact())) throw authorizationChanged();
+	}
+
+	private DomainException authorizationChanged() {
+		return new DomainException(DomainException.Code.FORBIDDEN, "订单门店授权事实已变化");
 	}
 
 }

@@ -56,6 +56,12 @@ public class StoreService implements StoreApi {
 		return value;
 	}
 
+	/** 冻结门店仍承担历史订单责任，此端口不赋予新交易资格且没有 HTTP 入口。 */
+	public View fact(Actor actor, String id) {
+		Identifiers.require(id);
+		return Inputs.found(mapper.find(actor.tenantId(), id));
+	}
+
 	/** Owner持有行锁直到库存命令提交，不能用旧版本许可写入变更后的归属。 */
 	@org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
 	public void lockCurrent(Actor actor, View expected) {

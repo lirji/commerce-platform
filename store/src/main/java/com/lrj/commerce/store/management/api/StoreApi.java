@@ -18,6 +18,9 @@ public interface StoreApi {
 	/** 从可信租户限定资源，禁止跨租户访问。 */
 	View requireActive(Actor actor, String id);
 
+	/** 历史责任使用当前真实门店事实，冻结不取消既有订单或资金义务；仅可信 Owner 内部调用。 */
+	View fact(Actor actor, String id);
+
 	/** 中央许可提交时由Owner锁定真实门店版本，避免判权后归属变化。 */
 	void lockCurrent(Actor actor, View expected);
 
