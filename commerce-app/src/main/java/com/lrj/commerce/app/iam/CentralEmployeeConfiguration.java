@@ -126,6 +126,7 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.RULE_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.RULE_CREATE;
         }
+        if ("GET".equals(r.getMethod()) && "/v1/operations/audiences/create-access".equals(path)) return EmployeeAccess.Capability.AUDIENCE_CREATE;
         if ("/v1/admin/audiences".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_CREATE;

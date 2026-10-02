@@ -32,6 +32,7 @@ export const centralGroups = [
       ["/operations/entitlement-definitions", "权益定义"],
       ["/operations/entitlements", "权益台账"],
       ["/operations/rules", "动态规则"],
+      ["/operations/audiences", "人群快照"],
     ],
   },
 ];

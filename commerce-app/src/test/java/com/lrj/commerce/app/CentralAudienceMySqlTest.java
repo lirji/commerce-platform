@@ -204,6 +204,26 @@ class CentralAudienceMySqlTest {
         assertEquals(1,count("marketing_audience_snapshot"));assertEquals(1,count("marketing_audience_member"));
         assertThrows(DomainException.class,()->assets.rules(employee,"",10));
     }
+    /** 创建提示仅复核当前独立权限，不返回执行引用；读取、撤权与依赖失败分别处理。 */
+    @Test void createHintIsIndependentAndFailsClosed() throws Exception {
+        String path="/v1/operations/audiences/create-access";
+        allowed.remove(AUDIENCE_READ.code());
+        var response=http("GET",path,"valid",true,null);
+        assertEquals(200,response.statusCode());assertEquals("{\"allowed\":true}",response.body());
+        assertEquals(403,http("GET","/v1/admin/audiences","valid",true,null).statusCode());
+        allowed.remove(AUDIENCE_CREATE.code());allowed.add(AUDIENCE_READ.code());
+        assertEquals(403,http("GET",path,"valid",true,null).statusCode());
+        assertEquals(200,http("GET","/v1/admin/audiences","valid",true,null).statusCode());
+        assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+        allowed.add(AUDIENCE_CREATE.code());partial.set(true);
+        assertEquals(403,http("GET",path,"valid",true,null).statusCode());partial.set(false);
+        afterScope.set(()->epoch.incrementAndGet());
+        assertEquals(403,http("GET",path,"valid",true,null).statusCode());
+        unavailable.set(true);assertEquals(503,http("GET",path,"valid",true,null).statusCode());unavailable.set(false);
+        jdbc.update("UPDATE employee_authority_route SET state='STOPPED',version=version+1 WHERE tenant_id=? AND family='AUDIENCE'",tenant);
+        assertEquals(403,http("GET",path,"valid",true,null).statusCode());
+        assertEquals(0,count("marketing_audience_snapshot"));assertEquals(0,count("employee_command_identity"));
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);

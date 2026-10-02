@@ -48,3 +48,32 @@ B端接口匹配、刷新恢复及Awwwards/Webby/FWA品质追求，持续完善�
 - 未完成：A1 GitCI交付、A2员工页；其他CE05—08与原生产目标/Owner/部署授权HOLD仍在。
 - 专用commerce-rules-mysql-698708fb5f已恢复启动，卷/43308保持；先source .local/runtime.env，再source .local/central-inventory/owned-rules.env。不得清空数据或修改V49—V62。
 - 下一步：运行既有验证与真实隔离演练，记录正式结果后持续A2及后续。保留Craft与其他证据及原8602，不反复等待继续。
+
+
+## CE05-A2 人群员工页（2026-10-01）
+
+- A1已推送1987062，精确CI36952128923 SUCCESS。Auth b5a6c64首次CI计数基线259/实际260失败，本地汇总漏判；2445da5已修，9契约/28工具通过，精确CI36952452483 SUCCESS已核验。
+- 当前原目录feat/central-audience-entry，基线1987062；Auth feat/commerce-audience-browser基线2445da5。无新工作树/子Agent，不改旧迁移/原8602/OA。
+- 已实施：AudienceActionsController/独立create-access、CentralPageController静态入口、中央路由、导航/lazy页；audienceClient白名单；CentralAudiences实际目录/两Tab/新鲜度说明/0—500成员输入与重复纠错/时间24小时/409/原键体冻结/切Tab与取消退出/401卸载/403和503隐藏写入及重新核验。
+- 8真实MySQL专项PASS，首次UI构建PASS；最终完整回归.local/central-audiences/ui-verify.log已BUILD SUCCESS：478项473PASS/5既有skip；最终UI重构建/forceCreation package及155类/迁移/45资源/演练复制JAR核对PASS。Auth脚本接线/262入口/9契约/28工具/语法通过，真实--browser session5093/569aae3f8c33/子网116运行中，待检查点与截图复核。
+- 修改文件：commerce-app下AudienceActionsController、CentralPageController、CentralEmployeeConfiguration、CentralAudienceMySqlTest；frontend/src/iam下CentralAudiences、audienceClient、CentralProducts、navigation；本进度。无新增迁移/SDK变更。
+- 未完成：真实人群PKCE/业务浏览器与精确SQL/截图（1440/390）、最终版本复核、正式结果及GitCI；完整478回归、构建/制品及hygiene已通过，A2仍不能标DONE。其余CE05—08及auth资源展示继续。
+- 下一步：先核验Auth侧session5093/569aae3f8c33真实--audiences --browser检查点及结果；不重复启动已完成478回归。脚本完成后实际查看1440/390页面和关联表单/异常截图，确认质量/精确SQL与版本摘要，再GitCI交付并继续其余CE05—08。
+
+- 最新真实演练569aae3f8c33（session5093）已147检查点PASS，仍在运行；先检查同一句柄/OS进程和检查点，不重复启动或将观察超时当终止。
+
+
+### A2首轮失败与最终演练恢复
+
+- 首轮569aae3f8c33/子网116已终止exit1，594检查点通过；人群write-only/read两阶段真实PKCE、必填/重复/501/时间/409、丢已提交响应后原键体重试、切Tab/取消退出/空成员和1440/390目录已执行通过。不能把未走到的最终SQL5审计、401与503当PASS。
+- 失败为测试initScript每次导航重写Token，覆盖刻意注入的无效凭据；已参考既有规则脚本保留已有session，401断言不变，未改业务/权限。截图捕获另归零滚动、弹层用实际视口并增390弹层，避免fixed头部/遮罩的整页捕获伪影。
+- 9契约/28工具、脚本语法及hygiene重验通过；commerces8源码和最终JAR摘要均不变，不重复478回归。首轮证据/数据保留，自有进程正常finally停止。
+- 最终真实--audiences --browser演练Auth侧session18603/.local/governance/p6/rehearsal-a5fd3867e690/子网117正在运行；原5093已停止，当前恢复先检查18603/PID及检查点，不因观察超时重启。A2保持VERIFYING，Git未交付。
+- 下一活动片只读预分析：原CampaignService八独立HIGH动作与budget.read同campaign资源，TENANT_ALL；现有DRAFT/IN_REVIEW/APPROVED/REJECTED/PUBLISHED/PAUSED、固定引用新鲜度/唯一发布、content version与lockVersion分别维护，预览无预占，预算履约内部入口不由员工撤权取消。A2交付后细化技术切片，不提前改代码。
+
+
+## CE05-A2 最终本地验证与交付检查点
+
+CE05-A2本地DONE：固定人群目录/创建两Tab与独立创建提示；8项真实MySQL和完整478项（473PASS/5既有skip）、最终前端build/forceCreation package通过。最终真实a5fd3867e690（10.254.117.0/24）647检查点PASS，人群11条浏览器检查及全部既有员工页回归通过；恰5条实际身份审计，UI两个快照为1:2和1:0，原键不重复、导入不创建客户。1440/390表单/目录、409/未知/退出确认/成功/401/503共11张截图已实际查看，正文390且表格内部横滚。两仓源码摘要、17嵌套模块/661类/45资源及复制JAR一致；262入口/122能力/34角色、9契约/28工具及两仓hygiene无阻断。首轮594后401夹具覆盖凭据失败已修正并保留。自有进程已停止；无新迁移，V49—V63不可改、SDK固定4747ac49，原8602/OA不切换。Git/CI待交付；下一CE05-CAM活动/审批/预算细化，其余CE05—08及auth资源展示未完成，生产2HOLD不变。
+
+下一步：正常任务分支提交、合并推送main并核对精确CI，然后串行CE05-CAM0/1/2。原18603已exit0，不再启动A2演练；证据a5fd3867e690/result.json与11张已查看截图保留。

@@ -28,6 +28,11 @@ import { enabled, login, manager, session } from "./session";
 import { central, CentralError, HTTP, useCentral, type Context } from "./api";
 
 // 登录与单一工作区不提前下载其他中央能力；权限仍由各页面的原客户端独立核验。
+const CentralAudiences = lazy(() =>
+  import("./CentralAudiences").then((module) => ({
+    default: module.CentralAudiences,
+  })),
+);
 const CentralRules = lazy(() =>
   import("./CentralRules").then((module) => ({ default: module.CentralRules })),
 );
@@ -177,6 +182,7 @@ export function CentralProducts() {
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
   // 固定入口与组件一一对应，新增页面不再加深路由条件分支。
   const pages: Record<string, ComponentType<Parameters<typeof Products>[0]>> = {
+    "/operations/audiences": CentralAudiences,
     "/operations/rules": CentralRules,
     "/operations/entitlement-definitions": CentralEntitlementDefinitions,
     "/operations/entitlements": CentralEntitlements,
