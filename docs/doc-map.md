@@ -64,4 +64,4 @@
 
 2026-10-02 CE05-S2动态人群页面完整DONE（含产品Git/精确CI），入口 `/operations/segments`；最终真实编译PKCE演练0b2c9e9dd22a已exit0、1128检查点/终态SQL与60张当前关联截图实看PASS，正式Validation COMPLETED/PASS，Authd35e6d5/CI36989740786及Commerce2946279/CI36989725617均精确SUCCESS。权威技术与验证继续使用上方SEGMENTS契约/验收链接；完整CE05—08与Auth菜单资源目标未完成。
 
-定向发券 CE05-D1 本地DONE，正式Validation PASS，四独立能力与持久双方向来源沿用[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_COUPON_DELIVERIES.md)及[验收记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_COUPON_DELIVERIES.md)。21实际MySQL专项及520全仓测试通过（5既有条件跳过）；真实Auth跨进程878检查点及终态SQL PASS，产品Git/精确CI待完成，D2页面尚未实施。
+定向发券 CE05-D1 完整DONE，正式Validation及产品Git/精确CI PASS，四独立能力与持久双方向来源沿用[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_COUPON_DELIVERIES.md)及[验收记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_COUPON_DELIVERIES.md)。21实际MySQL专项及520全仓测试通过（5既有条件跳过）；真实Auth跨进程878检查点及终态SQL PASS，Commerce2a75235/CI36997466878、Auth2ad3bad/CI36997489481均SUCCESS；D2页面READY、尚未实施，完整其余CE05—08/Auth选择目标继续。

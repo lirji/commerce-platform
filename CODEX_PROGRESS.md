@@ -2,9 +2,9 @@
 
 ## 当前发券Owner验证检查点（2026-10-02，优先于历史摘要）
 
-CE05-D1本地DONE，正式implementation-validation COMPLETED/PASS；21实际MySQL专项（14新增/7既有）及520全仓（515PASS/5既有条件skip）零fail/error，最终JAR731b76865ed7与17内部归档/源码15项一致。真实隔离fbefa05c7b47已exit0、878检查点（88发券）PASS；终态SQL恰5身份审计/内容版本1、29收件人、15撤回及14保留券，原ISSUE/首次REVOKE来源不变，真实Auth停服HTTP503和后台零效果/attempts0保留；六秒实际签发的新专用到期任务不冒充Owner POST等待七天。V66实际checksum579464248及全部注释通过，旧V31/V49–65不改。Git与精确CI尚待交付，D2 TODO；完整CE05—08/Auth实际发布菜单资源目标继续active。自有六端口已释放，原8602/OA/所有旧数据卷证据保留，无新工作树/Agent或生产部署。
+CE05-D1完整DONE，正式implementation-validation COMPLETED/PASS；产品Commerce2a752355f84faa0ef23166f611462ca3acb8a234/Auth2ad3bad43afb23671e83b717ac7e3d7714333bc9已正常任务分支push/ff main/main push。精确main CI Commerce36997466878/Auth36997489481均completed/SUCCESS（17/28步骤），D2 READY。21实际MySQL专项（14新增/7既有）及520全仓（515PASS/5既有条件skip）零fail/error；最终JAR731b76865ed7及17完整归档/源码15+4摘要一致。真实隔离fbefa05c7b47实际exit0、878检查点（88发券）全PASS；恰5身份审计/正内容版本1、29收件人、15撤回/14保留券，原ISSUE及首次REVOKE不换源，实际Auth停服HTTP503/后台零效果/attempts0。明确六秒新任务引用实际到期，未冒充Owner POST等待七天；V66实际checksum579464248注释/旧迁移不变。自有六端口释放，原8602/OA/旧数据/卷/失败证据保留，无新工作树/Agent或生产部署。完整剩余CE05—08及Auth实际发布菜单资源目标继续active，不缩减。
 
-下一步：按task-git-delivery只交付本任务两仓显式路径，精确产品CI PASS后推进D2。durable1已终态，不重新启动；21/520与真实878报告、全部失败日志及原来源保存。正式私密Auth coupon-delivery-owner-test-result.json Gate PASS，实际结果real-result.json；Commerce.local/central-audiences保存源码/JAR/71全仓XML/2专项XML与事务评审。
+下一步：仅纯交付状态元数据正常Git收尾；随后CE05-D2真实SSO批次/收件人页面、三独立短资格、原键unknown与显式新pump、401/403/503、最终编译PKCE/SQL及1440/390/320关联弹层实看。私密coupon-delivery-owner-test-result.json与delivery-final-result.json均PASS；durable1及两产品CI已终态，不重复878/21/520。D2只读预分析coupon-delivery-ui-preanalysis.json已绑定真实DTO，无D2产品实现。
 
 ## 当前状态（2026-10-02，以本节及末尾S2句柄为准）
 
