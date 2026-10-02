@@ -1,3 +1,44 @@
+# CE-FROZEN-RECEIPT-004 补修交接（2026-10-02，原终态保留）
+
+## 任务目标
+
+保留活动/券定义已成功同键原回执，门店后续冻结不阻断历史读取；当前权限与身份/路由栅栏仍每次执行，新意图不得绕过真实ACTIVE门店及CAS。
+
+## 已完成
+
+- Commerce 4b7c20a：仅CampaignService/CouponService/CentralOperationsRuntimeMySqlTest三文件。completedReceipt仅选择guarded原方向，最终原hash/命令锁+当前access.lock；补读仅业务资源CONFLICT/NOT_FOUND一次，权限/系统失败不吞。
+- 首次新写保留事务外ACTIVE快照，事务内action先lockCurrent；两类并发完成时序、回执合法FK清理后CONFLICT回滚、新key冻结拒绝与当前撤cap旧key403均真实SQL/HTTP闭合。
+- 新运营15项（旧8+新7）及旧Campaign13/Coupon7，35全部PASS、0fail/error/skip；独占已有50308/50310环境，未造DB/清共享数据/改guard或FK。
+- 私密新增 .local/order-operations/frozen-receipt-004-evidence-v1/result.json、manifest.json/3PASS XML/3logs，当前新service class与私密编译nestedTarget全BYTE MATCH。
+- 原root def7d4c/2bfe820共享静态语义审查PASS：37GET/37Page，35operations+1collab导航、34component+2产品fallback；listForEffects唯一、scope LIMIT前、D2与operations CSS保留。只读报告merged-shared-semantics-review-v1.json，不替代实际新root运行gate。
+
+## 已修改文件
+
+- marketing-runtime/src/main/java/com/lrj/commerce/campaign/management/application/CampaignService.java
+- benefit/src/main/java/com/lrj/commerce/benefit/coupon/application/CouponService.java
+- commerce-app/src/test/java/com/lrj/commerce/app/CentralOperationsRuntimeMySqlTest.java
+- CODEX_PROGRESS.md（本補修恢复记录；产品提交已单独完成）
+
+## 未完成
+
+- root需pick4b7c20a后完成新current受影响58实库、forceCreation制品/SDK/source归档及精确CI；IR全122出版继续HOLD直至该当前gate。
+- 原149/945/135终态属于原base不可改写；本补修新增3source与35窄实库证据，不能把旧browser JAR当补修运行证明。
+
+## 当前问题
+
+- 无本域产品阻塞。首次测试夹具误表名/FK受拒14/5errors、旧20在suffix schema被正确guard拒绝均保留；当前正确真实环境终态PASS。未削弱任何权限或业务断言。
+
+## 下一步建议
+
+1. root/独立review消费补修commit+新immutable sidecar；保持旧terminal/hash，当前新归档明确补修来源。
+2. root affected gate后IR更新SourceRef发布，按原21+新实际路由重数，不自动Grant34角色；本Owner不main merge/push，不启动旧rehearsal。
+
+## 恢复 Prompt
+
+读取本补修顶节与frozen-receipt-004-evidence-v1，继续root只读current source/artifact受影响gate；不得复写原149/945/135、不得原目录/target并发构建或DB写入。补修新三源已PASS提交4b7c20a，根目录运行由root唯一持有。
+
+---
+
 # 当前并行 CE06—08 终态（2026-10-02，优先于历史）
 
 ## 任务目标
