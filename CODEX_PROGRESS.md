@@ -17,7 +17,7 @@
 ## 未完成
 
 - J2/EF2五页面已在途，需完成路由/客户端/视觉、真实PKCE/跨进程Auth与SQL验收。
-- 共享dashboard.read闭集/迁移/hints给CE06 Owner；本任务不宣布全122已发布。
+- Dashboard共享闭集/V70/hints已验证；实际聚合与页面由CE07 Owner继续，本任务不宣布全122已发布。
 
 ## 当前问题
 
@@ -26,7 +26,7 @@
 
 ## 下一步建议
 
-1. 完成共享dashboard闭集小提交供其他Owner继续。
+1. Dashboard共享短集合已交付；继续五真实页面及PKCE/SQL/视觉。
 2. 完成五真实页面与隔离PKCE/SQL/视觉，按实际证据更新，不等待继续。
 
 ## 恢复 Prompt

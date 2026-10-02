@@ -276,6 +276,8 @@ public class CentralEmployeeConfiguration {
         if ("GET".equals(verb) && "/v1/admin/runtime/replays".equals(path)) return EmployeeAccess.Capability.RUNTIME_READ;
         if ("GET".equals(verb) && path.matches("/v1/admin/runtime/replays/[A-Za-z0-9_.:-]{1,64}")) return EmployeeAccess.Capability.RUNTIME_READ;
         if ("POST".equals(verb) && path.matches("/v1/admin/runtime/replays/[A-Za-z0-9_.:-]{1,64}/control")) return EmployeeAccess.Capability.RUNTIME_REPLAY_CONTROL;
+        if ("GET".equals(verb) && "/v1/admin/dashboard".equals(path)) return EmployeeAccess.Capability.DASHBOARD_READ;
+        if ("GET".equals(verb) && "/v1/operations/dashboard/read-access".equals(path)) return EmployeeAccess.Capability.DASHBOARD_READ;
         if ("GET".equals(verb) && "/v1/operations/orders/read-access".equals(path)) return EmployeeAccess.Capability.ORDER_READ;
         if ("GET".equals(verb) && "/v1/operations/orders/expire-access".equals(path)) return EmployeeAccess.Capability.ORDER_EXPIRE;
         if ("GET".equals(verb) && "/v1/operations/orders/expiry-retry-access".equals(path)) return EmployeeAccess.Capability.ORDER_EXPIRY_RETRY;
