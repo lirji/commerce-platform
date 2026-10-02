@@ -72,7 +72,9 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 手工任务持久化原员工与 Auth 执行引用的准确期限，不保存Token。每批扫描、快照发布、公告、重启和控制都重新核验原来源；新授权不能替换已撤销或过期的原任务。成功启用的周期调度保存独立固定政策，停未来调度或发布新定义不取消已开始的固定版本任务；STOPPED路由仍阻断系统任务，历史空来源在CENTRAL下拒绝推进。V65只追加来源和版本审计约束，不自动接管租户或推定历史政策。
 
-当前后台已通过真实跨进程本地验收，Git与精确CI交付状态见验证记录；专用动态人群SSO页面尚待CE05-S2交付。[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_SEGMENTS.md)与[验证记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_SEGMENTS.md)分别记录能力、任务语义和实际验收范围。本地隔离演练不改变原8602环境或生产部署。
+动态人群SSO页面 `/operations/segments?tenant_id=<UUID>` 已通过本地真实编译页面验收：定义/运行目录、会员规则创建和独立调度/刷新/控制/推进。写入岗位可以直接输入实际目标，不要求目录读取；四类有键命令保留未知结果的原意图，推进没有幂等键，未知后须核对并确认下一次调用。页面显示真实运行状态和独立公告状态，不把任务受理当作快照完成。
+
+当前后台已通过真实跨进程本地验收，Git与精确CI交付状态见验证记录；专用动态人群SSO页面已通过CE05-S2本地正式验证，产品Git/精确CI状态见验证记录。[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_SEGMENTS.md)与[验证记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_SEGMENTS.md)分别记录能力、任务语义和实际验收范围。本地隔离演练不改变原8602环境或生产部署。
 
 ### B端工作台与刷新恢复
 

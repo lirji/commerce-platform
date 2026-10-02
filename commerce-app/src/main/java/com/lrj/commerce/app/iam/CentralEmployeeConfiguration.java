@@ -127,6 +127,13 @@ public class CentralEmployeeConfiguration {
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.RULE_CREATE;
         }
         if ("GET".equals(r.getMethod()) && "/v1/operations/audiences/create-access".equals(path)) return EmployeeAccess.Capability.AUDIENCE_CREATE;
+        if ("GET".equals(r.getMethod())) {
+            if ("/v1/operations/segments/create-access".equals(path)) return EmployeeAccess.Capability.SEGMENT_CREATE;
+            if ("/v1/operations/segments/schedule-access".equals(path)) return EmployeeAccess.Capability.SEGMENT_SCHEDULE;
+            if ("/v1/operations/segments/refresh-access".equals(path)) return EmployeeAccess.Capability.SEGMENT_REFRESH;
+            if ("/v1/operations/segments/control-access".equals(path)) return EmployeeAccess.Capability.SEGMENT_CONTROL;
+            if ("/v1/operations/segments/pump-access".equals(path)) return EmployeeAccess.Capability.SEGMENT_PUMP;
+        }
         if ("/v1/admin/audiences".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_CREATE;

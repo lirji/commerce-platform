@@ -61,3 +61,5 @@
 2026-10-01 CE05-CAM1活动/预算中央权限接入：当前切片及真实版本/审批/幂等/预算履约契约见[auth活动契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_CAMPAIGNS.md)，验证/交付状态见[auth活动验收](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_CAMPAIGNS.md)。新增V64记录实际内容版本审计，SDK固定CAM0 b311e4c；界面CAM2单独验收，不覆盖Craft状态或宣称原8602已部署。
 
 2026-10-01 CE05-S1动态人群：SEGMENT六独立能力、runtime原执行来源和营销固定周期政策、V65正定义版本审计/来源持久化已实现；最终真实89f465b97213/37270 exit0、784检查点、21准确版本审计及正式Validation PASS，当前本地DONE，Git/精确CI另行核对。权威[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_SEGMENTS.md)及[实际验收](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_SEGMENTS.md)区分MySQL协议适配、真实Auth和S2页面；本仓当前状态见enterprise-iam-integration/PROGRESS_STATE及根CODEX_PROGRESS。无新依赖、自动租户接管或生产部署；V65已应用不可改。
+
+2026-10-02 CE05-S2动态人群页面本地DONE，入口 `/operations/segments`；最终真实编译PKCE演练0b2c9e9dd22a已exit0、1128检查点/终态SQL与60张当前关联截图实看PASS，正式Validation COMPLETED/PASS，产品Git/精确CI待交付。权威技术与验证继续使用上方SEGMENTS契约/验收链接；完整CE05—08与Auth菜单资源目标未完成。

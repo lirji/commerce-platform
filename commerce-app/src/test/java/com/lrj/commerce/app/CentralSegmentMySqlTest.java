@@ -136,6 +136,45 @@ class CentralSegmentMySqlTest {
         assertEquals(401,http("POST","/v1/admin/segment-runs/"+run.runId()+"/unknown","valid",true,null).statusCode());
         assertEquals(401,http("POST","/v1/admin/skus","valid",true,Map.of()).statusCode());
     }
+    /** 五个提示逐项判权：只返回资格，任何组合都不隐含读取或其他操作，也不写命令和审计。 */
+    @Test void actionHintsAreIndependentReadOnlyAndFailClosedAtHttp() throws Exception {
+        var hints=List.of(SEGMENT_CREATE,SEGMENT_SCHEDULE,SEGMENT_REFRESH,SEGMENT_CONTROL,SEGMENT_PUMP);
+        for(var granted:CAPS) {
+            allowed.clear();allowed.add(granted.code());
+            for(var hint:hints) {
+                String path="/v1/operations/segments/"+hint.name().substring("SEGMENT_".length()).toLowerCase(Locale.ROOT)+"-access";
+                var reply=http("GET",path,"valid",true,null);
+                assertEquals(granted==hint?200:403,reply.statusCode(),granted+" / "+hint);
+                if(granted==hint) assertEquals(Map.of("allowed",true),JsonCodec.read(reply.body(),Map.class));
+            }
+        }
+        allowed.clear();for(var cap:CAPS)allowed.add(cap.code());
+        for(var hint:hints) {
+            String path="/v1/operations/segments/"+hint.name().substring("SEGMENT_".length()).toLowerCase(Locale.ROOT)+"-access";
+            assertEquals(401,http("GET",path,"bad",true,null).statusCode());
+            assertEquals(401,http("GET",path,"valid",false,null).statusCode());
+            assertEquals(401,http("POST",path,"valid",true,null).statusCode());
+            assertEquals(403,http("GET",path,adminToken,false,null).statusCode());
+            unavailable.set(true);assertEquals(503,http("GET",path,"valid",true,null).statusCode());unavailable.set(false);
+        }
+        assertEquals(401,http("GET","/v1/operations/segments/read-access","valid",true,null).statusCode());
+        assertEquals(0,count("platform_command"));assertEquals(0,count("employee_command_identity"));
+        assertEquals(0,count("marketing_segment_run"));assertEquals(0,count("platform_event"));
+    }
+
+    /** 提示期间发生授权范围变化须拒绝，固定壳页不能变成任意路径或匿名业务入口。 */
+    @Test void hintScopeChangesAndFixedShellDoNotExposeData() throws Exception {
+        afterScope.set(()->generation.incrementAndGet());
+        assertEquals(403,http("GET","/v1/operations/segments/schedule-access","valid",true,null).statusCode());
+        generation.set(1);partial.set(true);
+        assertEquals(403,http("GET","/v1/operations/segments/create-access","valid",true,null).statusCode());
+        partial.set(false);
+        assertEquals(200,http("GET","/operations/segments",null,false,null).statusCode());
+        assertNotEquals(200,http("GET","/operations/segments/unknown",null,false,null).statusCode());
+        assertEquals(401,http("GET","/v1/admin/segments",null,false,null).statusCode());
+        assertEquals(0,count("platform_command"));assertEquals(0,count("employee_command_identity"));
+    }
+
     /** 定义版本、锁版本及原键分别保持；换nonce不换主体，实际版本审计不能冒用任务或快照ID。 */
     @Test void definitionsAndScheduleUsePositiveOwnerVersionAndStableReceipt() {
         String key=id();var def=input("S",7);var first=segments.create(actor(SEGMENT_CREATE),key,def);
@@ -282,7 +321,8 @@ class CentralSegmentMySqlTest {
         afterScope.set(()->partial.set(true));forbidden(()->segments.definitions(reader,"",10));
     }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body) throws Exception {
-        var request=HttpRequest.newBuilder(URI.create("http://localhost:"+port+path)).timeout(Duration.ofSeconds(20)).header("Authorization","Bearer "+token).header("Idempotency-Key",id());
+        var request=HttpRequest.newBuilder(URI.create("http://localhost:"+port+path)).timeout(Duration.ofSeconds(20)).header("Idempotency-Key",id());
+        if(token!=null)request.header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);
         if(body!=null)request.header("Content-Type","application/json");
         return HttpClient.newHttpClient().send(request.method(method,body==null?HttpRequest.BodyPublishers.noBody():HttpRequest.BodyPublishers.ofString(JsonCodec.write(body))).build(),HttpResponse.BodyHandlers.ofString());

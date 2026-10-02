@@ -1014,6 +1014,13 @@
 .campaign-modal .ant-input-number {
   width: 100%;
 }
+/* 实际人群/运行编号较长，弹层与回执完整换行，避免窄屏裁切。 */
+.segment-modal .ant-descriptions-item-content,
+.segment-receipt .ant-descriptions-item-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 @media (max-width: 560px) {
   .ant-modal.campaign-modal {
     max-width: calc(100vw - 24px);

@@ -38,6 +38,11 @@ const CentralCampaignBudgets = lazy(() =>
     default: module.CentralCampaignBudgets,
   })),
 );
+const CentralSegments = lazy(() =>
+  import("./CentralSegments").then((module) => ({
+    default: module.CentralSegments,
+  })),
+);
 const CentralAudiences = lazy(() =>
   import("./CentralAudiences").then((module) => ({
     default: module.CentralAudiences,
@@ -195,6 +200,7 @@ export function CentralProducts() {
     "/operations/campaigns": CentralCampaigns,
     "/operations/campaign-budgets": CentralCampaignBudgets,
     "/operations/audiences": CentralAudiences,
+    "/operations/segments": CentralSegments,
     "/operations/rules": CentralRules,
     "/operations/entitlement-definitions": CentralEntitlementDefinitions,
     "/operations/entitlements": CentralEntitlements,
