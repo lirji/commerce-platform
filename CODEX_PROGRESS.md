@@ -17,7 +17,7 @@
 
 ## 未完成
 
-- 本地J2逻辑Git交付及主流程统一集成/push；CE06/07九页共享接线补丁已交其Owner，需与本五页语义合并。
+- 主流程统一集成/push；CE06/07九页共享接线补丁已交其Owner，需与本五页语义合并。
 - 完整应用有界Owner catalog/角色/菜单实际发布由IR任务执行；本域18能力/5菜单映射准确，但不宣称全122已发布。
 
 ## 当前问题
@@ -27,8 +27,8 @@
 
 ## 下一步建议
 
-1. 用显式9产品/测试路径与正式文档创建本地完整逻辑提交，提供私密证据及18cap/5menu源映射给root/IR。
-2. 停止仅本 `start-final.py` 自有JVM（STOP_FINAL）后保留DB/镜像/工作树/证据，等待主流程集成；不清理原数据或共享容器。
+1. Commerce产品5db321b/Auth文档bdec341已本地提交，9产品/测试SHA与Git树MATCH，root/IR已收到私密证据和18cap/5menu映射。
+2. 已仅STOP_FINAL退出3个自有JVM，final-runtime-result.json确认全部stopped；保留自有DB/镜像/工作树/证据等待主流程集成，未清理原数据或共享容器。
 
 ## 恢复 Prompt
 
