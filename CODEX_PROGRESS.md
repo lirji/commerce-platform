@@ -1,3 +1,13 @@
+# 当前权限扩展任务（2026-10-01）
+
+目标：完整CE00—CE08角色权限及Auth接入项目菜单资源展示，原目录串行，不新建工作树/子Agent。
+
+CE05-CAM2本地DONE：七独立资格提示、活动目录/结构化创建/版本动作/实际预览与独立预算页完成。13真实MySQL专项、完整491项（486PASS/5既有skip）、45工具/9契约、3当前fixture及类型构建/格式通过；最终真实编译JAR演练01b3a0f89ea4（session63199/子网123）exit0，870检查点PASS。真实SQL恰21总活动身份审计/8新增单次效果、内容版本1且无store伪归属，UI-a PAUSED/锁4、UI-b REJECTED/锁2，预算各20.00/0/0；预览不产生报价或预占。28张当前真实1440/390/320关联截图已实际查看，Esc关闭与焦点恢复通过。7992eb6f基线包与17模块/663class/112资源/46前端文件一致；SSO编译包ab064ca1的276后端条目/88依赖与基线相同，源码13+5摘要未变。Git/精确CI待交付；其余CE05—08及Auth菜单资源目标继续，122能力/34角色未批量发布。四轮真实失败与修复前证据、5既有skip/Javaformatter限制保留；原8602/OA和共享数据未切换。
+
+下一步：显式13产品/测试及README、IAM和根进度提交CAM2，正常任务分支合并推main，核验精确CI。之后继续动态人群及其余CE05—08，V49—V64和原8602/旧数据保留。下方Craft及早期实时记录为历史，最新状态以本节为准。
+
+## 其他任务和历史检查点
+
 # Codex Progress
 
 ## 任务目标
@@ -101,3 +111,39 @@ CAM1恢复实时记录：完整489/11专项与当前制品字节栅栏PASS；真
 CE05-CAM1本地DONE：9独立活动/预算能力、6实际正内容版本动作、独立目录/预算与真实预览已接入；V64版本审计与活动/预算/状态/原回执同事务。11真实MySQL专项（含81权限HTTP边界/实际SQL故障/锁等待期限）、完整489项484PASS/5既有skip、9契约/28工具及两仓hygiene无阻断。最终10源码/SDK摘要与17嵌套模块/661类/510资源/45前端文件/复制JAR一致。真实47a2d78d80c5/子网118已exit0，645检查点PASS（79活动标签），SQL再次核验13身份审计/实际内容版本1:3、7:6、8:4，v7 PAUSED/lock6、v8 PUBLISHED/lock3，客户订单在STOPPED后正常释放v8预算。自有进程/PG已停止，数据证据保留。Git/CI待交付；CAM2和其余CE05—08/auth接入资源展示未完成，原8602/OA及生产2HOLD保持。
 
 下一步：按task-git-delivery显式路径提交本仓CAM1改动和auth演练/验收记录，正常合并推main，核对精确head CI；不重复已终态88447/47a2d78d80c5演练。CAM2准备记录campaigns-ui-impact.json只有仅读分析，待CAM1 Gate/GitCI后细化真实提示契约与页面，继续完整CE05—08目标。
+
+
+## CE05-CAM2 2026-10-01实时实施检查点
+
+CE05-CAM2实施中，尚未完整验收：七个字面独立资格GET与两个固定SPA入口、严格中央客户端、活动目录/创建/版本操作/实际DTO预览及独立预算页已实现。12真实MySQL专项、271源码入口/122能力/34角色未发布及9契约单测、前端类型构建/Prettier和三项契约夹具浏览器恢复检查通过。未知结果保留原键/体/目标，允许保留意图返回页签及取消退出，成功使用服务端实际lockVersion。真实PKCE六类角色/撤权/中央503/SQL和最终制品/截图尚未验收，无CAM2 Git交付，完整目标active。
+
+- auth原目录feat/commerce-campaign-ui-contract，纯CAM1 CI收尾及CAM2细化6a53140已正常合并推main；未提交CAM2实际271清单/HTTP索引/契约计数更正、契约测试与实施记录。commerce原目录feat/central-campaign-pages，基线6040232，12个CAM2生产/测试路径未提交。无新工作树/子Agent。
+- 完整verify初轮失败证据campaigns-ui-verify.log保留，既有发券断言20实际16；独立CouponDeliveryTest 7PASS，完整复核session45693/log campaigns-ui-verify-repeat.log仍live，下一先核对同一句柄，不重启。
+- 最新夹具浏览器session58702/log campaigns-ui-browser-screen-final.log（前三恢复测试已PASS，最后截图时序修正执行中），SSO Vite预览18666/session82016由本轮创建仍live。旧定位失败（关闭歧义/缺可访问label/虚拟Option/提示文案）证据全部保留；真实PKCE无C2新增演练，不能冒充完成。
+- 下一步：核实live两测试终态，保存真实总数和指纹；修正实际失败则重验受影响范围。完成最终with-ui归档/字节栅栏，给P6新增真实CAM2浏览器/SQL：可用独立internal业务身份加中央映射，在本轮隔离库按create-only/submit-only/preview-only/reviewer/publisher/read-only/budget-only有限Grant串行验收，避免external已有能力混淆角色。必须保留原C1恰13审计及版本断言，另精确核对UI新增效果；不得放宽现有断言或修改V49—V64。之后真实PKCE/截图/269旧漏计更正为271、正式Validation、Git/CI，继续全部CE05—08与auth接入资源展示。
+- 私密结果：auth .local/governance/commerce-contracts/campaigns-ui-{implementation-evidence,contract-result,contract-tests,auth-hygiene}.json/log；commerce .local/central-audiences/campaigns-ui-*。证据与旧8602/OA/测试数据/容器卷保留，生产2HOLD不阻塞本地实施。
+
+
+## CAM2最终本轮验证检查点
+
+CAM2本轮检查均已终态：完整复核session45693 exit0，69报告490项485PASS/5既有skip；12MySQL/9契约/三项最后UI恢复与布局fixture PASS，33835 exit0；最后forceCreation包98702 exit0。新包SHA d8a8f34e25da1986bc00ee24d5c67991f73ecbc10228b098de02a757d39afc51，17整模块归档/663class/112当前target资源/46dist逐字节PASS。hygiene最终无阻断（Java formatter限制），9张fixture图实际查看；本片仍需真实PKCE角色/SQL/撤权/503/关联最终截图及GitCI，非DONE。Vite18666/session82016仍为本轮专用live，不重启重复；无新真实C2演练。
+第一未完成步骤是给P6增加真实CAM2角色矩阵并验收，而非重跑完整490/已完成12专项。源码12路径SHA见campaigns-ui-implementation-evidence.json；若源码继续变更，应验证实际受影响范围并重建制品。保持CE05—08和auth接入资源全目标active。
+
+
+## CE05-CAM2 2026-10-01 编译制品验证检查点
+
+- 当前VERIFYING，未Git交付；完整CE05—08/Auth菜单资源目标active。
+- 第三轮16197/f40c3cdeda5f已exit1，813检查点和活动七角色/真实PKCE/409/原键/401/八新增效果通过。实际SQL再次核验总21，UI-a5/PAUSED4、UI-b3/REJECTED2，预算各20.00无预占。末尾库存读取fixture600秒过期（已731秒）而403；失败保留，仅延长隔离测试授权3000秒。
+- CentralCampaigns与fixture测试修正重复错误/错误资格提示，3项当前fixture/构建/格式PASS，1440/390当前图片已查看；四项Java摘要未变，12MySQL/490完整测试复用。没有新后端产品变更。
+- 最终演练session16358/rehearsal-83583faeb3c8（子网122）live，--packaged-browser直接由18665 JAR提供SSO页面；46前端文件与276后端条目/88依赖内容一致，JAR8e0adf07。观察同一句柄，不超时重启。尚需503/终态/最终真实图片/正式Validation/GitCI。
+- 恢复：读取auth根CODEX_PROGRESS与CE05_CAMPAIGNS，从当前16358实际终态继续；保留旧数据、容器、工作树、私密证据，不重做modal任务，不把Vite/fixture当编译页面权限证明。
+
+
+## CE05-CAM2 静态安全入口修复当前检查点
+
+编译真实演练16358/83583faeb3c8已exit1，在583通过后发现匿名人群页面401 JSON；原Vite未覆盖静态安全链。SecurityConfiguration仅补/audiences与两活动页面三个GET，API/POST/未知页面401边界新增实际测试，当前13MySQL全PASS。完整verify session20067 live，日志.local/central-audiences/campaigns-ui-static-entry-full-verify.log；原490与8e0adf07旧制品仅历史。恢复先核对20067终态和实际报告/最终包字节，再用123隔离子网重跑真实编译SSO页面，保留失败和数据，勿重启live或误标DONE。当前产品/测试13路径未Git，全CE目标active。
+
+
+CAM2最新：完整verify20067已exit0，69报告491项486PASS/5既有skip、0fail/error；13实际MySQL全PASS，最终7992eb6f与17模块/663class/112资源/46前端文件一致。新真实编译页面演练session63199（子网123）启动，须观察同一句柄到终态，先验匿名HTML/API/POST边界。仍VERIFYING未Git，完整CE目标active；原16358和旧490是修复前历史，数据/证据保留。
+
+新真实63199/01b3a0f89ea4已确认live，99检查点PASS；ab064ca1 SSO编译JAR的46前端/276后端条目88依赖字节一致，3实际匿名HTML200与POST/4API/未知路径401提前检查全部PASS。整轮未终态，下一步只观察63199，完成活动七角色/SQL/503及最终实际截图，暂不Git。

@@ -131,6 +131,15 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_CREATE;
         }
+        if ("GET".equals(r.getMethod())) {
+            if ("/v1/operations/campaigns/create-access".equals(path)) return EmployeeAccess.Capability.CAMPAIGN_CREATE;
+            if ("/v1/operations/campaigns/preview-access".equals(path)) return EmployeeAccess.Capability.CAMPAIGN_PREVIEW;
+            if ("/v1/operations/campaigns/submit-access".equals(path)) return EmployeeAccess.Capability.CAMPAIGN_SUBMIT;
+            if ("/v1/operations/campaigns/approve-access".equals(path)) return EmployeeAccess.Capability.CAMPAIGN_APPROVE;
+            if ("/v1/operations/campaigns/reject-access".equals(path)) return EmployeeAccess.Capability.CAMPAIGN_REJECT;
+            if ("/v1/operations/campaigns/publish-access".equals(path)) return EmployeeAccess.Capability.CAMPAIGN_PUBLISH;
+            if ("/v1/operations/campaigns/pause-access".equals(path)) return EmployeeAccess.Capability.CAMPAIGN_PAUSE;
+        }
         if ("/v1/admin/campaigns".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.CAMPAIGN_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.CAMPAIGN_CREATE;

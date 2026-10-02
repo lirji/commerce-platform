@@ -60,6 +60,12 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 [本仓测试记录](docs/implementation/oa-auth/phase-6/P6_TEST_RESULT.md)和[统一运行说明](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/phase-6/P6_RUNTIME.md)记录V48迁移Owner、冻结/切换/回退和31项真实隔离检查。原8602及commerce_local未切换；生产候选仍HOLD，P7未执行。
 
+### 活动与预算员工入口
+
+`/operations/campaigns?tenant_id=<UUID>`提供活动目录、结构化草稿和版本操作；`/operations/campaign-budgets?tenant_id=<UUID>`独立读取各内容版本预算。八项活动权限和`budget.read`分别授权，写入或预览人员无需额外目录读取权限。页面显示实际内容版本与状态锁版本，预览使用真实会员/SKU及固定资产，未知结果保留原幂等键和输入；登录失效隐藏敏感视图，撤权和服务故障拒绝操作。
+
+编译入口只匿名提供固定GET页面壳，业务API仍校验中央身份、租户与独立能力。使用现有前端SSO构建变量、中央store-read/employee配置、显式身份桥及CAMPAIGN族CENTRAL路由；没有自动迁移旧ADMIN或授予新角色。当前CE05-CAM2已通过最终真实编译页面本地验收，[契约与验证记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_CAMPAIGNS.md)维护最终状态；本地隔离验证不改变原8602或生产部署。
+
 ### B端工作台与刷新恢复
 
 管理工作台补齐任务恢复、恢复审计和历史重放；平台运维通过独立 `/v1/platform/me` 进入只读运行健康页。中央员工页面统一导航，但每个业务入口仍独立授权。刷新保留当前标签页会话及适用URL筛选、页签、游标，重新读取真实数据；退出与401清除凭据，服务暂不可用时支持恢复重试。

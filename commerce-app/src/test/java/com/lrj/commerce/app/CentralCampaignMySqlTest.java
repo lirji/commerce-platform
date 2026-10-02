@@ -287,8 +287,49 @@ class CentralCampaignMySqlTest {
         String publish=id();assertEquals(DomainException.Code.CONFLICT,assertThrows(DomainException.class,()->campaigns.publish(actor(CAMPAIGN_PUBLISH),publish,"A",7,2)).code());
         assertEquals("APPROVED",status("A",7));assertEquals(0,receipts(publish));assertEquals(3,count("employee_command_identity"));
     }
+    /** 七提示分别沿真实HTTP核验自己的能力、匿名/依赖失败及无业务写；不是对象操作许可。 */
+    @Test void allSevenHintsAreIndependentAndReadOnly() throws Exception {
+        List<EmployeeAccess.Capability> hints=List.of(CAMPAIGN_CREATE,CAMPAIGN_PREVIEW,CAMPAIGN_SUBMIT,CAMPAIGN_APPROVE,CAMPAIGN_REJECT,CAMPAIGN_PUBLISH,CAMPAIGN_PAUSE);
+        for(var cap:CAPABILITIES) {
+            allowed.clear();allowed.add(cap.code());
+            for(var hint:hints) {
+                String path="/v1/operations/campaigns/"+hint.code().substring(hint.code().lastIndexOf('.')+1)+"-access";
+                var response=http("GET",path,"valid",true,null);
+                assertEquals(cap==hint?200:403,response.statusCode(),cap+" -> "+hint);
+                if(cap==hint) assertEquals("{\"allowed\":true}",response.body());
+            }
+        }
+        allowed.clear();for(var cap:hints)allowed.add(cap.code());
+        for(var cap:hints) {
+            String path="/v1/operations/campaigns/"+cap.code().substring(cap.code().lastIndexOf('.')+1)+"-access";
+            assertEquals(401,http("GET",path,"invalid",true,null).statusCode());
+            unavailable.set(true);assertEquals(503,http("GET",path,"valid",true,null).statusCode());unavailable.set(false);
+            partial.set(true);assertEquals(403,http("GET",path,"valid",true,null).statusCode());partial.set(false);
+            afterScope.set(()->epoch.incrementAndGet());assertEquals(403,http("GET",path,"valid",true,null).statusCode());
+        }
+        assertEquals(0,count("employee_command_identity"));assertEquals(0,count("platform_command"));assertEquals(0,count("marketing_campaign"));
+        assertEquals(0,count("marketing_budget"));assertEquals(0,count("trade_quote"));assertEquals(0,count("inventory_hold"));
+    }
+    /** 匿名只能加载固定GET壳；没有UI资源的后端CI允许静态404，但不能被认证挑战拦截。 */
+    @Test void anonymousStaticEntryDoesNotOpenAnyBusinessApiOrOtherMethod() throws Exception {
+        boolean packagedUi=getClass().getResource("/static/index.html")!=null;
+        for(String path:List.of("/operations/campaigns","/operations/campaign-budgets","/operations/audiences")) {
+            var page=http("GET",path,null,false,null);
+            assertEquals(packagedUi?200:404,page.statusCode(),path);
+            if(packagedUi) {
+                assertTrue(page.headers().firstValue("Content-Type").orElse("").contains("text/html"));
+                assertTrue(page.body().contains("id=\"root\""));
+            }
+            assertEquals(401,http("POST",path,null,false,null).statusCode());
+        }
+        for(String path:List.of("/v1/admin/campaigns","/v1/admin/campaign-budgets","/v1/admin/audiences","/v1/operations/campaigns/create-access"))
+            assertEquals(401,http("GET",path,null,false,null).statusCode(),path);
+        assertEquals(401,http("GET","/operations/unregistered",null,false,null).statusCode());
+        assertEquals(0,count("employee_command_identity"));
+    }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
-        var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).timeout(Duration.ofSeconds(15)).header("Authorization","Bearer "+token);
+        var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).timeout(Duration.ofSeconds(15));
+        if(token!=null)request.header("Authorization","Bearer "+token);
         if(central)request.header("X-Tenant-Id",authTenant);
         if(body!=null)request.header("Content-Type","application/json").header("Idempotency-Key",id());
         request.method(method,body==null?HttpRequest.BodyPublishers.noBody():HttpRequest.BodyPublishers.ofString(JsonCodec.write(body)));

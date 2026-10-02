@@ -992,3 +992,39 @@
     max-height: 400px;
   }
 }
+
+/* 活动长表单与预览保持标题、动作可达，横向内容仅在表格内滚动。 */
+.ant-modal.campaign-modal {
+  max-width: calc(100vw - 48px);
+}
+.campaign-modal .ant-modal-body {
+  max-height: 70vh;
+  max-height: min(70vh, calc(100dvh - 220px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-inline-end: 8px;
+}
+.campaign-modal .ant-modal-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--border, #e8edf5);
+}
+.campaign-modal .ant-form-item {
+  min-width: 0;
+}
+.campaign-modal .ant-input-number {
+  width: 100%;
+}
+@media (max-width: 560px) {
+  .ant-modal.campaign-modal {
+    max-width: calc(100vw - 24px);
+    margin-inline: auto;
+  }
+  .campaign-modal .ant-modal-body {
+    max-height: calc(100vh - 240px);
+    max-height: calc(100dvh - 240px);
+    padding-inline-end: 4px;
+  }
+  .campaign-modal .ant-modal-footer .ant-space {
+    justify-content: flex-end;
+  }
+}
