@@ -74,7 +74,7 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 动态人群SSO页面 `/operations/segments?tenant_id=<UUID>` 已通过本地真实编译页面验收：定义/运行目录、会员规则创建和独立调度/刷新/控制/推进。写入岗位可以直接输入实际目标，不要求目录读取；四类有键命令保留未知结果的原意图，推进没有幂等键，未知后须核对并确认下一次调用。页面显示真实运行状态和独立公告状态，不把任务受理当作快照完成。
 
-当前后台已通过真实跨进程本地验收，Git与精确CI交付状态见验证记录；专用动态人群SSO页面已通过CE05-S2本地正式验证，产品Git/精确CI状态见验证记录。[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_SEGMENTS.md)与[验证记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_SEGMENTS.md)分别记录能力、任务语义和实际验收范围。本地隔离演练不改变原8602环境或生产部署。
+当前后台已通过真实跨进程本地验收，Git与精确CI交付状态见验证记录；专用动态人群SSO页面已完成CE05-S2正式验证、产品Git交付与精确CI，实际范围见验证记录。[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_SEGMENTS.md)与[验证记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_SEGMENTS.md)分别记录能力、任务语义和实际验收范围。本地隔离演练不改变原8602环境或生产部署。
 
 ### B端工作台与刷新恢复
 

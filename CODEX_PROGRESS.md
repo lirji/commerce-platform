@@ -2,7 +2,7 @@
 
 ## 当前状态（2026-10-02，以本节及末尾S2句柄为准）
 
-2026-10-02 CE05-S2本地DONE，implementation-validation COMPLETED/PASS：最终真实编译0b2c9e9dd22a/独立runner54927已exit0（09:21:42Z），1128检查点全PASS；六真实岗位/撤权/实际Auth停服八阶段及终态SQL通过。SYSTEM取消100/97、MANUAL仍RUNNING0/0，恰新增五条定义版本7单次身份审计、总26；无提前快照、入组公告或伪门店归属。60张当前1440/390/320目录、表单、详情、回执、409/unknown/关闭保护、401/撤权/503截图已逐张实际查看，UI001居中及UI002窄屏提示缺陷均在本轮验证修复。最新SSO JAR0220ff15684d与原4923的279后端/88依赖内容相同、47前端与78源码/13产品/4harness一致。506完整测试（501PASS/5既有skip）、19实际MySQL、当前7fixture、277入口/122候选/34岗位未发布、9契约/38工具、构建/Prettier及两仓hygiene无阻断；Java formatter既有限制保留。S2产品Git/精确CI待交付，整个剩余CE05—08/Auth实际菜单资源目标仍active。演练自有进程及五端口已退出，原8602/OA/数据/卷/所有失败和旧证据保留；原目录串行，无新Agent或工作树。
+2026-10-02 CE05-S2完整DONE（产品Git/精确CI已通过）：Auth d35e6d57c1b2c494aa2811dc8577c0a5d3882760/CI36989740786、Commerce294627904a8fb712e998382b6d2f1cd71923fbce/CI36989725617均completed/SUCCESS，精确head已核对并正常任务分支push/ff main/main push。正式Validation COMPLETED/PASS；最终编译0b2c9e9dd22a真实exit0、1128检查点PASS，八真实岗位/撤权/Auth停服阶段，60张当前1440/390/320关联图逐张实看。终态SQL SYSTEM取消100/97、MANUAL0/0，恰新增5条版本7身份审计、总26，无提前快照/公告/伪门店；UI001/002本轮已验证修复，所有旧FAIL保留。最终SSO JAR0220ff15684d、279后端/88依赖内容、47前端文件及78完整/13选定源/4harness一致；506完整（501PASS/5既有skip）、19实际MySQL、当前7fixture、277入口/122候选/34岗位未发布、9契约/38工具与构建/Prettier/hygiene无阻断。Java formatter未配置为既有限制。下一定向发券D0/D1/D2及全部剩余CE05—08/Auth实际发布菜单资源；整体目标仍active。原目录串行，无新Agent/工作树；自有演练及fixture18666已正常退出，原8602/OA/数据/卷/旧证据保留，未生产部署。
 
 ## 任务目标
 
@@ -243,6 +243,6 @@ session85180/PID21761/rehearsal-81eacc02b592/10.254.128.0/24已确认实际live�
 
 ## S2窄屏提示修正后当前真实演练
 
-2026-10-02 CE05-S2本地DONE，implementation-validation COMPLETED/PASS：最终真实编译0b2c9e9dd22a/独立runner54927已exit0（09:21:42Z），1128检查点全PASS；六真实岗位/撤权/实际Auth停服八阶段及终态SQL通过。SYSTEM取消100/97、MANUAL仍RUNNING0/0，恰新增五条定义版本7单次身份审计、总26；无提前快照、入组公告或伪门店归属。60张当前1440/390/320目录、表单、详情、回执、409/unknown/关闭保护、401/撤权/503截图已逐张实际查看，UI001居中及UI002窄屏提示缺陷均在本轮验证修复。最新SSO JAR0220ff15684d与原4923的279后端/88依赖内容相同、47前端与78源码/13产品/4harness一致。506完整测试（501PASS/5既有skip）、19实际MySQL、当前7fixture、277入口/122候选/34岗位未发布、9契约/38工具、构建/Prettier及两仓hygiene无阻断；Java formatter既有限制保留。S2产品Git/精确CI待交付，整个剩余CE05—08/Auth实际菜单资源目标仍active。演练自有进程及五端口已退出，原8602/OA/数据/卷/所有失败和旧证据保留；原目录串行，无新Agent或工作树。
+2026-10-02 CE05-S2完整DONE（产品Git/精确CI已通过）：Auth d35e6d57c1b2c494aa2811dc8577c0a5d3882760/CI36989740786、Commerce294627904a8fb712e998382b6d2f1cd71923fbce/CI36989725617均completed/SUCCESS，精确head已核对并正常任务分支push/ff main/main push。正式Validation COMPLETED/PASS；最终编译0b2c9e9dd22a真实exit0、1128检查点PASS，八真实岗位/撤权/Auth停服阶段，60张当前1440/390/320关联图逐张实看。终态SQL SYSTEM取消100/97、MANUAL0/0，恰新增5条版本7身份审计、总26，无提前快照/公告/伪门店；UI001/002本轮已验证修复，所有旧FAIL保留。最终SSO JAR0220ff15684d、279后端/88依赖内容、47前端文件及78完整/13选定源/4harness一致；506完整（501PASS/5既有skip）、19实际MySQL、当前7fixture、277入口/122候选/34岗位未发布、9契约/38工具与构建/Prettier/hygiene无阻断。Java formatter未配置为既有限制。下一定向发券D0/D1/D2及全部剩余CE05—08/Auth实际发布菜单资源；整体目标仍active。原目录串行，无新Agent/工作树；自有演练及fixture18666已正常退出，原8602/OA/数据/卷/旧证据保留，未生产部署。
 
-第一未完成步骤：按显式Auth11/Commerce16路径正常提交任务分支、推送、ff main及main推送，核对精确产品head的CI；不要重启已成功终态演练。正式证据Auth私密segments-ui-test-result.json、durable3-final-sql.json、durable3-visual-progress.json（60实看）与runtime-fence-durable3.json，历史UI finding和失败证据保留。之后继续定向发券D0/D1/D2及全部剩余CE05—08/Auth菜单资源；34设计角色已按资源类型分组，不能将候选设计当已发布。自有18666仅fixture，后续使用前须核对实际进程；原8602/OA与共享数据保持。
+第一未完成步骤：完成本轮纯交付状态元数据收尾，然后基于coupon-delivery-owner-impact.json、version-and-compensation-gap.json、repeat-revoke-source-proof.json与d0-draft.json细化正式定向发券契约/D0切片。S2两精确产品CI均SUCCESS，不重启演练或重跑已证明不变后端。D0技术草案尚非正式契约/实现，须保持REVOKE首次原来源、有限执行窗口与实际业务截止分开；34岗位已按资源类型分组，实际菜单仅展示已发布快照。完整目标继续，不清理旧数据/卷。
