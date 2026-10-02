@@ -26,7 +26,7 @@ public class MarketingAssetService implements MarketingAssets {
 
 	private final EmployeeAccess access;
 
-	/** 规则与人群共用持久层，但本片只接管规则权限，不更改人群身份入口。 */
+	/** 规则与人群共用持久层，分别按独立能力族接管员工权限。 */
 	public MarketingAssetService(AssetMapper mapper, Commands commands, Clock clock, EmployeeAccess access) {
 		this.mapper = mapper;
 		this.commands = commands;
@@ -34,8 +34,9 @@ public class MarketingAssetService implements MarketingAssets {
 		this.access = access;
 	}
 
+	/** 导入只取集合许可；成员编号来自快照，不把导入当成会员创建或成员有效性证明。 */
 	public AudienceView createAudience(Actor actor, String key, Audience input) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, AUDIENCE_CREATE);
 		Inputs.require(input != null && input.memberIds() != null && input.memberIds().size() <= 500, "人群单批最多500会员");
 		Identifiers.require(input.audienceId());
 		Inputs.require(!input.audienceId().startsWith("dyn-"), "dyn-前缀保留给动态人群任务");
@@ -48,18 +49,24 @@ public class MarketingAssetService implements MarketingAssets {
 				"人群快照新鲜度窗口无效");
 		input.memberIds().forEach(Identifiers::require);
 		Inputs.require(new HashSet<>(input.memberIds()).size() == input.memberIds().size(), "快照成员重复");
-		return commands.run(actor, "audience.create", key, input, AudienceView.class, () -> {
+		// 保持旧模式输入摘要；中央只增加稳定主体代际，执行引用nonce不参与幂等摘要。
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "audience.create", key, command, AudienceView.class, () -> access.lock(permit), () -> {
 			mapper.audience(actor.tenantId(), input, input.memberIds().size());
 			if (!input.memberIds().isEmpty())
 				mapper.members(actor.tenantId(), input);
+			access.audit(actor, permit, "audience.create", key, input.audienceId());
 			return mapper.audienceFind(actor.tenantId(), input.audienceId(), input.version());
 		});
 	}
 
+	/** 最新版本摘要不携成员清单，返回前复核身份、路由与完整租户范围。 */
 	public List<AudienceView> audiences(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, AUDIENCE_READ);
 		Inputs.page(after, limit);
-		return mapper.audiences(actor.tenantId(), after, limit);
+		var result = mapper.audiences(actor.tenantId(), after, limit);
+		EmployeeAccess.requireSame(permit, access.scope(actor, AUDIENCE_READ));
+		return result;
 	}
 
 	/** 一次批量读取所有固定版本，缺失版本拒绝而非默认命中。 */

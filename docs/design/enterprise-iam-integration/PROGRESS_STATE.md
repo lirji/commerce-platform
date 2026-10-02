@@ -1,4 +1,6 @@
-> **P6最新状态（2026-09-29）**：用户选择完整CATALOG能力，所选商城运营租户的本地隔离演练31项通过；原运行商城未切换。最终验证/Git/CI在auth规范PROGRESS_STATE，生产HOLD/P7未执行。下方为P5及更早历史。
+> **CE05-A1 最新状态（2026-10-01）**：原 CE00—CE08 计划持续执行。库存、目录、会员与券/权益/规则已交付；人群独立 AUDIENCE read/create 已实现，真实 MySQL 7 专项和完整回归 477 项（472 通过/5 既有跳过）PASS，V63 已应用不可改。SDK 来源固定 auth 4747ac49。独立身份/数据库跨进程549检查点PASS，制品摘要及152类/迁移一致，A1本地DONE，GitCI待交付；A2 页面、其他 CE05—08 和生产 HOLD 未完成。完整证据见 [auth 人群验收](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_AUDIENCES.md)。原 8602/OA 未切换，下方保留历史。
+
+> **P6历史状态（2026-09-29）**：用户选择完整CATALOG能力，所选商城运营租户的本地隔离演练31项通过；原运行商城未切换。最终验证/Git/CI在auth规范PROGRESS_STATE，生产HOLD/P7未执行。下方为P5及更早历史。
 
 > **当前实施状态（2026-09-29）**：以下为早期候选计划历史。权威计划在[auth 63节点DAG](https://github.com/lirji/auth-platform/tree/main/docs/design/oa-auth-unification)。P3已交付；本轮P5商品查询/受控资料修改及外部门店合作限时导出已实现，通过真实MySQL/OA/浏览器验收；P507真实运行验收已完成，产品提交c7384fe已正常合并推送main，完整CI 36596109216通过。Q-EXT已确认门店/商家协作，不实现供应商订单。最终状态见[auth进度](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/PROGRESS_STATE.md)和本仓phase-5测试报告；P6前停止，无生产部署。下方历史TODO不覆盖本段。
 

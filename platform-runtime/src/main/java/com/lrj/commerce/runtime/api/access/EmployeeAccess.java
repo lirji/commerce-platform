@@ -43,7 +43,9 @@ public interface EmployeeAccess {
         ENTITLEMENT_RESOLVE("commerce.entitlement.resolve", "ENTITLEMENT", "entitlement"),
         RULE_READ("commerce.rule.read", "RULE", "marketing_rule"),
         RULE_CREATE("commerce.rule.create", "RULE", "marketing_rule"),
-        RULE_PUBLISH("commerce.rule.publish", "RULE", "marketing_rule");
+        RULE_PUBLISH("commerce.rule.publish", "RULE", "marketing_rule"),
+        AUDIENCE_READ("commerce.audience.read", "AUDIENCE", "audience"),
+        AUDIENCE_CREATE("commerce.audience.create", "AUDIENCE", "audience");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }

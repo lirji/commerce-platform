@@ -38,3 +38,13 @@ B端接口匹配、刷新恢复及Awwwards/Webby/FWA品质追求，持续完善�
 ## 恢复 Prompt
 
 请读取CODEX_PROGRESS.md和docs/PROGRESS_STATE.json，从Git/CI交付继续，勿重复实施已完成切片，不等待继续；外部获奖不是已验证事实。
+
+## 原权限扩展目标恢复：CE05-A1（2026-10-01）
+
+- 目标保持：完整商城角色权限与auth接入项目菜单资源展示，继续原CE05—08计划，不能把单片当全目标完成。
+- 旧暂停条件已解除：Craft另任务已完成，本仓main86acfb0干净。本轮原目录串行feat/central-audience-operations，auth原目录feat/commerce-audience-owner-rehearsal；无新工作树/子Agent。
+- auth A0精确CI36707598359 SUCCESS（4747ac49）已核验；SDK来源固定该版本，sdk-install通过。
+- A1人群集合read/create、AUDIENCE路由、稳定主体命令及头/成员/审计同事务已实施；V63已在专用MySQL执行，不可修改。兼容夹具修正后，7专项全部PASS；最终完整回归477项（472 PASS/5既有skip）、构建及7源码摘要核对PASS，日志owner-verify-corrected.log。独立跨进程edc3a5f8c7d0/子网115共549PASS，152类/迁移及演练制品摘要一致，自有进程已停止。本地A1 DONE，GitCI待交付。
+- 未完成：A1 GitCI交付、A2员工页；其他CE05—08与原生产目标/Owner/部署授权HOLD仍在。
+- 专用commerce-rules-mysql-698708fb5f已恢复启动，卷/43308保持；先source .local/runtime.env，再source .local/central-inventory/owned-rules.env。不得清空数据或修改V49—V62。
+- 下一步：运行既有验证与真实隔离演练，记录正式结果后持续A2及后续。保留Craft与其他证据及原8602，不反复等待继续。
