@@ -117,10 +117,36 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
     .fill("1");
   await member.getByRole("button", { name: "提交售后申请" }).click();
   await member.getByLabel("申请原因").fill("全链路验收退货");
+  // 点击结束不代表命令已提交；跨浏览器读取必须等真实回执，避免首次列表读取抢在事务前。
+  const requested = member.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/v1/aftersales",
+  );
   await member.getByRole("button", { name: "确认提交" }).click();
+  const requestedResponse = await requested;
+  expect(requestedResponse.status()).toBe(200);
+  const returned = await requestedResponse.json();
+  expect(returned.orderId).toBe(order.orderId);
+  expect(returned.status).toBe("REQUESTED");
+  expect(typeof returned.caseId).toBe("string");
+  await expect(
+    member.getByRole("dialog", { name: "提交售后申请" }),
+  ).toBeHidden();
+  await expect
+    .poll(
+      async () =>
+        (await api("/admin/aftersales")).find(
+          (r: { caseId: string }) => r.caseId === returned.caseId,
+        )?.status,
+    )
+    .toBe("REQUESTED");
   await nav(admin, "售后审批");
-  await admin.getByRole("button", { name: "批准", exact: true }).click();
-  await admin
+  const returnedRow = admin
+    .getByRole("row")
+    .filter({ hasText: returned.caseId });
+  await returnedRow.getByRole("button", { name: "批准", exact: true }).click();
+  await returnedRow
     .getByRole("button", { name: "确认退货入库", exact: true })
     .click();
   // 退款由事件异步创建；先等待当前订单的真实退款，避免页面初次加载空列表。
@@ -139,9 +165,15 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
     .click();
   await admin.getByRole("button", { name: "核对退款", exact: true }).click();
   await expect
-    .poll(async () => (await api("/admin/aftersales"))[0].status, {
-      timeout: 15000,
-    })
+    .poll(
+      async () =>
+        (await api("/admin/aftersales")).find(
+          (r: { caseId: string }) => r.caseId === returned.caseId,
+        )?.status,
+      {
+        timeout: 15000,
+      },
+    )
     .toBe("COMPLETED");
   await expect
     .poll(async () => (await api("/entitlements", "member"))[0].status)

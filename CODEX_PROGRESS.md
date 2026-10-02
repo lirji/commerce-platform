@@ -85,6 +85,14 @@
 
 # Codex Progress
 
+## 当前 CI 整改检查点（2026-10-02）
+
+两仓已经正常任务分支推送、快进 main 并推送 main。Auth `3958f14a2d135b48f7708fb694f705aaf11f37b4` 的 [CI 37044087418](https://github.com/lirji/auth-platform/actions/runs/37044087418) completed/SUCCESS；Commerce `eef0a3ce3a34f8623e003306fa353a80b1ec1510` 的 [CI 37044089855](https://github.com/lirji/commerce-platform/actions/runs/37044089855) completed/FAILURE：真实 MySQL、构建、依赖审计与启动通过，浏览器 40 PASS / 1 FAIL / 20 既有条件 skip，旧售后验收在批准按钮超时。
+
+本次有界修正仅 `frontend/tests/commerce.spec.ts`：点击提交前监听精确 POST 售后响应，要求 200、原订单、REQUESTED 和 caseId；等待成功关闭弹层，并从原管理员列表核实该售后编号，按该行审批/入库，最终仍从管理员列表核实同编号 COMPLETED。源码存在跨浏览器先读后提交竞态风险；旧 artifact 无网络 trace，不能称已证明失败请求的具体时序或状态。保留旧 FAIL，不延长超时、不降低权限、不修改产品代码、凭据或迁移。
+
+本地 Prettier、Playwright 四用例加载和 TypeScript 检查通过；新真实整链路由当前提交的正常 CI 验证。完整业务实现、546 组合基线、004 受影响 58、真实隔离 122 能力/42 菜单/34 角色及 14 视觉证据仍有效，产品源码不变。最终未完成项只有本修正精确 CI 与交付状态落盘；不需要用户重复确认。
+
 ## 任务目标
 
 完整中央旅程/效果/执行权限及真实SSO页面；原D2目录仍冻结，本任务只在隔离树。
