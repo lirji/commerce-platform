@@ -2,36 +2,37 @@
 
 ## 任务目标
 
-完整中央旅程/效果/执行权限及真实SSO页面；原D2目录仍冻结，本任务只在隔离树。
+完整中央旅程/效果/执行权限及真实SSO页面。本域本地验收完成；完整应用能力/角色/实际菜单及main集成由主流程继续。原D2目录冻结，禁止操作其源码/目标/运行数据。
 
 ## 已完成
 
-- Auth J0 c834d38、共享CE06/07 ad09213已验证。
-- Commerce共享Provider4ca6acc；真实MySQL68迁移/14 CD回归。
-- CE05 Journey/效果/执行Owner与PreparedEnrollment；独占MySQL26项通过，证据.local/journeys/j1-evidence-v1。
+- Auth c834d38/ad09213/5e7abbf；Commerce共享Provider4ca6acc、完整J1/EF1 e900616、Dashboard共享/V70 d65e7e5。
+- 独占MySQL J1二十六项、Auth真实PG/图共享二十方法各原始归档保留；完整私密Maven通过，不把本UI片重复计为后端新增通过。
+- J2/EF2五个真实SSO页面、十八独立岗位Grant实际PKCE、跨自有JVM原Source二十二检查点、原Grant实际35秒到期、write-only/rebuild-only/401/403/真实Auth503、同键未知→坏2xx→成功与SQL恰一次提交均PASS。
+- 当前52图+1窄屏底部图已实看；另7权限状态图保留并注明前一UI包。真实可重复交互测试1/1PASS，源码9路径/完整frontend76及最终JAR均有SHA。私密 `.local/journeys/j2-evidence-v1` TEST_RESULT COMPLETED/PASS。
 
 ## 已修改文件
 
-- JourneyApi/Service/Authorization/Mapper、JourneyAccessController；EffectsService、CampaignExecutionService；内部OrderApi四文件、真实测试、安全隔离URL。
+- 五页CentralJourneys、journeyClient/Command、共享导航/pageMap/style、精确SPA GET/安全路由；central-journeys真实交互测试；正式契约/UI验收/doc-map及本进度。
 
 ## 未完成
 
-- J2/EF2五页面已在途，需完成路由/客户端/视觉、真实PKCE/跨进程Auth与SQL验收。
-- Dashboard共享闭集/V70/hints已验证；实际聚合与页面由CE07 Owner继续，本任务不宣布全122已发布。
+- 本地J2逻辑Git交付及主流程统一集成/push；CE06/07九页共享接线补丁已交其Owner，需与本五页语义合并。
+- 完整应用有界Owner catalog/角色/菜单实际发布由IR任务执行；本域18能力/5菜单映射准确，但不宣称全122已发布。
 
 ## 当前问题
 
-- 49308及49309初始schema默认collation曾失败V29，保留证据；另建同实例唯一utf8mb4_bin库后68迁移通过。
-- 所有Maven必须本Auth工作树.local/maven-repository；禁共享m2 install及D2端口。
+- 原失败库/collation与脚本选择器失败保留，终态另归档；Java formatter既有限制，无验收阻断。
+- root短TTL60时钟边界仍UNPROVEN，未修改guard/Provider上限。所有Maven只本Auth树.local/maven-repository；禁止原D2端口/共享写。
 
 ## 下一步建议
 
-1. Dashboard共享短集合已交付；继续五真实页面及PKCE/SQL/视觉。
-2. 完成五真实页面与隔离PKCE/SQL/视觉，按实际证据更新，不等待继续。
+1. 用显式9产品/测试路径与正式文档创建本地完整逻辑提交，提供私密证据及18cap/5menu源映射给root/IR。
+2. 停止仅本 `start-final.py` 自有JVM（STOP_FINAL）后保留DB/镜像/工作树/证据，等待主流程集成；不清理原数据或共享容器。
 
 ## 恢复 Prompt
 
-请读取本CODEX_PROGRESS及CE05_JOURNEY_OWNER，继续J2/EF2，保留原D2freeze，不新增Agent/worktree，不推main。
+读取本节、CE05_JOURNEY_UI及.local/journeys/j2-evidence-v1/test-result.json，从Git/统一发布集成收尾继续；不要重复已通过的26后端/52视觉或破坏原Source，不要求反复继续。
 
 ---
 
