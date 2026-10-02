@@ -22,6 +22,10 @@ public interface EmployeeAuthorityMapper {
     /** 仅保存原刷新引用元数据，执行ID的唯一性由数据库承担。 */
     int rememberSegmentExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("json") String json);
     String segmentExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor);
+    /** 发券签发元数据与两个业务方向分离，执行引用只能对应一个能力。 */
+    int rememberCouponDeliveryExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor,
+                                       @Param("capability") String capability, @Param("json") String json);
+    String couponDeliveryExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("capability") String capability);
     Route find(@Param("tenant") String tenant, @Param("family") String family);
     Route lock(@Param("tenant") String tenant, @Param("family") String family);
     Route central(@Param("authTenant") String authTenant, @Param("family") String family);

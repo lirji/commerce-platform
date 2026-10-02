@@ -21,9 +21,17 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
     }
     /** 引用有效期有界，用例仍逐次核对Owner资源及当前Grant。 */
     public Actor authenticate(String token, String tenant, EmployeeAccess.Capability capability) {
+        return authenticate(token, tenant, capability, false);
+    }
+    /** 正文前只按已登记POST决定有限引用上限，业务Owner另外核验deadline与撤回方向。 */
+    public Actor authenticate(String token, String tenant, EmployeeAccess.Capability capability, boolean durableRequest) {
         var route = access.central(tenant, capability);
         if (route == null) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
-        var ref = client.issueExecution(token, check(tenant, capability), Instant.now().plusSeconds(capability == EmployeeAccess.Capability.SEGMENT_REFRESH ? EmployeeAccess.SEGMENT_REFRESH_REFERENCE_SECONDS : 60).truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
+        boolean couponSource = durableRequest && (capability == EmployeeAccess.Capability.COUPON_DELIVERY_CREATE
+                || capability == EmployeeAccess.Capability.COUPON_DELIVERY_CONTROL);
+        long seconds = capability == EmployeeAccess.Capability.SEGMENT_REFRESH ? EmployeeAccess.SEGMENT_REFRESH_REFERENCE_SECONDS
+                : couponSource ? EmployeeAccess.COUPON_DELIVERY_REFERENCE_SECONDS : 60;
+        var ref = client.issueExecution(token, check(tenant, capability), Instant.now().plusSeconds(seconds).truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
         var c = ref.context();
         var actor = bindings.find(tenant, c.principalId(), c.membershipId(), c.membershipGeneration());
         if (actor == null || !route.tenantId().equals(actor.tenantId())) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
@@ -31,6 +39,16 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
         // 刷新引用可跨进程推进，保存中央返回的准确期限；其余短命令不增加持久来源。
         if (capability == EmployeeAccess.Capability.SEGMENT_REFRESH) {
             try { access.rememberSegmentExecution(result, new EmployeeAccess.SegmentExecution(
+                    new EmployeeAccess.Identity(c.principalId(), c.membershipId(), c.membershipGeneration()), route,
+                    c.applicationId(), c.environment(), c.callerServiceId(), c.membershipVersion(), c.principalVersion(),
+                    Instant.parse(ref.expiresAt())));
+            } catch (DomainException failure) {
+                if (failure.code() == DomainException.Code.FORBIDDEN) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
+                throw new CentralAccessException(503);
+            }
+        }
+        if (couponSource) {
+            try { access.rememberCouponDeliveryExecution(result, capability, new EmployeeAccess.CouponDeliveryExecution(
                     new EmployeeAccess.Identity(c.principalId(), c.membershipId(), c.membershipGeneration()), route,
                     c.applicationId(), c.environment(), c.callerServiceId(), c.membershipVersion(), c.principalVersion(),
                     Instant.parse(ref.expiresAt())));

@@ -114,6 +114,13 @@ public class CentralEmployeeConfiguration {
             if ("/v1/operations/point-offers/status-access".equals(path)) return EmployeeAccess.Capability.POINT_OFFER_STATUS_UPDATE;
         }
         if ("GET".equals(r.getMethod()) && "/v1/operations/coupon-definitions/create-access".equals(path)) return EmployeeAccess.Capability.COUPON_DEFINITION_CREATE;
+        if ("/v1/admin/coupon-deliveries".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DELIVERY_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DELIVERY_CREATE;
+        }
+        if ("POST".equals(r.getMethod()) && "/v1/admin/coupon-deliveries/pump".equals(path)) return EmployeeAccess.Capability.COUPON_DELIVERY_PUMP;
+        if ("GET".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/coupon-deliveries/[A-Za-z0-9_.:-]{1,64}/recipients")) return EmployeeAccess.Capability.COUPON_DELIVERY_READ;
+        if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/coupon-deliveries/[A-Za-z0-9_.:-]{1,64}/control")) return EmployeeAccess.Capability.COUPON_DELIVERY_CONTROL;
         if ("/v1/admin/coupon-definitions".equals(path)) {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DEFINITION_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DEFINITION_CREATE;
@@ -200,6 +207,11 @@ public class CentralEmployeeConfiguration {
         }
         return null;
     }
+    /** 只有准确业务POST允许保存长期来源；后续GET资格提示仍使用短引用。 */
+    private static boolean couponDeliveryPost(HttpServletRequest request) {
+        return "POST".equals(request.getMethod()) && ("/v1/admin/coupon-deliveries".equals(request.getServletPath())
+                || request.getServletPath().matches("/v1/admin/coupon-deliveries/[A-Za-z0-9_.:-]{1,64}/control"));
+    }
     private static final class EmployeeFilter extends OncePerRequestFilter {
         private final CentralEmployeeService service;
         EmployeeFilter(CentralEmployeeService service) { this.service = service; }
@@ -208,7 +220,7 @@ public class CentralEmployeeConfiguration {
             try {
                 String header = single(request, "Authorization"), tenant = single(request, "X-Tenant-Id");
                 if (!header.startsWith("Bearer ")) throw new CentralAccessException(401);
-                var actor = service.authenticate(header.substring(7), tenant, capability(request));
+                var actor = service.authenticate(header.substring(7), tenant, capability(request), couponDeliveryPost(request));
                 var context = SecurityContextHolder.createEmptyContext();
                 context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(actor, null, List.of(new SimpleGrantedAuthority("CENTRAL_EMPLOYEE"))));
                 SecurityContextHolder.setContext(context);

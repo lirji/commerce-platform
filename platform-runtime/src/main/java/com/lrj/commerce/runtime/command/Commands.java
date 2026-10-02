@@ -24,6 +24,17 @@ public class Commands {
 		this.transaction.setTimeout(10);
 	}
 
+	/** Owner已核对当前身份/资源后，在事务外选择旧回执的原方向；真正返回仍必须通过runGuarded栅栏。 */
+	public <T> T completedReceipt(Actor actor, String operation, String commandKey, Object input, Class<T> type) {
+		Identifiers.require(operation);
+		Identifiers.require(commandKey);
+		var row = mapper.find(new CommandMapper.Key(actor.tenantId(), actor.actorId(), operation, commandKey));
+		if (row == null || row.responseJson() == null) return null;
+		if (!row.requestHash().equals(JsonCodec.hash(JsonCodec.write(input))))
+			throw new DomainException(DomainException.Code.IDEMPOTENCY_CONFLICT, "相同幂等键的请求内容不同");
+		return JsonCodec.read(row.responseJson(), type);
+	}
+
 	/** 唯一键争用在数据库内串行；相同键不同业务输入不得重新执行。 */
 	public <T> T run(Actor actor, String operation, String commandKey, Object input, Class<T> type,
 			Supplier<T> action) {

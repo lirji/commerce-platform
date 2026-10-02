@@ -7,6 +7,8 @@ import java.time.Instant;
 public interface EmployeeAccess {
     /** 原最大刷新TTL加签发请求余量，只限定引用，不扩大原Grant或五秒提交窗。 */
     long SEGMENT_REFRESH_REFERENCE_SECONDS = 86460;
+    /** 发放与首次撤回单次来源上限；实际发放另受业务deadline约束。 */
+    long COUPON_DELIVERY_REFERENCE_SECONDS = 604860;
     /** 只登记已实现的用例，不能按请求字符串拼能力或迁移单元。 */
     enum Capability {
         INVENTORY_READ("commerce.inventory.read", "INVENTORY", "store"), INVENTORY_RECEIVE("commerce.inventory.receive", "INVENTORY", "store"),
@@ -62,7 +64,11 @@ public interface EmployeeAccess {
         SEGMENT_SCHEDULE("commerce.segment.schedule", "SEGMENT", "segment"),
         SEGMENT_REFRESH("commerce.segment.refresh", "SEGMENT", "segment"),
         SEGMENT_CONTROL("commerce.segment.control", "SEGMENT", "segment"),
-        SEGMENT_PUMP("commerce.segment.pump", "SEGMENT", "segment");
+        SEGMENT_PUMP("commerce.segment.pump", "SEGMENT", "segment"),
+        COUPON_DELIVERY_CREATE("commerce.coupon_delivery.create", "COUPON_DELIVERY", "coupon_delivery"),
+        COUPON_DELIVERY_READ("commerce.coupon_delivery.read", "COUPON_DELIVERY", "coupon_delivery"),
+        COUPON_DELIVERY_CONTROL("commerce.coupon_delivery.control", "COUPON_DELIVERY", "coupon_delivery"),
+        COUPON_DELIVERY_PUMP("commerce.coupon_delivery.pump", "COUPON_DELIVERY", "coupon_delivery");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }
@@ -104,6 +110,13 @@ public interface EmployeeAccess {
     void rememberSegmentExecution(Actor actor, SegmentExecution source);
     /** 进程恢复依赖持久元数据，不能用新的员工引用替代原来源。 */
     SegmentExecution segmentExecution(Actor actor);
+    /** 发券两个方向保存同结构元数据，能力必须在准确调用处单独限定。 */
+    record CouponDeliveryExecution(Identity identity, Route route, String applicationId, String environment,
+                                   String callerServiceId, long membershipVersion, long principalVersion, Instant expiresAt) {}
+    /** 仅实际持久POST登记，GET资格不生成长期任务来源。 */
+    void rememberCouponDeliveryExecution(Actor actor, Capability capability, CouponDeliveryExecution source);
+    /** 通过原Actor、执行引用及准确能力读取，不以新控制来源替换旧方向。 */
+    CouponDeliveryExecution couponDeliveryExecution(Actor actor, Capability capability);
     /** 独立系统政策只核验SEGMENT权威，不伪造员工或延续批准人的Grant。 */
     record SegmentPolicyPermit(String tenant, Route route, Instant until) {}
     SegmentPolicyPermit segmentPolicy(String tenant, Route approvedRoute);

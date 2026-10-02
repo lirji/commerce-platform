@@ -11,11 +11,14 @@ public interface CouponDeliveryMapper {
 
 	record Row(String contentJson, String status, String mode, String cursorMember, String revokeCursor, int processed,
 			int issued, int skipped, int revoked, int kept, int attempts, String errorCode, Instant availableAt,
-			long version) {
+			long version, long contentVersion, String issueSourceJson, String revokeSourceJson) {
 	}
 
 	void insert(@Param("tenant") String tenant, @Param("input") Create input, @Param("json") String json,
-			@Param("now") Instant now);
+			@Param("now") Instant now, @Param("source") String source);
+
+	/** 首次撤回来源仅在发放方向且尚未登记时写入，不覆盖既有撤回来源。 */
+	int startRevoke(@Param("tenant") String tenant, @Param("id") String id, @Param("source") String source);
 
 	Row find(@Param("tenant") String tenant, @Param("id") String id);
 

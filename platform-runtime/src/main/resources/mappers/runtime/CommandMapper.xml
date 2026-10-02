@@ -8,6 +8,10 @@
     SELECT request_hash,response_json FROM platform_command WHERE tenant_id=#{tenantId} AND actor_id=#{actorId}
     AND operation=#{operation} AND command_key=#{commandKey} FOR UPDATE
   </select>
+  <select id="find" resultType="com.lrj.commerce.runtime.command.persistence.CommandMapper$Row">
+    SELECT request_hash,response_json FROM platform_command WHERE tenant_id=#{tenantId} AND actor_id=#{actorId}
+    AND operation=#{operation} AND command_key=#{commandKey}
+  </select>
   <update id="complete">UPDATE platform_command SET response_json=#{response} WHERE tenant_id=#{key.tenantId}
     AND actor_id=#{key.actorId} AND operation=#{key.operation} AND command_key=#{key.commandKey} AND response_json IS NULL</update>
   <insert id="audit">INSERT INTO platform_audit(tenant_id,actor_id,operation,command_key)

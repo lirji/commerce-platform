@@ -83,3 +83,5 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 [设计与接口映射](docs/design/b-console-experience/FRONTEND_ARCHITECTURE.md)、[增量契约](docs/design/b-console-experience/CONTRACTS.md)、[验收与品质复核](docs/delivery/b-console-experience/TEST_RESULT.md)记录本轮边界及证据；旧8602容器没有自动更新，源码预览和生产部署分别记录。
 
 B端第二轮品质迭代：统一经营壳层、正负金额趋势探索、旅程版本关系图、SKU操作与中央按页加载。见[迭代方案](docs/design/b-console-craft/PLAN.md)、[验证与限制](docs/delivery/b-console-craft/TEST_RESULT.md)、[实际自查修订](docs/delivery/b-console-craft/REVIEW.md)。刷新会话和URL上下文恢复契约继续保留。
+
+定向发券 CE05-D1 本地DONE，正式Validation PASS，四独立能力与持久双方向来源沿用[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_COUPON_DELIVERIES.md)及[验收记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_COUPON_DELIVERIES.md)。21实际MySQL专项及520全仓测试通过（5既有条件跳过）；真实Auth跨进程878检查点及终态SQL PASS，产品Git/精确CI待完成，D2页面尚未实施。

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper">
-  <sql id="row">CAST(content_json AS CHAR) content_json,status,mode,cursor_member,revoke_cursor,processed,issued,skipped,revoked,kept,attempts,error_code,available_at,version</sql>
-  <insert id="insert">INSERT INTO automation_coupon_batch(tenant_id,batch_id,store_id,content_json,status,available_at,created_at) VALUES(#{tenant},#{input.batchId},#{input.storeId},#{json},'RUNNING',#{now},#{now})</insert>
+  <sql id="row">CAST(content_json AS CHAR) content_json,status,mode,cursor_member,revoke_cursor,processed,issued,skipped,revoked,kept,attempts,error_code,available_at,version,content_version,CAST(issue_source_json AS CHAR) issue_source_json,CAST(revoke_source_json AS CHAR) revoke_source_json</sql>
+  <insert id="insert">INSERT INTO automation_coupon_batch(tenant_id,batch_id,store_id,content_json,status,available_at,created_at,content_version,issue_source_json) VALUES(#{tenant},#{input.batchId},#{input.storeId},#{json},'RUNNING',#{now},#{now},1,#{source})</insert>
+  <update id="startRevoke">UPDATE automation_coupon_batch SET revoke_source_json=#{source} WHERE tenant_id=#{tenant} AND batch_id=#{id} AND mode='ISSUE' AND revoke_source_json IS NULL</update>
   <select id="find" resultType="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id}</select>
   <select id="lock" resultType="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id} FOR UPDATE</select>
   <select id="list" resultType="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND store_id=#{store} AND batch_id&gt;#{after} ORDER BY batch_id LIMIT #{limit}</select>

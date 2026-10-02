@@ -17,6 +17,9 @@ public interface CommandMapper {
 
 	Row lock(Key key);
 
+	/** 只读已提交回执；Owner在短事务外据此选择准确原执行方向。 */
+	Row find(Key key);
+
 	int complete(@Param("key") Key key, @Param("response") String response);
 
 	void audit(@Param("key") Key key);
