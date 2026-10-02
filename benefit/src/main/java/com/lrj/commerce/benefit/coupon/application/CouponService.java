@@ -68,14 +68,38 @@ public class CouponService implements CouponApi {
 		Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO) > 0, "券金额必须大于零");
 		// 保留旧模式原始输入摘要；中央主体代际稳定绑定，临时执行引用不影响原键重试。
 		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
-		var preparedStore = stores.requireActive(actor, input.storeId());
+		// 预读只选历史方向，最终仍由当前身份栅栏和原命令锁决定，绝不事务外返回回执。
+		var completed = completedCreation(actor, key, command, permit);
+		if (completed != null) return completed;
+		final StoreApi.View preparedStore;
+		try {
+			preparedStore = stores.requireActive(actor, input.storeId());
+		} catch (DomainException unavailableStore) {
+			// 另一请求可在预读后完成并冻结/删除门店；只对业务资源失败补读一次，不吞权限或系统异常。
+			if (unavailableStore.code() != DomainException.Code.CONFLICT
+					&& unavailableStore.code() != DomainException.Code.NOT_FOUND) throw unavailableStore;
+			var concurrentReceipt = completedCreation(actor, key, command, permit);
+			if (concurrentReceipt == null) throw unavailableStore;
+			return concurrentReceipt;
+		}
 		return () -> commands.runGuarded(actor, "coupon.definition", key, command, DefinitionView.class,
-				() -> { stores.lockCurrent(actor, preparedStore); access.lock(permit); }, () -> {
+				() -> access.lock(permit), () -> {
+			// 只在首次效果执行时核对已冻结的 ACTIVE 门店；并发先完成的原回执不重复验证新交易前提。
+			stores.lockCurrent(actor, preparedStore);
 
 			mapper.definition(actor.tenantId(), input);
 			access.audit(actor, permit, "coupon.definition", key, input.definitionId());
 			return definition(mapper.definitionFind(actor.tenantId(), input.definitionId(), input.version()));
 		});
+	}
+
+	/** 历史回执不要求旧门店仍可参与新交易；回执并发清理时禁止降级为新的实际创建。 */
+	private PreparedCreation completedCreation(Actor actor, String key, Object command, EmployeeAccess.ScopePermit permit) {
+		if (commands.completedReceipt(actor, "coupon.definition", key, command, DefinitionView.class) == null) return null;
+		return () -> commands.runGuarded(actor, "coupon.definition", key, command, DefinitionView.class,
+				() -> access.lock(permit), () -> {
+					throw new DomainException(DomainException.Code.CONFLICT, "原命令回执已清理，请核验原意图");
+				});
 	}
 
 	/** 消费者可见本店定义，但领取仍需服务端资格校验。 */
