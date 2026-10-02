@@ -1,3 +1,42 @@
+# Codex Progress
+
+## 任务目标
+
+完整CE00—CE08商城角色权限，并在Auth展示实际接入项目的菜单与资源，方便运营选择；目标active，不能缩成动态人群S1。原目录串行，不新Agent/工作树，不重做已交付modal。
+
+## 已完成
+
+- S0及CAM2已完整Git/精确CI DONE。
+- CE05-S1本地DONE，implementation-validation COMPLETED/PASS：六SEGMENT独立能力、实际正父定义、原命令身份审计、原手工来源与固定独立SYSTEM政策通过。最终真实89f465b97213/session37270已exit0，784检查点全PASS（129 segment标签）；SQL再次核对21条准确版本审计，手工定义7/快照2 COMPLETED、processed113/matched112，撤权后保留100已提交公告；policy和实际Auth停服outage任务固定定义7/快照1、113/112、公告完成。实际Auth员工read/pump503，独立政策无员工Grant继续完成。13产品源/最终JAR/3harness源摘要一致；完整504=499PASS/5既有skip与最终17专项、47工具/9契约、271入口/122能力/34角色未发布、CI YAML/新增2证据回归及两仓hygiene无阻断（formatter限制）。V65已应用不可改、原数据保留。前两失败658时区及784证据O_EXCL全部保留，未手工转换失败。正式Git/精确CI待完成，S2与全部其余CE05—08/Auth菜单资源目标保持active。
+- 最终JAR9570511ed7bc8e5a4a9b7a537dd893e1694fabb45c5934510fc6b36133f715d6，1342字节核对、13源摘要一致；完整504与最终17证据分别保留。V65 SHA07346cdb3c116f413870a55fde5c341e7b6360f56a68fe266b1ad5cc36cb2504已应用不可改。
+
+## 已修改文件
+
+- Commerce13实现/专项/迁移/SDK路径，README、doc-map、enterprise-iam-integration/PROGRESS_STATE及本进度；Auth P6/helper/2证据回归、CI、七实际能力绑定、segment契约/验收/进度。完整显式路径见Auth私密segments-owner-delivery-scope.json（Auth8、Commerce17）。
+
+## 未完成
+
+- S1正常Git任务分支提交、合并推main及精确CI；正式本地Validation已PASS。任务分支Auth feat/commerce-segment-owner-rehearsal（基线290ce1b）、Commerce feat/central-segment-operations（基线d0d6296）复用。
+- S2完整动态人群页：已真实DTO/交互技术细化、未改UI，须等待S1 Git/CI。
+- 全部剩余CE05发券/旅程/效果、CE06/07/08和Auth实际菜单/资源展示与选择，122候选能力/34岗位未批量发布。
+
+## 当前问题
+
+- 无真正阻塞；两真实失败（658时区、784证据O_EXCL）及本地旧失败/5既有skip全部保留。最终37270/89f465b97213已exit0/784全PASS，不重启。
+- formatter未配置既有限制；S1 UI N/A，S2需实际最终编译PKCE及视觉。六秒到期fixture为Auth实际签发的新专用任务，不替换旧源，不冒充HTTP长任务已等86460秒。
+- 私密日志/配置不原样输出。原8602/OA/dev_infra/43308、所有测试库/数据/旧卷/证据/旧工作树保留，无清理或生产部署授权。
+
+## 下一步建议
+
+1. 复核最终指纹/显式Git范围，正常提交、任务分支及main推送，核验精确CI；不无理由重复504全仓或已终态真实演练。
+2. S1 GitCI完成后串行S2及所有剩余切片，保持完整目标。
+
+## 恢复 Prompt
+
+读取本节与Auth CONTRACTS_COMMERCE_SEGMENTS/CE05_SEGMENTS及私密segments-owner-test-result.json。最终37270/89f465b97213已exit0、784检查点（129segment）PASS、21实际正版本审计一致，13产品/3harness源及JAR一致，V65已应用不可改。当前下一Git/精确CI；之后S2和全部剩余CE05—08/Auth资源目标，不重复已终态演练、不新Agent/工作树、不清理数据，不要求反复继续。
+
+## 先前记录（以上方S1为当前状态）
+
 # 当前权限扩展任务（2026-10-01）
 
 目标：完整CE00—CE08角色权限及Auth接入项目菜单资源展示，原目录串行，不新建工作树/子Agent。

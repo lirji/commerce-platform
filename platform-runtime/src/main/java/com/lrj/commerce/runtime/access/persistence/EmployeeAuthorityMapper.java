@@ -19,6 +19,9 @@ public interface EmployeeAuthorityMapper {
                        @Param("permit") com.lrj.commerce.runtime.api.access.EmployeeAccess.ScopePermit permit,
                        @Param("capability") String capability, @Param("operation") String operation, @Param("key") String key,
                        @Param("resourceId") String resourceId, @Param("resourceVersion") long resourceVersion);
+    /** 仅保存原刷新引用元数据，执行ID的唯一性由数据库承担。 */
+    int rememberSegmentExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor, @Param("json") String json);
+    String segmentExecution(@Param("actor") com.lrj.commerce.runtime.api.identity.Actor actor);
     Route find(@Param("tenant") String tenant, @Param("family") String family);
     Route lock(@Param("tenant") String tenant, @Param("family") String family);
     Route central(@Param("authTenant") String authTenant, @Param("family") String family);

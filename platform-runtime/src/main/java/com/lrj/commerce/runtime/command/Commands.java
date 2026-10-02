@@ -33,6 +33,12 @@ public class Commands {
 	/** 权威切换栅栏先于旧回执读取，防止幂等重试绕过当前资源与身份限制。 */
 	public <T> T runGuarded(Actor actor, String operation, String commandKey, Object input, Class<T> type,
 			Runnable guard, Supplier<T> action) {
+		return runGuarded(actor, operation, commandKey, input, type, guard, result -> {}, action);
+	}
+
+	/** 持久任务回执仍关联原来源，返回旧任务前由Owner核对来源，不能以新引用复活旧任务。 */
+	public <T> T runGuarded(Actor actor, String operation, String commandKey, Object input, Class<T> type,
+			Runnable guard, java.util.function.Consumer<T> receiptGuard, Supplier<T> action) {
 		Identifiers.require(commandKey);
 		Identifiers.require(operation);
 		var key = new CommandMapper.Key(actor.tenantId(), actor.actorId(), operation, commandKey);
@@ -44,8 +50,11 @@ public class Commands {
 			if (!previous.requestHash().equals(hash)) {
 				throw new DomainException(DomainException.Code.IDEMPOTENCY_CONFLICT, "相同幂等键的请求内容不同");
 			}
-			if (previous.responseJson() != null)
-				return JsonCodec.read(previous.responseJson(), type);
+			if (previous.responseJson() != null) {
+				T result = JsonCodec.read(previous.responseJson(), type);
+				receiptGuard.accept(result);
+				return result;
+			}
 			T result = action.get();
 			if (mapper.complete(key, JsonCodec.write(result)) != 1)
 				throw new IllegalStateException("命令结果写入失败");

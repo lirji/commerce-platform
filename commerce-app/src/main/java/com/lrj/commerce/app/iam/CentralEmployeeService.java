@@ -23,11 +23,23 @@ public final class CentralEmployeeService implements CentralEmployeeCheck {
     public Actor authenticate(String token, String tenant, EmployeeAccess.Capability capability) {
         var route = access.central(tenant, capability);
         if (route == null) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
-        var ref = client.issueExecution(token, check(tenant, capability), Instant.now().plusSeconds(60).truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
+        var ref = client.issueExecution(token, check(tenant, capability), Instant.now().plusSeconds(capability == EmployeeAccess.Capability.SEGMENT_REFRESH ? EmployeeAccess.SEGMENT_REFRESH_REFERENCE_SECONDS : 60).truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
         var c = ref.context();
         var actor = bindings.find(tenant, c.principalId(), c.membershipId(), c.membershipGeneration());
         if (actor == null || !route.tenantId().equals(actor.tenantId())) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
-        return new Actor(actor.tenantId(), actor.actorId(), Actor.Role.OPERATOR, actor.channel(), ref.executionId());
+        var result = new Actor(actor.tenantId(), actor.actorId(), Actor.Role.OPERATOR, actor.channel(), ref.executionId());
+        // 刷新引用可跨进程推进，保存中央返回的准确期限；其余短命令不增加持久来源。
+        if (capability == EmployeeAccess.Capability.SEGMENT_REFRESH) {
+            try { access.rememberSegmentExecution(result, new EmployeeAccess.SegmentExecution(
+                    new EmployeeAccess.Identity(c.principalId(), c.membershipId(), c.membershipGeneration()), route,
+                    c.applicationId(), c.environment(), c.callerServiceId(), c.membershipVersion(), c.principalVersion(),
+                    Instant.parse(ref.expiresAt())));
+            } catch (DomainException failure) {
+                if (failure.code() == DomainException.Code.FORBIDDEN) throw new AccessDeniedException("CENTRAL_EMPLOYEE_DENIED");
+                throw new CentralAccessException(503);
+            }
+        }
+        return result;
     }
     /** 返回主体必须仍映射为原Actor；其他能力或代际的引用不能借用。 */
     @Override public Decision require(Actor actor, EmployeeAccess.Capability capability, EmployeeAccess.StoreFact fact, String tenant) {

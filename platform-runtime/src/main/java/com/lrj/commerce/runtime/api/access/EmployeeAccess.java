@@ -5,6 +5,8 @@ import java.time.Instant;
 
 /** 员工用例的实时能力门禁；领域只传Owner事实，不接触中央SDK或用户Token。 */
 public interface EmployeeAccess {
+    /** 原最大刷新TTL加签发请求余量，只限定引用，不扩大原Grant或五秒提交窗。 */
+    long SEGMENT_REFRESH_REFERENCE_SECONDS = 86460;
     /** 只登记已实现的用例，不能按请求字符串拼能力或迁移单元。 */
     enum Capability {
         INVENTORY_READ("commerce.inventory.read", "INVENTORY", "store"), INVENTORY_RECEIVE("commerce.inventory.receive", "INVENTORY", "store"),
@@ -54,7 +56,13 @@ public interface EmployeeAccess {
         CAMPAIGN_REJECT("commerce.campaign.reject", "CAMPAIGN", "campaign"),
         CAMPAIGN_PUBLISH("commerce.campaign.publish", "CAMPAIGN", "campaign"),
         CAMPAIGN_PAUSE("commerce.campaign.pause", "CAMPAIGN", "campaign"),
-        BUDGET_READ("commerce.budget.read", "CAMPAIGN", "campaign");
+        BUDGET_READ("commerce.budget.read", "CAMPAIGN", "campaign"),
+        SEGMENT_READ("commerce.segment.read", "SEGMENT", "segment"),
+        SEGMENT_CREATE("commerce.segment.create", "SEGMENT", "segment"),
+        SEGMENT_SCHEDULE("commerce.segment.schedule", "SEGMENT", "segment"),
+        SEGMENT_REFRESH("commerce.segment.refresh", "SEGMENT", "segment"),
+        SEGMENT_CONTROL("commerce.segment.control", "SEGMENT", "segment"),
+        SEGMENT_PUMP("commerce.segment.pump", "SEGMENT", "segment");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }
@@ -89,6 +97,18 @@ public interface EmployeeAccess {
                 || !java.util.Objects.equals(before.fingerprint(), after.fingerprint()))
             throw new com.lrj.commerce.kernel.DomainException(com.lrj.commerce.kernel.DomainException.Code.FORBIDDEN, "目录授权上下文已变化");
     }
+    /** 原手工引用的准确截止与分区；准入许可的五秒窗口不能替代任务引用期限。 */
+    record SegmentExecution(Identity identity, Route route, String applicationId, String environment,
+                            String callerServiceId, long membershipVersion, long principalVersion, Instant expiresAt) {}
+    /** 只在中央签发segment.refresh后保存无Token元数据，随后由Owner复制进任务。 */
+    void rememberSegmentExecution(Actor actor, SegmentExecution source);
+    /** 进程恢复依赖持久元数据，不能用新的员工引用替代原来源。 */
+    SegmentExecution segmentExecution(Actor actor);
+    /** 独立系统政策只核验SEGMENT权威，不伪造员工或延续批准人的Grant。 */
+    record SegmentPolicyPermit(String tenant, Route route, Instant until) {}
+    SegmentPolicyPermit segmentPolicy(String tenant, Route approvedRoute);
+    /** 系统政策提交也与停止/切换串行，Owner另行核验真实政策和固定定义。 */
+    void lock(SegmentPolicyPermit permit);
     /** 状态持久化，不能由HTTP头或运行开关推断当前权威。 */
     record Route(String tenantId, String authTenantId, String family, String state, boolean everCentral, long version) {}
     /** 每次业务访问都要调用，包括非HTTP入口和重试。 */

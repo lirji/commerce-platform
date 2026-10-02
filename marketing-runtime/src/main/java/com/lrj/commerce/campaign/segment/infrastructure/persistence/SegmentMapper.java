@@ -22,7 +22,7 @@ public interface SegmentMapper {
 			@Param("done") boolean done);
 
 	record Root(String segmentId, String audienceId, long currentVersion, long snapshotSequence, boolean enabled,
-			Instant nextDue, long lockVersion) {
+			Instant nextDue, long lockVersion, String schedulePolicyJson) {
 	}
 
 	record Row(String definitionJson, String audienceId, boolean enabled, long lockVersion) {
@@ -46,11 +46,14 @@ public interface SegmentMapper {
 	List<Row> definitions(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
 
 	int schedule(@Param("tenant") String tenant, @Param("id") String id, @Param("input") SegmentApi.Schedule input,
-			@Param("now") Instant now);
+			@Param("now") Instant now, @Param("policy") String policy);
 
 	void allocate(@Param("tenant") String tenant, @Param("id") String id, @Param("due") Instant due);
 
-	void run(@Param("tenant") String tenant, @Param("run") SegmentApi.Run run);
+	void run(@Param("tenant") String tenant, @Param("run") SegmentApi.Run run, @Param("source") String source);
+
+	/** 来源不进入公开DTO，不允许控制命令更新原创建者。 */
+	String source(@Param("tenant") String tenant, @Param("id") String id);
 
 	SegmentApi.Run runFind(@Param("tenant") String tenant, @Param("id") String id);
 

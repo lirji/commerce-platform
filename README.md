@@ -66,6 +66,14 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 编译入口只匿名提供固定GET页面壳，业务API仍校验中央身份、租户与独立能力。使用现有前端SSO构建变量、中央store-read/employee配置、显式身份桥及CAMPAIGN族CENTRAL路由；没有自动迁移旧ADMIN或授予新角色。当前CE05-CAM2已通过最终真实编译页面本地验收，[契约与验证记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_CAMPAIGNS.md)维护最终状态；本地隔离验证不改变原8602或生产部署。
 
+### 动态人群员工权限与执行来源
+
+既有 `/v1/admin/segments` 目录与定义、调度、刷新、运行记录、任务控制和有界推进分别使用 `segment.read/create/schedule/refresh/control/pump` 六项中央能力；读取、控制和推进不隐含创建或刷新权限。SEGMENT路由按真实租户显式接管，对象判权采用实际正定义版本，调度锁版本与输出快照版本保持独立。
+
+手工任务持久化原员工与 Auth 执行引用的准确期限，不保存Token。每批扫描、快照发布、公告、重启和控制都重新核验原来源；新授权不能替换已撤销或过期的原任务。成功启用的周期调度保存独立固定政策，停未来调度或发布新定义不取消已开始的固定版本任务；STOPPED路由仍阻断系统任务，历史空来源在CENTRAL下拒绝推进。V65只追加来源和版本审计约束，不自动接管租户或推定历史政策。
+
+当前后台已通过真实跨进程本地验收，Git与精确CI交付状态见验证记录；专用动态人群SSO页面尚待CE05-S2交付。[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_SEGMENTS.md)与[验证记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_SEGMENTS.md)分别记录能力、任务语义和实际验收范围。本地隔离演练不改变原8602环境或生产部署。
+
 ### B端工作台与刷新恢复
 
 管理工作台补齐任务恢复、恢复审计和历史重放；平台运维通过独立 `/v1/platform/me` 进入只读运行健康页。中央员工页面统一导航，但每个业务入口仍独立授权。刷新保留当前标签页会话及适用URL筛选、页签、游标，重新读取真实数据；退出与401清除凭据，服务暂不可用时支持恢复重试。

@@ -157,6 +157,16 @@ public class CentralEmployeeConfiguration {
                 default -> null;
             };
         }
+        if ("/v1/admin/segments".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.SEGMENT_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.SEGMENT_CREATE;
+        }
+        if ("POST".equals(r.getMethod()) && "/v1/admin/segments/pump".equals(path)) return EmployeeAccess.Capability.SEGMENT_PUMP;
+        // 完整解码路径及有限动作，未知控制动作不会进入中央员工认证链。
+        if ("GET".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/segments/[A-Za-z0-9_.:-]{1,64}/runs")) return EmployeeAccess.Capability.SEGMENT_READ;
+        if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/segments/[A-Za-z0-9_.:-]{1,64}/(schedule|refresh)"))
+            return r.getServletPath().endsWith("/schedule") ? EmployeeAccess.Capability.SEGMENT_SCHEDULE : EmployeeAccess.Capability.SEGMENT_REFRESH;
+        if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/segment-runs/[A-Za-z0-9_.:-]{1,64}/(cancel|retry|retry-announcement)")) return EmployeeAccess.Capability.SEGMENT_CONTROL;
         if ("GET".equals(r.getMethod()) && "/v1/admin/rule-fields".equals(path)) return EmployeeAccess.Capability.RULE_READ;
         // 解码后的合法标识与正版本匹配完整路径，不允许未知规则动作。
         if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/rules/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/publish")) return EmployeeAccess.Capability.RULE_PUBLISH;

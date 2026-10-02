@@ -47,7 +47,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         State state = route == null ? State.LEGACY : State.valueOf(route.state());
         Instant until = Instant.now().plusSeconds(5);
         if (state == State.LEGACY || state == State.SHADOW) {
-            if (actor.executionId() != null) throw denied();
+            if (actor.executionId() != null || (segmentCapability(capability) && route != null && route.everCentral())) throw denied();
             actor.requireAdmin();
             var all = new com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter(java.util.List.of(
                     new com.lrj.commerce.runtime.api.scope.ScopeQuery.Path(true,java.util.List.of(),java.util.List.of())));
@@ -59,7 +59,7 @@ public class EmployeeAuthority implements EmployeeAccess {
         if (decision.until().isBefore(until)) until = decision.until();
         if (!until.isAfter(Instant.now()) || decision.filter().paths().isEmpty()) throw denied();
         if ((capability == Capability.MERCHANT_CREATE || capability == Capability.STORE_CREATE || memberCapability(capability)
-                || pointOfferCapability(capability) || couponDefinitionCapability(capability) || entitlementCapability(capability) || ruleCapability(capability) || audienceCapability(capability) || campaignCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
+                || pointOfferCapability(capability) || couponDefinitionCapability(capability) || entitlementCapability(capability) || ruleCapability(capability) || audienceCapability(capability) || campaignCapability(capability) || segmentCapability(capability) || Capability.GROWTH_POLICY_READ.resourceType().equals(capability.resourceType()))
                 && decision.filter().paths().stream().noneMatch(com.lrj.commerce.runtime.api.scope.ScopeQuery.Path::tenantAll)) throw denied();
         return new ScopePermit(capability, actor.tenantId(), decision.filter(), route, decision.identity(), decision.fingerprint(), until);
     }
@@ -68,10 +68,10 @@ public class EmployeeAuthority implements EmployeeAccess {
         if ((!memberCapability(permit.capability()) && !pointOfferCapability(permit.capability())
                 && permit.capability() != Capability.ENTITLEMENT_READ && permit.capability() != Capability.ENTITLEMENT_RESOLVE
                 && permit.capability() != Capability.RULE_READ && permit.capability() != Capability.RULE_PUBLISH
-                && !campaignAction(permit.capability())) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD || permit.capability() == Capability.POINT_OFFER_DEFINE
+                && !campaignAction(permit.capability()) && !segmentObject(permit.capability())) || permit.capability() == Capability.MEMBER_CREATE || permit.capability() == Capability.MEMBER_TAG_DEFINE || permit.capability() == Capability.MEMBER_BEHAVIOR_REBUILD || permit.capability() == Capability.POINT_OFFER_DEFINE
                 || !actor.tenantId().equals(permit.tenant()) || fact == null
                 || !permit.capability().resourceType().equals(fact.type()) || fact.version() < 0
-                || (campaignAction(permit.capability()) && fact.version() == 0)) throw denied();
+                || ((campaignAction(permit.capability()) || segmentObject(permit.capability())) && fact.version() == 0)) throw denied();
         com.lrj.commerce.kernel.Identifiers.require(fact.id());
         if (!permit.until().isAfter(Instant.now()) || !Objects.equals(routes.find(permit.tenant(), permit.capability().family()), permit.route())) throw denied();
         if (permit.identity() == null) {
@@ -118,6 +118,51 @@ public class EmployeeAuthority implements EmployeeAccess {
         return java.util.Set.of(Capability.CAMPAIGN_PREVIEW, Capability.CAMPAIGN_SUBMIT, Capability.CAMPAIGN_APPROVE,
                 Capability.CAMPAIGN_REJECT, Capability.CAMPAIGN_PUBLISH, Capability.CAMPAIGN_PAUSE).contains(capability);
     }
+    /** 动态定义与快照/任务分开；集合创建及推进不能冒用已有对象。 */
+    private static boolean segmentObject(Capability capability) {
+        return java.util.Set.of(Capability.SEGMENT_READ, Capability.SEGMENT_SCHEDULE,
+                Capability.SEGMENT_REFRESH, Capability.SEGMENT_CONTROL).contains(capability);
+    }
+    private static boolean segmentCapability(Capability capability) {
+        return segmentObject(capability) || capability == Capability.SEGMENT_CREATE || capability == Capability.SEGMENT_PUMP;
+    }
+    /** 签发结果来自中央适配层；写入前锁定对应中央路由，不把Token或ALLOW缓存持久化。 */
+    @Override @Transactional
+    public void rememberSegmentExecution(Actor actor, SegmentExecution source) {
+        if (actor.role() != Actor.Role.OPERATOR || actor.executionId() == null || source == null
+                || source.identity() == null || source.route() == null || !Capability.SEGMENT_REFRESH.family().equals(source.route().family())
+                || !State.CENTRAL.name().equals(source.route().state()) || !actor.tenantId().equals(source.route().tenantId())
+                || !source.expiresAt().isAfter(Instant.now()) || source.expiresAt().isAfter(Instant.now().plusSeconds(SEGMENT_REFRESH_REFERENCE_SECONDS))
+                || !Objects.equals(routes.lock(actor.tenantId(), Capability.SEGMENT_REFRESH.family()), source.route())) throw denied();
+        if (routes.rememberSegmentExecution(actor, com.lrj.commerce.runtime.serialization.JsonCodec.write(source)) != 1)
+            throw new DomainException(DomainException.Code.CONFLICT, "刷新引用来源保存失败");
+    }
+    /** 缺少来源不能猜成系统任务；原Actor与执行ID必须一致。 */
+    @Override public SegmentExecution segmentExecution(Actor actor) {
+        if (actor.role() != Actor.Role.OPERATOR || actor.executionId() == null) throw denied();
+        var json = routes.segmentExecution(actor);
+        if (json == null) throw denied();
+        var source = com.lrj.commerce.runtime.serialization.JsonCodec.read(json, SegmentExecution.class);
+        if (!actor.tenantId().equals(source.route().tenantId()) || !source.expiresAt().isAfter(Instant.now())) throw denied();
+        return source;
+    }
+    /** 已批准的周期政策属于系统责任；撤销批准人Grant不改变已提交政策，但停止权威必须阻断。 */
+    @Override public SegmentPolicyPermit segmentPolicy(String tenant, Route approvedRoute) {
+        var route = routes.find(tenant, Capability.SEGMENT_REFRESH.family());
+        if (approvedRoute == null) {
+            if (route != null && (route.everCentral() || !java.util.Set.of(State.LEGACY.name(), State.SHADOW.name()).contains(route.state()))) throw denied();
+        } else if (route == null || !State.CENTRAL.name().equals(route.state()) || !route.everCentral()
+                || !State.CENTRAL.name().equals(approvedRoute.state()) || !Capability.SEGMENT_REFRESH.family().equals(approvedRoute.family())
+                || !tenant.equals(approvedRoute.tenantId()) || !Objects.equals(route.authTenantId(), approvedRoute.authTenantId())
+                || route.version() < approvedRoute.version()) throw denied();
+        return new SegmentPolicyPermit(tenant, route, Instant.now().plusSeconds(5));
+    }
+    /** 政策真实来源由营销Owner校验，运行时只锁定持久权威与提交截止。 */
+    @Override @Transactional(propagation = Propagation.MANDATORY)
+    public void lock(SegmentPolicyPermit permit) {
+        if (!Objects.equals(routes.lock(permit.tenant(), Capability.SEGMENT_REFRESH.family()), permit.route())
+                || !permit.until().isAfter(Instant.now())) throw denied();
+    }
     private static boolean memberCapability(Capability capability) {
         return java.util.Set.of(Capability.MEMBER_READ, Capability.MEMBER_CREATE, Capability.MEMBER_PROFILE_UPDATE, Capability.MEMBER_STATUS_UPDATE, Capability.GROWTH_READ, Capability.GROWTH_ADJUST, Capability.GROWTH_RECALCULATE, Capability.MEMBER_TAG_READ, Capability.MEMBER_TAG_DEFINE, Capability.MEMBER_TAG_ASSIGN, Capability.MEMBER_BEHAVIOR_READ, Capability.MEMBER_BEHAVIOR_UPDATE, Capability.MEMBER_BEHAVIOR_REBUILD, Capability.MEMBER_CYCLE_READ, Capability.MEMBER_CYCLE_EVALUATE, Capability.CYCLE_BENEFIT_GRANT, Capability.POINTS_READ, Capability.POINTS_ADJUST, Capability.POINTS_EXPIRE).contains(capability);
     }
@@ -140,7 +185,8 @@ public class EmployeeAuthority implements EmployeeAccess {
     /** 创建使用可信提交结果，已有动作使用Owner版本；与业务、预算和回执共用事务。 */
     @Override @Transactional(propagation = Propagation.MANDATORY)
     public void auditVersion(Actor actor, ScopePermit permit, String operation, String key, String resourceId, long contentVersion) {
-        if ((permit.capability() != Capability.CAMPAIGN_CREATE && !campaignAction(permit.capability())) || contentVersion <= 0 || !actor.tenantId().equals(permit.tenant())) throw denied();
+        if ((permit.capability() != Capability.CAMPAIGN_CREATE && !campaignAction(permit.capability())
+                && !java.util.Set.of(Capability.SEGMENT_CREATE, Capability.SEGMENT_SCHEDULE, Capability.SEGMENT_REFRESH, Capability.SEGMENT_CONTROL).contains(permit.capability())) || contentVersion <= 0 || !actor.tenantId().equals(permit.tenant())) throw denied();
         com.lrj.commerce.kernel.Identifiers.require(resourceId);
         if (permit.identity() == null) return;
         if (routes.auditVersioned(actor, permit, permit.capability().code(), operation, key, resourceId, contentVersion) != 1)
