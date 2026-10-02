@@ -1035,3 +1035,38 @@
     justify-content: flex-end;
   }
 }
+
+/* 订单运营表单在窄屏占满可用宽度；真实长编号在弹层与回执内完整换行。 */
+.operations-modal .ant-descriptions-item-content,
+.operations-modal .ant-alert-message,
+.operations-modal .ant-alert-description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.operations-modal .ant-tag {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.operations-workspace .ant-form-item,
+.operations-modal .ant-form-item {
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .operations-workspace .ant-form-inline {
+    display: block;
+  }
+  .operations-workspace .ant-form-inline .ant-form-item {
+    margin: 0 0 16px;
+  }
+  .operations-workspace .ant-form-inline .ant-form-item-control,
+  .operations-workspace .ant-form-inline .ant-input {
+    min-width: 0;
+    width: 100%;
+  }
+  .operations-modal .ant-modal-footer .ant-space {
+    justify-content: flex-end;
+    max-width: 100%;
+  }
+}
