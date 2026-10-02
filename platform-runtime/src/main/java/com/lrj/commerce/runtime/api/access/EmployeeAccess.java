@@ -45,7 +45,16 @@ public interface EmployeeAccess {
         RULE_CREATE("commerce.rule.create", "RULE", "marketing_rule"),
         RULE_PUBLISH("commerce.rule.publish", "RULE", "marketing_rule"),
         AUDIENCE_READ("commerce.audience.read", "AUDIENCE", "audience"),
-        AUDIENCE_CREATE("commerce.audience.create", "AUDIENCE", "audience");
+        AUDIENCE_CREATE("commerce.audience.create", "AUDIENCE", "audience"),
+        CAMPAIGN_READ("commerce.campaign.read", "CAMPAIGN", "campaign"),
+        CAMPAIGN_CREATE("commerce.campaign.create", "CAMPAIGN", "campaign"),
+        CAMPAIGN_PREVIEW("commerce.campaign.preview", "CAMPAIGN", "campaign"),
+        CAMPAIGN_SUBMIT("commerce.campaign.submit", "CAMPAIGN", "campaign"),
+        CAMPAIGN_APPROVE("commerce.campaign.approve", "CAMPAIGN", "campaign"),
+        CAMPAIGN_REJECT("commerce.campaign.reject", "CAMPAIGN", "campaign"),
+        CAMPAIGN_PUBLISH("commerce.campaign.publish", "CAMPAIGN", "campaign"),
+        CAMPAIGN_PAUSE("commerce.campaign.pause", "CAMPAIGN", "campaign"),
+        BUDGET_READ("commerce.budget.read", "CAMPAIGN", "campaign");
         private final String code, family, resourceType;
         Capability(String code, String family, String resourceType) { this.code = code; this.family = family; this.resourceType = resourceType; }
         public String code() { return code; }
@@ -72,6 +81,8 @@ public interface EmployeeAccess {
     void lock(ScopePermit permit);
     /** 记录本事务实际创建目标，不拿待创建目标作为授权事实。 */
     void audit(Actor actor, ScopePermit permit, String operation, String commandKey, String resourceId);
+    /** 活动记录实际不可变内容版本，不能把状态锁版本当成授权或审计版本。 */
+    void auditVersion(Actor actor, ScopePermit permit, String operation, String commandKey, String resourceId, long contentVersion);
     /** 读取后权限或身份变化时拒绝返回旧结果。 */
     static void requireSame(ScopePermit before, ScopePermit after) {
         if(!java.util.Objects.equals(before.route(), after.route()) || !java.util.Objects.equals(before.identity(), after.identity())

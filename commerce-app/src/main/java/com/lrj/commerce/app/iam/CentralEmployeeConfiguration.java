@@ -131,6 +131,23 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.AUDIENCE_CREATE;
         }
+        if ("/v1/admin/campaigns".equals(path)) {
+            if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.CAMPAIGN_READ;
+            if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.CAMPAIGN_CREATE;
+        }
+        if ("GET".equals(r.getMethod()) && "/v1/admin/campaign-budgets".equals(path)) return EmployeeAccess.Capability.BUDGET_READ;
+        // 只登记现有六个版本动作；解码后支持合法冒号，不接受任意能力拼接。
+        if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/campaigns/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/(preview|submit|approve|reject|publish|pause)")) {
+            return switch (r.getServletPath().substring(r.getServletPath().lastIndexOf('/') + 1)) {
+                case "preview" -> EmployeeAccess.Capability.CAMPAIGN_PREVIEW;
+                case "submit" -> EmployeeAccess.Capability.CAMPAIGN_SUBMIT;
+                case "approve" -> EmployeeAccess.Capability.CAMPAIGN_APPROVE;
+                case "reject" -> EmployeeAccess.Capability.CAMPAIGN_REJECT;
+                case "publish" -> EmployeeAccess.Capability.CAMPAIGN_PUBLISH;
+                case "pause" -> EmployeeAccess.Capability.CAMPAIGN_PAUSE;
+                default -> null;
+            };
+        }
         if ("GET".equals(r.getMethod()) && "/v1/admin/rule-fields".equals(path)) return EmployeeAccess.Capability.RULE_READ;
         // 解码后的合法标识与正版本匹配完整路径，不允许未知规则动作。
         if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/rules/[A-Za-z0-9_.:-]{1,64}/[1-9][0-9]{0,18}/publish")) return EmployeeAccess.Capability.RULE_PUBLISH;

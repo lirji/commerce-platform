@@ -11,6 +11,8 @@ import java.util.List;
 import com.lrj.commerce.campaign.funding.api.CampaignFundingApi;
 import com.lrj.commerce.campaign.management.api.CampaignApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.BUDGET_READ;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
 
@@ -22,7 +24,11 @@ public class CampaignFundingService implements CampaignFundingApi {
 
 	private final CampaignMapper campaigns;
 
-	public CampaignFundingService(BudgetMapper mapper, CampaignMapper campaigns) {
+	private final EmployeeAccess access;
+
+	/** 仅员工预算列表接管，订单资方快照和预占履约仍走原可信事务。 */
+	public CampaignFundingService(BudgetMapper mapper, CampaignMapper campaigns, EmployeeAccess access) {
+		this.access = access;
 		this.mapper = mapper;
 		this.campaigns = campaigns;
 	}
@@ -72,9 +78,11 @@ public class CampaignFundingService implements CampaignFundingApi {
 
 	/** 财务列表包括旧版本预算，使用稳定预算ID分页。 */
 	public List<Budget> budgets(Actor actor, String after, int limit) {
-		actor.requireAdmin();
+		var permit = access.scope(actor, BUDGET_READ);
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		var result = mapper.list(actor.tenantId(), after, limit);
+		EmployeeAccess.requireSame(permit, access.scope(actor, BUDGET_READ));
+		return result;
 	}
 
 	private void finish(String tenant, String order, boolean confirmed) {

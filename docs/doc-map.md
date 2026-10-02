@@ -57,3 +57,5 @@
 2026-10-01 中央员工权限原计划继续 CE05-A1：本仓状态见 `design/enterprise-iam-integration/PROGRESS_STATE.md` 及根 `CODEX_PROGRESS.md` 的 CE05-A1 独立节；人群原接口、不可变快照和可信内部引用契约及真实验证见 [auth 人群契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_AUDIENCES.md) 和 [人群验收](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_AUDIENCES.md)。本轮不覆盖 Craft 进度或将后端通过当作 A2 页面交付。
 
 2026-10-01 CE05-A2固定SSO人群页、独立create-access与导航完成本地验收；真实647检查点/11人群浏览器及1440/390产品截图，当前源码与JAR验证见auth `CE05_AUDIENCES.md`，本仓状态仍在 `design/enterprise-iam-integration/PROGRESS_STATE.md`。原Craft状态不覆盖，无新迁移或生产部署；原8源码与真实契约绑定，GitCI单独记录。
+
+2026-10-01 CE05-CAM1活动/预算中央权限接入：当前切片及真实版本/审批/幂等/预算履约契约见[auth活动契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_CAMPAIGNS.md)，验证/交付状态见[auth活动验收](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_CAMPAIGNS.md)。新增V64记录实际内容版本审计，SDK固定CAM0 b311e4c；界面CAM2单独验收，不覆盖Craft状态或宣称原8602已部署。

@@ -13,6 +13,8 @@ import com.lrj.commerce.campaign.management.api.CampaignApi;
 import com.lrj.commerce.campaign.rule.api.MemberRuleFacts;
 import com.lrj.commerce.campaign.rule.api.RuleNode;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.access.EmployeeAccess;
+import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
@@ -45,6 +47,8 @@ public class CampaignService implements CampaignApi {
 
 	private final Commands commands;
 
+	private final EmployeeAccess access;
+
 	public CampaignService(CampaignMapper mapper, StoreApi stores, Commands commands, MarketingAssets assets,
 			java.time.Clock clock, com.lrj.commerce.campaign.funding.infrastructure.persistence.BudgetMapper budgets,
 			com.lrj.commerce.benefit.entitlement.api.EntitlementApi entitlements,
@@ -53,7 +57,9 @@ public class CampaignService implements CampaignApi {
 			com.lrj.commerce.catalog.assortment.api.CatalogApi catalog,
 			com.lrj.commerce.marketing.api.DecisionPort decisions,
 			com.lrj.commerce.benefit.coupon.api.CouponApi coupons,
-			@org.springframework.beans.factory.annotation.Value("${commerce.marketing.coupon-enabled:false}") boolean couponEnabled) {
+			@org.springframework.beans.factory.annotation.Value("${commerce.marketing.coupon-enabled:false}") boolean couponEnabled,
+			EmployeeAccess access) {
+		this.access = access;
 		this.members = members;
 		this.memberGrowth = memberGrowth;
 		this.catalog = catalog;
@@ -71,7 +77,7 @@ public class CampaignService implements CampaignApi {
 
 	/** 草稿内容不可变，修改必须创建新版本。 */
 	public View create(Actor actor, String key, Draft input) {
-		actor.require(Actor.Capability.MARKETING_DRAFT_EDIT);
+		var permit = access.scope(actor, CAMPAIGN_CREATE);
 		Inputs.require(input != null, "请求不能为空");
 		Identifiers.require(input.campaignId());
 		Inputs.text(input.name(), 128);
@@ -98,7 +104,9 @@ public class CampaignService implements CampaignApi {
 		}
 		money(input.minimumSpend());
 		Inputs.require(money(input.discountAmount()).compareTo(Money.ZERO) > 0, "优惠必须大于零");
-		return commands.run(actor, "campaign.create", key, input, View.class, () -> {
+		// 旧模式保留原摘要；中央只加入稳定主体，执行nonce不参与重试意图。
+		Object command = permit.identity() == null ? input : new Object[] { input, permit.identity() };
+		return commands.runGuarded(actor, "campaign.create", key, command, View.class, () -> access.lock(permit), () -> {
 			var store = stores.requireActive(actor, input.storeId());
 			RuleNode rule = input.rule();
 			if (input.policy() != null) {
@@ -118,6 +126,7 @@ public class CampaignService implements CampaignApi {
 			budgets.create(actor.tenantId(), java.util.UUID.randomUUID().toString(), input.campaignId(),
 					input.version(),
 					input.policy() == null || input.policy().terms() == null ? null : input.policy().terms().budget());
+			access.auditVersion(actor, permit, "campaign.create", key, input.campaignId(), input.version());
 			return view(mapper.find(actor.tenantId(), input.campaignId(), input.version()));
 		});
 	}
@@ -133,11 +142,15 @@ public class CampaignService implements CampaignApi {
 	}
 
 	private View change(Actor actor, String key, String id, long version, long expected, boolean publish) {
-		actor.require(publish ? Actor.Capability.MARKETING_PUBLISH : Actor.Capability.MARKETING_PAUSE);
+		var scope = access.scope(actor, publish ? CAMPAIGN_PUBLISH : CAMPAIGN_PAUSE);
 		Identifiers.require(id);
 		Inputs.require(version > 0 && expected >= 0, "活动版本无效");
-		return commands.run(actor, publish ? "campaign.publish" : "campaign.pause", key, List.of(id, version, expected),
-				View.class, () -> {
+		var current = Inputs.found(mapper.find(actor.tenantId(), id, version));
+		var permit = access.resource(actor, scope, fact(current));
+		String operation = publish ? "campaign.publish" : "campaign.pause";
+		Object command = command(scope, id, version, expected);
+		return commands.runGuarded(actor, operation, key, command,
+				View.class, () -> lockPermit(actor, permit), () -> {
 					var group = mapper.lockGroup(actor.tenantId(), id);
 					var row = group.stream()
 						.filter(r -> r.version() == version)
@@ -153,6 +166,7 @@ public class CampaignService implements CampaignApi {
 						mapper.pauseOthers(actor.tenantId(), id);
 					if (mapper.change(actor.tenantId(), id, version, expected, publish ? "PUBLISHED" : "PAUSED") != 1)
 						throw new DomainException(DomainException.Code.CONFLICT, "活动并发版本冲突");
+					access.auditVersion(actor, permit.scope(), operation, key, row.campaignId(), row.version());
 					return view(mapper.find(actor.tenantId(), id, version));
 				});
 	}
@@ -199,9 +213,11 @@ public class CampaignService implements CampaignApi {
 
 	/** 管理台按活动ID列出每个活动最新内容版本。 */
 	public List<View> list(Actor actor, String after, int limit) {
-		actor.require(Actor.Capability.MARKETING_ACTIVITY_READ);
+		var permit = access.scope(actor, CAMPAIGN_READ);
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var result = mapper.list(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		EmployeeAccess.requireSame(permit, access.scope(actor, CAMPAIGN_READ));
+		return result;
 	}
 
 	private View view(CampaignMapper.Row r) {
@@ -224,11 +240,21 @@ public class CampaignService implements CampaignApi {
 
 	/** 每次审批变更都带预期版本并写命令审计，不能跳级发布。 */
 	public View review(Actor actor, String key, String id, long version, long expected, String action) {
-		actor.require(Actor.Capability.MARKETING_REVIEW);
+		Inputs.require(action != null && java.util.Set.of("submit", "approve", "reject").contains(action), "审批动作无效");
+		var scope = access.scope(actor, switch (action) {
+			case "submit" -> CAMPAIGN_SUBMIT;
+			case "approve" -> CAMPAIGN_APPROVE;
+			case "reject" -> CAMPAIGN_REJECT;
+			default -> throw new IllegalArgumentException("未登记审批动作");
+		});
 		Identifiers.require(id);
 		Inputs.require(version > 0 && expected >= 0 && java.util.Set.of("submit", "approve", "reject").contains(action),
 				"审批动作无效");
-		return commands.run(actor, "campaign." + action, key, List.of(id, version, expected), View.class, () -> {
+		var current = Inputs.found(mapper.find(actor.tenantId(), id, version));
+		var permit = access.resource(actor, scope, fact(current));
+		String operation = "campaign." + action;
+		return commands.runGuarded(actor, operation, key, command(scope, id, version, expected), View.class,
+				() -> lockPermit(actor, permit), () -> {
 			var row = mapper.lockGroup(actor.tenantId(), id)
 				.stream()
 				.filter(r -> r.version() == version)
@@ -240,8 +266,30 @@ public class CampaignService implements CampaignApi {
 				throw new DomainException(DomainException.Code.CONFLICT, "审批状态或版本冲突");
 			if (mapper.change(actor.tenantId(), id, version, expected, next) != 1)
 				throw new DomainException(DomainException.Code.CONFLICT, "活动审批并发冲突");
+			access.auditVersion(actor, permit.scope(), operation, key, row.campaignId(), row.version());
 			return view(mapper.find(actor.tenantId(), id, version));
 		});
+	}
+
+	/** 路由锁先于实际版本组锁和回执；等待业务锁后再次限制许可期限。 */
+	private void lockPermit(Actor actor, EmployeeAccess.ResourcePermit permit) {
+		access.lock(permit.scope());
+		var row = mapper.lockGroup(actor.tenantId(), permit.fact().id()).stream()
+			.filter(r -> r.version() == permit.fact().version()).findFirst()
+			.orElseThrow(() -> new DomainException(DomainException.Code.NOT_FOUND, "活动版本不存在"));
+		// 内容不可变；状态lockVersion递增不应使已成功的原键重试变成状态冲突。
+		if (!permit.fact().equals(fact(row)))
+			throw new DomainException(DomainException.Code.CONFLICT, "活动内容版本事实变化");
+		access.lock(permit.scope());
+	}
+
+	private static EmployeeAccess.ResourceFact fact(CampaignMapper.Row row) {
+		return new EmployeeAccess.ResourceFact(CAMPAIGN_READ.resourceType(), row.campaignId(), row.version());
+	}
+
+	/** 保留旧命令的输入形状，中央身份变更不能回放旧主体的成功结果。 */
+	private static Object command(EmployeeAccess.ScopePermit permit, String id, long version, long expected) {
+		return permit.identity() == null ? List.of(id, version, expected) : List.of(id, version, expected, permit.identity());
 	}
 
 	/** 人群资格只影响对应活动，MISS/UNKNOWN不会被活动内部NOT反转。 */
@@ -284,11 +332,12 @@ public class CampaignService implements CampaignApi {
 
 	/** 预览真实会员和目录价格，但不存报价、不预占库存/预算、不发权益。 */
 	public PreviewResult preview(Actor actor, String id, long version, Preview input) {
-		actor.require(Actor.Capability.MARKETING_PREVIEW);
+		var scope = access.scope(actor, CAMPAIGN_PREVIEW);
 		Identifiers.require(id);
 		Inputs.require(version > 0 && input != null && input.items() != null && !input.items().isEmpty()
 				&& input.items().size() <= 100, "预览购物清单无效");
 		var row = Inputs.found(mapper.find(actor.tenantId(), id, version));
+		var permit = access.resource(actor, scope, fact(row));
 		members.requireActive(actor, input.memberId());
 		stores.requireActive(actor, row.storeId());
 		var quantities = new java.util.TreeMap<String, Integer>();
@@ -319,7 +368,7 @@ public class CampaignService implements CampaignApi {
 				input.memberId(), at, lines, MemberRuleFacts
 					.from(memberGrowth.facts(actor.tenantId(), input.memberId()), gross.amount().toPlainString()),
 				candidates.offers()));
-		return new PreviewResult(result.gross().amount().toPlainString(), result.discount().amount().toPlainString(),
+		var preview = new PreviewResult(result.gross().amount().toPlainString(), result.discount().amount().toPlainString(),
 				result.payable().amount().toPlainString(),
 				result.lines()
 					.stream()
@@ -331,6 +380,11 @@ public class CampaignService implements CampaignApi {
 						? "模拟此版本与当前已发布活动竞争；不含优惠券，不预占库存或预算，实际下单再次校验。模拟时间不回溯会员事实。"
 						: "仅模拟该活动版本；不含优惠券，不预占库存或预算，实际下单再次校验。模拟时间不回溯会员事实。",
 				result.selected());
+		// 预览没有副作用，但长链路返回前仍复核原身份/范围和实际版本。
+		var refreshed = access.scope(actor, CAMPAIGN_PREVIEW);
+		EmployeeAccess.requireSame(permit.scope(), refreshed);
+		access.resource(actor, refreshed, fact(Inputs.found(mapper.find(actor.tenantId(), id, version))));
+		return preview;
 	}
 
 	private com.lrj.commerce.marketing.api.DecisionModels.Pricing pricing(CampaignApi.Pricing input) {
