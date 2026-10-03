@@ -1,50 +1,44 @@
 # Codex Progress
 
-## 当前任务：全站居中弹层与按钮统一（2026-10-02，本地验证 PASS，首次 CI 发现新尺寸用例重排时序，整改验证中）
+## 当前任务：全站弹层与按钮统一，本地 Docker 部署 PASS（2026-10-02 PDT）
 
 ## 任务目标
 
-按用户确认的 Claude frontend-design 方案，将本项目全部抽屉改为居中弹层，所有操作按钮统一为 38px 高、14px 字号、8px 圆角及14px左右内边距。宽度随文字变化，仅图标按钮宽38px且无内边距；保留现有配色、真实API、权限、关闭保护与未知结果恢复。
+按用户确认的 Claude frontend-design 方案，将全站抽屉改为居中弹层、统一按钮为38px高/14px字号/8px圆角，并按用户“部署一下”授权更新本机现有商城Docker容器。
 
 ## 已完成
 
-- 建立任务分支 `feat/frontend-modal-button-consistency`，基线 `753cba1`，原目录原工作树，无用户已有改动；仅当前 Commerce 仓库。
-- 26个原抽屉实例全部改为共享 `RecordModal`，包含经营/中央/会员详情、长表单、购物袋和两处移动导航；源码无 Drawer/抽屉CSS残留。
-- 主题覆盖所有操作按钮及组件内置尺寸，移除页面size及CSS差异；商城分类共用Button，搜索按钮完整圆角。长弹层仅内容滚动，底部动作始终可达。
-- 修复迁移引起的表单延后挂载初值问题，运营页面与旅程编辑器在打开完成后按当前草稿重置，回归证实新建不沿用上一版本。
-- 当前 TypeScript/Vite构建 PASS；32项浏览器验证 PASS，1项真实PKCE用例因缺少隔离fixture明确SKIP。测试边界返回正式DTO，不作为真实授权或资金验收。
-- 36个中央/协作路由在1440/390/320下全部按钮实际尺寸和页面边界PASS，108路由截图及2导航/错误图；会员商品/购物袋三屏宽、活动详情/编辑320、焦点归还和关闭保护PASS，代表截图已人工查看。
-- 完整设计与现行规范见 `docs/design/frontend-modal-buttons.md`；已应用 `update-progress-docs` 与 `task-git-delivery`，用户持续授权正常分支/合并/main推送，未生产部署。
+- 前端产品与验证修正已正常合入并推送main，产品版本 `70d07407be55f22ab70d3cff7cb4c31ed558088e`；精确main CI37085563281终态SUCCESS。后端553项/5条件skip，浏览器43PASS/20条件skip，无失败。
+- 26个原抽屉使用共享RecordModal，所有按钮统一；设计、实现及此前验证见 `docs/design/frontend-modal-buttons.md` 和 `.local/frontend-modal-buttons/delivery.json`。首次CI的新尺寸用例重排时序失败已修正，历史失败证据保留。
+- 本机 `desktop-linux/commerce-platform-app-1` 更新至 `commerce-platform:rev-70d0740`，入口 http://127.0.0.1:8602；健康healthy，应用UP，匿名API401。
+- 实际容器JAR SHA与构建一致，61个实际HTTP前端文件逐字节一致；新旧21,569个非前端展开条目内容一致，后端及依赖未改变。
+- Docker页面13项浏览器回归全部PASS：320px弹层、按钮尺寸、关闭保护、焦点、草稿重置、商品和购物袋。正式DTO fixture仅展示验收，不写入业务数据；入场动画结束后的320px购物袋截图已复核。
+- 数据库配置、地址密钥、全部环境变量值和dev-infra网络保留；私密Compose镜像标签持久化更新，旧rev-753cba1镜像及原配置保留，无需回滚。
+- 已应用deployment-execution；当前应用更新和验证完成，使用update-progress-docs同步实际结果，并按task-git-delivery和用户持续授权交付本任务文档。
 
 ## 已修改文件
 
-- `frontend/src/shared/interactions.tsx`、`shared/ui.tsx`、`shared/marketing.tsx`：共享Modal、关闭保护及按钮入口。
-- `frontend/src/theme.ts`、`main.tsx`、`style.css`、`workspace.css`：统一尺寸、居中及滚动布局。
-- `frontend/src/app/App.tsx`、相关`features/*.tsx`与`iam/*.tsx`：抽屉消费者、导航及按钮显式size清理；准确文件清单以本任务Git diff为准。
-- `frontend/tests/presentation.ts`、`interaction-refresh.spec.ts`、`central-workspace.spec.ts`、`visual-refresh.spec.ts`：真实尺寸/位置、表单关闭/焦点和会员展示回归。
-- `docs/design/frontend-modal-buttons.md` 与本进度文件。
+- 本任务跟踪文件：`docs/delivery/frontend-modal-docker-deployment.md`、`CODEX_PROGRESS.md`。
+- 私密忽略文件：`.local/compose.env`（仅镜像标签），`.local/frontend-modal-buttons/docker/`（构建、镜像与运行证据、浏览器报告、回滚配置/JAR）。
+- 不修改产品代码、测试、Dockerfile、Compose结构或共享基础设施；前端改动已在上一任务发布。
 
 ## 未完成
 
-- 产品提交 `7401e4c` 已正常任务分支push、main快进与push；首次main CI37084940895和分支CI37084911027终态FAIL，42浏览器PASS/1新尺寸用例FAIL/20既有条件SKIP。
-- 新用例切换会员商城视口后同步读宽度，改为等待ResizeObserver导航重排收敛；持续横向溢出仍失败，未改产品、业务断言或超时。已在生产构建预览上定向重复10次全PASS，格式和diff检查PASS；产品指纹与7401e4c完全一致。待提交修正、推送main，核对新精确CI。
+- 本地Docker部署无未完成项；当前文档分支 `chore/frontend-modal-docker-deploy` 的提交/合并/main推送按持续授权收尾。最终Git和文档CI状态以 `.local/frontend-modal-buttons/docker/DEPLOYMENT_RESULT.json` 为准，避免循环提交。
 
 ## 当前问题
 
-- 首次CI仅新增会员商城尺寸检查失败，已保留完整失败日志和artifact。真实购物支付履约售后、原商城尺寸检查均通过；新检查正做同阈值的等待方式修正，不声称首次CI成功。
-- 本地旧失败（表单初值、搜索按钮圆角、历史中央页退出按钮假设）及证据已保留；最终通过运行位于 `.local/frontend-modal-buttons/final-pages` / `final-interactions` / `central-interactions`，不会用旧失败当成功。
-- 第一轮部分图片因命令工作目录位于父级`.local/frontend-modal-buttons`，已复制归档到本仓`.local/frontend-modal-buttons`，原副本保留；没有新建项目或工作树。
-- 原有忽略的配置、制品、数据库、证据及历史工作树均保留。原自有预览18601已停止；整改使用独立production preview18601，结束后停止；未执行真实PKCE或本地新数据库写入。
+- 无部署阻塞。浏览器展示回归使用测试边界，不代表本次重复验收真实支付/PKCE；部署源版本已通过完整CI。
+- 所有历史证据、数据、卷和已有工作树均保留，不清理。此次只更新本机Commerce容器。
 
 ## 下一步建议
 
-1. 核对差异、格式与源码fingerprint后按完整逻辑单元提交并正常推送任务分支及main。
-2. 等待本提交精确CI，只有终态通过才写CI PASS。最终交付回执追加到 `.local/frontend-modal-buttons/delivery.json`，避免文档引用自身提交造成循环。
-3. 停止本任务自有预览；保持用户数据、历史证据、分支与工作树。
+1. 按本任务限定路径完成文档Git收尾，并在私密DEPLOYMENT_RESULT.json记录实际提交与远程main状态。
+2. 已完成回执若为DONE，直接使用8602查看新版；不重复部署、不清理数据、不重新实施前端。
 
 ## 恢复 Prompt
 
-请读取 `CODEX_PROGRESS.md` 的当前任务及 `.local/frontend-modal-buttons/delivery.json`，从Git/CI首个未完成步骤继续。产品和本地验证已完成，不重新规划、不重建工作树、不清理数据，不等待“继续”。只正常合并推送本任务仓库main；远程CI未结束不要推会取消它的main新提交，不生产部署。
+请读取CODEX_PROGRESS.md和`.local/frontend-modal-buttons/docker/DEPLOYMENT_RESULT.json`。Docker部署已PASS，当前镜像rev-70d0740，先核对当前容器及回执，仅继续尚未完成的文档交付；回执DONE则任务完成。保留私密配置和数据库，不能因文档main提交不同于产品版本而重新部署。
 
 ---
 
