@@ -1,6 +1,6 @@
 {
   "task": "frontend-usability",
-  "status": "LOCAL_VALIDATION_COMPLETE",
+  "status": "DONE",
   "branch": "feat/frontend-usability",
   "baseline": "de8d133b5913f67c7c8a76efc3e81c1fc3ce9c2b",
   "slices": {
@@ -8,7 +8,7 @@
     "U2": "DONE",
     "U3": "DONE",
     "U4": "DONE",
-    "U5": "IN_PROGRESS"
+    "U5": "DONE"
   },
   "sourceFingerprint": "a1766e850d66ffc0df1c2ad6b8a08286803762d4f836979f2c7a2ad5ee3ad382",
   "validation": {
@@ -24,23 +24,137 @@
     "backendSkipped": 5,
     "browserCombinedPassed": 42,
     "browserFinalAffectedPassed": 23,
-    "visualFinalPassed": 3
+    "visualFinalPassed": 3,
+    "ci": "PASS"
   },
   "evidence": [
     "docs/design/frontend-usability.md",
     "docs/design/frontend-usability-queries.md",
     ".local/frontend-usability/",
     "docs/delivery/frontend-usability/TEST_RESULT.md",
-    "docs/delivery/frontend-usability/REVIEW.md"
+    "docs/delivery/frontend-usability/REVIEW.md",
+    "docs/delivery/frontend-usability/DEPLOYMENT_RESULT.md"
   ],
   "previousProgressState": "docs/delivery/frontend-usability/PREVIOUS_PROGRESS_STATE.json",
-  "next": "Git分批交付main，精确CI通过后更新本机Docker8602",
+  "next": "本次任务完成，最终文档提交与回执同步；不重复部署、不清理其他任务内容",
   "deployment": {
-    "result": "PENDING",
-    "target": "local desktop-linux / commerce-platform-app-1 / http://127.0.0.1:8602"
+    "status": "DONE",
+    "result": "PASS",
+    "sourceRef": "aeed09efb291e9120e2ad05d14280caee18e7905",
+    "ci": {
+      "gate": "PASS",
+      "sourceRef": "aeed09efb291e9120e2ad05d14280caee18e7905",
+      "url": "https://github.com/lirji/commerce-platform/actions/runs/37097514226",
+      "checks": [
+        {
+          "name": "Build and verify real MySQL semantics",
+          "result": "PASS"
+        },
+        {
+          "name": "Audit frontend dependencies",
+          "result": "PASS"
+        },
+        {
+          "name": "Start packaged application",
+          "result": "PASS"
+        },
+        {
+          "name": "Browser fixtures and Chromium",
+          "result": "PASS"
+        },
+        {
+          "name": "Real browser commerce acceptance",
+          "result": "PASS"
+        }
+      ],
+      "requiredJob": "verify",
+      "recordedAt": "2026-10-03T04:51:33.200901+00:00"
+    },
+    "ciCounts": {
+      "sourceRef": "aeed09efb291e9120e2ad05d14280caee18e7905",
+      "suites": 74,
+      "backend": {
+        "tests": 554,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 5
+      },
+      "browser": {
+        "startTime": "2026-10-03T04:48:35.645Z",
+        "duration": 133718.62099999998,
+        "expected": 45,
+        "skipped": 21,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "runtime": {
+      "result": "PASS",
+      "sourceRef": "aeed09efb291e9120e2ad05d14280caee18e7905",
+      "ci": "https://github.com/lirji/commerce-platform/actions/runs/37097514226",
+      "image": "commerce-platform:rev-aeed09e",
+      "imageId": "sha256:6c34abdfba5434730c5ccfa38820472b28db3265a4832336798ffb0a7e2eab47",
+      "jarSha256": "950b804c81bb9a450cc148449c32a1951b2f1d5d2798991410f4252aef415ea1",
+      "health": "healthy",
+      "applicationHealth": "UP",
+      "anonymousApi": 401,
+      "frontendFiles": 61,
+      "actualHttpAssetsMatch": true,
+      "environmentValuesUnchanged": true,
+      "networkUnchanged": true,
+      "portUnchanged": true,
+      "rollbackImage": "commerce-platform:rev-7870aa1",
+      "rollback": "NOT_NEEDED",
+      "completedAt": "2026-10-03T04:51:45.871187+00:00"
+    },
+    "readonlyRuntime": {
+      "result": "PASS",
+      "checks": 33,
+      "database": "commerce_local",
+      "method": "GET only"
+    },
+    "dockerBrowser": {
+      "startTime": "2026-10-03T04:52:11.065Z",
+      "duration": 41774.335,
+      "expected": 22,
+      "skipped": 1,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "ownedPreviews": "STOPPED",
+    "documentationDelivery": "PENDING",
+    "completedAt": "2026-10-03T04:57:22.921039+00:00"
   },
   "limitations": [
     "无总数游标列表不提供虚构总页数或任意跳页",
     "中央浏览器夹具不冒充OIDC或权限验收，真实权限由MySQL集成测试验证"
-  ]
+  ],
+  "delivery": {
+    "status": "PUSHED_MAIN",
+    "sourceRef": "aeed09efb291e9120e2ad05d14280caee18e7905",
+    "branch": "feat/frontend-usability",
+    "commits": [
+      {
+        "id": "322ca2845e7bef60078dd7c2748ff9e8704ce5df",
+        "slice": "U2"
+      },
+      {
+        "id": "aeed09efb291e9120e2ad05d14280caee18e7905",
+        "slices": [
+          "U1",
+          "U3",
+          "U4"
+        ]
+      }
+    ],
+    "main": "aeed09efb291e9120e2ad05d14280caee18e7905",
+    "ciRun": 37097514226,
+    "ciUrl": "https://github.com/lirji/commerce-platform/actions/runs/37097514226",
+    "sourceFingerprint": "a1766e850d66ffc0df1c2ad6b8a08286803762d4f836979f2c7a2ad5ee3ad382",
+    "validation": "PASS",
+    "worktree": "clean",
+    "deployTarget": "local desktop-linux/commerce-platform-app-1 :8602",
+    "deploy": "PENDING",
+    "recordedAt": "2026-10-03T04:44:36.281619+00:00"
+  }
 }

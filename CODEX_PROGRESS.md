@@ -1,42 +1,43 @@
 # Codex Progress
 
-## 当前任务：新版 Claude SKILL 全站前端可用性优化（本地验证通过，Git交付中）
+## 当前任务：新版 Claude SKILL 全站前端可用性优化（DONE）
 
 ## 任务目标
 
-让用户和运营看清、读懂、便于查找和操作；全站筛选、列表字段、真实分页、文案和密度优化，补齐必要只读查询。用户已确认全站前端 + 必要只读查询范围；连续完成正常 main 发布与已授权本机 Docker8602更新。
+按照新版 Claude frontend-design，让用户和运营直观看清、读懂、便于查找和操作。用户已确认全站前端 + 必要后端只读查询；完成Git main交付及已有授权的本机Docker8602更新。
 
 ## 已完成
 
-- 阅读新版 Claude frontend-design 与工程执行规范；原目录创建 feat/frontend-usability，基线 de8d133，无初始用户改动。
-- U1 已实现：全站游标首页、上一页、下一页与真实访问位置；URL恢复、条件/门店/会员变化重置，无总数时不伪造总页数。
-- U2 已实现：核心经营与营销、权益等目录的有界只读关键词/状态查询；订单创建时间半开区间；人群和授权启用状态。SQL在LIMIT前筛选，旧接口兼容，权限和业务写入规则保留。
-- U3/U4 已实现：运营与会员端列表、筛选、中文状态/金额/空值、详情、手机筛选布局与密度；保留38px按钮及紧凑居中弹层。
-- 前端构建PASS；中央19浏览器用例与36路由三种屏宽检查PASS；新分页/查询/手机详情2用例PASS。截图发现会员行操作换行，已扩大操作列并复核。
+- U1—U5全部完成。真实筛选、完整关键字段、中文状态/金额/空值与游标上一页/首页/下一页；刷新/详情返回恢复，筛选、门店和会员变化重置。不伪造总数。
+- 保持紧凑居中弹层、38px按钮及权限/业务写入/未知结果保护。桌面提高密度，手机筛选并排，主要会员状态随名称显示，宽表提示完整字段与操作。
+- feat/frontend-usability分两批322ca28（只读查询）与aeed09e（前端与验证）正常合入推送main；精确main CI37097514226及分支CI37097510158均SUCCESS。
+- CI：74套件554项（549 PASS / 5既有条件SKIP），浏览器45 PASS / 21条件SKIP；本地42组合、最后23受影响及3视觉/查询检查PASS，中央36路由覆盖1440/390/320px。
+- Docker本机desktop-linux/commerce-platform-app-1已更新rev-aeed09e，入口http://127.0.0.1:8602；healthy/UP，匿名401，61实际HTTP前端文件与制品逐字节一致，33真实只读GET及22Docker浏览器PASS。
+- 数据库、所有环境值、地址密钥、端口、dev-infra及worker配置保留；无迁移/灌数据/清空卷。旧rev-7870aa1镜像保留，未回滚。自有18601/18602预览已停止。
 
 ## 已修改文件
 
-- 源码清单以 git diff 为准：各Owner API/Service/Mapper/Controller及只读验证用例；frontend共享分页/筛选/路由/格式化及运营与会员页面；docs/design/frontend-usability.md、CODEX_PROGRESS.md。
-- 私密证据与日志保留于 .local/frontend-usability/，不提交凭据。
+- 当前任务源清单见322ca28/aeed09e的187个路径，查询补充契约docs/design/frontend-usability-queries.md、方案docs/design/frontend-usability.md。
+- 验证、复核及部署记录docs/delivery/frontend-usability/；当前docs/PROGRESS_STATE.json。私密证据与凭据留在.local/frontend-usability/，不提交运行凭据。
 
 ## 未完成
 
-- U1—U4 DONE；U5本地验证PASS。全量74套件554项（549 PASS / 5既有条件SKIP）、组合42浏览器PASS、最后受影响23浏览器及3视觉/查询PASS，64前端文件格式PASS，卫生无阻断。
-- 待分批提交main、精确远程CI、本机Docker8602更新及实际HTTP资产/健康/浏览器验证。
+- 产品改造、必要验证与本机部署均无未完成项。文档收尾按正常Git授权交付；最终文档SHA/推送/CI观察仅写私密delivery.json，不制造引用自身的无限提交。
 
 ## 当前问题
 
-- 无阻断。历史Maven并行制品损坏、积分屏障超时及空依赖模块专项失败均保留；独立21专项和最终全量均通过，未修改并发规则或放宽POM。
-- 编译后的61前端资源与JAR完全一致；只部署本机当前项目，不清理数据或共享环境。
+- 无阻断；历史Maven并行制品损坏、既有积分屏障超时及空依赖模块专项失败均保留，独立专项和最终全量验证已通过，未改积分规则或放宽POM。
+- 无可信总数时不支持虚构总页数或任意跳页；中央边界夹具不冒充实际SSO，条件SKIP透明保留。卫生工具缺少统一formatter识别，64改动前端文件实际Prettier检查PASS。
+- 本任务未新建工作树；已有历史工作树、私密配置、验收和回滚制品保留，未授权清理。
 
 ## 下一步建议
 
-1. 按 task-git-delivery 分批提交U2只读查询与U1/U3/U4前端，正常main合并推送；远程精确CI通过后部署。
-2. 部署只变更commerce镜像标签，保留dev-infra、数据库和全部环境值，核验61实际HTTP资源和Docker浏览器。
+1. 核对.local/frontend-usability/DEPLOYMENT_RESULT.json与delivery.json的终态；DONE表示完成，不重复构建、部署或重做设计。
+2. 若用户提出新的具体页面反馈，在此交付基线上开启有界新任务。
 
 ## 恢复 Prompt
 
-读取本检查点及 docs/design/frontend-usability.md，从 feat/frontend-usability 验证阶段继续。已授权全站前端及必要只读查询、main发布、本机Docker8602，不要求重复继续，不重启全部设计，不清理数据/环境/其他项目。
+读取本检查点、docs/delivery/frontend-usability/DEPLOYMENT_RESULT.md和私密最终回执。U1—U5已完成、main源CI通过且本机8602已更新；只核对尚未记录的文档Git终态，不重复部署、不清理数据/环境/其他工作树。
 
 ---
 
