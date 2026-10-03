@@ -14,7 +14,7 @@
 
 ## 未完成
 - 本地 b109f20 固定提交CLI与Auth导出器JSON逐字段完全相等，44菜单／123能力；仅生成候选，零发布或授权写入。
-- 正常Git main发布／精确远程CI待收尾；Auth MG02–MG19仍待连续实施。
+- b109f20/b34891d已正常远程main；CI37100533319构建／真实MySQL／四个菜单测试成功，但Node Playwright导入JSON缺少type属性失败。已补JSON导入属性，构建和实际Playwright发现PASS，后续精确CI待收尾。Auth全计划继续。
 
 ## 当前问题
 - 无阻断；已有生产目录v2和业务Grant不改动，不重做旧部署。

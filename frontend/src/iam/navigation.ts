@@ -1,4 +1,4 @@
-import declaration from "./catalog.json";
+import declaration from "./catalog.json" with { type: "json" };
 
 /** 导航与Owner发布候选消费同一声明；静态入口配置不代表用户持有业务授权。 */
 const menus = declaration.menus;

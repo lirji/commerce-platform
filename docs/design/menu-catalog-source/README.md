@@ -30,3 +30,5 @@ node frontend/scripts/export-menu-catalog.mjs --version 3 --output /path/to/priv
 - Git 固定版本 CLI 导出、Auth 消费方和远程 CI 的最终回执由 Auth MG01 验收和本地根进度记录；不声称已部署。原本机目录、角色、Grant 和数据库未修改。
 
 固定提交 `b109f2092aba670515ba33a537289346b5ccfa92` 的真实CLI与Auth导出器生成相同候选（44菜单／123能力）；未请求发布API。两工具28个Python／4个Node行为测试、共享声明构建校验和最新构建PASS。远程CI另行追踪，不用本地通过冒充远程结果。
+
+远程37100533319验收暴露Node JSON导入属性缺失；navigation.ts已补type=json，构建和Playwright真实测试发现PASS，修复后的CI继续核验。
