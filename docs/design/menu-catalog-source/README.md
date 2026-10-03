@@ -31,4 +31,4 @@ node frontend/scripts/export-menu-catalog.mjs --version 3 --output /path/to/priv
 
 固定提交 `b109f2092aba670515ba33a537289346b5ccfa92` 的真实CLI与Auth导出器生成相同候选（44菜单／123能力）；未请求发布API。两工具28个Python／4个Node行为测试、共享声明构建校验和最新构建PASS。远程CI另行追踪，不用本地通过冒充远程结果。
 
-远程37100533319验收暴露Node JSON导入属性缺失；navigation.ts已补type=json，构建和Playwright真实测试发现PASS，修复后的CI继续核验。
+远程37100533319验收暴露Node JSON导入属性缺失；navigation.ts已补type=json，构建和Playwright真实测试发现PASS，修复提交47ebb6526af7707468d72c2d84bf515d579669b2已正常合并／推送远程main，精确CI37100968743 SUCCESS（构建、真实MySQL、声明行为测试及Playwright等必需步骤通过）。本切片未部署或调用发布API。

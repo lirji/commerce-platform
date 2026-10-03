@@ -1,4 +1,4 @@
-# Codex Progress — 单一菜单声明（MG01，产品DONE／Git收尾）
+# Codex Progress — 单一菜单声明（MG01，DONE）
 
 ## 任务目标
 按 Auth 已批准 MG00–MG19 治理计划，电商 MG01 从同一结构化声明生成导航和发布候选；后续治理实现由 Auth 项目连续推进。本轮无生产部署。
@@ -12,19 +12,19 @@
 - frontend/src/iam/catalog.json、navigation.ts、CentralShell.tsx、tsconfig、package.json、scripts四个工具／测试。
 - .github/workflows/verify.yml、docs/design/menu-catalog-source/README.md、本进度。
 
-## 未完成
+## 验证回执
 - 本地 b109f20 固定提交CLI与Auth导出器JSON逐字段完全相等，44菜单／123能力；仅生成候选，零发布或授权写入。
-- b109f20/b34891d已正常远程main；CI37100533319构建／真实MySQL／四个菜单测试成功，但Node Playwright导入JSON缺少type属性失败。已补JSON导入属性，构建和实际Playwright发现PASS，后续精确CI待收尾。Auth全计划继续。
+- b109f20/b34891d已正常远程main；CI37100533319构建／真实MySQL／四个菜单测试成功，但Node Playwright导入JSON缺少type属性失败。已补JSON导入属性，构建和实际Playwright发现PASS，修复47ebb65的精确CI37100968743 SUCCESS，全部必需步骤通过。Auth全计划继续。
 
 ## 当前问题
 - 无阻断；已有生产目录v2和业务Grant不改动，不重做旧部署。
 
 ## 下一步建议
-1. 提交后对固定HEAD生成候选，与Auth工具结果核对；必要验证通过后按持续授权正常推送／合入main。
-2. 更新MG01回执和Auth进度，直接继续MG02。保留历史工作树和忽略证据。
+1. MG01已正常合并／推送远程main，产品及CI验证完成，不重复改声明／导出器或发布原commerce v2。
+2. Auth全计划ACTIVE，MG00–MG03 DONE；MG04实施中。Commerce下一次产品改动在MG07／MG08契约与依赖满足后继续。保留旧工作树／私密证据，不清理。
 
 ## 恢复 Prompt
-读取本节和Auth menu-role-governance/PROGRESS_STATE；单一声明MG01收尾后继续全计划，不在切片之间等待继续，不自动发布目录或生产部署。
+读取本节和Auth menu-role-governance/PROGRESS_STATE；Commerce MG01已完成，47ebb65精确CI成功。继续Auth后续MG04–MG19，不重复Owner发布或生产部署。
 
 ---
 
