@@ -1,4 +1,4 @@
-# Codex Progress — 单一菜单声明（MG01，ACTIVE）
+# Codex Progress — 单一菜单声明（MG01，产品DONE／Git收尾）
 
 ## 任务目标
 按 Auth 已批准 MG00–MG19 治理计划，电商 MG01 从同一结构化声明生成导航和发布候选；后续治理实现由 Auth 项目连续推进。本轮无生产部署。
@@ -13,7 +13,8 @@
 - .github/workflows/verify.yml、docs/design/menu-catalog-source/README.md、本进度。
 
 ## 未完成
-- 固定提交CLI与Auth导出器对比、Git提交和精确远程CI收尾；Auth MG02–MG19仍待连续实施。
+- 本地 b109f20 固定提交CLI与Auth导出器JSON逐字段完全相等，44菜单／123能力；仅生成候选，零发布或授权写入。
+- 正常Git main发布／精确远程CI待收尾；Auth MG02–MG19仍待连续实施。
 
 ## 当前问题
 - 无阻断；已有生产目录v2和业务Grant不改动，不重做旧部署。

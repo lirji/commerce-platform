@@ -28,3 +28,5 @@ node frontend/scripts/export-menu-catalog.mjs --version 3 --output /path/to/priv
 - 新声明生成的 6 组／35 经营路由、名称、排序与 c9eb50c 固定基线逐项相同；商品协作入口和名称相同，无用户可见布局变化，视觉重审不适用。
 - TypeScript／生产构建通过；实际 Prettier 执行通过。通用卫生工具无阻断，但其 formatter 自动发现仍报告 TOOL_NOT_AVAILABLE，不能把工具发现限制冒充未执行实际格式化。
 - Git 固定版本 CLI 导出、Auth 消费方和远程 CI 的最终回执由 Auth MG01 验收和本地根进度记录；不声称已部署。原本机目录、角色、Grant 和数据库未修改。
+
+固定提交 `b109f2092aba670515ba33a537289346b5ccfa92` 的真实CLI与Auth导出器生成相同候选（44菜单／123能力）；未请求发布API。两工具28个Python／4个Node行为测试、共享声明构建校验和最新构建PASS。远程CI另行追踪，不用本地通过冒充远程结果。
