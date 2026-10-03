@@ -1,6 +1,6 @@
 # Codex Progress
 
-## 当前任务：全站居中弹层与按钮统一（2026-10-02，本地验证 PASS，Git/CI 交付中）
+## 当前任务：全站居中弹层与按钮统一（2026-10-02，本地验证 PASS，首次 CI 发现新尺寸用例重排时序，整改验证中）
 
 ## 任务目标
 
@@ -26,13 +26,15 @@
 
 ## 未完成
 
-- 正常逻辑提交、任务分支push、main快进与push，核对精确提交远程CI。
+- 产品提交 `7401e4c` 已正常任务分支push、main快进与push；首次main CI37084940895和分支CI37084911027终态FAIL，42浏览器PASS/1新尺寸用例FAIL/20既有条件SKIP。
+- 新用例切换会员商城视口后同步读宽度，改为等待ResizeObserver导航重排收敛；持续横向溢出仍失败，未改产品、业务断言或超时。已在生产构建预览上定向重复10次全PASS，格式和diff检查PASS；产品指纹与7401e4c完全一致。待提交修正、推送main，核对新精确CI。
 
 ## 当前问题
 
-- 无产品阻断。本地旧失败（表单初值、搜索按钮圆角、历史中央页退出按钮假设）及证据已保留；最终通过运行位于 `.local/frontend-modal-buttons/final-pages` / `final-interactions` / `central-interactions`，不会用旧失败当成功。
+- 首次CI仅新增会员商城尺寸检查失败，已保留完整失败日志和artifact。真实购物支付履约售后、原商城尺寸检查均通过；新检查正做同阈值的等待方式修正，不声称首次CI成功。
+- 本地旧失败（表单初值、搜索按钮圆角、历史中央页退出按钮假设）及证据已保留；最终通过运行位于 `.local/frontend-modal-buttons/final-pages` / `final-interactions` / `central-interactions`，不会用旧失败当成功。
 - 第一轮部分图片因命令工作目录位于父级`.local/frontend-modal-buttons`，已复制归档到本仓`.local/frontend-modal-buttons`，原副本保留；没有新建项目或工作树。
-- 原有忽略的配置、制品、数据库、证据及历史工作树均保留。自有预览18601在运行，交付时停止；未执行真实PKCE或本地新数据库写入。
+- 原有忽略的配置、制品、数据库、证据及历史工作树均保留。原自有预览18601已停止；整改使用独立production preview18601，结束后停止；未执行真实PKCE或本地新数据库写入。
 
 ## 下一步建议
 

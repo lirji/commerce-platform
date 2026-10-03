@@ -359,11 +359,16 @@ test("会员商城、分类、商品详情与购物袋共用按钮尺寸，三�
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
     await assertButtonSizes(page);
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth + 1,
-      ),
-    ).toBe(true);
+    // 会员横向导航通过 ResizeObserver 重排；等待真实布局收敛，持续溢出仍会失败。
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth + 1,
+          ),
+        { message: `${width}px 商城布局稳定后不应横向溢出` },
+      )
+      .toBe(true);
     await page.getByRole("button", { name: "测试咖啡", exact: true }).click();
     await assertCentered(page);
     await assertButtonSizes(page);
