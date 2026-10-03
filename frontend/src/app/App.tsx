@@ -597,7 +597,7 @@ export function App() {
           title="经营导航"
           expandable={false}
           footer={null}
-          width={480}
+          width={400}
           open={menuOpen}
           onCancel={() => setMenuOpen(false)}
         >

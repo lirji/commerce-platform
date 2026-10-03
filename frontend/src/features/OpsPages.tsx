@@ -351,7 +351,7 @@ export function OpsPages({ store }: { store: string }) {
       </Card>
       <RecordModal
         title="运营页面"
-        width={1000}
+        width={760}
         open={!!selected}
         onCancel={() => setSelected(undefined)}
         destroyOnHidden
@@ -375,7 +375,7 @@ export function OpsPages({ store }: { store: string }) {
       </RecordModal>
       <RecordModal
         title="页面编排"
-        width={960}
+        width={640}
         open={editing}
         afterOpenChange={(visible) => {
           // Modal 延后挂载内容；须在表单读到当前草稿初始值后重置，避免新建沿用上一版本。

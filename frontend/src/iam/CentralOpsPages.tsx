@@ -112,7 +112,7 @@ function DefinitionAction({
         open={open}
         centered
         title={action === "create" ? "创建不可变页面版本" : "真实数据只读预览"}
-        width={820}
+        width={640}
         styles={{ body: { maxHeight: "67vh", overflowY: "auto" } }}
         maskClosable={false}
         keyboard={!command.busy && !command.frozen}
@@ -405,7 +405,7 @@ function EmbeddedAction({
         open={!!choice}
         centered
         title={choice?.label}
-        width={820}
+        width={640}
         styles={{ body: { maxHeight: "66vh", overflowY: "auto" } }}
         closable={!command.busy && !command.frozen}
         keyboard={!command.busy && !command.frozen}

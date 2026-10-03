@@ -166,7 +166,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
         title="版本配置"
         open={!!detail}
         onCancel={() => setDetail(undefined)}
-        width={720}
+        width={560}
       >
         {detail && <MarketingDetails record={detail} />}
       </RecordModal>
@@ -187,7 +187,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
             </Button>
           </FormActions>
         }
-        width={720}
+        width={560}
         destroyOnHidden
       >
         <ErrorNotice error={command.error} />

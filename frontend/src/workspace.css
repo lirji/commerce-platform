@@ -121,8 +121,8 @@
   box-shadow: -1px 0 0 var(--line);
 }
 .record-modal .ant-modal-title {
-  font-size: 20px;
-  letter-spacing: -0.4px;
+  font-size: 16px;
+  letter-spacing: 0;
 }
 .record-modal .ant-descriptions-item-label {
   color: var(--muted);

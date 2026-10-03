@@ -250,7 +250,7 @@ test("旅程关系图准确表达分支与汇合，节点可键盘核对且返�
       .locator(".journey-node-detail")
       .getByText("当前版本的实际通知内容", { exact: true }),
   ).toBeInViewport();
-  await page.getByRole("button", { name: "收起视图", exact: true }).click();
+  // 初始展示使用紧凑单列；用户主动展开后才显示并排关系图与节点详情。
   await expect(map.locator(".journey-map-content")).toHaveCSS(
     "display",
     "block",
@@ -259,6 +259,11 @@ test("旅程关系图准确表达分支与汇合，节点可键盘核对且返�
   await expect(map.locator(".journey-map-content")).toHaveCSS(
     "display",
     "grid",
+  );
+  await page.getByRole("button", { name: "收起视图", exact: true }).click();
+  await expect(map.locator(".journey-map-content")).toHaveCSS(
+    "display",
+    "block",
   );
   await page.screenshot({
     path: `${evidence}/journey-graph-1440.png`,

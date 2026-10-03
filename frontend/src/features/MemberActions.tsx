@@ -72,7 +72,7 @@ export function MemberActions({
         title="会员经营详情"
         open={detail}
         onCancel={() => setDetail(false)}
-        width={960}
+        width={760}
         destroyOnHidden
       >
         {detail && <MemberBehavior admin memberId={String(row.memberId)} />}
@@ -123,7 +123,7 @@ export function MemberActions({
         title="会员变更记录"
         open={historyOpen}
         onCancel={() => setHistoryOpen(false)}
-        width={960}
+        width={760}
       >
         <ErrorNotice error={history.error} />
         <Button onClick={history.refresh}>刷新</Button>

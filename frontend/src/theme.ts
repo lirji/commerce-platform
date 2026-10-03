@@ -108,7 +108,7 @@ export const consoleTheme: ThemeConfig = {
       headerColor: palette.muted,
     },
     Card: { headerFontSize: 15, borderRadiusLG: 12, headerHeight: 56 },
-    Modal: { borderRadiusLG: 16, paddingContentHorizontalLG: 24 },
+    Modal: { borderRadiusLG: 12, paddingContentHorizontalLG: 20 },
     Tabs: {
       itemSelectedColor: palette.accent,
       itemHoverColor: palette.ink,

@@ -30,6 +30,15 @@ export async function assertButtonSizes(page: Page) {
 export async function assertCentered(page: Page) {
   const dialog = page.getByRole("dialog").last();
   await expect(dialog).toBeVisible();
+  // 等入场动画结束再核对位置和截图，避免记录只有遮罩、内容仍透明的过渡帧。
+  await expect
+    .poll(() =>
+      dialog.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return style.opacity === "1" && !element.className.includes("zoom");
+      }),
+    )
+    .toBe(true);
   await expect(page.locator(".ant-drawer")).toHaveCount(0);
   const box = (await dialog.boundingBox())!;
   const viewport = page.viewportSize()!;

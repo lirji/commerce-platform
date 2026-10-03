@@ -542,7 +542,7 @@ function Directory({
         centered
         className="campaign-modal delivery-modal"
         title="发券批次与收件人"
-        width={1000}
+        width={760}
         open={!!detail}
         onCancel={() => setDetail("")}
         mask={{ closable: false }}
@@ -752,7 +752,7 @@ function Operation({
         centered
         className="campaign-modal delivery-modal"
         title={labels[action]}
-        width={action === "create" ? 780 : 720}
+        width={action === "create" ? 640 : 560}
         open={open}
         onCancel={() => void close()}
         closable={!command.busy}

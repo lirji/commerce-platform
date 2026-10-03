@@ -50,7 +50,7 @@ export function CampaignPreview({ campaign }: { campaign: Campaign }) {
         title={`${campaign.name} · v${campaign.version} 预览`}
         open={open}
         onCancel={() => !command.busy && setOpen(false)}
-        width={760}
+        width={600}
         footer={
           <FormActions
             onCancel={() => !command.busy && setOpen(false)}

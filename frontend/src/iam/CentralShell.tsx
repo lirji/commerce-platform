@@ -112,7 +112,7 @@ export function CentralShell({
         title="经营导航"
         expandable={false}
         footer={null}
-        width={480}
+        width={400}
         open={open}
         onCancel={() => setOpen(false)}
       >

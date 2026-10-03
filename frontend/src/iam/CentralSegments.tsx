@@ -325,7 +325,7 @@ function Runs({
       <Modal
         centered
         className="campaign-modal segment-modal"
-        width={760}
+        width={600}
         title="动态人群运行详情"
         open={!!runId}
         onCancel={() => setRunId("")}
@@ -446,7 +446,7 @@ function Directory({
       <Modal
         centered
         className="campaign-modal segment-modal"
-        width={1000}
+        width={760}
         title="动态人群定义与运行记录"
         open={!!detail}
         onCancel={() => setDetail("")}
@@ -638,7 +638,7 @@ function Operation({
         centered
         className="campaign-modal segment-modal"
         title={labels[action]}
-        width={action === "create" ? 900 : 720}
+        width={action === "create" ? 640 : 560}
         open={open}
         onCancel={() => void close()}
         closable={!command.busy}

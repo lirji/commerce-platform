@@ -302,7 +302,7 @@ export function ProductPresentation({
       title={`${product?.title ?? "商品"} · 展示资料`}
       open={!!product}
       onCancel={onClose}
-      width={960}
+      width={760}
     >
       <ErrorNotice error={profile.error} />
       {product && profile.data && (
@@ -437,7 +437,7 @@ export function BarcodeEditor({
       title={`${sku?.title ?? "规格"} · 条码资料`}
       open={!!sku}
       onCancel={onClose}
-      width={720}
+      width={560}
     >
       <ErrorNotice error={barcode.error} />
       {sku && barcode.data && (
@@ -637,7 +637,7 @@ export function VariantCreator({
           </FormActions>
         }
         destroyOnHidden
-        width={720}
+        width={560}
       >
         <VariantForm
           form={form}

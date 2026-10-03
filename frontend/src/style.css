@@ -706,10 +706,16 @@ textarea {
   font-weight: 500;
 }
 .ant-modal .ant-modal-title {
-  font-size: 18px;
+  font-size: 16px;
 }
 .ant-modal .ant-form {
-  margin-top: 24px;
+  margin-top: 12px;
+}
+.ant-modal .ant-form-item {
+  margin-bottom: 16px;
+}
+.ant-modal .ant-form-item-label {
+  padding-bottom: 6px;
 }
 .ant-modal .ant-modal-close {
   width: 38px;
@@ -1382,7 +1388,17 @@ textarea {
   height: 42px;
 }
 .checkout-modal .ant-form {
-  margin-top: 24px;
+  margin-top: 12px;
+}
+.checkout-modal .bag-line {
+  padding-block: 10px;
+}
+.checkout-modal .ant-steps {
+  gap: 8px;
+}
+.checkout-modal .ant-steps-item-title {
+  font-size: 12px;
+  white-space: nowrap;
 }
 .coupon-value,
 .member-app .coupon-value {
@@ -1661,13 +1677,20 @@ textarea {
   overflow-x: auto;
 }
 /* 弹层容器约束高度，只有内容区滚动；保存/取消入口无需滚到表单末尾。 */
-.ant-modal {
+body .ant-modal-root .ant-modal {
   max-width: calc(100vw - 32px);
 }
 .ant-modal .ant-modal-container {
   display: flex;
   flex-direction: column;
-  max-height: calc(100dvh - 32px);
+  max-height: min(76dvh, 680px);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgb(23 34 56 / 14%);
+}
+/* 仅用户主动展开时增加阅读空间；普通打开按内容高度收缩。 */
+.record-modal-expanded .ant-modal-container {
+  max-height: min(88dvh, 820px);
 }
 .ant-modal .ant-modal-header,
 .ant-modal .ant-modal-footer {
@@ -1679,13 +1702,49 @@ textarea {
   overscroll-behavior: contain;
 }
 .record-modal .ant-modal-header {
-  padding-bottom: 16px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .record-modal .ant-modal-footer {
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--line);
+}
+.record-modal .overlay-intro {
+  margin-bottom: 16px;
+}
+.record-modal .record-hero {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+}
+.record-modal .record-hero-title {
+  font-size: 16px;
+}
+.record-modal .record-metrics {
+  gap: 8px;
+  margin-top: 12px;
+}
+.record-modal .record-metric {
+  padding: 8px 12px;
+}
+.record-modal .record-group + .record-group {
+  margin-top: 16px;
+}
+.product-modal .product-detail {
+  gap: 20px;
+  padding-top: 8px;
+}
+.product-modal .product-detail-gallery img {
+  height: 220px;
+}
+.product-modal .product-detail-gallery .product-fallback {
+  min-height: 180px;
+  height: 180px;
+}
+.product-modal .product-detail-gallery .product-fallback > span {
+  height: auto;
+  width: auto;
 }
 .record-modal-heading {
   display: flex;
@@ -1705,12 +1764,29 @@ textarea {
   flex-wrap: wrap;
 }
 @media (max-width: 600px) {
-  .ant-modal {
-    max-width: calc(100vw - 24px);
+  body .ant-modal-root .ant-modal {
+    max-width: calc(100vw - 32px);
   }
   .ant-modal .ant-modal-container {
-    max-height: calc(100dvh - 24px);
+    max-height: min(82dvh, 640px);
     padding: 16px;
+  }
+  /* 窄屏已经接近可用宽度，隐藏没有额外阅读收益的展开入口。 */
+  .modal-expand-control {
+    display: none;
+  }
+  .product-modal .product-detail {
+    gap: 16px;
+  }
+  .product-modal .product-detail-gallery img {
+    height: 160px;
+  }
+  .product-modal .product-detail-gallery .product-fallback {
+    min-height: 140px;
+    height: 140px;
+  }
+  .product-modal .product-detail-price {
+    font-size: 24px;
   }
   .record-modal-heading {
     align-items: flex-start;

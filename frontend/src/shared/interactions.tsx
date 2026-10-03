@@ -68,7 +68,7 @@ export function useDirtyClose(
 export function RecordModal({
   children,
   className,
-  width = 720,
+  width = 560,
   extra,
   footer,
   onCancel,
@@ -93,8 +93,14 @@ export function RecordModal({
       centered
       open={open}
       onCancel={onCancel}
-      className={["record-modal", className].filter(Boolean).join(" ")}
-      width={expanded ? 1120 : width}
+      className={[
+        "record-modal",
+        expanded && "record-modal-expanded",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      width={expanded ? 960 : width}
       title={
         <div className="record-modal-heading">
           <span>{title}</span>
@@ -103,6 +109,7 @@ export function RecordModal({
             {expandable && (
               <Button
                 type="text"
+                className="modal-expand-control"
                 onClick={() => setExpanded((value) => !value)}
               >
                 {expanded ? "收起视图" : "展开视图"}

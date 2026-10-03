@@ -437,10 +437,9 @@ export function Journeys({ store }: { store: string }) {
       <RecordModal
         className="record-modal"
         title="旅程节点与版本"
-        initialExpanded
         open={!!detail}
         onCancel={() => setDetail(undefined)}
-        width={720}
+        width={760}
       >
         {detail && (
           <RecordHero
@@ -465,7 +464,7 @@ export function Journeys({ store }: { store: string }) {
       </RecordModal>
       <RecordModal
         title="旅程编辑器"
-        width={860}
+        width={640}
         open={open}
         afterOpenChange={(visible) => {
           // Modal 延后挂载内容；须在表单读到当前草稿初始值后重置，避免新建沿用上一版本。

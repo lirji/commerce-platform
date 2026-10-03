@@ -322,7 +322,7 @@ function Create({
       )}
       <Modal
         centered
-        width={900}
+        width={640}
         className="campaign-modal"
         title="创建活动草稿"
         open={open}
@@ -683,7 +683,7 @@ function Operations({
       </Form>
       <Modal
         centered
-        width={action === "preview" ? 1000 : 600}
+        width={action === "preview" ? 760 : 600}
         className="campaign-modal"
         title={`${labels[action]} · ${form.getFieldValue("campaignId") ?? ""}`}
         open={open}

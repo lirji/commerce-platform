@@ -264,7 +264,7 @@ function MemberList() {
         title={selected ? `${selected.displayName} · 变更记录` : "变更记录"}
         open={!!selected}
         onCancel={() => setSelected(undefined)}
-        width={820}
+        width={640}
         destroyOnHidden
       >
         {selected && (

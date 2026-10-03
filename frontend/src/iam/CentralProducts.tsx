@@ -460,7 +460,7 @@ function Products({
       <RecordModal
         open={!!selected}
         title="商品资料"
-        width={960}
+        width={760}
         destroyOnHidden
         onCancel={() => guard(() => navigate({ product: null }))}
       >

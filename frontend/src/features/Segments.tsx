@@ -194,7 +194,7 @@ export function Segments() {
         title={`${selected?.content.name ?? "人群"} · 刷新任务`}
         open={!!selected}
         onCancel={() => setSelected(undefined)}
-        width={960}
+        width={760}
       >
         <Alert
           type="info"
@@ -304,7 +304,7 @@ export function Segments() {
             </Button>
           </FormActions>
         }
-        width={780}
+        width={640}
         destroyOnHidden
       >
         <ErrorNotice error={command.error} />

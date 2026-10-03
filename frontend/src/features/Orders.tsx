@@ -188,7 +188,7 @@ export function Orders({
       </div>
       <RecordModal
         className="record-modal"
-        width={760}
+        width={600}
         open={!!selected}
         onCancel={() => setSelected(undefined)}
         title="订单详情"

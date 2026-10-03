@@ -321,7 +321,7 @@ export function CatalogJobs({ store }: { store: string }) {
         title={`${selected?.definition.name ?? "计划"} · 逐项回执`}
         open={!!selected}
         onCancel={() => setSelected(undefined)}
-        width={960}
+        width={760}
       >
         <ErrorNotice error={receipts.error} />
         <Button onClick={receipts.refresh}>刷新回执</Button>
@@ -389,7 +389,7 @@ export function ChannelPrices({
         setChannel(undefined);
         onClose();
       }}
-      width={960}
+      width={760}
     >
       <Alert
         type="info"

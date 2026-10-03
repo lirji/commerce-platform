@@ -404,7 +404,7 @@ export function ProductOperations({
         title={`${selected?.title ?? "商品"} · 修订记录`}
         open={!!selected}
         onCancel={() => setSelected(undefined)}
-        width={960}
+        width={760}
       >
         {selected && (
           <Card className="record-identity" variant="borderless">

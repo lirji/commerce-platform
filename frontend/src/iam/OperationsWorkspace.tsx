@@ -260,7 +260,7 @@ export function OperationsList({
         open={!!selected}
         title="业务详情"
         centered
-        width={760}
+        width={600}
         styles={{ body: { maxHeight: "68vh", overflowY: "auto" } }}
         onCancel={() => {
           setSelected(undefined);
@@ -384,7 +384,7 @@ export function OperationAction({
         open={open}
         title={label}
         centered
-        width={640}
+        width={560}
         closable={!command.busy && !command.frozen}
         keyboard={!command.busy && !command.frozen}
         maskClosable={false}

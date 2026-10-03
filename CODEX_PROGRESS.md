@@ -1,44 +1,48 @@
 # Codex Progress
 
-## 当前任务：全站弹层与按钮统一，本地 Docker 部署 PASS（2026-10-02 PDT）
+## 当前任务：弹窗紧凑样式调整（本地验证 PASS，Git / CI / Docker 更新中）
 
 ## 任务目标
 
-按用户确认的 Claude frontend-design 方案，将全站抽屉改为居中弹层、统一按钮为38px高/14px字号/8px圆角，并按用户“部署一下”授权更新本机现有商城Docker容器。
+根据用户“弹窗不好看、太大”的反馈，沿用 Claude frontend-design 方案收紧全站弹层宽高和留白，保持按钮38px统一与既有业务交互，并更新用户刚部署的本机Docker页面。
 
 ## 已完成
 
-- 前端产品与验证修正已正常合入并推送main，产品版本 `70d07407be55f22ab70d3cff7cb4c31ed558088e`；精确main CI37085563281终态SUCCESS。后端553项/5条件skip，浏览器43PASS/20条件skip，无失败。
-- 26个原抽屉使用共享RecordModal，所有按钮统一；设计、实现及此前验证见 `docs/design/frontend-modal-buttons.md` 和 `.local/frontend-modal-buttons/delivery.json`。首次CI的新尺寸用例重排时序失败已修正，历史失败证据保留。
-- 本机 `desktop-linux/commerce-platform-app-1` 更新至 `commerce-platform:rev-70d0740`，入口 http://127.0.0.1:8602；健康healthy，应用UP，匿名API401。
-- 实际容器JAR SHA与构建一致，61个实际HTTP前端文件逐字节一致；新旧21,569个非前端展开条目内容一致，后端及依赖未改变。
-- Docker页面13项浏览器回归全部PASS：320px弹层、按钮尺寸、关闭保护、焦点、草稿重置、商品和购物袋。正式DTO fixture仅展示验收，不写入业务数据；入场动画结束后的320px购物袋截图已复核。
-- 数据库配置、地址密钥、全部环境变量值和dev-infra网络保留；私密Compose镜像标签持久化更新，旧rev-753cba1镜像及原配置保留，无需回滚。
-- 已应用deployment-execution；当前应用更新和验证完成，使用update-progress-docs同步实际结果，并按task-git-delivery和用户持续授权交付本任务文档。
+- 原目录任务分支 `fix/compact-modal-layout`，基线main `b422be2`，原工作树clean，无新工作树；上一部署70d0740保持健康。
+- 全部显式弹层宽度收紧：普通详情默认560px，表单通常600–640px，表格/关系图760px，商品720px，购物袋520px，导航400px。主动展开960px，旅程取消默认1120px展开。
+- 标题16px、圆角12px、桌面20px/手机16px内边距；表单间距16px、头尾分隔12px。短内容按内容高度收缩，桌面上限min(76dvh,680px)，手机min(82dvh,640px)，正文滚动、头尾固定。
+- 手机固定两侧16px留白并隐藏没有空间收益的展开入口；购物袋横向步骤/下方标题，商品图片区缩小。没有更改按钮尺寸、API、权限、关闭保护、请求中保护或数据。
+- TypeScript/Vite、Maven with-ui打包和diff检查PASS。JAR当前61前端资产逐字节一致；与运行旧版本21,569个非前端展开条目完全一致。
+- 最终本地39项回归PASS：20经营/会员交互 + 19中央交互/壳层；中央36路由1440/390/320全部通过。320px购物袋约514px高（原696px），编辑表单640px上限，商品占位140px；代表截图已人工查看。
+- 实际宽高上限、居中、滚动、按钮、焦点、草稿、未知结果和401卸载均验证；截图等待入场动画结束。真实支付/授权业务本地未重跑，等待精确远程全库CI。
+- 首轮两个真实接口测试缺少preview后端；两个客户端源码导入用例需dev服务器。保留失败证据，使用匹配测试环境后中央19项全通过，不改业务断言或超时。
 
 ## 已修改文件
 
-- 本任务跟踪文件：`docs/delivery/frontend-modal-docker-deployment.md`、`CODEX_PROGRESS.md`。
-- 私密忽略文件：`.local/compose.env`（仅镜像标签），`.local/frontend-modal-buttons/docker/`（构建、镜像与运行证据、浏览器报告、回滚配置/JAR）。
-- 不修改产品代码、测试、Dockerfile、Compose结构或共享基础设施；前端改动已在上一任务发布。
+- `frontend/src/shared/interactions.tsx`、`shared/marketing.tsx`、`theme.ts`、`style.css`、`workspace.css`：共享尺寸与内容布局。
+- 经营、中央、会员及两处导航弹层的显式width；准确清单以Git本任务diff为准，无后端/依赖/数据库改动。
+- `frontend/tests/presentation.ts`、`interaction-refresh.spec.ts`、`b-console-craft.spec.ts`：入场帧等待、实际紧凑尺寸与旅程初始收起行为。
+- `docs/design/frontend-modal-buttons.md`、本进度文件；受控证据 `.local/compact-modals/`。
 
 ## 未完成
 
-- 本地Docker部署无未完成项；当前文档分支 `chore/frontend-modal-docker-deploy` 的提交/合并/main推送按持续授权收尾。最终Git和文档CI状态以 `.local/frontend-modal-buttons/docker/DEPLOYMENT_RESULT.json` 为准，避免循环提交。
+- 按用户持续授权完成任务提交、分支/main推送，等待精确CI；不得将运行中写成成功。
+- CI通过后沿用本机8602的现有配置构建并更新Commerce容器，核对实际JAR、61资源、健康/匿名401与Docker页面回归，保留旧镜像用于回滚。
 
 ## 当前问题
 
-- 无部署阻塞。浏览器展示回归使用测试边界，不代表本次重复验收真实支付/PKCE；部署源版本已通过完整CI。
-- 所有历史证据、数据、卷和已有工作树均保留，不清理。此次只更新本机Commerce容器。
+- 无产品阻塞。前一文档main CI37092740384已SUCCESS。
+- 本地测试边界使用正式DTO，不硬编码产品数据或冒充真实资金/授权验收。原数据、配置、失败证据及历史工作树保留。
 
 ## 下一步建议
 
-1. 按本任务限定路径完成文档Git收尾，并在私密DEPLOYMENT_RESULT.json记录实际提交与远程main状态。
-2. 已完成回执若为DONE，直接使用8602查看新版；不重复部署、不清理数据、不重新实施前端。
+1. 仅提交本任务路径并正常合入推送main，核对新提交CI終态。
+2. 门禁通过后更新本机Docker并写`.local/compact-modals/DEPLOYMENT_RESULT.json`。
+3. 停止本任务自有18601/18602/18603预览，保持8602应用运行。
 
 ## 恢复 Prompt
 
-请读取CODEX_PROGRESS.md和`.local/frontend-modal-buttons/docker/DEPLOYMENT_RESULT.json`。Docker部署已PASS，当前镜像rev-70d0740，先核对当前容器及回执，仅继续尚未完成的文档交付；回执DONE则任务完成。保留私密配置和数据库，不能因文档main提交不同于产品版本而重新部署。
+读取CODEX_PROGRESS.md、`.local/compact-modals/delivery.json`和DEPLOYMENT_RESULT.json，从Git/CI/Docker首个未完成步骤继续。样式与本地验证已完成，不重新规划、不清理用户数据、不新工作树；最终回执DONE则完成。本机Docker已获用户同一任务部署授权，不部署其他环境或项目。
 
 ---
 

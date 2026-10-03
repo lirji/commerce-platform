@@ -689,7 +689,7 @@ export function AdminData({
         title={detail ? detailTitle : "业务记录详情"}
         open={!!detail}
         onCancel={() => setDetail(undefined)}
-        width={720}
+        width={560}
       >
         {detail && (
           <>

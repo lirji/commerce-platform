@@ -258,7 +258,7 @@ export function CouponDeliveries({ store }: { store: string }) {
         title={`${selected?.content.name ?? "定向券"} · 收件人回执`}
         open={!!selected}
         onCancel={() => setSelected(undefined)}
-        width={960}
+        width={760}
       >
         <ErrorNotice error={recipients.error} />
         {selectedNow && (

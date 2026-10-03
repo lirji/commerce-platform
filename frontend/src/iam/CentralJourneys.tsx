@@ -1087,7 +1087,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
         open={!!open}
         onCancel={close}
         footer={null}
-        width={760}
+        width={600}
         destroyOnHidden
         maskClosable={false}
       >
@@ -1124,7 +1124,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
         open={detail !== undefined}
         onCancel={() => setDetail(undefined)}
         footer={<Button onClick={() => setDetail(undefined)}>关闭</Button>}
-        width={900}
+        width={640}
       >
         {detail != null &&
           typeof detail === "object" &&

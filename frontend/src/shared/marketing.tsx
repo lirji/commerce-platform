@@ -420,7 +420,7 @@ export function CampaignEditor({
         {label}
       </Button>
       <RecordModal
-        width={760}
+        width={640}
         title={label}
         open={open}
         onCancel={closing.requestClose}

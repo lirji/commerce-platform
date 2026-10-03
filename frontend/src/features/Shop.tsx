@@ -141,7 +141,7 @@ export function Shop({
         title={shown?.title}
         open={!!info}
         onCancel={() => setInfo(undefined)}
-        width={860}
+        width={720}
         footer={<Button onClick={() => setInfo(undefined)}>返回店铺</Button>}
       >
         <ErrorNotice error={details.error} />
@@ -387,12 +387,14 @@ export function Shop({
         title="购物袋与结算"
         open={bag}
         onCancel={() => setBag(false)}
-        width={620}
+        width={520}
         className="checkout-modal"
       >
         <ErrorNotice error={command.error} />
         <ErrorNotice error={place.error} />
         <Steps
+          responsive={false}
+          titlePlacement="vertical"
           size="small"
           current={checkoutStep}
           items={[

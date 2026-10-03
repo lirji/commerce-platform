@@ -85,6 +85,9 @@ test("行操作尺寸一致，单页隐藏无用分页，配置使用业务语�
   const dialog = page.getByRole("dialog");
   await assertCentered(page);
   await assertButtonSizes(page);
+  const compact = (await dialog.boundingBox())!;
+  expect(compact.width).toBeLessThanOrEqual(600);
+  expect(compact.height).toBeLessThanOrEqual(680);
   await expect(dialog.locator(".rule-summary")).toHaveText("会员等级等于VIP");
   await dialog.getByRole("button", { name: "展开视图", exact: true }).click();
   await expect(
@@ -372,6 +375,8 @@ test("会员商城、分类、商品详情与购物袋共用按钮尺寸，三�
     await page.getByRole("button", { name: "测试咖啡", exact: true }).click();
     await assertCentered(page);
     await assertButtonSizes(page);
+    const product = (await page.getByRole("dialog").boundingBox())!;
+    expect(product.width).toBeLessThanOrEqual(720);
     await page.screenshot({
       path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/frontend-modal-buttons"}/member-product-${width}.png`,
     });
@@ -383,6 +388,11 @@ test("会员商城、分类、商品详情与购物袋共用按钮尺寸，三�
     await page.getByRole("button", { name: "购物袋 · 1", exact: true }).click();
     await assertCentered(page);
     await assertButtonSizes(page);
+    const checkout = (await page.getByRole("dialog").boundingBox())!;
+    expect(checkout.width).toBeLessThanOrEqual(520);
+    expect(checkout.height).toBeLessThanOrEqual(
+      Math.min(680, page.viewportSize()!.height * 0.82),
+    );
     await page.screenshot({
       path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/frontend-modal-buttons"}/member-checkout-${width}.png`,
     });
