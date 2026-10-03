@@ -17,7 +17,12 @@ public interface OpsPageMapper {
 
 	Row published(String tenant, String id);
 
-	List<Row> list(String tenant, String after, int limit);
+	List<Row> list(String tenant, String after, int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> list(String tenant, String after, int limit) {
+		return list(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	List<Row> versions(String tenant, String id);
 

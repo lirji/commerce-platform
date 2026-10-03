@@ -25,7 +25,12 @@ public interface MemberMapper {
 
 	MemberApi.View find(@Param("tenant") String tenant, @Param("id") String id);
 
-	List<MemberApi.View> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
+	List<MemberApi.View> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<MemberApi.View> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit) {
+		return list(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	MemberApi.View byActor(@Param("tenant") String tenant, @Param("actor") String actor);
 

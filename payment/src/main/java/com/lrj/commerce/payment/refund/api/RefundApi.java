@@ -1,5 +1,6 @@
 package com.lrj.commerce.payment.refund.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
@@ -15,6 +16,9 @@ public interface RefundApi {
 	View internalRead(String tenant, String refundId);
 
 	List<View> list(Actor actor, String after, int limit);
+
+	/** 只读查询条件，不改变既有数据权限或业务记录。 */
+	List<View> list(Actor actor, String after, int limit, ListFilter filter);
 
 	View reconcile(Actor actor, String refundId);
 

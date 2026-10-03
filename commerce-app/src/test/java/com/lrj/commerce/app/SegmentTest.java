@@ -234,7 +234,10 @@ class SegmentTest {
 		assertEquals("CANCELLED",
 				jdbc.queryForObject("SELECT status FROM marketing_segment_run WHERE tenant_id=? AND run_id=?",
 						String.class, tenant, second.path("runId").asString()));
+		assertEquals(1, call("GET", "/v1/admin/segments?q=limited&enabled=false&limit=1", admin, null, null).body().size());
 		post("/v1/admin/segments/limited/schedule", admin, "enable", Map.of("expectedVersion", 0, "enabled", true));
+		assertEquals(1, call("GET", "/v1/admin/segments?q=limited&enabled=true&limit=1", admin, null, null).body().size());
+		assertEquals(0, call("GET", "/v1/admin/segments?q=limited&enabled=false&limit=1", admin, null, null).body().size());
 		pump();
 		assertEquals(3, jdbc.queryForObject("SELECT COUNT(*) FROM marketing_segment_run WHERE tenant_id=?",
 				Integer.class, tenant));

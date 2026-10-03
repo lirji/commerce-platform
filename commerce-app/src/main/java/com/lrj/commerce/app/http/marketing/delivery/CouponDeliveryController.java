@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.marketing.delivery;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.journey.delivery.api.CouponDeliveryApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,8 +27,10 @@ public class CouponDeliveryController {
 	/** 批次游标分页。 */
 	@GetMapping
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return deliveries.list(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return deliveries.list(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 收件人只读回执。 */

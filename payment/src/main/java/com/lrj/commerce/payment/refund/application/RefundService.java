@@ -1,5 +1,6 @@
 package com.lrj.commerce.payment.refund.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.payment.charge.infrastructure.persistence.PaymentMapper;
 import com.lrj.commerce.payment.refund.infrastructure.persistence.RefundMapper;
 import com.lrj.commerce.ordering.order.api.OrderApi;
@@ -104,9 +105,16 @@ public class RefundService implements RefundApi {
 	}
 
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
 		var permit = access.scope(actor, REFUND_READ);
-		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit);
+		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit, filter);
 		EmployeeAccess.requireSame(permit, access.scope(actor, REFUND_READ));
 		return result;
 	}

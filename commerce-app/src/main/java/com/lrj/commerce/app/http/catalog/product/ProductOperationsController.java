@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.catalog.product;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.catalog.product.api.ProductOperationsApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,8 +34,10 @@ public class ProductOperationsController {
 	/** 门店商品主数据目录。 */
 	@GetMapping("/products")
 	public Object products(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return products.products(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return products.products(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 新建不可换绑的规格。 */
@@ -54,8 +57,10 @@ public class ProductOperationsController {
 	/** 经营列表含下架SKU。 */
 	@GetMapping("/skus")
 	public Object skus(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return products.skus(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return products.skus(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 有界修订历史。 */

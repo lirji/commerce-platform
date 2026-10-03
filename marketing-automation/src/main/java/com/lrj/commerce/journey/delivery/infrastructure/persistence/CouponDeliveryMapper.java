@@ -25,7 +25,13 @@ public interface CouponDeliveryMapper {
 	Row lock(@Param("tenant") String tenant, @Param("id") String id);
 
 	List<Row> list(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> list(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
+			@Param("limit") int limit) {
+		return list(tenant, store, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	String pending(@Param("tenant") String tenant, @Param("now") Instant now);
 

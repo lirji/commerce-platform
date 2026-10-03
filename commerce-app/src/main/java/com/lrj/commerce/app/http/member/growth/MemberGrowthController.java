@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.member.growth;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -84,8 +85,10 @@ public class MemberGrowthController {
 	/** 字典列表。 */
 	@GetMapping("/admin/member-tags")
 	public Object tags(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return tags.definitions(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return tags.definitions(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 标签赋值与撤销。 */

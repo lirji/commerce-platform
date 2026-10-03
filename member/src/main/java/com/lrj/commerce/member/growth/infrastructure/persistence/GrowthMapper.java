@@ -78,7 +78,13 @@ public interface GrowthMapper {
 	MemberTagApi.Definition tagDefinition(@Param("tenant") String tenant, @Param("id") String id);
 
 	List<MemberTagApi.Definition> tagDefinitions(@Param("tenant") String tenant, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 既有内部读取保留无筛选语义。 */
+	default List<MemberTagApi.Definition> tagDefinitions(@Param("tenant") String tenant, @Param("after") String after,
+			@Param("limit") int limit) {
+		return tagDefinitions(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	MemberTagApi.Assignment assignment(@Param("tenant") String tenant, @Param("member") String member,
 			@Param("tag") String tag);

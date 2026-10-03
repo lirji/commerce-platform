@@ -1,5 +1,6 @@
 package com.lrj.commerce.benefit.entitlement.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
 import com.lrj.commerce.benefit.entitlement.infrastructure.persistence.EntitlementMapper;
 import com.lrj.commerce.member.profile.api.MemberApi;
@@ -67,10 +68,18 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 
 	/** 最新目录仍按原门店过滤；返回前复核完整租户许可，不额外赋予门店权限。 */
 	public List<DefinitionView> definitions(Actor actor, String store, String after, int limit) {
+		return definitions(actor, store, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<DefinitionView> definitions(Actor actor, String store, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoStatus();
+		filter.requireNoTime();
 		var permit = access.scope(actor, ENTITLEMENT_DEFINITION_READ);
 		Identifiers.require(store);
 		Inputs.page(after, limit);
-		var result = mapper.definitions(actor.tenantId(), store, after, limit).stream().map(this::definition).toList();
+		var result = mapper.definitions(actor.tenantId(), store, after, limit, filter).stream().map(this::definition).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, ENTITLEMENT_DEFINITION_READ));
 		return result;
 	}
@@ -159,15 +168,29 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 	}
 
 	public List<View> wallet(Actor actor, String after, int limit) {
+		return wallet(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> wallet(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit);
+		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit, filter);
 	}
 
 	/** 实例目录包含各状态，按实际租户与grant游标隔离，不借会员归属代替员工授权。 */
 	public List<View> adminList(Actor actor, String after, int limit) {
+		return adminList(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> adminList(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit = access.scope(actor, ENTITLEMENT_READ);
 		Inputs.page(after, limit);
-		var result = mapper.list(actor.tenantId(), null, after, limit);
+		var result = mapper.list(actor.tenantId(), null, after, limit, filter);
 		EmployeeAccess.requireSame(permit, access.scope(actor, ENTITLEMENT_READ));
 		return result;
 	}

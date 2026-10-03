@@ -1,5 +1,6 @@
 package com.lrj.commerce.ordering.order.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.trade.api.QuoteApi;
 import java.time.Instant;
@@ -31,6 +32,9 @@ public interface OrderApi {
 
 	/** 稳定ID游标分页，明细只在单笔接口提供。 */
 	List<View> list(Actor actor, String after, int limit);
+
+	/** 只读查询条件，不改变既有数据权限或业务记录。 */
+	List<View> list(Actor actor, String after, int limit, ListFilter filter);
 
 	/** 支付未知时只能进入CLOSING，不能释放库存。 */
 	View cancel(Actor actor, String key, String orderId);
@@ -83,6 +87,9 @@ public interface OrderApi {
 
 	/** 管理查询仅同租户投影，不暴露收货地址。 */
 	List<View> adminList(Actor actor, String after, int limit);
+
+	/** 只读查询条件，不改变既有数据权限或业务记录。 */
+	List<View> adminList(Actor actor, String after, int limit, ListFilter filter);
 
 	View adminRead(Actor actor, String id);
 

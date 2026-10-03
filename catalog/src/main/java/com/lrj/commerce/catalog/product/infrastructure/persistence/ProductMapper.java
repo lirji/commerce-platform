@@ -27,7 +27,13 @@ public interface ProductMapper {
 		@Param("input") ProductOperationsApi.ProductChange input,@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
 		@Param("deadline") java.time.Instant deadline);
 	List<ProductOperationsApi.Product> products(@Param("tenant") String tenant, @Param("store") String store,
-			@Param("after") String after, @Param("limit") int limit);
+			@Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<ProductOperationsApi.Product> products(@Param("tenant") String tenant, @Param("store") String store,
+			@Param("after") String after, @Param("limit") int limit) {
+		return products(tenant, store, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	void insertVariant(@Param("tenant") String tenant, @Param("input") ProductOperationsApi.Variant input,
 			@Param("specifications") String specifications, @Param("hash") String hash);
@@ -37,7 +43,13 @@ public interface ProductMapper {
 	SkuRow sku(@Param("tenant") String tenant, @Param("store") String store, @Param("id") String id);
 
 	List<SkuRow> skus(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<SkuRow> skus(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
+			@Param("limit") int limit) {
+		return skus(tenant, store, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int change(@Param("tenant") String tenant, @Param("id") String id,
 			@Param("input") ProductOperationsApi.Change input);

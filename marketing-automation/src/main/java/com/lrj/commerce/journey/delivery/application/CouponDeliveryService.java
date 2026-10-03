@@ -1,5 +1,6 @@
 package com.lrj.commerce.journey.delivery.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.journey.delivery.api.CouponDeliveryApi;
 import com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper;
 import com.lrj.commerce.campaign.asset.api.MarketingAssets;
@@ -105,10 +106,17 @@ public class CouponDeliveryService implements CouponDeliveryApi {
 
 	/** 管理列表稳定批次游标。 */
 	public List<View> list(Actor actor, String store, String after, int limit) {
+		return list(actor, store, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> list(Actor actor, String store, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit = access.scope(actor, COUPON_DELIVERY_READ);
 		Inputs.page(after, limit);
 		stores.requireActive(actor, store);
-		var rows = mapper.list(actor.tenantId(), store, after, limit).stream().map(this::view).toList();
+		var rows = mapper.list(actor.tenantId(), store, after, limit, filter).stream().map(this::view).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, COUPON_DELIVERY_READ));
 		return rows;
 	}

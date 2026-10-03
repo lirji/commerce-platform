@@ -1,5 +1,6 @@
 package com.lrj.commerce.catalog.job.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.catalog.job.infrastructure.persistence.CatalogJobMapper;
 import com.lrj.commerce.catalog.product.infrastructure.persistence.ProductMapper;
 import com.lrj.commerce.store.access.api.StoreAccessApi;
@@ -110,9 +111,16 @@ public class CatalogJobService implements CatalogJobApi {
 
 	/** 列表只展示当前授权门店。 */
 	public List<View> list(Actor actor, String store, String after, int limit) {
+		return list(actor, store, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> list(Actor actor, String store, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		access.requireCatalog(actor, store);
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), store, after, limit).stream().map(this::view).toList();
+		return mapper.list(actor.tenantId(), store, after, limit, filter).stream().map(this::view).toList();
 	}
 
 	/** 回执稳定序号分页，读取仍验证门店边界。 */

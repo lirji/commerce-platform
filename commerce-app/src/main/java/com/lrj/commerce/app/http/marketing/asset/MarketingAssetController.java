@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.marketing.asset;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.app.http.commerce.CommerceController;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -42,8 +43,10 @@ public class MarketingAssetController {
 	/** 只返回人群摘要，不泄漏全量会员清单。 */
 	@GetMapping("/audiences")
 	public Object audiences(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return assets.audiences(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return assets.audiences(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 规则字段按服务器目录校验。 */
@@ -63,8 +66,10 @@ public class MarketingAssetController {
 	/** 列最新版本规则资产。 */
 	@GetMapping("/rules")
 	public Object rules(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return assets.rules(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return assets.rules(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 字段类型来自固定可信数据提供方。 */
@@ -84,8 +89,10 @@ public class MarketingAssetController {
 	/** 预算余额来自权威数据库，旧版本仍可审计。 */
 	@GetMapping("/campaign-budgets")
 	public Object budgets(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return funding.budgets(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return funding.budgets(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 }

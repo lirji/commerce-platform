@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.marketing.segment;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.campaign.segment.api.SegmentApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,8 +27,10 @@ public class SegmentController {
 	/** 最新定义列表。 */
 	@GetMapping("/segments")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return segments.definitions(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to, @RequestParam(required = false) Boolean enabled) {
+		return segments.definitions(actor, after, limit, new ListFilter(q, status, from, to, enabled));
 	}
 
 	/** 启停周期刷新。 */

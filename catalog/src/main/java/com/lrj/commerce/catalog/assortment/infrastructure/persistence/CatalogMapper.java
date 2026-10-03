@@ -22,7 +22,13 @@ public interface CatalogMapper {
 	void insert(@Param("tenant") String tenant, @Param("input") CatalogApi.Create input);
 
 	List<CatalogApi.View> list(@Param("tenant") String tenant, @Param("store") String store,
-			@Param("after") String after, @Param("limit") int limit);
+			@Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<CatalogApi.View> list(@Param("tenant") String tenant, @Param("store") String store,
+			@Param("after") String after, @Param("limit") int limit) {
+		return list(tenant, store, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	List<CatalogApi.View> batch(@Param("tenant") String tenant, @Param("store") String store,
 			@Param("ids") List<String> ids);

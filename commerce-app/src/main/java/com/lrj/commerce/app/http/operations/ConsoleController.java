@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.operations;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.payment.charge.api.PaymentApi;
@@ -50,8 +51,10 @@ public class ConsoleController {
 	/** 有界运营订单队列。 */
 	@GetMapping("/admin/orders")
 	public Object orders(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return orders.adminList(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return orders.adminList(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 详情不包含收货地址。 */

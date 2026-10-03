@@ -1,5 +1,6 @@
 package com.lrj.commerce.catalog.product.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 import java.time.Instant;
@@ -40,11 +41,17 @@ public interface ProductOperationsApi {
 
 	List<Product> products(Actor actor, String storeId, String after, int limit);
 
+	/** 只读查询条件，不改变既有数据权限或业务记录。 */
+	List<Product> products(Actor actor, String storeId, String after, int limit, ListFilter filter);
+
 	Sku variant(Actor actor, String key, Variant input);
 
 	Sku change(Actor actor, String key, String id, Change input);
 
 	List<Sku> skus(Actor actor, String storeId, String after, int limit);
+
+	/** 只读查询条件，不改变既有数据权限或业务记录。 */
+	List<Sku> skus(Actor actor, String storeId, String after, int limit, ListFilter filter);
 
 	List<Revision> history(Actor actor, String storeId, String id, long after, int limit);
 

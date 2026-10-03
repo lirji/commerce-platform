@@ -1,5 +1,6 @@
 package com.lrj.commerce.journey.delivery.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.campaign.asset.api.MarketingAssets;
 import java.time.Instant;
@@ -27,6 +28,9 @@ public interface CouponDeliveryApi {
 
 	/** 目录与回执均限定本租户并有界。 */
 	List<View> list(Actor actor, String store, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> list(Actor actor, String store, String after, int limit, ListFilter filter);
 
 	List<Recipient> recipients(Actor actor, String id, String after, int limit);
 

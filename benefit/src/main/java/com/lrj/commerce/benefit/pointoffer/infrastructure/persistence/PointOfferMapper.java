@@ -19,7 +19,13 @@ public interface PointOfferMapper {
 	Row lock(@Param("tenant") String tenant, @Param("id") String id);
 
 	List<Row> list(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
-			@Param("limit") int limit, @Param("admin") boolean admin, @Param("now") Instant now);
+			@Param("limit") int limit, @Param("admin") boolean admin, @Param("now") Instant now, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> list(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
+			@Param("limit") int limit, @Param("admin") boolean admin, @Param("now") Instant now) {
+		return list(tenant, store, after, limit, admin, now, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int status(@Param("tenant") String tenant, @Param("id") String id, @Param("input") Status input);
 

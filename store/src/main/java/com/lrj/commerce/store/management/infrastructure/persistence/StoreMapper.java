@@ -19,6 +19,13 @@ public interface StoreMapper {
 	/** 范围谓词与租户在分页前生效。 */
 	List<StoreApi.View> listScoped(@Param("tenant") String tenant,
 			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
-			@Param("after") String after, @Param("limit") int limit);
+			@Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<StoreApi.View> listScoped(@Param("tenant") String tenant,
+			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("after") String after, @Param("limit") int limit) {
+		return listScoped(tenant, scope, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 }

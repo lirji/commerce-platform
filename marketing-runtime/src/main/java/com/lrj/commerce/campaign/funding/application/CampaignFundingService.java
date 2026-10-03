@@ -1,5 +1,6 @@
 package com.lrj.commerce.campaign.funding.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.campaign.funding.infrastructure.persistence.BudgetMapper;
 import com.lrj.commerce.campaign.management.infrastructure.persistence.CampaignMapper;
 import com.lrj.commerce.marketing.api.DecisionModels.Selection;
@@ -78,9 +79,17 @@ public class CampaignFundingService implements CampaignFundingApi {
 
 	/** 财务列表包括旧版本预算，使用稳定预算ID分页。 */
 	public List<Budget> budgets(Actor actor, String after, int limit) {
+		return budgets(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<Budget> budgets(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoStatus();
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit = access.scope(actor, BUDGET_READ);
 		Inputs.page(after, limit);
-		var result = mapper.list(actor.tenantId(), after, limit);
+		var result = mapper.list(actor.tenantId(), after, limit, filter);
 		EmployeeAccess.requireSame(permit, access.scope(actor, BUDGET_READ));
 		return result;
 	}

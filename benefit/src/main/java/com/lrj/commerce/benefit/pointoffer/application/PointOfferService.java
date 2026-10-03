@@ -1,5 +1,6 @@
 package com.lrj.commerce.benefit.pointoffer.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.pointoffer.infrastructure.persistence.PointOfferMapper;
 import com.lrj.commerce.store.management.api.StoreApi;
 import com.lrj.commerce.kernel.*;
@@ -108,12 +109,19 @@ public class PointOfferService implements PointOfferApi {
 
 	/** 受控目录不泄露其他租户或失效活动。 */
 	public List<View> list(Actor actor, String store, String after, int limit) {
+		return list(actor, store, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> list(Actor actor, String store, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		// 共享客户目录的旧ADMIN入口同样走员工门禁，避免绕过已接管管理接口。
 		boolean customer = actor.role() == Actor.Role.MEMBER;
 		var permit = customer ? null : access.scope(actor, POINT_OFFER_READ);
 		Inputs.page(after, limit);
 		stores.requireActive(actor, store);
-		var result = mapper.list(actor.tenantId(), store, after, limit, !customer, clock.instant())
+		var result = mapper.list(actor.tenantId(), store, after, limit, !customer, clock.instant(), filter)
 			.stream().map(this::view).toList();
 		if (permit != null) EmployeeAccess.requireSame(permit, access.scope(actor, POINT_OFFER_READ));
 		return result;

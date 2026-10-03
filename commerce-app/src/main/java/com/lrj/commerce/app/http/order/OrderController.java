@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.order;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.inventory.api.InventoryApi;
@@ -36,8 +37,10 @@ public class OrderController {
 	/** 游标和页大小在用例里有上限。 */
 	@GetMapping("/orders")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return orders.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return orders.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 取消命令由状态机决定是否允许释放预占。 */
@@ -57,8 +60,10 @@ public class OrderController {
 	/** 查询只返回当前租户库存。 */
 	@GetMapping("/admin/inventory")
 	public Object inventory(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return inventory.list(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return inventory.list(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 }

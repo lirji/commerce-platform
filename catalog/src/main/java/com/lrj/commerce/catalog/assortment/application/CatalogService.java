@@ -1,5 +1,6 @@
 package com.lrj.commerce.catalog.assortment.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.catalog.assortment.api.CatalogApi;
 import com.lrj.commerce.catalog.assortment.infrastructure.persistence.CatalogMapper;
 import com.lrj.commerce.store.management.api.StoreApi;
@@ -69,9 +70,16 @@ public class CatalogService implements CatalogApi {
 
 	/** 目录是同租户可见数据，冻结店铺不能继续销售。 */
 	public List<View> list(Actor actor, String storeId, String after, int limit) {
+		return list(actor, storeId, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String storeId, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		stores.requireActive(actor, storeId);
 		Inputs.page(after, limit);
-		var rows = mapper.list(actor.tenantId(), storeId, after, limit);
+		var rows = mapper.list(actor.tenantId(), storeId, after, limit, filter);
 		if (rows.isEmpty())
 			return rows;
 		return priced(actor, storeId, rows.stream().map(View::skuId).toList(), clock.instant()).stream()

@@ -1,5 +1,6 @@
 package com.lrj.commerce.fulfillment.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.fulfillment.api.*;
 import com.lrj.commerce.fulfillment.application.port.WmsPort;
 import com.lrj.commerce.fulfillment.infrastructure.persistence.FulfillmentMapper;
@@ -44,9 +45,16 @@ public class FulfillmentService implements FulfillmentApi, EventHandler {
 	}
 
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
 		var permit = access.scope(actor, FULFILLMENT_READ);
-		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit);
+		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit, filter);
 		EmployeeAccess.requireSame(permit, access.scope(actor, FULFILLMENT_READ));
 		return result;
 	}

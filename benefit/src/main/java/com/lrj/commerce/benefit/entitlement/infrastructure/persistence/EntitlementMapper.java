@@ -19,7 +19,13 @@ public interface EntitlementMapper {
 			@Param("version") long version);
 
 	List<DefinitionRow> definitions(@Param("tenant") String tenant, @Param("store") String store,
-			@Param("after") String after, @Param("limit") int limit);
+			@Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<DefinitionRow> definitions(@Param("tenant") String tenant, @Param("store") String store,
+			@Param("after") String after, @Param("limit") int limit) {
+		return definitions(tenant, store, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int reserveQuota(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
@@ -45,7 +51,13 @@ public interface EntitlementMapper {
 	int consume(@Param("tenant") String tenant, @Param("grant") View grant, @Param("units") int units);
 
 	List<View> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省不附加筛选。 */
+	default List<View> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
+			@Param("limit") int limit) {
+		return list(tenant, member, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	void entry(@Param("tenant") String tenant, @Param("id") String id, @Param("grant") String grant,
 			@Param("action") String action, @Param("units") int units, @Param("balance") int balance,

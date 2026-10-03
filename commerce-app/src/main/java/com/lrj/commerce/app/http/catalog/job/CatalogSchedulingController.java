@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.catalog.job;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +31,10 @@ public class CatalogSchedulingController {
 	/** 门店批次列表。 */
 	@GetMapping("/catalog-jobs")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return jobs.list(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return jobs.list(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 有界逐项回执。 */

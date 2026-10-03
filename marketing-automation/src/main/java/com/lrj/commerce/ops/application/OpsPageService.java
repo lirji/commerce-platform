@@ -1,5 +1,6 @@
 package com.lrj.commerce.ops.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.ops.api.OpsPageApi;
 import com.lrj.commerce.ops.infrastructure.persistence.OpsPageMapper;
 import com.lrj.commerce.kernel.*;
@@ -95,9 +96,16 @@ public class OpsPageService implements OpsPageApi {
 
 	/** 最新版本列表不代表已发布版本，渲染入口另查发布指针。 */
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit = access.scope(actor, OPS_PAGE_READ);
 		Inputs.page(after, limit);
-		var result = mapper.list(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var result = mapper.list(actor.tenantId(), after, limit, filter).stream().map(this::view).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, OPS_PAGE_READ));
 		return result;
 	}

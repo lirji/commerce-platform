@@ -1,5 +1,6 @@
 package com.lrj.commerce.store.access.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 import com.lrj.commerce.store.management.api.StoreApi;
@@ -23,6 +24,9 @@ public interface StoreAccessApi {
 	Grant change(Actor actor, String key, String id, Change input);
 
 	List<Grant> list(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<Grant> list(Actor actor, String after, int limit, ListFilter filter);
 
 	List<StoreApi.View> stores(Actor actor, String after, int limit);
 

@@ -22,7 +22,13 @@ public interface OrderMapper {
 	Row lock(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id);
 
 	List<Row> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
+			@Param("limit") int limit) {
+		return list(tenant, member, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	/** 实际创建时间范围、稳定订单游标，效果 Owner 内部授权先于调用。 */
 	List<Row> listForEffects(@Param("tenant") String tenant, @Param("store") String store,
@@ -30,7 +36,13 @@ public interface OrderMapper {
 
 	/** 员工列表与批次按 Owner 的真实门店列在 LIMIT 前过滤。 */
 	List<Row> scopedList(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
-			@Param("after") String after, @Param("limit") int limit);
+			@Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> scopedList(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
+			@Param("after") String after, @Param("limit") int limit) {
+		return scopedList(tenant, scope, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 	List<Row> expiredScoped(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
 			@Param("now") Instant now, @Param("max") int max, @Param("transientMax") int transientMax);
 	/** 旧批次回执仍以原目标复核当前能力，不从新的候选集重建来源。 */

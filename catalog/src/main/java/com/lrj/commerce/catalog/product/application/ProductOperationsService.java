@@ -1,5 +1,6 @@
 package com.lrj.commerce.catalog.product.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.catalog.assortment.infrastructure.persistence.CatalogMapper;
 import com.lrj.commerce.catalog.merchandising.infrastructure.persistence.MerchandisingMapper;
 import com.lrj.commerce.catalog.product.infrastructure.persistence.ProductMapper;
@@ -87,9 +88,17 @@ public class ProductOperationsService implements ProductOperationsApi, com.lrj.c
 	}
 	/** 数据库游标保证读取有界。 */
 	public List<Product> products(Actor actor, String store, String after, int limit) {
+		return products(actor, store, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<Product> products(Actor actor, String store, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoStatus();
+		filter.requireNoTime();
 		access.requireCatalog(actor, store);
 		Inputs.page(after, limit);
-		return mapper.products(actor.tenantId(), store, after, limit);
+		return mapper.products(actor.tenantId(), store, after, limit, filter);
 	}
 
 	/** 名值对规范化后唯一，避免仅靠前端防重复。 */
@@ -142,9 +151,16 @@ public class ProductOperationsService implements ProductOperationsApi, com.lrj.c
 
 	/** 经营列表包含下架商品，会员目录仍只包含上架商品。 */
 	public List<Sku> skus(Actor actor, String store, String after, int limit) {
+		return skus(actor, store, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<Sku> skus(Actor actor, String store, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		access.requireCatalog(actor, store);
 		Inputs.page(after, limit);
-		return mapper.skus(actor.tenantId(), store, after, limit).stream().map(this::view).toList();
+		return mapper.skus(actor.tenantId(), store, after, limit, filter).stream().map(this::view).toList();
 	}
 
 	/** 历史记录也验证当前授权，撤权后不能通过旧链接读取。 */

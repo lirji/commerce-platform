@@ -1,5 +1,6 @@
 package com.lrj.commerce.campaign.management.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.marketing.api.DecisionModels.Offer;
 import java.time.Instant;
@@ -66,6 +67,9 @@ public interface CampaignApi {
 	View pause(Actor actor, String key, String id, long version, long expectedVersion);
 
 	List<View> list(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> list(Actor actor, String after, int limit, ListFilter filter);
 
 	/** 增强活动必须走显式审批，旧无policy活动保留兼容发布。 */
 	View review(Actor actor, String key, String id, long version, long expected, String action);

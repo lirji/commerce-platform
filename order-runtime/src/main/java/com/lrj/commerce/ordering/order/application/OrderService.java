@@ -1,5 +1,6 @@
 package com.lrj.commerce.ordering.order.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.ordering.order.infrastructure.persistence.OrderMapper;
 import com.lrj.commerce.ordering.address.infrastructure.security.AddressCipher;
 import com.lrj.commerce.ordering.order.api.OrderApi;
@@ -180,8 +181,14 @@ public class OrderService implements OrderApi {
 
 	/** 列表不加载明细快照，防止列表隐含N+1或放大响应。 */
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit)
+		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit, filter)
 			.stream()
 			.map(this::view)
 			.toList();
@@ -458,9 +465,15 @@ public class OrderService implements OrderApi {
 
 	/** 与本人列表分开，SQL 在 LIMIT 前使用实际 store_id；不返回地址。 */
 	public List<View> adminList(Actor actor, String after, int limit) {
+		return adminList(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> adminList(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
 		Inputs.page(after, limit);
 		var before = access.scope(actor, ORDER_READ);
-		var result = mapper.scopedList(actor.tenantId(), before.filter(), after, limit).stream().map(this::view).toList();
+		var result = mapper.scopedList(actor.tenantId(), before.filter(), after, limit, filter).stream().map(this::view).toList();
 		EmployeeAccess.requireSame(before, access.scope(actor, ORDER_READ));
 		return result;
 	}

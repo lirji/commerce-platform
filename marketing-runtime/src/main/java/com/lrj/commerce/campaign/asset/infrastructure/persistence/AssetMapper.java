@@ -19,7 +19,13 @@ public interface AssetMapper {
 	AudienceView audienceFind(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
 	List<AudienceView> audiences(@Param("tenant") String tenant, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<AudienceView> audiences(@Param("tenant") String tenant, @Param("after") String after,
+			@Param("limit") int limit) {
+		return audiences(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	record Membership(String audienceId, long version, String source, Instant watermark, Instant validUntil,
 			boolean matched) {
@@ -40,6 +46,11 @@ public interface AssetMapper {
 
 	int publishRule(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
-	List<RuleRow> rules(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
+	List<RuleRow> rules(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<RuleRow> rules(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit) {
+		return rules(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 }

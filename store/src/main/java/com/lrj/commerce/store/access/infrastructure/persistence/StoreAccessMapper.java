@@ -16,7 +16,13 @@ public interface StoreAccessMapper {
 	int change(@Param("tenant") String tenant, @Param("id") String id, @Param("input") StoreAccessApi.Change input);
 
 	List<StoreAccessApi.Grant> list(@Param("tenant") String tenant, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 既有内部读取保留无筛选语义。 */
+	default List<StoreAccessApi.Grant> list(@Param("tenant") String tenant, @Param("after") String after,
+			@Param("limit") int limit) {
+		return list(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	boolean allowed(@Param("tenant") String tenant, @Param("actor") String actor, @Param("store") String store,
 			@Param("merchant") String merchant);

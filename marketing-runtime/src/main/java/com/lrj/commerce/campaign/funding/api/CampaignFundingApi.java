@@ -1,5 +1,6 @@
 package com.lrj.commerce.campaign.funding.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.marketing.api.DecisionModels.Selection;
 import java.util.List;
@@ -24,5 +25,8 @@ public interface CampaignFundingApi {
 	void release(String tenant, String order);
 
 	List<Budget> budgets(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<Budget> budgets(Actor actor, String after, int limit, ListFilter filter);
 
 }

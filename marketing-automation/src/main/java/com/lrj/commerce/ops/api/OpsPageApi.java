@@ -1,5 +1,6 @@
 package com.lrj.commerce.ops.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.campaign.management.api.CampaignApi;
 import com.lrj.commerce.benefit.coupon.api.CouponApi;
@@ -49,6 +50,9 @@ public interface OpsPageApi {
 	View create(Actor actor, String key, Definition input);
 
 	List<View> list(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> list(Actor actor, String after, int limit, ListFilter filter);
 
 	List<View> versions(Actor actor, String id);
 

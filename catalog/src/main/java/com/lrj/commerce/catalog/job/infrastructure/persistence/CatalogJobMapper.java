@@ -17,7 +17,12 @@ public interface CatalogJobMapper {
 
 	Row lock(String tenant, String id);
 
-	List<Row> list(String tenant, String store, String after, int limit);
+	List<Row> list(String tenant, String store, String after, int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> list(String tenant, String store, String after, int limit) {
+		return list(tenant, store, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	List<Item> items(String tenant, String id, int after, int limit);
 

@@ -1,5 +1,6 @@
 package com.lrj.commerce.catalog.job.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +35,9 @@ public interface CatalogJobApi {
 	View create(Actor actor, String key, Create input);
 
 	List<View> list(Actor actor, String store, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> list(Actor actor, String store, String after, int limit, ListFilter filter);
 
 	List<Item> items(Actor actor, String store, String id, int after, int limit);
 

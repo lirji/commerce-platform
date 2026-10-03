@@ -15,6 +15,7 @@ import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.access.EmployeeAccess;
 import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.runtime.recovery.RecoveryAudit;
 import com.lrj.commerce.runtime.work.FailureClass;
@@ -274,9 +275,16 @@ public class EventDispatcher {
 
 	/** 运维查询只返回元信息与失败证据，不返回业务载荷或异常内容。 */
 	public List<EventMapper.EventView> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 元信息筛选先于分页，不读取业务载荷。 */
+	public List<EventMapper.EventView> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit = access.scope(actor, EVENT_READ);
 		Inputs.page(after, limit);
-		var result = mapper.list(actor.tenantId(), after, limit);
+		var result = mapper.list(actor.tenantId(), after, limit, filter);
 		EmployeeAccess.requireSame(permit, access.scope(actor, EVENT_READ));
 		return result;
 	}

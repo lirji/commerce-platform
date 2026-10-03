@@ -1,5 +1,6 @@
 package com.lrj.commerce.member.profile.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.member.profile.infrastructure.persistence.MemberMapper;
 import com.lrj.commerce.runtime.command.Commands;
@@ -132,9 +133,16 @@ public class MemberService implements MemberApi {
 
 	/** 查询同时校验管理权限和分页上限。 */
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var before = access.scope(actor, MEMBER_READ);
 		Inputs.page(after, limit);
-		var rows = mapper.list(actor.tenantId(), after, limit);
+		var rows = mapper.list(actor.tenantId(), after, limit, filter);
 		EmployeeAccess.requireSame(before, access.scope(actor, MEMBER_READ));
 		return rows;
 	}

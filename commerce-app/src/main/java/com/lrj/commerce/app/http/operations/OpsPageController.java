@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.operations;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.ops.api.OpsPageApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,8 +33,10 @@ public class OpsPageController {
 	/** 最新版本列表。 */
 	@GetMapping
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return pages.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return pages.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 真实数据只读预览，不持久化页面。 */

@@ -43,7 +43,12 @@ public interface SegmentMapper {
 
 	String definitionJson(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
-	List<Row> definitions(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
+	List<Row> definitions(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> definitions(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit) {
+		return definitions(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int schedule(@Param("tenant") String tenant, @Param("id") String id, @Param("input") SegmentApi.Schedule input,
 			@Param("now") Instant now, @Param("policy") String policy);

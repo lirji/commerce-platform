@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.aftersales;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.aftersales.api.AftersaleApi;
 import com.lrj.commerce.fulfillment.api.FulfillmentApi;
 import com.lrj.commerce.payment.refund.api.RefundApi;
@@ -33,8 +34,10 @@ public class AftersaleController {
 	/** 有界管理待履约列表。 */
 	@GetMapping("/admin/fulfillments")
 	public Object fulfillments(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return fulfillment.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return fulfillment.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 隔离WMS发货事实。 */
@@ -67,15 +70,19 @@ public class AftersaleController {
 	/** 个人申请列表。 */
 	@GetMapping("/aftersales")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return cases.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return cases.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 管理员审核列表。 */
 	@GetMapping("/admin/aftersales")
 	public Object admin(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return cases.adminList(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return cases.adminList(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 批准申请，已发货必须等待退货。 */
@@ -102,8 +109,10 @@ public class AftersaleController {
 	/** 财务退款查询不返回渠道机密。 */
 	@GetMapping("/admin/refunds")
 	public Object refunds(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return refunds.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return refunds.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 核对可信退款渠道。 */

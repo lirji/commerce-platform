@@ -1,5 +1,6 @@
 package com.lrj.commerce.member.profile.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
@@ -50,6 +51,9 @@ public interface MemberApi {
 
 	/** 有界游标分页。 */
 	List<View> list(Actor actor, String after, int limit);
+
+	/** 只读查询条件，不改变既有数据权限或业务记录。 */
+	List<View> list(Actor actor, String after, int limit, ListFilter filter);
 
 	/** 根据认证主体获取本人会员，客户端不能指定其他会员。 */
 	View current(Actor actor);

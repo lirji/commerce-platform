@@ -3,7 +3,8 @@
 <mapper namespace="com.lrj.commerce.inventory.infrastructure.persistence.InventoryMapper">
   <insert id="receive">INSERT INTO inventory_stock(tenant_id,store_id,sku_id,available,held,sold,version) VALUES(#{tenant},#{input.storeId},#{input.skuId},#{input.quantity},0,0,0) ON DUPLICATE KEY UPDATE available=available+#{input.quantity},version=version+1</insert>
   <select id="find" resultType="com.lrj.commerce.inventory.api.InventoryApi$Stock">SELECT store_id,sku_id,available,held,sold,version FROM inventory_stock WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id=#{sku}</select>
-  <select id="list" resultType="com.lrj.commerce.inventory.api.InventoryApi$Stock">SELECT store_id,sku_id,available,held,sold,version FROM inventory_stock WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id &gt; #{after} ORDER BY sku_id LIMIT #{limit}</select>
+  <select id="list" resultType="com.lrj.commerce.inventory.api.InventoryApi$Stock">SELECT store_id,sku_id,available,held,sold,version FROM inventory_stock WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id &gt; #{after}
+    <if test="filter.q != null">AND (LOCATE(#{filter.q},sku_id)&gt;0)</if> ORDER BY sku_id LIMIT #{limit}</select>
   <update id="reserve">UPDATE inventory_stock SET available=available-#{quantity},held=held+#{quantity},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{store} AND sku_id=#{sku} AND available&gt;=#{quantity}</update>
   <insert id="insertHold">INSERT INTO inventory_hold(tenant_id,order_id,store_id,sku_id,quantity,status) VALUES(#{tenant},#{order},#{store},#{sku},#{quantity},'RESERVED')</insert>
   <select id="holds" resultType="com.lrj.commerce.inventory.infrastructure.persistence.InventoryMapper$Hold">SELECT store_id,sku_id,quantity,status FROM inventory_hold WHERE tenant_id=#{tenant} AND order_id=#{order} ORDER BY sku_id FOR UPDATE</select>

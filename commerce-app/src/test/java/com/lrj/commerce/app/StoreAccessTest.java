@@ -142,6 +142,13 @@ class StoreAccessTest {
 		assertEquals(409, call("POST", "/v1/admin/store-grants/g1/status", admin, "stale", change).status());
 		post("/v1/admin/store-grants", admin, "merchantGrant", Map.of("grantId", "gm", "actorId", "operator",
 				"resourceType", "MERCHANT", "resourceId", "merchant1", "permission", "CATALOG", "reason", "商家管理员"));
+		// false 必须成为真实筛选条件；不能因布尔假值被当作未填写而返回全部授权。
+		var inactive = call("GET", "/v1/admin/store-grants?q=operator&enabled=false&limit=1", admin, null, null);
+		assertEquals(200, inactive.status());
+		assertEquals(1, inactive.body().size());
+		assertEquals("g1", inactive.body().get(0).path("grantId").asString());
+		assertEquals("gm", call("GET", "/v1/admin/store-grants?q=operator&enabled=true&limit=1", admin, null, null)
+				.body().get(0).path("grantId").asString());
 		assertEquals(2, call("GET", "/v1/operations/stores", operator, null, null).body().size());
 		post("/v1/admin/stores", admin, "s3", Map.of("storeId", "store3", "merchantId", "merchant1", "name", "新增门店"));
 		assertEquals(3, call("GET", "/v1/operations/stores", operator, null, null).body().size());

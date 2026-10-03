@@ -23,7 +23,13 @@ public interface CouponMapper {
 			@Param("version") long version);
 
 	List<DefinitionRow> definitions(@Param("tenant") String tenant, @Param("store") String store,
-			@Param("after") String after, @Param("limit") int limit, @Param("admin") boolean admin);
+			@Param("after") String after, @Param("limit") int limit, @Param("admin") boolean admin, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<DefinitionRow> definitions(@Param("tenant") String tenant, @Param("store") String store,
+			@Param("after") String after, @Param("limit") int limit, @Param("admin") boolean admin) {
+		return definitions(tenant, store, after, limit, admin, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int issue(@Param("tenant") String tenant, @Param("id") String id, @Param("version") long version);
 
@@ -68,7 +74,13 @@ public interface CouponMapper {
 	LockedCoupon lock(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id);
 
 	List<Coupon> wallet(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省不附加筛选。 */
+	default List<Coupon> wallet(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
+			@Param("limit") int limit) {
+		return wallet(tenant, member, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int revoke(@Param("tenant") String tenant, @Param("id") String id);
 

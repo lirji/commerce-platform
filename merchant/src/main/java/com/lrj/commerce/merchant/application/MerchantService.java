@@ -1,5 +1,6 @@
 package com.lrj.commerce.merchant.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.merchant.api.MerchantApi;
 import com.lrj.commerce.merchant.infrastructure.persistence.MerchantMapper;
 import com.lrj.commerce.runtime.command.Commands;
@@ -53,11 +54,18 @@ public class MerchantService implements MerchantApi {
 
 	/** 查询同时校验管理权限和分页上限。 */
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
 		var before = access.scope(actor, MERCHANT_READ);
 		if (before.filter().paths().stream().anyMatch(p -> !p.stores().isEmpty()))
 			throw new DomainException(DomainException.Code.FORBIDDEN, "商家范围不能包含门店条件");
-		var rows = mapper.listScoped(actor.tenantId(), before.filter(), after, limit);
+		var rows = mapper.listScoped(actor.tenantId(), before.filter(), after, limit, filter);
 		EmployeeAccess.requireSame(before, access.scope(actor, MERCHANT_READ));
 		return rows;
 	}

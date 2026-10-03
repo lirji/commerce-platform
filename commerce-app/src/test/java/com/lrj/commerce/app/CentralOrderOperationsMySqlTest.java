@@ -5,6 +5,7 @@ import com.lrj.authz.sdk.*;
 import com.lrj.commerce.app.iam.CentralEmployeeService;
 import com.lrj.commerce.runtime.api.access.EmployeeAccess;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
 import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.fulfillment.api.FulfillmentApi;
@@ -109,6 +110,16 @@ class CentralOrderOperationsMySqlTest {
         assertEquals("1-allowed",fulfillment.list(actor(FULFILLMENT_READ),"",1).getFirst().orderId());
         assertEquals("1-case",cases.adminList(actor(AFTERSALE_READ),"",1).getFirst().caseId());
         assertEquals("1-refund",refunds.list(actor(REFUND_READ),"",1).getFirst().refundId());
+        // 查询条件不能覆盖 SQL 门店权限；只匹配未授权记录时必须为空。
+        var deniedFilter = new ListFilter("0-denied", "PAID", null, null);
+        assertTrue(orders.adminList(actor(ORDER_READ), "", 1, deniedFilter).isEmpty());
+        assertEquals("1-allowed", orders.adminList(actor(ORDER_READ), "", 1, new ListFilter("allowed", "PAID", Instant.now().minusSeconds(200), Instant.now())).getFirst().orderId());
+        assertTrue(orders.adminList(actor(ORDER_READ), "", 1, new ListFilter(null, "PAID", Instant.now(), null)).isEmpty());
+        assertTrue(fulfillment.list(actor(FULFILLMENT_READ), "", 1, new ListFilter("0-denied", "READY", null, null)).isEmpty());
+        assertTrue(cases.adminList(actor(AFTERSALE_READ), "", 1, new ListFilter("0-case", "REQUESTED", null, null)).isEmpty());
+        assertTrue(refunds.list(actor(REFUND_READ), "", 1, new ListFilter("0-refund", "SUCCEEDED", null, null)).isEmpty());
+        assertEquals("1-case", cases.adminList(actor(AFTERSALE_READ), "", 1, new ListFilter("1-case", "REQUESTED", null, null)).getFirst().caseId());
+        assertEquals("1-refund", refunds.list(actor(REFUND_READ), "", 1, new ListFilter("1-refund", "SUCCEEDED", null, null)).getFirst().refundId());
         forbidden(()->orders.adminRead(actor(ORDER_READ),"0-denied"));forbidden(()->orders.adminList(admin,"",1));
         assertEquals(200,http("GET","/v1/orders/1-allowed",customerToken,false,null,null).statusCode());
         assertEquals(403,http("GET","/v1/admin/orders",adminToken,false,null,null).statusCode());

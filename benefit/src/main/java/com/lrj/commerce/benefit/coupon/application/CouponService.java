@@ -1,5 +1,6 @@
 package com.lrj.commerce.benefit.coupon.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.coupon.api.CouponApi;
 import com.lrj.commerce.benefit.coupon.infrastructure.persistence.CouponMapper;
 import com.lrj.commerce.member.profile.api.MemberApi;
@@ -104,12 +105,20 @@ public class CouponService implements CouponApi {
 
 	/** 消费者可见本店定义，但领取仍需服务端资格校验。 */
 	public List<DefinitionView> definitions(Actor actor, String store, String after, int limit) {
+		return definitions(actor, store, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<DefinitionView> definitions(Actor actor, String store, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoStatus();
+		filter.requireNoTime();
 		// 共享客户目录的非会员同样执行员工门禁，接管后旧ADMIN不能从别名入口旁路。
 		boolean customer = actor.role() == Actor.Role.MEMBER;
 		var permit = customer ? null : access.scope(actor, COUPON_DEFINITION_READ);
 		stores.requireActive(actor, store);
 		Inputs.page(after, limit);
-		var result = mapper.definitions(actor.tenantId(), store, after, limit, !customer)
+		var result = mapper.definitions(actor.tenantId(), store, after, limit, !customer, filter)
 			.stream()
 			.map(this::definition)
 			.toList();
@@ -289,8 +298,15 @@ public class CouponService implements CouponApi {
 	}
 
 	public List<Coupon> wallet(Actor actor, String after, int limit) {
+		return wallet(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<Coupon> wallet(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
-		return mapper.wallet(actor.tenantId(), members.current(actor).memberId(), after, limit);
+		return mapper.wallet(actor.tenantId(), members.current(actor).memberId(), after, limit, filter);
 	}
 
 	/** 报价只校验资格，不消费券，最终占用发生在下单事务。 */

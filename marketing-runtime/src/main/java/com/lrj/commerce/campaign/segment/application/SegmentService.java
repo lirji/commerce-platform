@@ -1,5 +1,6 @@
 package com.lrj.commerce.campaign.segment.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.campaign.segment.infrastructure.persistence.SegmentMapper;
 import com.lrj.commerce.member.growth.api.MemberGrowthApi;
 import com.lrj.commerce.marketing.api.*;
@@ -95,9 +96,16 @@ public class SegmentService implements SegmentApi {
 
 	/** 有界最新定义目录。 */
 	public List<View> definitions(Actor actor, String after, int limit) {
+		return definitions(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> definitions(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoStatus();
+		filter.requireNoTime();
 		var permit = access.scope(actor, SEGMENT_READ);
 		Inputs.page(after, limit);
-		var rows = mapper.definitions(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var rows = mapper.definitions(actor.tenantId(), after, limit, filter).stream().map(this::view).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, SEGMENT_READ));
 		return rows;
 	}

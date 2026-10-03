@@ -1,5 +1,6 @@
 package com.lrj.commerce.campaign.asset.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.campaign.asset.infrastructure.persistence.AssetMapper;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
@@ -62,9 +63,17 @@ public class MarketingAssetService implements MarketingAssets {
 
 	/** 最新版本摘要不携成员清单，返回前复核身份、路由与完整租户范围。 */
 	public List<AudienceView> audiences(Actor actor, String after, int limit) {
+		return audiences(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<AudienceView> audiences(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoStatus();
+		filter.requireNoTime();
 		var permit = access.scope(actor, AUDIENCE_READ);
 		Inputs.page(after, limit);
-		var result = mapper.audiences(actor.tenantId(), after, limit);
+		var result = mapper.audiences(actor.tenantId(), after, limit, filter);
 		EmployeeAccess.requireSame(permit, access.scope(actor, AUDIENCE_READ));
 		return result;
 	}
@@ -137,9 +146,16 @@ public class MarketingAssetService implements MarketingAssets {
 
 	/** 最新版本目录与可信字段独立于写权限，返回前复核完整租户范围。 */
 	public List<RuleView> rules(Actor actor, String after, int limit) {
+		return rules(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<RuleView> rules(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit = access.scope(actor, RULE_READ);
 		Inputs.page(after, limit);
-		var result = mapper.rules(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var result = mapper.rules(actor.tenantId(), after, limit, filter).stream().map(this::view).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, RULE_READ));
 		return result;
 	}

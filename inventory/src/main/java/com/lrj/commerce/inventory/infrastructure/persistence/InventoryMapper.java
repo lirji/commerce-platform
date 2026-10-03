@@ -16,7 +16,13 @@ public interface InventoryMapper {
 	Stock find(@Param("tenant") String tenant, @Param("store") String store, @Param("sku") String sku);
 
 	List<Stock> list(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省不附加筛选。 */
+	default List<Stock> list(@Param("tenant") String tenant, @Param("store") String store, @Param("after") String after,
+			@Param("limit") int limit) {
+		return list(tenant, store, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int reserve(@Param("tenant") String tenant, @Param("store") String store, @Param("sku") String sku,
 			@Param("quantity") int quantity);

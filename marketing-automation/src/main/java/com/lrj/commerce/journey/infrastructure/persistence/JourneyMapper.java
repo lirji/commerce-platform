@@ -21,7 +21,12 @@ public interface JourneyMapper {
 
 	Scan scanLock(String tenant, String id, long version);
 
-	List<Scan> scans(String tenant, String after, int limit);
+	List<Scan> scans(String tenant, String after, int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Scan> scans(String tenant, String after, int limit) {
+		return scans(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int scanAdvance(String tenant, Scan previous, String status, String cursor, Instant before, Instant due,
 			int scanned, int enrolled);
@@ -61,7 +66,12 @@ public interface JourneyMapper {
 
 	List<Row> group(String tenant, String id);
 
-	List<Row> definitions(String tenant, String after, int limit);
+	List<Row> definitions(String tenant, String after, int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Row> definitions(String tenant, String after, int limit) {
+		return definitions(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	List<Row> published(String tenant, String store, Instant now);
 
@@ -80,7 +90,12 @@ public interface JourneyMapper {
 
 	Instance dueLock(String tenant, String id, Instant now);
 
-	List<Instance> instances(String tenant, String member, String after, int limit);
+	List<Instance> instances(String tenant, String member, String after, int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
+	default List<Instance> instances(String tenant, String member, String after, int limit) {
+		return instances(tenant, member, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	List<Instance> orderInstances(String tenant, String order);
 

@@ -1,5 +1,6 @@
 package com.lrj.commerce.inventory.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.inventory.api.InventoryApi;
 import com.lrj.commerce.runtime.api.access.EmployeeAccess;
 import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
@@ -58,11 +59,19 @@ public class InventoryService implements InventoryApi {
 
 	/** 必填单门店，在SQL分页前完成该门店能力检查，读取后复核当前授权。 */
 	public List<Stock> list(Actor actor, String storeId, String after, int limit) {
+		return list(actor, storeId, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<Stock> list(Actor actor, String storeId, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoStatus();
+		filter.requireNoTime();
 		Identifiers.require(storeId);
 		Inputs.page(after, limit);
 		var store = centralStore(actor, storeId);
 		var before = access.require(actor, INVENTORY_READ, fact(store));
-		var rows = mapper.list(actor.tenantId(), storeId, after, limit);
+		var rows = mapper.list(actor.tenantId(), storeId, after, limit, filter);
 		var afterPermit = access.require(actor, INVENTORY_READ, fact(centralStore(actor, storeId)));
 		if (!java.util.Objects.equals(before.route(), afterPermit.route())
 				|| !java.util.Objects.equals(before.fact(), afterPermit.fact())

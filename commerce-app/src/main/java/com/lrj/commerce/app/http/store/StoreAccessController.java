@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.store;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.store.access.api.StoreAccessApi;
 import com.lrj.commerce.app.iam.CentralStoreReadService;
 import com.lrj.commerce.app.iam.CentralStoreIdentity;
@@ -39,8 +40,10 @@ public class StoreAccessController {
 	/** 授权审查列表。 */
 	@GetMapping("/admin/store-grants")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return access.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to, @RequestParam(required = false) Boolean enabled) {
+		return access.list(actor, after, limit, new ListFilter(q, status, from, to, enabled));
 	}
 
 	/** 运营仅见被授权资源。 */

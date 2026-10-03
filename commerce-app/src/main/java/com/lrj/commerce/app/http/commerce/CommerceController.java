@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.commerce;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.merchant.api.MerchantApi;
@@ -50,8 +51,10 @@ public class CommerceController {
 
 	@GetMapping("/admin/members")
 	public Object members(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return members.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return members.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	@PostMapping("/admin/merchants")
@@ -62,8 +65,10 @@ public class CommerceController {
 
 	@GetMapping("/admin/merchants")
 	public Object merchants(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return merchants.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return merchants.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	@PostMapping("/admin/stores")
@@ -74,8 +79,10 @@ public class CommerceController {
 
 	@GetMapping("/admin/stores")
 	public Object stores(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return stores.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return stores.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	@PostMapping("/admin/skus")
@@ -86,8 +93,10 @@ public class CommerceController {
 
 	@GetMapping({ "/catalog", "/admin/skus" })
 	public Object catalog(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return catalog.list(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return catalog.list(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	@PostMapping("/admin/campaigns")
@@ -98,8 +107,10 @@ public class CommerceController {
 
 	@GetMapping("/admin/campaigns")
 	public Object campaigns(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return campaigns.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return campaigns.list(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	public record Version(long expectedVersion) {

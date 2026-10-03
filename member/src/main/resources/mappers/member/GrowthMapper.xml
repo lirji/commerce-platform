@@ -28,7 +28,8 @@
   <select id="tags" resultType="string">SELECT tag_id FROM member_tag_assignment WHERE tenant_id=#{tenant} AND member_id=#{member} AND active=TRUE ORDER BY tag_id LIMIT 65</select>
   <insert id="tag">INSERT INTO member_tag_definition(tenant_id,tag_id,name) VALUES(#{tenant},#{input.tagId},#{input.name})</insert>
   <select id="tagDefinition" resultType="com.lrj.commerce.member.tag.api.MemberTagApi$Definition">SELECT tag_id,name FROM member_tag_definition WHERE tenant_id=#{tenant} AND tag_id=#{id}</select>
-  <select id="tagDefinitions" resultType="com.lrj.commerce.member.tag.api.MemberTagApi$Definition">SELECT tag_id,name FROM member_tag_definition WHERE tenant_id=#{tenant} AND tag_id&gt;#{after} ORDER BY tag_id LIMIT #{limit}</select>
+  <select id="tagDefinitions" resultType="com.lrj.commerce.member.tag.api.MemberTagApi$Definition">SELECT tag_id,name FROM member_tag_definition WHERE tenant_id=#{tenant} AND tag_id&gt;#{after}
+    <if test="filter.q != null">AND (LOCATE(#{filter.q},tag_id)&gt;0 OR LOCATE(#{filter.q},name)&gt;0)</if> ORDER BY tag_id LIMIT #{limit}</select>
   <select id="assignment" resultType="com.lrj.commerce.member.tag.api.MemberTagApi$Assignment">SELECT tag_id,active,version,source,reason FROM member_tag_assignment WHERE tenant_id=#{tenant} AND member_id=#{member} AND tag_id=#{tag}</select>
   <insert id="assign">INSERT INTO member_tag_assignment(tenant_id,member_id,tag_id,active,version,source,reason) VALUES(#{tenant},#{member},#{input.tagId},#{input.active},1,'MANUAL',#{input.reason}) ON DUPLICATE KEY UPDATE active=#{input.active},version=version+1,reason=#{input.reason}</insert>
   <select id="assignments" resultType="com.lrj.commerce.member.tag.api.MemberTagApi$Assignment">SELECT tag_id,active,version,source,reason FROM member_tag_assignment WHERE tenant_id=#{tenant} AND member_id=#{member} AND tag_id&gt;#{after} ORDER BY tag_id LIMIT #{limit}</select>

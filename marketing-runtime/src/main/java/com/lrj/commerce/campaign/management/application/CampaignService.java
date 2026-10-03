@@ -1,5 +1,6 @@
 package com.lrj.commerce.campaign.management.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.campaign.funding.infrastructure.persistence.BudgetMapper;
 import com.lrj.commerce.campaign.management.infrastructure.persistence.CampaignMapper;
 import com.lrj.commerce.marketing.api.DecisionModels.*;
@@ -247,9 +248,16 @@ public class CampaignService implements CampaignApi {
 
 	/** 管理台按活动ID列出每个活动最新内容版本。 */
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit = access.scope(actor, CAMPAIGN_READ);
 		Inputs.page(after, limit);
-		var result = mapper.list(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var result = mapper.list(actor.tenantId(), after, limit, filter).stream().map(this::view).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, CAMPAIGN_READ));
 		return result;
 	}

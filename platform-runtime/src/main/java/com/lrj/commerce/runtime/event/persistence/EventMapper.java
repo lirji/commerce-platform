@@ -36,7 +36,13 @@ public interface EventMapper {
 			@Param("windowMillis") long windowMillis, @Param("limit") int limit);
 
 	java.util.List<EventView> list(@Param("tenant") String tenant, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 既有内部读取保留无筛选语义。 */
+	default java.util.List<EventView> list(@Param("tenant") String tenant, @Param("after") String after,
+			@Param("limit") int limit) {
+		return list(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 	int retry(@Param("tenant") String tenant, @Param("id") String id);
 

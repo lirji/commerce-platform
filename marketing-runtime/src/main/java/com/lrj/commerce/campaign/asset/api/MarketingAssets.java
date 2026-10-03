@@ -1,5 +1,6 @@
 package com.lrj.commerce.campaign.asset.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.time.Instant;
 import java.util.List;
@@ -41,6 +42,9 @@ public interface MarketingAssets {
 
 	List<AudienceView> audiences(Actor actor, String after, int limit);
 
+	/** 只读条件保持当前业务授权边界。 */
+	List<AudienceView> audiences(Actor actor, String after, int limit, ListFilter filter);
+
 	List<Source> sources(String tenant, String member, List<Ref> refs, Instant now);
 
 	/** 已发布固定人群的有界成员游标，不能读取未完成刷新结果。 */
@@ -56,6 +60,9 @@ public interface MarketingAssets {
 	java.util.Map<String, String> ruleFields(Actor actor);
 
 	List<RuleView> rules(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<RuleView> rules(Actor actor, String after, int limit, ListFilter filter);
 
 	RuleNode publishedRule(String tenant, Ref ref);
 

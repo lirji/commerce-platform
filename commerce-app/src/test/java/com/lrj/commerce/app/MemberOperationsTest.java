@@ -115,6 +115,35 @@ class MemberOperationsTest {
 		return Map.of("storeId", "store1", "items", List.of(Map.of("skuId", "sku1", "quantity", quantity)));
 	}
 
+	/** 真实HTTP/SQL验证跨页筛选、字面特殊字符、查询边界与租户隔离。 */
+	@Test
+	void listFiltersRunBeforeLimitAndDoNotTreatKeywordsAsSqlPatterns() throws Exception {
+		seed();
+		post("/v1/admin/members", admin, "second", Map.of("memberId", "m2", "actorId", "second", "displayName", "特殊%_", "memberLevel", "VIP"));
+		post("/v1/admin/members", admin, "third", Map.of("memberId", "m3", "actorId", "third", "displayName", "最后会员", "memberLevel", "NORMAL"));
+		assertEquals("m1", call("GET", "/v1/admin/members?limit=1", admin, null, null).body().get(0).get("memberId").asString());
+		assertEquals("m3", call("GET", "/v1/admin/members?q=m3&limit=1", admin, null, null).body().get(0).get("memberId").asString());
+		assertEquals("m2", call("GET", "/v1/admin/members?q=%25_&limit=1", admin, null, null).body().get(0).get("memberId").asString());
+		assertEquals(0, call("GET", "/v1/admin/members?q=m3&after=m3&limit=1", admin, null, null).body().size());
+		post("/v1/admin/members/m3/status", admin, "freeze-third", Map.of("expectedVersion", 0, "value", "FROZEN", "reason", "筛选验收"));
+		assertEquals("m3", call("GET", "/v1/admin/members?status=FROZEN&limit=1", admin, null, null).body().get(0).get("memberId").asString());
+		assertEquals(0, call("GET", "/v1/admin/members?q=m3", token("isolated-" + UUID.randomUUID(), "admin", "ADMIN"), null, null).body().size());
+		assertEquals(403, call("GET", "/v1/admin/members?q=m3", member, null, null).status());
+		assertEquals(400, call("GET", "/v1/admin/members?q=" + "x".repeat(65), admin, null, null).status());
+		assertEquals(400, call("GET", "/v1/admin/members?from=2026-01-01T00:00:00Z", admin, null, null).status());
+		assertEquals(1, call("GET", "/v1/admin/merchants?q=merchant1&status=ACTIVE&limit=1", admin, null, null).body().size());
+		assertEquals(1, call("GET", "/v1/admin/stores?q=store1&status=ACTIVE&limit=1", admin, null, null).body().size());
+		assertEquals(1, call("GET", "/v1/catalog?storeId=store1&q=sku1&limit=1", member, null, null).body().size());
+		// 即使列表为空也实际执行每个 Owner SQL，验证关键词字段和 JSON 投影可查询。
+		for (var route : List.of("/admin/events", "/admin/member-tags", "/admin/campaign-budgets", "/admin/store-grants", "/admin/campaigns", "/admin/rules", "/admin/audiences", "/admin/segments", "/admin/journeys", "/admin/journey-instances", "/admin/journey-scans", "/admin/ops-pages", "/admin/entitlements", "/entitlements", "/coupons", "/admin/coupon-deliveries?storeId=store1", "/admin/coupon-definitions?storeId=store1", "/admin/entitlement-definitions?storeId=store1", "/admin/point-offers?storeId=store1", "/point-offers?storeId=store1", "/operations/catalog-jobs?storeId=store1", "/operations/products?storeId=store1", "/operations/skus?storeId=store1", "/admin/inventory?storeId=store1")) {
+			var reply = call("GET", "/v1" + route + (route.contains("?") ? "&" : "?") + "q=unmatched-filter&limit=1", route.equals("/coupons") || route.equals("/entitlements") ? member : admin, null, null);
+			assertEquals(200, reply.status(), route + ": " + reply.body());
+			assertEquals(0, reply.body().size(), route);
+		}
+		assertEquals(400, call("GET", "/v1/orders?from=2026-01-02T00:00:00Z&to=2026-01-01T00:00:00Z", member, null, null).status());
+
+	}
+
 	@Test
 	void lifecycleIsVersionedAuditedAndTerminal() throws Exception {
 		seed();

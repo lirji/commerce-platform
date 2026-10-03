@@ -1,5 +1,6 @@
 package com.lrj.commerce.benefit.coupon.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.time.Instant;
 import java.util.List;
@@ -52,6 +53,9 @@ public interface CouponApi {
 
 	List<DefinitionView> definitions(Actor actor, String store, String after, int limit);
 
+	/** 只读条件保持当前业务授权边界。 */
+	List<DefinitionView> definitions(Actor actor, String store, String after, int limit, ListFilter filter);
+
 	/** 受控兑换的定义必须禁止公开领取。 */
 	void validateExchange(String tenant, String store, String definition, long version, Instant from, Instant to);
 
@@ -83,6 +87,9 @@ public interface CouponApi {
 	Coupon claim(Actor actor, String key, String definition, long version);
 
 	List<Coupon> wallet(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<Coupon> wallet(Actor actor, String after, int limit, ListFilter filter);
 
 	Coupon eligible(Actor actor, String coupon, String store, String gross);
 

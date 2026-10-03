@@ -1,5 +1,6 @@
 package com.lrj.commerce.benefit.entitlement.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.time.Instant;
 import java.util.List;
@@ -55,6 +56,9 @@ public interface EntitlementApi {
 
 	List<DefinitionView> definitions(Actor actor, String store, String after, int limit);
 
+	/** 只读条件保持当前业务授权边界。 */
+	List<DefinitionView> definitions(Actor actor, String store, String after, int limit, ListFilter filter);
+
 	void validateBinding(String tenant, String store, Ref ref, Instant from, Instant to);
 
 	void reserveOrder(Actor actor, String order, String member, String store, Ref ref);
@@ -70,7 +74,13 @@ public interface EntitlementApi {
 
 	List<View> wallet(Actor actor, String after, int limit);
 
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> wallet(Actor actor, String after, int limit, ListFilter filter);
+
 	List<View> adminList(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> adminList(Actor actor, String after, int limit, ListFilter filter);
 
 	List<Ledger> ledger(Actor actor, String grant, String after, int limit);
 

@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.benefit.pointoffer;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.pointoffer.api.PointOfferApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,15 +34,19 @@ public class PointOfferController {
 	/** 员工读取只使用独立目录权限，服务层兼容旧权威。 */
 	@GetMapping("/admin/point-offers")
 	public Object adminList(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return offers.list(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return offers.list(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 会员只可见当前有效目录。 */
 	@GetMapping("/point-offers")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return offers.list(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return offers.list(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 原子扣分和发放受理。 */

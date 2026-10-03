@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.benefit.entitlement;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,22 +27,28 @@ public class EntitlementController {
 	/** 店铺维度查询发行额度。 */
 	@GetMapping("/admin/entitlement-definitions")
 	public Object definitions(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return benefits.definitions(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return benefits.definitions(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 本人权益钱包。 */
 	@GetMapping("/entitlements")
 	public Object wallet(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return benefits.wallet(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return benefits.wallet(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 管理待发放或待补偿条目。 */
 	@GetMapping("/admin/entitlements")
 	public Object admin(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return benefits.adminList(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return benefits.adminList(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 用户核销需要服务端余额与有效期校验。 */

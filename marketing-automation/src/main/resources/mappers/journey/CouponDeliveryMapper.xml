@@ -6,7 +6,9 @@
   <update id="startRevoke">UPDATE automation_coupon_batch SET revoke_source_json=#{source} WHERE tenant_id=#{tenant} AND batch_id=#{id} AND mode='ISSUE' AND revoke_source_json IS NULL</update>
   <select id="find" resultType="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id}</select>
   <select id="lock" resultType="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND batch_id=#{id} FOR UPDATE</select>
-  <select id="list" resultType="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND store_id=#{store} AND batch_id&gt;#{after} ORDER BY batch_id LIMIT #{limit}</select>
+  <select id="list" resultType="com.lrj.commerce.journey.delivery.infrastructure.persistence.CouponDeliveryMapper$Row">SELECT <include refid="row"/> FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND store_id=#{store} AND batch_id&gt;#{after}
+    <if test="filter.q != null">AND (LOCATE(#{filter.q},batch_id)&gt;0 OR LOCATE(#{filter.q},JSON_UNQUOTE(JSON_EXTRACT(content_json,'$.name')))&gt;0)</if>
+    <if test="filter.status != null">AND status=#{filter.status}</if> ORDER BY batch_id LIMIT #{limit}</select>
   <select id="pending" resultType="string">SELECT batch_id FROM automation_coupon_batch WHERE tenant_id=#{tenant} AND status IN ('RUNNING','REVOKING') AND available_at&lt;=#{now} ORDER BY available_at,batch_id LIMIT 1</select>
   <select id="tenants" resultType="string">SELECT DISTINCT tenant_id FROM automation_coupon_batch WHERE tenant_id&gt;#{after} AND status IN ('RUNNING','REVOKING') AND available_at&lt;=#{now} ORDER BY tenant_id LIMIT #{limit}</select>
   <update id="status">UPDATE automation_coupon_batch SET status=#{status},mode=#{mode},attempts=0,error_code=NULL,available_at=#{now},version=version+1 WHERE tenant_id=#{tenant} AND batch_id=#{id} AND version=#{expected}</update>

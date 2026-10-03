@@ -24,6 +24,11 @@ public interface BudgetMapper {
 
 	int finishHold(@Param("tenant") String tenant, @Param("order") String order, @Param("status") String status);
 
-	List<Budget> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
+	List<Budget> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+
+	/** 既有内部读取保留无筛选语义。 */
+	default List<Budget> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit) {
+		return list(tenant, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+	}
 
 }

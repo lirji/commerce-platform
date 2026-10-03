@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.benefit.coupon;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.coupon.api.CouponApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,8 +27,10 @@ public class CouponController {
 	/** 消费者和管理者读取相同权威定义。 */
 	@GetMapping({ "/coupon-definitions", "/admin/coupon-definitions" })
 	public Object definitions(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return coupons.definitions(actor, storeId, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return coupons.definitions(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 同会员同券版本最多领取一次。 */
@@ -40,8 +43,10 @@ public class CouponController {
 	/** 钱包只返回本人权益。 */
 	@GetMapping("/coupons")
 	public Object wallet(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return coupons.wallet(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return coupons.wallet(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 }

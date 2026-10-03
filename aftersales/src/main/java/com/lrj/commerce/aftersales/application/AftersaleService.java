@@ -1,5 +1,6 @@
 package com.lrj.commerce.aftersales.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.aftersales.api.AftersaleApi;
 import com.lrj.commerce.aftersales.infrastructure.persistence.AftersaleMapper;
 import com.lrj.commerce.ordering.order.api.OrderApi;
@@ -123,17 +124,31 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 	}
 
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit)
+		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit, filter)
 			.stream()
 			.map(this::view)
 			.toList();
 	}
 
 	public List<View> adminList(Actor actor, String after, int limit) {
+		return adminList(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> adminList(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
 		var permit = access.scope(actor, AFTERSALE_READ);
-		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit).stream().map(this::view).toList();
+		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit, filter).stream().map(this::view).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, AFTERSALE_READ));
 		return result;
 	}

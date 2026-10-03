@@ -1,5 +1,6 @@
 package com.lrj.commerce.store.management.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.store.management.api.StoreApi;
 import com.lrj.commerce.store.management.infrastructure.persistence.StoreMapper;
 import com.lrj.commerce.runtime.command.Commands;
@@ -72,9 +73,16 @@ public class StoreService implements StoreApi {
 
 	/** 查询同时校验管理权限和分页上限。 */
 	public List<View> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
+	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
 		var before = access.scope(actor, STORE_DIRECTORY_READ);
-		var rows = mapper.listScoped(actor.tenantId(), before.filter(), after, limit);
+		var rows = mapper.listScoped(actor.tenantId(), before.filter(), after, limit, filter);
 		EmployeeAccess.requireSame(before, access.scope(actor, STORE_DIRECTORY_READ));
 		return rows;
 	}

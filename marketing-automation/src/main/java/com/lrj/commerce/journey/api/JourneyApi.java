@@ -1,5 +1,6 @@
 package com.lrj.commerce.journey.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.campaign.rule.api.RuleNode;
 import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
@@ -98,6 +99,9 @@ public interface JourneyApi {
 	/** 持久扫描状态与人工恢复均有界且受租户约束。 */
 	List<Scan> scans(Actor actor, String after, int limit);
 
+	/** 只读条件保持当前业务授权边界。 */
+	List<Scan> scans(Actor actor, String after, int limit, ListFilter filter);
+
 	Scan retryScan(Actor actor, String key, String id, long version, ScanRetry input);
 
 	record EffectSummary(String journeyId, long enrolled, long completed, long notified, long entrySuppressed,
@@ -144,6 +148,9 @@ public interface JourneyApi {
 	/** 内容只能通过创建新版本修改。 */
 	List<View> definitions(Actor actor, String after, int limit);
 
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> definitions(Actor actor, String after, int limit, ListFilter filter);
+
 	/** 审批和发布包含预期版本与审计。 */
 	View change(Actor actor, String key, String id, long version, long expected, String action);
 
@@ -152,6 +159,9 @@ public interface JourneyApi {
 
 	/** 管理员与本人分别限定查询范围。 */
 	List<Instance> instances(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<Instance> instances(Actor actor, String after, int limit, ListFilter filter);
 
 	/** 取消仅停止后续节点；已有业务效果不会被隐藏。 */
 	Instance control(Actor actor, String key, String id, String action);

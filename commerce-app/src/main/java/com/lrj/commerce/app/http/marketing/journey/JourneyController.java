@@ -1,5 +1,6 @@
 package com.lrj.commerce.app.http.marketing.journey;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.journey.api.JourneyApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,8 +30,10 @@ public class JourneyController {
 	/** 有界读取最新定义。 */
 	@GetMapping("/admin/journeys")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return journeys.definitions(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return journeys.definitions(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 无副作用校验，机器码用于运营定位无效节点配置。 */
@@ -64,8 +67,10 @@ public class JourneyController {
 	/** 查询范围由服务端认证身份决定。 */
 	@GetMapping({ "/admin/journey-instances", "/journey-instances" })
 	public Object instances(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return journeys.instances(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return journeys.instances(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 只读取固定版本和真实执行记录，不以当前定义补写历史。 */
@@ -91,8 +96,10 @@ public class JourneyController {
 	/** 持久扫描的当前进度与失败状态。 */
 	@GetMapping("/admin/journey-scans")
 	public Object scans(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return journeys.scans(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
+		return journeys.scans(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
 	/** 隔离恢复保留原检查点，并记录原因。 */

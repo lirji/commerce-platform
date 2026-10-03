@@ -1,5 +1,6 @@
 package com.lrj.commerce.inventory.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
@@ -17,6 +18,9 @@ public interface InventoryApi {
 
 	/** 店铺维度有界管理查询。 */
 	List<Stock> list(Actor actor, String storeId, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<Stock> list(Actor actor, String storeId, String after, int limit, ListFilter filter);
 
 	/** 必须加入调用方本地事务，不跨网络。 */
 	void reserve(Actor actor, String orderId, String storeId, String skuId, int quantity);

@@ -1,5 +1,6 @@
 package com.lrj.commerce.store.access.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.store.access.infrastructure.persistence.StoreAccessMapper;
 import com.lrj.commerce.merchant.api.MerchantApi;
 import com.lrj.commerce.kernel.*;
@@ -79,9 +80,16 @@ public class StoreAccessService implements StoreAccessApi {
 
 	/** 全租户授权列表仅平台管理员可见。 */
 	public List<Grant> list(Actor actor, String after, int limit) {
+		return list(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<Grant> list(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoStatus();
+		filter.requireNoTime();
 		actor.requireAdmin();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), after, limit);
+		return mapper.list(actor.tenantId(), after, limit, filter);
 	}
 
 	/** 查询在数据库中过滤范围，撤销后不会返回旧目录。 */

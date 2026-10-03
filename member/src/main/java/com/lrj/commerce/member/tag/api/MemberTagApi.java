@@ -1,5 +1,6 @@
 package com.lrj.commerce.member.tag.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.util.List;
 
@@ -18,6 +19,9 @@ public interface MemberTagApi {
 	Definition create(Actor actor, String key, Definition input);
 
 	List<Definition> definitions(Actor actor, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<Definition> definitions(Actor actor, String after, int limit, ListFilter filter);
 
 	Assignment assign(Actor actor, String key, String memberId, Assign input);
 

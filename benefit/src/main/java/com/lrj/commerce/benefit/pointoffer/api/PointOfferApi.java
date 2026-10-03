@@ -1,5 +1,6 @@
 package com.lrj.commerce.benefit.pointoffer.api;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +37,9 @@ public interface PointOfferApi {
 
 	/** 稳定游标，会员只看当前有效目录。 */
 	List<View> list(Actor actor, String store, String after, int limit);
+
+	/** 只读条件保持当前业务授权边界。 */
+	List<View> list(Actor actor, String store, String after, int limit, ListFilter filter);
 
 	/** 会员本人原子扣分及资产受理。 */
 	Receipt redeem(Actor actor, String key, String id);

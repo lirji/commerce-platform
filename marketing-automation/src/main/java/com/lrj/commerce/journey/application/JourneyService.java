@@ -1,5 +1,6 @@
 package com.lrj.commerce.journey.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.journey.api.JourneyApi;
 import com.lrj.commerce.journey.infrastructure.persistence.JourneyMapper;
 import com.lrj.commerce.kernel.*;
@@ -197,9 +198,16 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 查询每个旅程的最新内容版本，实例仍保留自己的旧版本。 */
 	public List<View> definitions(Actor actor, String after, int limit) {
+		return definitions(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<View> definitions(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit=authorization.scope(actor,JOURNEY_READ);
 		Inputs.page(after, limit);
-		var result=mapper.definitions(actor.tenantId(), after, limit).stream().map(this::view).toList();
+		var result=mapper.definitions(actor.tenantId(), after, limit, filter).stream().map(this::view).toList();
 		authorization.after(actor,permit);return result;
 	}
 
@@ -346,10 +354,17 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 按认证身份限制实例列表，不开放任意memberId过滤。 */
 	public List<Instance> instances(Actor actor, String after, int limit) {
+		return instances(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<Instance> instances(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		Inputs.page(after, limit);
-		if(actor.role()==Actor.Role.MEMBER)return mapper.instances(actor.tenantId(),members.current(actor).memberId(),after,limit);
+		if(actor.role()==Actor.Role.MEMBER)return mapper.instances(actor.tenantId(),members.current(actor).memberId(),after,limit, filter);
 		var permit=authorization.scope(actor,JOURNEY_INSTANCE_READ);
-		var result=mapper.instances(actor.tenantId(),null,after,limit);
+		var result=mapper.instances(actor.tenantId(),null,after,limit, filter);
 		authorization.after(actor,permit);return result;
 	}
 
@@ -766,9 +781,16 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 管理员可看到隔离原因和扫描边界，状态读取不会推进任务。 */
 	public List<Scan> scans(Actor actor, String after, int limit) {
+		return scans(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<Scan> scans(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var permit=authorization.scope(actor,JOURNEY_SCAN_READ);
 		Inputs.page(after, limit);
-		var result=mapper.scans(actor.tenantId(),after,limit);authorization.after(actor,permit);return result;
+		var result=mapper.scans(actor.tenantId(),after,limit, filter);authorization.after(actor,permit);return result;
 	}
 
 	/** 只重试明确隔离版本，保留原游标且不撤销已提交的入组。 */

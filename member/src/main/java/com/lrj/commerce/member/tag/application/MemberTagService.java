@@ -1,5 +1,6 @@
 package com.lrj.commerce.member.tag.application;
 
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.member.growth.infrastructure.persistence.GrowthMapper;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.kernel.*;
@@ -46,9 +47,17 @@ public class MemberTagService implements MemberTagApi {
 
 	/** 字典有界查询。 */
 	public List<Definition> definitions(Actor actor, String after, int limit) {
+		return definitions(actor, after, limit, ListFilter.none());
+	}
+
+	/** 只读条件先筛选再分页，保持原用例的权限复核。 */
+	public List<Definition> definitions(Actor actor, String after, int limit, ListFilter filter) {
+		filter.requireNoStatus();
+		filter.requireNoEnabled();
+		filter.requireNoTime();
 		var before = access.scope(actor, MEMBER_TAG_READ);
 		Inputs.page(after, limit);
-		var result = mapper.tagDefinitions(actor.tenantId(), after, limit);
+		var result = mapper.tagDefinitions(actor.tenantId(), after, limit, filter);
 		EmployeeAccess.requireSame(before, access.scope(actor, MEMBER_TAG_READ));
 		return result;
 	}

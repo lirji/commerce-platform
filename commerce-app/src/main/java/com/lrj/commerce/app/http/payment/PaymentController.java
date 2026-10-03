@@ -4,6 +4,7 @@ import com.lrj.commerce.payment.charge.api.PaymentApi;
 import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.runtime.event.EventDispatcher;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,8 +73,8 @@ public class PaymentController {
 	/** 仅查询租户内事件元信息。 */
 	@GetMapping("/admin/events")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return events.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit, @RequestParam(required = false) String q, @RequestParam(required = false) String status) {
+		return events.list(actor, after, limit, new ListFilter(q, status, null, null));
 	}
 
 	/** 本租户积压诊断：到期数、最老到期年龄、重试与隔离数、近期投递延迟，不含载荷。 */
