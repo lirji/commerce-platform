@@ -1873,3 +1873,101 @@ body .ant-modal-root .ant-modal {
     overflow-y: auto;
   }
 }
+
+/* 查询区与列表位置使用共同语义；内容密度不缩小按钮点击区域。 */
+.query-panel {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+}
+.query-form {
+  display: flex;
+  gap: 12px 16px;
+  align-items: flex-end;
+}
+.query-form .ant-form-item {
+  margin: 0;
+}
+.query-form .ant-form-item-label {
+  padding-bottom: 4px;
+}
+.query-form .ant-input-affix-wrapper {
+  width: 260px;
+  max-width: 100%;
+}
+.query-form .ant-select {
+  min-width: 120px;
+}
+.query-form .ant-form-item:has(input[type="datetime-local"]) {
+  max-width: 225px;
+}
+.query-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 13px;
+}
+.cursor-position {
+  white-space: nowrap;
+}
+.mobile-row-status,
+.table-read-hint {
+  display: none;
+}
+.pager {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ant-table-cell {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px) {
+  .mobile-row-status {
+    display: block;
+  }
+  .table-read-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .query-panel {
+    padding: 12px;
+  }
+  .query-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .query-form .ant-form-item {
+    margin: 0;
+    width: calc(50% - 6px);
+    max-width: none !important;
+  }
+  .query-form .ant-form-item.query-wide {
+    width: 100%;
+  }
+  .query-form .ant-input-affix-wrapper,
+  .query-form .ant-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .query-summary {
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .query-form .ant-form-item-row {
+    display: block;
+  }
+  .query-form .ant-form-item-label {
+    text-align: left;
+  }
+  .query-form .ant-form-item-control {
+    min-width: 0;
+  }
+}

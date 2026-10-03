@@ -1,4 +1,6 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { Alert, Button, Form, Modal, Space, Table } from "antd";
 import { useState } from "react";
@@ -50,12 +52,15 @@ type Run = {
 
 /** 运营看到真实检查点；刷新任务与已发布受众版本在界面上明确区分。 */
 export function Segments() {
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
   const [selected, setSelected] = useState<Segment>();
-  const [runAfter, setRunAfter] = useState("");
+  const [runAfter, setRunAfter] = useCursorState("Segments.runAfter", "");
   const [open, setOpen] = useState(false);
+  const filters = useListFilters("after", "/admin/segments", () =>
+    setAfter(""),
+  );
   const resource = useResource<Segment[]>(
-    `/admin/segments?after=${encode(after)}`,
+    `/admin/segments?after=${encode(after)}&${filters.query}`,
   );
   const runs = useResource<Run[]>(
     selected
@@ -97,10 +102,15 @@ export function Segments() {
           </Space>
         }
       />
+      {filters.toolbar}
       <ErrorNotice error={resource.error} />
       <ListPanel
+        pageSize={filters.limit}
         count={resource.data?.length ?? 0}
+        loading={resource.loading}
+        error={resource.error}
         after={after}
+        cursorName={"after"}
         onHome={() => setAfter("")}
         onNext={() => setAfter(resource.data!.at(-1)!.content.segmentId)}
         homeLabel="回到首页"
@@ -278,9 +288,18 @@ export function Segments() {
           ]}
         />
         <Space>
+          <CursorBack
+            name={"Segments.runAfter"}
+            after={runAfter}
+            onPrevious={setRunAfter}
+            initial={""}
+            disabled={runs.loading || !!runs.error}
+            count={runs.data?.length}
+            pageSize={filters.limit}
+          />
           <Button onClick={() => setRunAfter("")}>回到首页</Button>
           <Button
-            disabled={runs.data?.length !== 50}
+            disabled={runs.loading || !!runs.error || runs.data?.length !== 50}
             onClick={() => setRunAfter(runs.data!.at(-1)!.runId)}
           >
             下一页

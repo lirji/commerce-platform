@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
 import {
@@ -87,8 +89,14 @@ function attributes(value: unknown) {
 }
 /** 类目与模板使用真实可分页目录，创建新版本不会修改旧绑定。 */
 export function CatalogStructure({ store }: { store: string }) {
-  const [categoryAfter, setCategoryAfter] = useState("");
-  const [templateAfter, setTemplateAfter] = useState("");
+  const [categoryAfter, setCategoryAfter] = useCursorState(
+    "CatalogMerchandising.categoryAfter",
+    "",
+  );
+  const [templateAfter, setTemplateAfter] = useCursorState(
+    "CatalogMerchandising.templateAfter",
+    "",
+  );
   const categories = useResource<Category[]>(
     `/operations/catalog-categories?storeId=${encode(store)}&after=${encode(categoryAfter)}`,
   );
@@ -185,6 +193,15 @@ export function CatalogStructure({ store }: { store: string }) {
                 ]}
               />
               <PagerActions>
+                <CursorBack
+                  name={"CatalogMerchandising.categoryAfter"}
+                  after={categoryAfter}
+                  onPrevious={setCategoryAfter}
+                  initial={""}
+                  disabled={categories.loading || !!categories.error}
+                  count={categories.data?.length}
+                  pageSize={50}
+                />
                 <Button
                   disabled={!categoryAfter}
                   onClick={() => setCategoryAfter("")}
@@ -192,7 +209,11 @@ export function CatalogStructure({ store }: { store: string }) {
                   类目首页
                 </Button>
                 <Button
-                  disabled={categories.data?.length !== 100}
+                  disabled={
+                    categories.loading ||
+                    !!categories.error ||
+                    categories.data?.length !== 100
+                  }
                   onClick={() =>
                     setCategoryAfter(categories.data!.at(-1)!.categoryId)
                   }
@@ -261,6 +282,15 @@ export function CatalogStructure({ store }: { store: string }) {
                 ]}
               />
               <PagerActions>
+                <CursorBack
+                  name={"CatalogMerchandising.templateAfter"}
+                  after={templateAfter}
+                  onPrevious={setTemplateAfter}
+                  initial={""}
+                  disabled={templates.loading || !!templates.error}
+                  count={templates.data?.length}
+                  pageSize={50}
+                />
                 <Button
                   disabled={!templateAfter}
                   onClick={() => setTemplateAfter("")}
@@ -268,7 +298,11 @@ export function CatalogStructure({ store }: { store: string }) {
                   模板首页
                 </Button>
                 <Button
-                  disabled={templates.data?.length !== 100}
+                  disabled={
+                    templates.loading ||
+                    !!templates.error ||
+                    templates.data?.length !== 100
+                  }
                   onClick={() =>
                     setTemplateAfter(templates.data!.at(-1)!.templateId)
                   }

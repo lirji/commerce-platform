@@ -1,3 +1,4 @@
+import { listGuardPath } from "../shared/listFilters";
 import { ApiError, type request } from "../shared/api";
 import { CentralError, HTTP, type Context } from "./api";
 
@@ -151,12 +152,13 @@ export function couponDeliveryClient(
     options: Parameters<typeof request>[1] = {},
   ) => {
     const method = options.method ?? "GET";
+    const guardedPath = listGuardPath(path);
     let directory = false,
       recipients = false,
       control = false;
     let target: string | undefined;
     try {
-      const [route, queryText, extra] = path.split("?");
+      const [route, queryText, extra] = guardedPath.split("?");
       if (extra !== undefined || path.includes("#"))
         throw new Error("无效路径");
       const item =

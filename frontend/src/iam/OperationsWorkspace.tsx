@@ -1,3 +1,6 @@
+import { Pager, Status, formatField, TableReadHint } from "../shared/ui";
+import { useListFilters } from "../shared/listFilters";
+import { useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -60,12 +63,7 @@ export function OperationDetails({
         items={fields.map(([key, label]) => ({
           key,
           label,
-          children:
-            key.toLowerCase().includes("amount") || key === "payable"
-              ? money(text(row[key]))
-              : key.endsWith("At")
-                ? time(text(row[key]))
-                : text(row[key]),
+          children: formatField(key, row[key]),
         }))}
       />
       {Array.isArray(row.items) && (
@@ -171,12 +169,14 @@ export function OperationsList({
   fields: readonly [string, string][];
   detailPath?: (id: string) => string;
 }) {
-  const [after, setAfter] = useState(""),
-    [previous, setPrevious] = useState<string[]>([]),
+  const [after, setAfter] = useCursorState("OperationsWorkspace.after", ""),
     [selected, setSelected] = useState<OperationRow>(),
     [detailId, setDetailId] = useState<string>();
+  const filters = useListFilters(`OperationsList.${path}`, path, () =>
+    setAfter(""),
+  );
   const list = useResource<OperationRow[]>(
-      `${path}?after=${encodeURIComponent(after)}&limit=50`,
+      `${path}?after=${encodeURIComponent(after)}&${filters.query}`,
     ),
     detail = useResource<OperationRow>(
       detailId && detailPath ? detailPath(detailId) : null,
@@ -186,17 +186,20 @@ export function OperationsList({
     title,
     dataIndex: key,
     ellipsis: true,
-    render: (v) =>
-      key === "status" ? (
-        <Tag>{text(v)}</Tag>
-      ) : key.toLowerCase().includes("amount") || key === "payable" ? (
-        money(text(v))
-      ) : (
-        text(v)
-      ),
+    width: key.endsWith("At")
+      ? 180
+      : key.toLowerCase().includes("amount") || key === "payable"
+        ? 120
+        : 150,
+    align:
+      key.toLowerCase().includes("amount") || key === "payable"
+        ? "right"
+        : "left",
+    render: (v) => formatField(key, v),
   }));
   table.push({
-    title: "详情",
+    title: "操作",
+    width: 100,
     key: "details",
     render: (_, r) => (
       <Button
@@ -205,7 +208,7 @@ export function OperationsList({
           setDetailId(String(r[idField]));
         }}
       >
-        查看
+        查看详情
       </Button>
     ),
   });
@@ -218,6 +221,7 @@ export function OperationsList({
         </Button>
       }
     >
+      {filters.toolbar}
       <ErrorNotice error={list.error} />
       <Table<OperationRow>
         rowKey={(r) => String(r[idField])}
@@ -232,29 +236,17 @@ export function OperationsList({
             : "当前范围暂无记录",
         }}
       />
-      <Space wrap style={{ marginTop: 16 }}>
-        <Typography.Text type="secondary">
-          本批 {list.data?.length ?? 0} 条 · 每批最多50条
-        </Typography.Text>
-        <Button
-          disabled={!previous.length || list.loading}
-          onClick={() => {
-            setAfter(previous.at(-1) ?? "");
-            setPrevious((p) => p.slice(0, -1));
-          }}
-        >
-          上一批
-        </Button>
-        <Button
-          disabled={list.loading || list.data?.length !== 50}
-          onClick={() => {
-            setPrevious((p) => [...p, after]);
-            setAfter(String(list.data?.at(-1)?.[idField] ?? ""));
-          }}
-        >
-          下一批
-        </Button>
-      </Space>
+      <TableReadHint />
+      <Pager
+        after={after}
+        cursorName="OperationsWorkspace.after"
+        count={list.data?.length ?? 0}
+        pageSize={filters.limit}
+        loading={list.loading}
+        error={list.error}
+        onHome={() => setAfter("")}
+        onNext={() => setAfter(String(list.data?.at(-1)?.[idField] ?? ""))}
+      />
       <Modal
         className="operations-modal"
         open={!!selected}
@@ -489,7 +481,7 @@ export function OperationAction({
                   <Select
                     options={f.options?.map((value) => ({
                       value,
-                      label: value,
+                      label: formatField("mode", value),
                     }))}
                   />
                 ) : (

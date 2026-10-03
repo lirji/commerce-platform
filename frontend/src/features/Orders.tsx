@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { useCursorState } from "../shared/routeState";
 import {
   Button,
   Card,
@@ -46,7 +47,7 @@ export function Orders({
   admin: boolean;
   capabilities: Capabilities;
 }) {
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
   const [selected, setSelected] = useState<string>();
   const [workspaceId, setWorkspaceId] = useState(workspaceOrder);
   const listRef = useRef<HTMLDivElement>(null);
@@ -93,8 +94,14 @@ export function Orders({
       else listRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
     });
   };
+  const filters = useListFilters(
+    "Orders",
+    admin ? "/admin/orders" : "/orders",
+    () => setAfter(""),
+  );
   const resource = useResource<Order[]>(
-    (admin ? "/admin/orders" : "/orders") + `?after=${encode(after)}`,
+    (admin ? "/admin/orders" : "/orders") +
+      `?after=${encode(after)}&${filters.query}`,
   );
   return (
     <Workbench>
@@ -132,8 +139,13 @@ export function Orders({
         />
         <ErrorNotice error={resource.error} />
         <ListPanel
+          toolbar={filters.toolbar}
+          pageSize={filters.limit}
           count={resource.data?.length ?? 0}
+          loading={resource.loading}
+          error={resource.error}
           after={after}
+          cursorName={"after"}
           onHome={() => setAfter("")}
           onNext={() => setAfter(resource.data!.at(-1)!.orderId)}
         >
@@ -143,7 +155,17 @@ export function Orders({
             loading={resource.loading}
             pagination={false}
             locale={{
-              emptyText: <Blank text="还没有订单，完成报价后即可下单" />,
+              emptyText: (
+                <Blank
+                  text={
+                    resource.error
+                      ? "列表未加载，请根据错误重试"
+                      : filters.active
+                        ? "暂无符合筛选条件的订单，请调整或重置筛选"
+                        : "还没有订单，完成报价后即可下单"
+                  }
+                />
+              ),
             }}
             scroll={{ x: 720 }}
             columns={[

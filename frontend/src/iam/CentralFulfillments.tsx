@@ -50,6 +50,7 @@ export default function CentralFulfillments(props: OperationsProps) {
               ["status", "履约状态"],
               ["trackingNo", "运单"],
               ["blocked", "售后阻拦"],
+              ["provider", "仓配渠道"],
             ]}
             fields={[
               ["orderId", "订单编号"],

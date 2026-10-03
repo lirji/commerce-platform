@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import {
   Button,
@@ -277,9 +278,12 @@ const triggerLabels: Record<Journey["trigger"], string> = {
   CART_ABANDONED: "加购挽回",
 };
 export function Journeys({ store }: { store: string }) {
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
+  const filters = useListFilters("after", "/admin/journeys", () =>
+    setAfter(""),
+  );
   const resource = useResource<Governed<Journey>[]>(
-    `/admin/journeys?after=${encode(after)}`,
+    `/admin/journeys?after=${encode(after)}&${filters.query}`,
   );
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<Governed<Journey>>();
@@ -357,10 +361,15 @@ export function Journeys({ store }: { store: string }) {
           </>
         }
       />
+      {filters.toolbar}
       <ErrorNotice error={resource.error} />
       <ListPanel
+        pageSize={filters.limit}
         count={resource.data?.length ?? 0}
+        loading={resource.loading}
+        error={resource.error}
         after={after}
+        cursorName={"after"}
         onHome={() => setAfter("")}
         onNext={() => setAfter(resource.data!.at(-1)!.content.journeyId)}
       >

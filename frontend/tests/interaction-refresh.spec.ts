@@ -66,7 +66,7 @@ async function openCampaign(page: Page) {
   ).toBeVisible();
 }
 
-test("行操作尺寸一致，单页隐藏无用分页，配置使用业务语言", async ({ page }) => {
+test("行操作尺寸一致，单页明确禁用翻页，配置使用业务语言", async ({ page }) => {
   await openCampaign(page);
   const heights = await page
     .locator(".row-actions button")
@@ -80,7 +80,10 @@ test("行操作尺寸一致，单页隐藏无用分页，配置使用业务语�
   await assertButtonSizes(page);
   await expect(
     page.getByRole("button", { name: "下一页", exact: true }),
-  ).toHaveCount(0);
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "上一页", exact: true }),
+  ).toBeDisabled();
   await page.getByRole("button", { name: "查看配置", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await assertCentered(page);

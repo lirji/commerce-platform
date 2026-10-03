@@ -1,4 +1,7 @@
-import { useRouteState } from "../shared/routeState";
+import { listGuardPath } from "../shared/listFilters";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -53,10 +56,13 @@ function couponClient(context: Context, expired: () => void): typeof request {
     path: string,
     options: Parameters<typeof request>[1] = {},
   ) => {
+    const guardedPath = listGuardPath(path);
     const method = options.method ?? "GET";
     let directory = false;
     if (path.startsWith("/admin/coupon-definitions?")) {
-      const query = new URLSearchParams(path.slice(path.indexOf("?") + 1));
+      const query = new URLSearchParams(
+        guardedPath.slice(guardedPath.indexOf("?") + 1),
+      );
       directory =
         Array.from(query.keys()).length === 3 &&
         query.has("after") &&
@@ -137,12 +143,18 @@ function Directory() {
   );
 }
 function DefinitionList({ store }: { store: string }) {
-  const [after, setAfter] = useRouteState("DefinitionList.after", "");
+  const [after, setAfter] = useCursorState("DefinitionList.after", "", store);
+  const filters = useListFilters(
+    "DefinitionList.after",
+    "/admin/coupon-definitions",
+    () => setAfter(""),
+  );
   const rows = useResource<DefinitionView[]>(
-    `/admin/coupon-definitions?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/coupon-definitions?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&${filters.query}`,
   );
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<DefinitionView>
@@ -202,6 +214,15 @@ function DefinitionList({ store }: { store: string }) {
         />
       )}
       <Space>
+        <CursorBack
+          name={"DefinitionList.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}
@@ -210,7 +231,7 @@ function DefinitionList({ store }: { store: string }) {
         </Button>
         <Button
           disabled={
-            rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data!.at(-1)!.content.definitionId)}
         >

@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { Alert, Button, Card, Table, Tabs } from "antd";
 import { useState } from "react";
@@ -45,8 +47,11 @@ type Report<T> = {
 };
 /** 描述性队列与实际用券两个口径分别分页，避免混加收入或编造ROI。 */
 export function LifecycleEffects({ query }: { query: string }) {
-  const [after, setAfter] = useState("");
-  const [batchAfter, setBatchAfter] = useState("");
+  const [after, setAfter] = useCursorState("LifecycleEffects.after", "");
+  const [batchAfter, setBatchAfter] = useCursorState(
+    "LifecycleEffects.batchAfter",
+    "",
+  );
   const journeys = useResource<Report<JourneySeries>>(
     `/admin/marketing-effects/journeys?${query}&after=${encode(after)}`,
   );
@@ -128,11 +133,24 @@ export function LifecycleEffects({ query }: { query: string }) {
                 ]}
               />
               <PagerActions>
+                <CursorBack
+                  name={"LifecycleEffects.after"}
+                  after={after}
+                  onPrevious={setAfter}
+                  initial={""}
+                  disabled={journeys.loading || !!journeys.error}
+                  count={journeys.data?.rows.length}
+                  pageSize={50}
+                />
                 <Button disabled={!after} onClick={() => setAfter("")}>
                   版本比较首页
                 </Button>
                 <Button
-                  disabled={journeys.data?.rows.length !== 50}
+                  disabled={
+                    journeys.loading ||
+                    !!journeys.error ||
+                    journeys.data?.rows.length !== 50
+                  }
                   onClick={() => setAfter(journeys.data!.rows.at(-1)!.seriesId)}
                 >
                   下一页版本比较
@@ -180,6 +198,15 @@ export function LifecycleEffects({ query }: { query: string }) {
                 ]}
               />
               <PagerActions>
+                <CursorBack
+                  name={"LifecycleEffects.batchAfter"}
+                  after={batchAfter}
+                  onPrevious={setBatchAfter}
+                  initial={""}
+                  disabled={deliveries.loading || !!deliveries.error}
+                  count={deliveries.data?.rows.length}
+                  pageSize={50}
+                />
                 <Button
                   disabled={!batchAfter}
                   onClick={() => setBatchAfter("")}
@@ -187,7 +214,11 @@ export function LifecycleEffects({ query }: { query: string }) {
                   批次比较首页
                 </Button>
                 <Button
-                  disabled={deliveries.data?.rows.length !== 50}
+                  disabled={
+                    deliveries.loading ||
+                    !!deliveries.error ||
+                    deliveries.data?.rows.length !== 50
+                  }
                   onClick={() =>
                     setBatchAfter(deliveries.data!.rows.at(-1)!.seriesId)
                   }

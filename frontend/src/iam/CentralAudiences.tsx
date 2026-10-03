@@ -1,3 +1,5 @@
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
 import {
   Alert,
   App,
@@ -21,7 +23,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { useRouteState } from "../shared/routeState";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import { ErrorNotice, PageHead } from "../shared/ui";
 import { HTTP, type Context } from "./api";
 import {
@@ -43,9 +45,14 @@ const forbidden = (error?: Error) =>
   error instanceof ApiError && error.status === HTTP.FORBIDDEN;
 
 function Directory({ revision }: { revision: number }) {
-  const [after, setAfter] = useRouteState("AudienceDirectory.after", "");
+  const [after, setAfter] = useCursorState("AudienceDirectory.after", "");
+  const filters = useListFilters(
+    "AudienceDirectory.after",
+    "/admin/audiences",
+    () => setAfter(""),
+  );
   const rows = useResource<AudienceView[]>(
-    `/admin/audiences?after=${encodeURIComponent(after)}&limit=${AUDIENCE_PAGE_SIZE}`,
+    `/admin/audiences?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   const refresh = rows.refresh;
   useEffect(() => {
@@ -57,6 +64,7 @@ function Directory({ revision }: { revision: number }) {
         每个人群显示最新不可变版本摘要。目录不展示成员编号；零成员快照表示空集合。
       </Typography.Text>
       <Button onClick={refresh}>刷新人群目录</Button>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<AudienceView>
@@ -114,14 +122,21 @@ function Directory({ revision }: { revision: number }) {
         时间按浏览器时区显示，窗口提示依据当前设备时间；实际业务使用仍由服务端核对新鲜度。
       </Typography.Text>
       <Space wrap>
+        <CursorBack
+          name={"AudienceDirectory.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           回到首页
         </Button>
         <Button
           disabled={
-            !!rows.error ||
-            rows.loading ||
-            rows.data?.length !== AUDIENCE_PAGE_SIZE
+            !!rows.error || rows.loading || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data?.at(-1)?.audienceId ?? "")}
         >

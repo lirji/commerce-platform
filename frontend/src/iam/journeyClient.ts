@@ -1,3 +1,4 @@
+import { listGuardPath } from "../shared/listFilters";
 import { ApiError, type request } from "../shared/api";
 import { CentralError, HTTP, type Context } from "./api";
 export const journeyId = /^[A-Za-z0-9_.:-]{1,64}$/;
@@ -153,8 +154,9 @@ export function journeyClient(
     path: string,
     options: Parameters<typeof request>[1] = {},
   ) => {
+    const guardedPath = listGuardPath(path);
     const method = options.method ?? "GET";
-    const [base, query] = path.split("?");
+    const [base, query] = guardedPath.split("?");
     const hints =
       /^\/operations\/(journeys\/(create|validate|preview|submit|approve|reject|publish|pause|pump)|journey-instances\/(create|control)|journey-scans\/retry|marketing-effects\/rebuild)-access$/;
     const lists = new Set([

@@ -36,6 +36,9 @@ export default function CentralRefunds(props: OperationsProps) {
               ["orderId", "订单"],
               ["status", "渠道状态"],
               ["amount", "退款金额"],
+              ["caseId", "售后编号"],
+              ["provider", "退款渠道"],
+              ["currency", "币种"],
             ]}
             fields={[
               ["refundId", "退款编号"],

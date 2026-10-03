@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
 import { Alert, Button, Card, Form, Input, Modal, Space, Table } from "antd";
@@ -19,7 +21,7 @@ type Scan = {
 };
 /** 扫描与实例分开展示，让运营能辨认未入组和等待中的会员。 */
 export function JourneyScans() {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useCursorState("JourneyScans.after", "");
   const rows = useResource<Scan[]>(
     `/admin/journey-scans?after=${encode(after)}`,
   );
@@ -97,11 +99,20 @@ export function JourneyScans() {
         ]}
       />
       <PagerActions>
+        <CursorBack
+          name={"JourneyScans.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           扫描首页
         </Button>
         <Button
-          disabled={rows.data?.length !== 50}
+          disabled={rows.loading || !!rows.error || rows.data?.length !== 50}
           onClick={() => setAfter(rows.data!.at(-1)!.journeyId)}
         >
           下一批扫描

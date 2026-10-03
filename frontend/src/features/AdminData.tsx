@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { Button, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
@@ -30,6 +31,7 @@ type Spec = {
   path: string;
   id: string;
   store?: boolean;
+  actionWidth?: number;
   fields?: Field[];
   columns: [string, string][];
   build?: (v: Values, store: string) => unknown;
@@ -90,6 +92,7 @@ export const specs: Record<string, Spec> = {
   },
   members: {
     title: "会员档案",
+    actionWidth: 200,
     description: "维护会员与认证主体的对应关系。",
     path: "/admin/members",
     id: "memberId",
@@ -263,6 +266,8 @@ export const specs: Record<string, Spec> = {
     columns: [
       ["name", "权益"],
       ["memberId", "会员"],
+      ["orderId", "来源订单"],
+      ["expiresAt", "有效期"],
       ["remainingUnits", "剩余单位"],
       ["debtUnits", "待补偿单位"],
       ["status", "状态"],
@@ -302,7 +307,9 @@ export const specs: Record<string, Spec> = {
     columns: [
       ["caseId", "售后编号"],
       ["orderId", "订单"],
+      ["memberId", "会员"],
       ["refundAmount", "退款金额"],
+      ["refundId", "退款编号"],
       ["returnRequired", "需退货"],
       ["status", "状态"],
     ],
@@ -389,7 +396,11 @@ function cell(key: string, value: unknown): ReactNode {
     typeof value === "string"
   )
     return money(value);
-  if (["validUntil", "availableAt", "createdAt", "dueAt"].includes(key))
+  if (
+    ["validUntil", "availableAt", "createdAt", "dueAt", "expiresAt"].includes(
+      key,
+    )
+  )
     return time(value);
   if (typeof value === "boolean") return value ? "是" : "否";
   return value == null ? "—" : String(value);
@@ -406,11 +417,14 @@ export function AdminData({
   onStoresChanged: () => void;
 }) {
   const spec = specs[kind];
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
+  const filters = useListFilters(`AdminData.${kind}`, spec.path, () =>
+    setAfter(""),
+  );
   const [detail, setDetail] = useState<Row>();
   const query =
     spec.path +
-    `?after=${encode(after)}` +
+    `?after=${encode(after)}&${filters.query}` +
     (spec.store ? "&storeId=" + encode(store) : "");
   const resource = useResource<Row[]>(spec.store && !store ? null : query);
   const rows = resource.data?.map((r) => ({
@@ -626,8 +640,13 @@ export function AdminData({
       />
       <ErrorNotice error={resource.error} />
       <ListPanel
+        toolbar={filters.toolbar}
+        pageSize={filters.limit}
+        loading={resource.loading}
+        error={resource.error}
         count={rows?.length ?? 0}
         after={after}
+        cursorName={"after"}
         onHome={() => setAfter("")}
         onNext={() => setAfter(string(rows!.at(-1)![spec.id]))}
       >
@@ -669,6 +688,7 @@ export function AdminData({
                   <PrimaryCell
                     title={cell(key, v)}
                     subtitle={key === spec.id ? undefined : string(r[spec.id])}
+                    status={string(r.status)}
                   />
                 ) : (
                   cell(key, v)
@@ -676,7 +696,7 @@ export function AdminData({
             })),
             {
               title: "操作",
-              width: kind === "members" ? 148 : 280,
+              width: spec.actionWidth ?? 280,
               align: "right" as const,
               className: "row-actions-cell",
               render: (_, r) => actions(r),

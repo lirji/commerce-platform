@@ -1,3 +1,5 @@
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
 import {
   Alert,
   App,
@@ -24,7 +26,7 @@ import {
   useResource,
   type request,
 } from "../shared/api";
-import { useRouteState } from "../shared/routeState";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import { ErrorNotice, PageHead } from "../shared/ui";
 import { HTTP, type Context } from "./api";
 import {
@@ -147,9 +149,14 @@ function Directory({
   revision: number;
   select: (value: CampaignView) => void;
 }) {
-  const [after, setAfter] = useRouteState("CampaignDirectory.after", "");
+  const [after, setAfter] = useCursorState("CampaignDirectory.after", "");
+  const filters = useListFilters(
+    "CampaignDirectory.after",
+    "/admin/campaigns",
+    () => setAfter(""),
+  );
   const rows = useResource<CampaignView[]>(
-    `/admin/campaigns?after=${encodeURIComponent(after)}&limit=${CAMPAIGN_PAGE_SIZE}`,
+    `/admin/campaigns?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   useEffect(() => {
     if (revision) rows.refresh();
@@ -160,6 +167,7 @@ function Directory({
         每个活动显示最新内容版本。内容版本定位活动规则，状态锁版本用于审批、发布和暂停的并发校验。
       </Typography.Text>
       <Button onClick={rows.refresh}>刷新活动目录</Button>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<CampaignView>
@@ -221,14 +229,21 @@ function Directory({
         />
       )}
       <Space wrap>
+        <CursorBack
+          name={"CampaignDirectory.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           回到首页
         </Button>
         <Button
           disabled={
-            !!rows.error ||
-            rows.loading ||
-            rows.data?.length !== CAMPAIGN_PAGE_SIZE
+            !!rows.error || rows.loading || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data?.at(-1)?.content.campaignId ?? "")}
         >
@@ -1015,9 +1030,14 @@ export function CentralCampaigns(props: Props) {
   );
 }
 function Budgets() {
-  const [after, setAfter] = useRouteState("CampaignBudgets.after", "");
+  const [after, setAfter] = useCursorState("CampaignBudgets.after", "");
+  const filters = useListFilters(
+    "CampaignBudgets.after",
+    "/admin/campaign-budgets",
+    () => setAfter(""),
+  );
   const rows = useResource<CampaignBudget[]>(
-    `/admin/campaign-budgets?after=${encodeURIComponent(after)}&limit=${CAMPAIGN_PAGE_SIZE}`,
+    `/admin/campaign-budgets?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
@@ -1025,6 +1045,7 @@ function Budgets() {
         按预算编号展示所有实际内容版本余额；不需要活动目录读取权限。金额为服务端当前快照。
       </Typography.Text>
       <Button onClick={rows.refresh}>刷新预算余额</Button>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table
@@ -1049,14 +1070,21 @@ function Budgets() {
         />
       )}
       <Space wrap>
+        <CursorBack
+          name={"CampaignBudgets.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           回到首页
         </Button>
         <Button
           disabled={
-            !!rows.error ||
-            rows.loading ||
-            rows.data?.length !== CAMPAIGN_PAGE_SIZE
+            !!rows.error || rows.loading || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data?.at(-1)?.budgetId ?? "")}
         >

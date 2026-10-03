@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import {
   Alert,
@@ -64,8 +66,11 @@ const actions: Record<string, string> = {
 /** 积分资产从独立账本读取，不能用页面累计成交或成长值自行估算。 */
 export function MemberPoints({ admin }: { admin: boolean }) {
   const [member, setMember] = useState("");
-  const [after, setAfter] = useState(0);
-  const [policyAfter, setPolicyAfter] = useState(0);
+  const [after, setAfter] = useCursorState("MemberPoints.after", 0);
+  const [policyAfter, setPolicyAfter] = useCursorState(
+    "MemberPoints.policyAfter",
+    0,
+  );
   const base = admin
     ? member
       ? `/admin/member-points/${encode(member)}`
@@ -228,11 +233,22 @@ export function MemberPoints({ admin }: { admin: boolean }) {
               ]}
             />
             <PagerActions>
+              <CursorBack
+                name={"MemberPoints.after"}
+                after={after}
+                onPrevious={setAfter}
+                initial={0}
+                disabled={ledger.loading || !!ledger.error}
+                count={ledger.data?.length}
+                pageSize={50}
+              />
               <Button disabled={!after} onClick={() => setAfter(0)}>
                 最早积分记录
               </Button>
               <Button
-                disabled={ledger.data?.length !== 50}
+                disabled={
+                  ledger.loading || !!ledger.error || ledger.data?.length !== 50
+                }
                 onClick={() => setAfter(ledger.data!.at(-1)!.sequenceId)}
               >
                 下一页积分
@@ -341,11 +357,24 @@ export function MemberPoints({ admin }: { admin: boolean }) {
             ]}
           />
           <PagerActions>
+            <CursorBack
+              name={"MemberPoints.policyAfter"}
+              after={policyAfter}
+              onPrevious={setPolicyAfter}
+              initial={0}
+              disabled={policies.loading || !!policies.error}
+              count={policies.data?.length}
+              pageSize={50}
+            />
             <Button disabled={!policyAfter} onClick={() => setPolicyAfter(0)}>
               最早积分策略
             </Button>
             <Button
-              disabled={policies.data?.length !== 50}
+              disabled={
+                policies.loading ||
+                !!policies.error ||
+                policies.data?.length !== 50
+              }
               onClick={() => setPolicyAfter(policies.data!.at(-1)!.version)}
             >
               下一页积分策略

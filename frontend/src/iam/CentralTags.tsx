@@ -1,4 +1,6 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -193,9 +195,14 @@ export function CentralTags({
 }
 
 function TagDictionary() {
-  const [after, setAfter] = useRouteState("TagDictionary.after", "");
+  const [after, setAfter] = useCursorState("TagDictionary.after", "");
+  const filters = useListFilters(
+    "TagDictionary.after",
+    "/admin/member-tags",
+    () => setAfter(""),
+  );
   const rows = useResource<Definition[]>(
-    `/admin/member-tags?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/member-tags?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
@@ -205,6 +212,7 @@ function TagDictionary() {
         </Typography.Text>
         <Button onClick={rows.refresh}>刷新字典</Button>
       </Space>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<Definition>
@@ -220,6 +228,15 @@ function TagDictionary() {
         />
       )}
       <Space>
+        <CursorBack
+          name={"TagDictionary.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}
@@ -228,7 +245,7 @@ function TagDictionary() {
         </Button>
         <Button
           disabled={
-            rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data!.at(-1)!.tagId)}
         >
@@ -279,7 +296,7 @@ function AssignmentSearch() {
 }
 
 function Assignments({ member }: { member: string }) {
-  const [after, setAfter] = useRouteState("Assignments.after", "");
+  const [after, setAfter] = useCursorState("Assignments.after", "", member);
   const rows = useResource<Assignment[]>(
     `/admin/member-tags/${encodeURIComponent(member)}/assignments?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
   );
@@ -314,6 +331,15 @@ function Assignments({ member }: { member: string }) {
         />
       )}
       <Space>
+        <CursorBack
+          name={"Assignments.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}

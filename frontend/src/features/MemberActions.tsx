@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { Button, Dropdown, Table } from "antd";
@@ -20,7 +22,7 @@ export function MemberActions({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [after, setAfter] = useState(0);
+  const [after, setAfter] = useCursorState("MemberActions.after", 0);
   const base = "/admin/members/" + encode(String(row.memberId));
   const history = useResource<Record<string, unknown>[]>(
     historyOpen ? base + "/history?after=" + after : null,
@@ -142,11 +144,22 @@ export function MemberActions({
           ]}
         />
         <PagerActions>
+          <CursorBack
+            name={"MemberActions.after"}
+            after={after}
+            onPrevious={setAfter}
+            initial={0}
+            disabled={history.loading || !!history.error}
+            count={history.data?.length}
+            pageSize={50}
+          />
           <Button disabled={after === 0} onClick={() => setAfter(0)}>
             最早记录
           </Button>
           <Button
-            disabled={history.data?.length !== 50}
+            disabled={
+              history.loading || !!history.error || history.data?.length !== 50
+            }
             onClick={() => setAfter(Number(history.data!.at(-1)!.version))}
           >
             下一页

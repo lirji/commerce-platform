@@ -1,50 +1,42 @@
 # Codex Progress
 
-## 当前任务：弹窗紧凑样式调整与本地 Docker 部署 PASS（2026-10-02 PDT）
+## 当前任务：新版 Claude SKILL 全站前端可用性优化（本地验证通过，Git交付中）
 
 ## 任务目标
 
-根据用户“弹窗不好看、太大”的反馈，沿用 Claude frontend-design 方案收紧全站弹层宽高和留白，保持按钮38px统一与既有业务交互，并更新用户刚部署的本机Docker页面。
+让用户和运营看清、读懂、便于查找和操作；全站筛选、列表字段、真实分页、文案和密度优化，补齐必要只读查询。用户已确认全站前端 + 必要只读查询范围；连续完成正常 main 发布与已授权本机 Docker8602更新。
 
 ## 已完成
 
-- 原目录任务分支 `fix/compact-modal-layout`，基线main `b422be2`，原工作树clean，无新工作树；上一部署70d0740保持健康。
-- 全部显式弹层宽度收紧：普通详情默认560px，表单通常600–640px，表格/关系图760px，商品720px，购物袋520px，导航400px。主动展开960px，旅程取消默认1120px展开。
-- 标题16px、圆角12px、桌面20px/手机16px内边距；表单间距16px、头尾分隔12px。短内容按内容高度收缩，桌面上限min(76dvh,680px)，手机min(82dvh,640px)，正文滚动、头尾固定。
-- 手机固定两侧16px留白并隐藏没有空间收益的展开入口；购物袋横向步骤/下方标题，商品图片区缩小。没有更改按钮尺寸、API、权限、关闭保护、请求中保护或数据。
-- TypeScript/Vite、Maven with-ui打包和diff检查PASS。JAR当前61前端资产逐字节一致；与运行旧版本21,569个非前端展开条目完全一致。
-- 最终本地39项回归PASS：20经营/会员交互 + 19中央交互/壳层；中央36路由1440/390/320全部通过。320px购物袋约514px高（原696px），编辑表单640px上限，商品占位140px；代表截图已人工查看。
-- 实际宽高上限、居中、滚动、按钮、焦点、草稿、未知结果和401卸载均验证；截图等待入场动画结束。真实支付/授权业务本地未重跑，等待精确远程全库CI。
-- 首轮两个真实接口测试缺少preview后端；两个客户端源码导入用例需dev服务器。保留失败证据，使用匹配测试环境后中央19项全通过，不改业务断言或超时。
-
-- 产品提交 `7870aa1878d0a55952f56edb6c0968cb28145da8` 已正常分支/main推送，精确main CI37093269697终态SUCCESS。后端553项（548PASS/5条件SKIP）、浏览器43PASS/20条件SKIP，无失败。
-- 已部署本机 `commerce-platform:rev-7870aa1`，入口http://127.0.0.1:8602，healthy/UP/匿名401及61资产一致PASS；实际Docker页面13项回归全PASS，320px购物袋最终截图已复核。
-- 数据库、环境变量值、地址密钥和网络保留，私密Compose只改镜像标签；旧rev-70d0740保留，无需回滚。自有18601/18602/18603预览停止。
+- 阅读新版 Claude frontend-design 与工程执行规范；原目录创建 feat/frontend-usability，基线 de8d133，无初始用户改动。
+- U1 已实现：全站游标首页、上一页、下一页与真实访问位置；URL恢复、条件/门店/会员变化重置，无总数时不伪造总页数。
+- U2 已实现：核心经营与营销、权益等目录的有界只读关键词/状态查询；订单创建时间半开区间；人群和授权启用状态。SQL在LIMIT前筛选，旧接口兼容，权限和业务写入规则保留。
+- U3/U4 已实现：运营与会员端列表、筛选、中文状态/金额/空值、详情、手机筛选布局与密度；保留38px按钮及紧凑居中弹层。
+- 前端构建PASS；中央19浏览器用例与36路由三种屏宽检查PASS；新分页/查询/手机详情2用例PASS。截图发现会员行操作换行，已扩大操作列并复核。
 
 ## 已修改文件
 
-- `frontend/src/shared/interactions.tsx`、`shared/marketing.tsx`、`theme.ts`、`style.css`、`workspace.css`：共享尺寸与内容布局。
-- 经营、中央、会员及两处导航弹层的显式width；准确清单以Git本任务diff为准，无后端/依赖/数据库改动。
-- `frontend/tests/presentation.ts`、`interaction-refresh.spec.ts`、`b-console-craft.spec.ts`：入场帧等待、实际紧凑尺寸与旅程初始收起行为。
-- `docs/design/frontend-modal-buttons.md`、`docs/delivery/compact-modal-deployment.md`、本进度文件；受控证据 `.local/compact-modals/`。
+- 源码清单以 git diff 为准：各Owner API/Service/Mapper/Controller及只读验证用例；frontend共享分页/筛选/路由/格式化及运营与会员页面；docs/design/frontend-usability.md、CODEX_PROGRESS.md。
+- 私密证据与日志保留于 .local/frontend-usability/，不提交凭据。
 
 ## 未完成
 
-- 产品和Docker部署无未完成项。当前仅部署/进度文档Git收尾；最终提交、main推送和文档CI终态以 `.local/compact-modals/DEPLOYMENT_RESULT.json` 为准，不循环追加引用自身提交。
+- U1—U4 DONE；U5本地验证PASS。全量74套件554项（549 PASS / 5既有条件SKIP）、组合42浏览器PASS、最后受影响23浏览器及3视觉/查询PASS，64前端文件格式PASS，卫生无阻断。
+- 待分批提交main、精确远程CI、本机Docker8602更新及实际HTTP资产/健康/浏览器验证。
 
 ## 当前问题
 
-- 无产品或部署阻塞。产品精确main CI37093269697与任务分支CI均SUCCESS；前一文档main CI37092740384亦SUCCESS。
-- 本地测试边界使用正式DTO，不硬编码产品数据或冒充真实资金/授权验收。原数据、配置、失败证据及历史工作树保留。
+- 无阻断。历史Maven并行制品损坏、积分屏障超时及空依赖模块专项失败均保留；独立21专项和最终全量均通过，未修改并发规则或放宽POM。
+- 编译后的61前端资源与JAR完全一致；只部署本机当前项目，不清理数据或共享环境。
 
 ## 下一步建议
 
-1. 按限定文档路径提交并正常推送main，在私密最终回执写Git实际结果；文档提交不改变产品代码，不重复部署。
-2. 回执DONE则本任务完成。直接使用8602查看紧凑版；不清理数据库、镜像、证据或工作树。
+1. 按 task-git-delivery 分批提交U2只读查询与U1/U3/U4前端，正常main合并推送；远程精确CI通过后部署。
+2. 部署只变更commerce镜像标签，保留dev-infra、数据库和全部环境值，核验61实际HTTP资源和Docker浏览器。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS.md、`.local/compact-modals/delivery.json`和DEPLOYMENT_RESULT.json。产品7870aa1精确CI已SUCCESS，Docker rev-7870aa1部署已PASS，39项本地与13项Docker回归通过。只继续尚未完成的文档Git收尾；回执DONE则结束，不重新规划、部署或清理数据。私密回执记录文档最终CI状态，未结束不宣称成功。
+读取本检查点及 docs/design/frontend-usability.md，从 feat/frontend-usability 验证阶段继续。已授权全站前端及必要只读查询、main发布、本机Docker8602，不要求重复继续，不重启全部设计，不清理数据/环境/其他项目。
 
 ---
 

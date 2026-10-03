@@ -1,3 +1,5 @@
+import { CursorBack } from "./pagination";
+import { useCursorState } from "./routeState";
 import {
   Alert,
   Button,
@@ -25,18 +27,39 @@ export {
 } from "./interactions";
 import { useId, useState, type ReactNode } from "react";
 import { ApiError, useCommand } from "./api";
-export const time = (v: unknown) =>
-  v ? new Date(String(v)).toLocaleString("zh-CN", { hour12: false }) : "—";
-export const money = (v: unknown) => (v == null ? "—" : `¥${String(v)}`);
+export const time = (v: unknown) => {
+  if (v == null || v === "") return "未提供";
+  const date = new Date(String(v));
+  return Number.isFinite(date.getTime())
+    ? date.toLocaleString("zh-CN", { hour12: false })
+    : "时间格式无效";
+};
+export const money = (v: unknown) => {
+  if (v == null || v === "") return "未提供";
+  const value = String(v);
+  if (!/^-?\d+(\.\d+)?$/.test(value)) return value;
+  const [integer, decimal = ""] = value.split(".");
+  return `¥${integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${decimal.padEnd(2, "0")}`;
+};
 const labels: Record<string, string> = {
   ACTIVE: "可用",
+  INACTIVE: "已停用",
+  ISSUED: "已发放",
+  KEPT: "已保留",
+  PREVIEW: "已预览",
+  FINISHED: "执行完成",
+  FAILED: "处理失败",
+  STOPPED: "已停止",
+  SKIPPED: "已跳过",
+  ISSUE: "发放",
+  REVOKE: "撤回",
   SCHEDULED: "待执行",
   CONFLICT: "版本冲突",
   REVOCATION_DONE: "撤销处理完成",
   RETIRED: "已停用",
   IDLE: "等待下一轮",
   REVOKING: "撤销处理中",
-  FROZEN: "已停用",
+  FROZEN: "已冻结",
   DRAFT: "草稿",
   IN_REVIEW: "待审批",
   APPROVED: "已批准",
@@ -75,8 +98,12 @@ const labels: Record<string, string> = {
   TIMED_OUT: "已超时",
   PENDING: "待处理",
 };
+export const statusText = (value: string) =>
+  labels[value] ?? `未知状态（${value}）`;
 export function Status({ value }: { value?: string }) {
-  const v = value ?? "UNKNOWN";
+  if (value == null || value === "")
+    return <Typography.Text type="secondary">未提供</Typography.Text>;
+  const v = value;
   const tone = [
     "PAID",
     "COMPLETED",
@@ -106,6 +133,7 @@ export function Status({ value }: { value?: string }) {
           : "idle";
   return (
     <Tag
+      title={v}
       className="status-tag"
       style={{
         background: palette[`${tone}Soft`],
@@ -113,7 +141,7 @@ export function Status({ value }: { value?: string }) {
         borderColor: "transparent",
       }}
     >
-      {labels[v] ?? v}
+      {statusText(v)}
     </Tag>
   );
 }
@@ -378,7 +406,7 @@ export function fieldLabel(key: string) {
   return fieldNames[key] ?? key;
 }
 export function formatField(key: string, value: unknown): ReactNode {
-  if (value == null || value === "") return "—";
+  if (value == null || value === "") return "未提供";
   const enumLabels: Record<string, string> = {
     WAIT: "等待",
     DECIDE: "条件分支",
@@ -392,6 +420,8 @@ export function formatField(key: string, value: unknown): ReactNode {
     JOURNEY: "营销旅程",
     FINISHED: "执行完成",
     CHANNEL_REQUIRED: "渠道支付",
+    FREE: "无需付款",
+    ZERO_AMOUNT: "无需付款",
     SANDBOX: "本地沙箱",
     SANDBOX_WMS: "沙箱物流",
     UNASSIGNED: "尚未分配",
@@ -408,6 +438,19 @@ export function formatField(key: string, value: unknown): ReactNode {
     CONTAINS: "包含",
     TEXT: "文本",
     DECIMAL: "数值",
+    UNPROCESSED: "仅处理尚未处理的事件",
+    REPROCESS: "重新处理事件",
+    RETRY: "重试",
+    RESET_TRANSIENT: "恢复暂时故障",
+    ISOLATE: "隔离停止处理",
+    SKIP: "跳过",
+    TRANSIENT: "暂时故障",
+    CONCURRENCY_RETRYABLE: "并发冲突，可重试",
+    DEPENDENCY_UNAVAILABLE: "依赖服务不可用",
+    BUSINESS_REJECTED: "业务条件不满足",
+    DATA_CORRUPTION: "业务数据异常",
+    CONFIGURATION_ERROR: "服务配置异常",
+    PERMANENT: "需要人工处理",
   };
   if (
     [
@@ -420,12 +463,25 @@ export function formatField(key: string, value: unknown): ReactNode {
       "provider",
       "currency",
       "result",
+      "failureClass",
+      "mode",
+      "action",
     ].includes(key)
   )
     return enumLabels[String(value)] ?? String(value);
   if (key.endsWith("Bps")) return `${Number(value) / 100}%`;
   if (key === "field") return fieldLabel(String(value));
-  if (key === "status") return <Status value={string(value)} />;
+  if (
+    [
+      "status",
+      "state",
+      "grantStatus",
+      "eventStatus",
+      "previousState",
+      "newState",
+    ].includes(key)
+  )
+    return <Status value={string(value)} />;
   if (
     moneyKeys.has(key) &&
     (typeof value === "string" ||
@@ -555,15 +611,22 @@ export function Detail({ value }: { value: unknown }) {
 export function PrimaryCell({
   title,
   subtitle,
+  status,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
+  status?: string;
 }) {
   return (
     <div className="primary-cell">
       <strong>{title}</strong>
       {subtitle != null && subtitle !== "" && (
         <span className="muted">{subtitle}</span>
+      )}
+      {status && (
+        <span className="mobile-row-status">
+          <Status value={status} />
+        </span>
       )}
     </div>
   );
@@ -619,8 +682,16 @@ export function Pager({
   onNext,
   homeLabel = "首页",
   nextLabel = "下一页",
+  cursorName = "after",
+  loading = false,
+  error,
+  initial,
 }: {
   after?: unknown;
+  initial?: string | number;
+  cursorName?: string;
+  loading?: boolean;
+  error?: Error;
   count: number;
   pageSize?: number;
   onHome: () => void;
@@ -628,19 +699,50 @@ export function Pager({
   homeLabel?: string;
   nextLabel?: string;
 }) {
+  const stringInitial = typeof initial === "string" ? initial : "";
+  const numberInitial = typeof initial === "number" ? initial : 0;
+  const [, setString] = useCursorState(cursorName, stringInitial);
+  const [, setNumber] = useCursorState(cursorName, numberInitial);
+  const atHome =
+    after == null ||
+    after === (typeof after === "number" ? numberInitial : stringInitial);
+  const blocked = loading || !!error;
   return (
     <div className="pager">
-      <span className="list-count">本页 {count} 条</span>
-      {(!!after || count >= pageSize) && (
-        <Space>
-          <Button disabled={!after} onClick={onHome}>
+      <span className="list-count">
+        {loading
+          ? "正在加载…"
+          : error
+            ? "列表未加载"
+            : `本页 ${count} 条 · 每页最多${pageSize}条`}
+      </span>
+      {
+        <Space wrap>
+          {typeof after === "number" ? (
+            <CursorBack
+              name={cursorName}
+              after={after}
+              initial={numberInitial}
+              onPrevious={setNumber}
+              disabled={blocked}
+            />
+          ) : (
+            <CursorBack
+              name={cursorName}
+              after={String(after ?? "")}
+              initial={stringInitial}
+              onPrevious={setString}
+              disabled={blocked}
+            />
+          )}
+          <Button disabled={blocked || atHome} onClick={onHome}>
             {homeLabel}
           </Button>
-          <Button disabled={count < pageSize} onClick={onNext}>
+          <Button disabled={blocked || count < pageSize} onClick={onNext}>
             {nextLabel}
           </Button>
         </Space>
-      )}
+      }
     </div>
   );
 }
@@ -654,11 +756,17 @@ export function ListPanel({
   pageSize,
   homeLabel,
   nextLabel,
+  cursorName,
+  loading,
+  error,
 }: {
   children: ReactNode;
   toolbar?: ReactNode;
   count?: number;
   after?: unknown;
+  cursorName?: string;
+  loading?: boolean;
+  error?: Error;
   onHome?: () => void;
   onNext?: () => void;
   pageSize?: number;
@@ -669,9 +777,13 @@ export function ListPanel({
     <Card className="list-panel">
       {toolbar && <div className="list-toolbar">{toolbar}</div>}
       <div className="list-table">{children}</div>
+      <TableReadHint />
       {onHome && onNext && count != null && (
         <Pager
           after={after}
+          cursorName={cursorName}
+          loading={loading}
+          error={error}
           count={count}
           pageSize={pageSize}
           onHome={onHome}
@@ -681,6 +793,13 @@ export function ListPanel({
         />
       )}
     </Card>
+  );
+}
+export function TableReadHint() {
+  return (
+    <Typography.Text type="secondary" className="table-read-hint">
+      左右滑动表格可查看完整字段和操作
+    </Typography.Text>
   );
 }
 export type Field = {
@@ -931,3 +1050,17 @@ export const localDateTime = (value: string) => {
     .toISOString()
     .slice(0, 16);
 };
+
+/** 展示已登记的恢复类型；仍提交服务端原代码，不能改写任务语义。 */
+export function workTypeLabel(value: string) {
+  return (
+    (
+      {
+        event: "业务事件处理",
+        "order.expiry": "订单到期关闭",
+        "member.points.expiry": "积分到期处理",
+        "member.cycle.assessment": "会员周期考核",
+      } as Record<string, string>
+    )[value] ?? value
+  );
+}

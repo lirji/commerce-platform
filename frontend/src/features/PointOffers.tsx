@@ -1,3 +1,6 @@
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
 import {
@@ -50,11 +53,19 @@ export function PointOffers({
   admin: boolean;
   store: string;
 }) {
-  const [after, setAfter] = useState("");
-  const [receiptAfter, setReceiptAfter] = useState("");
+  const [after, setAfter] = useCursorState("PointOffers.after", "");
+  const [receiptAfter, setReceiptAfter] = useCursorState(
+    "PointOffers.receiptAfter",
+    "",
+  );
+  const filters = useListFilters(
+    "PointOffers",
+    admin ? "/admin/point-offers" : "/point-offers",
+    () => setAfter(""),
+  );
   const offers = useResource<OfferView[]>(
     store
-      ? `${admin ? "/admin" : ""}/point-offers?storeId=${encode(store)}&after=${encode(after)}`
+      ? `${admin ? "/admin" : ""}/point-offers?storeId=${encode(store)}&after=${encode(after)}&${filters.query}`
       : null,
   );
   const receipts = useResource<Receipt[]>(
@@ -78,6 +89,7 @@ export function PointOffers({
         }
         description="优惠券受理后即可进入券钱包；权益需等待发放完成后使用。兑换成功不支持退积分，券和权益沿用各自有效期。"
       />
+      {filters.toolbar}
       <ErrorNotice error={offers.error} />
       <ErrorNotice error={wallet.error} />
       {!admin && (
@@ -245,11 +257,24 @@ export function PointOffers({
         </Row>
       )}
       <PagerActions>
+        <CursorBack
+          name={"PointOffers.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={offers.loading || !!offers.error}
+          count={offers.data?.length}
+          pageSize={filters.limit}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           兑换首页
         </Button>
         <Button
-          disabled={offers.data?.length !== 50}
+          disabled={
+            offers.loading ||
+            !!offers.error ||
+            offers.data?.length !== filters.limit
+          }
           onClick={() => setAfter(offers.data!.at(-1)!.content.offerId)}
         >
           下一页兑换
@@ -278,6 +303,15 @@ export function PointOffers({
             ]}
           />
           <PagerActions>
+            <CursorBack
+              name={"PointOffers.receiptAfter"}
+              after={receiptAfter}
+              onPrevious={setReceiptAfter}
+              initial={""}
+              disabled={receipts.loading || !!receipts.error}
+              count={receipts.data?.length}
+              pageSize={filters.limit}
+            />
             <Button
               disabled={!receiptAfter}
               onClick={() => setReceiptAfter("")}
@@ -285,7 +319,11 @@ export function PointOffers({
               回执首页
             </Button>
             <Button
-              disabled={receipts.data?.length !== 50}
+              disabled={
+                receipts.loading ||
+                !!receipts.error ||
+                receipts.data?.length !== 50
+              }
               onClick={() =>
                 setReceiptAfter(receipts.data!.at(-1)!.redemptionId)
               }

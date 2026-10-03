@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import {
   Alert,
@@ -56,7 +58,7 @@ export function MemberBehavior({
   memberId?: string;
 }) {
   const [selected, setSelected] = useState("");
-  const [after, setAfter] = useState(0);
+  const [after, setAfter] = useCursorState("MemberBehavior.after", 0);
   const [rebuildAfter, setRebuildAfter] = useState("");
   const [rebuildResult, setRebuildResult] = useState<{
     scanned: number;
@@ -205,11 +207,22 @@ export function MemberBehavior({
               ]}
             />
             <PagerActions>
+              <CursorBack
+                name={"MemberBehavior.after"}
+                after={after}
+                onPrevious={setAfter}
+                initial={0}
+                disabled={events.loading || !!events.error}
+                count={events.data?.length}
+                pageSize={50}
+              />
               <Button disabled={!after} onClick={() => setAfter(0)}>
                 最早交互
               </Button>
               <Button
-                disabled={events.data?.length !== 50}
+                disabled={
+                  events.loading || !!events.error || events.data?.length !== 50
+                }
                 onClick={() => setAfter(events.data!.at(-1)!.sequenceId)}
               >
                 下一页交互

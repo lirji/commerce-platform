@@ -54,6 +54,9 @@ export default function CentralAftersales(props: OperationsProps) {
               ["orderId", "订单"],
               ["status", "状态"],
               ["refundAmount", "退款金额"],
+              ["memberId", "会员编号"],
+              ["returnRequired", "需要退货"],
+              ["refundId", "退款编号"],
             ]}
             fields={[
               ["caseId", "售后编号"],

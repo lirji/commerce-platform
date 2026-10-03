@@ -1,3 +1,6 @@
+import { useCursorState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { Pager, PrimaryCell } from "../shared/ui";
 import { Button, Card, Col, Row, Space, Table, Tabs } from "antd";
 import type {
   Aftersale,
@@ -24,24 +27,59 @@ export function MemberWallet({
   store: string;
   section: string;
 }) {
+  const [availableAfter, setAvailableAfter] = useCursorState(
+    "MemberWallet.claim.after",
+    "",
+    store,
+  );
+  const [walletAfter, setWalletAfter] = useCursorState(
+    "MemberWallet.wallet.after",
+    "",
+  );
+  const [after, setAfter] = useCursorState(`MemberWallet.${section}.after`, "");
+  const claimFilters = useListFilters(
+    "MemberWallet.claim",
+    "/coupon-definitions",
+    () => setAvailableAfter(""),
+  );
+  const walletFilters = useListFilters("MemberWallet.wallet", "/coupons", () =>
+    setWalletAfter(""),
+  );
+  const sectionFilters = useListFilters(
+    `MemberWallet.${section}`,
+    section === "benefits"
+      ? "/entitlements"
+      : section === "aftersales"
+        ? "/aftersales"
+        : "",
+    () => setAfter(""),
+  );
   const available = useResource<
     { content: CouponDefinition; issued: number }[]
   >(
     store && section === "coupons"
-      ? "/coupon-definitions?storeId=" + encode(store)
+      ? `/coupon-definitions?storeId=${encode(store)}&after=${encode(availableAfter)}&${claimFilters.query}`
       : null,
   );
   const wallet = useResource<Coupon[]>(
-    section === "coupons" ? "/coupons" : null,
+    section === "coupons"
+      ? `/coupons?after=${encode(walletAfter)}&${walletFilters.query}`
+      : null,
   );
   const benefits = useResource<Entitlement[]>(
-    section === "benefits" ? "/entitlements" : null,
+    section === "benefits"
+      ? `/entitlements?after=${encode(after)}&${sectionFilters.query}`
+      : null,
   );
   const notices = useResource<Notification[]>(
-    section === "notifications" ? "/notifications" : null,
+    section === "notifications"
+      ? `/notifications?after=${encode(after)}&limit=50`
+      : null,
   );
   const cases = useResource<Aftersale[]>(
-    section === "aftersales" ? "/aftersales" : null,
+    section === "aftersales"
+      ? `/aftersales?after=${encode(after)}&${sectionFilters.query}`
+      : null,
   );
   const refresh = () => {
     available.refresh();
@@ -73,83 +111,127 @@ export function MemberWallet({
             {
               key: "claim",
               label: "领取优惠",
-              children:
-                available.loading && !available.data ? (
-                  <div className="page-loading">正在加载可领优惠</div>
-                ) : (
-                  <Row gutter={[16, 16]}>
-                    {available.data?.length === 0 && (
-                      <Col span={24}>
-                        <Blank text="暂无可公开领取的优惠券，已发放的券请查看「我的优惠券」" />
-                      </Col>
-                    )}
-                    {available.data?.map(({ content: c, issued }) => (
-                      <Col xs={24} md={12} lg={8} key={c.definitionId}>
-                        <Card className="coupon-card" title={c.name}>
-                          <p className="coupon-value">
-                            {money(c.discountAmount)}
-                          </p>
-                          <p>
-                            满 {money(c.minimumSpend)} 可用 ·{" "}
-                            {c.stackable ? "可叠加活动" : "择优使用"}
-                          </p>
-                          <p className="muted">
-                            {(c.validityDays ?? 0) > 0
-                              ? `领取后${c.validityDays}天有效，发行截止${time(c.validTo)}`
-                              : `有效期至${time(c.validTo)}`}{" "}
-                            · 已领 {issued}/{c.quota}
-                          </p>
-                          <ActionButton
-                            path={
-                              "/coupons/" +
-                              encode(c.definitionId) +
-                              "/" +
-                              c.version +
-                              "/claim"
-                            }
-                            label="领取优惠券"
-                            onDone={refresh}
-                          />
-                        </Card>
-                      </Col>
-                    ))}
-                  </Row>
-                ),
+              children: (
+                <>
+                  {claimFilters.toolbar}
+                  {available.loading && !available.data ? (
+                    <div className="page-loading">正在加载可领优惠</div>
+                  ) : (
+                    <Row gutter={[16, 16]}>
+                      {available.data?.length === 0 && (
+                        <Col span={24}>
+                          <Blank text="暂无可公开领取的优惠券，已发放的券请查看「我的优惠券」" />
+                        </Col>
+                      )}
+                      {available.data?.map(({ content: c, issued }) => (
+                        <Col xs={24} md={12} lg={8} key={c.definitionId}>
+                          <Card className="coupon-card" title={c.name}>
+                            <p className="coupon-value">
+                              {money(c.discountAmount)}
+                            </p>
+                            <p>
+                              满 {money(c.minimumSpend)} 可用 ·{" "}
+                              {c.stackable ? "可叠加活动" : "择优使用"}
+                            </p>
+                            <p className="muted">
+                              {(c.validityDays ?? 0) > 0
+                                ? `领取后${c.validityDays}天有效，发行截止${time(c.validTo)}`
+                                : `有效期至${time(c.validTo)}`}{" "}
+                              · 已领 {issued}/{c.quota}
+                            </p>
+                            <ActionButton
+                              path={
+                                "/coupons/" +
+                                encode(c.definitionId) +
+                                "/" +
+                                c.version +
+                                "/claim"
+                              }
+                              label="领取优惠券"
+                              onDone={refresh}
+                            />
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  )}
+                  <Pager
+                    after={availableAfter}
+                    cursorName="MemberWallet.claim.after"
+                    count={available.data?.length ?? 0}
+                    pageSize={claimFilters.limit}
+                    loading={available.loading}
+                    error={available.error}
+                    onHome={() => setAvailableAfter("")}
+                    onNext={() =>
+                      setAvailableAfter(
+                        available.data!.at(-1)!.content.definitionId,
+                      )
+                    }
+                  />
+                </>
+              ),
             },
             {
               key: "wallet",
               label: "我的优惠券",
               children: (
-                <Table<Coupon>
-                  rowKey="couponId"
-                  dataSource={wallet.data}
-                  loading={wallet.loading}
-                  locale={{
-                    emptyText: (
-                      <Blank text="还没有优惠券，可先到领取优惠页领取" />
-                    ),
-                  }}
-                  columns={[
-                    { title: "优惠券", dataIndex: "name" },
-                    {
-                      title: "优惠金额",
-                      dataIndex: "discountAmount",
-                      render: money,
-                    },
-                    {
-                      title: "使用状态",
-                      dataIndex: "status",
-                      render: (v: string) => <Status value={v} />,
-                    },
-                    { title: "有效期", dataIndex: "validTo", render: time },
-                  ]}
-                  pagination={false}
-                />
+                <>
+                  {walletFilters.toolbar}
+                  <Table<Coupon>
+                    rowKey="couponId"
+                    dataSource={wallet.data}
+                    loading={wallet.loading}
+                    locale={{
+                      emptyText: (
+                        <Blank text="还没有优惠券，可先到领取优惠页领取" />
+                      ),
+                    }}
+                    columns={[
+                      {
+                        title: "优惠券",
+                        dataIndex: "name",
+                        render: (v, row) => (
+                          <PrimaryCell title={v} subtitle={row.couponId} />
+                        ),
+                      },
+                      {
+                        title: "使用门槛",
+                        dataIndex: "minimumSpend",
+                        render: money,
+                      },
+                      {
+                        title: "优惠金额",
+                        dataIndex: "discountAmount",
+                        render: money,
+                      },
+                      {
+                        title: "使用状态",
+                        dataIndex: "status",
+                        render: (v: string) => <Status value={v} />,
+                      },
+                      { title: "有效期", dataIndex: "validTo", render: time },
+                    ]}
+                    scroll={{ x: 650 }}
+                    pagination={false}
+                  />
+                  <Pager
+                    after={walletAfter}
+                    cursorName="MemberWallet.wallet.after"
+                    count={wallet.data?.length ?? 0}
+                    pageSize={walletFilters.limit}
+                    loading={wallet.loading}
+                    error={wallet.error}
+                    onHome={() => setWalletAfter("")}
+                    onNext={() => setWalletAfter(wallet.data!.at(-1)!.couponId)}
+                  />
+                </>
               ),
             },
           ]}
         />
       )}
+      {section !== "coupons" && sectionFilters.toolbar}
       {section === "benefits" &&
         (benefits.loading && !benefits.data ? (
           <div className="page-loading">正在加载权益</div>
@@ -240,6 +322,44 @@ export function MemberWallet({
             }}
           />
         </Card>
+      )}
+      {section !== "coupons" && (
+        <Pager
+          after={after}
+          cursorName={`MemberWallet.${section}.after`}
+          count={
+            section === "benefits"
+              ? (benefits.data?.length ?? 0)
+              : section === "aftersales"
+                ? (cases.data?.length ?? 0)
+                : (notices.data?.length ?? 0)
+          }
+          pageSize={sectionFilters.limit}
+          loading={
+            section === "benefits"
+              ? benefits.loading
+              : section === "aftersales"
+                ? cases.loading
+                : notices.loading
+          }
+          error={
+            section === "benefits"
+              ? benefits.error
+              : section === "aftersales"
+                ? cases.error
+                : notices.error
+          }
+          onHome={() => setAfter("")}
+          onNext={() =>
+            setAfter(
+              section === "benefits"
+                ? benefits.data!.at(-1)!.grantId
+                : section === "aftersales"
+                  ? cases.data!.at(-1)!.caseId
+                  : notices.data!.at(-1)!.notificationId,
+            )
+          }
+        />
       )}
     </>
   );

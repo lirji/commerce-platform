@@ -1,3 +1,6 @@
+import { formatField, workTypeLabel } from "../shared/ui";
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import {
   Alert,
   Button,
@@ -65,8 +68,14 @@ function RuntimeRead() {
       "/admin/runtime/replay/classifications",
     ),
     [workType, setWorkType] = useState(""),
-    [stoppedAfter, setStoppedAfter] = useState(""),
-    [historyAfter, setHistoryAfter] = useState(0);
+    [stoppedAfter, setStoppedAfter] = useCursorState(
+      "CentralRuntime.stoppedAfter",
+      "",
+    ),
+    [historyAfter, setHistoryAfter] = useCursorState(
+      "CentralRuntime.historyAfter",
+      0,
+    );
   const stopped = useResource<OperationRow[]>(
       workType
         ? `/admin/runtime/stopped?workType=${workType}&after=${encodeURIComponent(stoppedAfter)}&limit=50`
@@ -95,7 +104,7 @@ function RuntimeRead() {
         <Select
           aria-label="恢复工作类型"
           style={{ width: "100%", maxWidth: 420 }}
-          placeholder="从真实Owner注册中选择工作类型"
+          placeholder="选择需要查看的业务处理类型"
           value={workType || undefined}
           onChange={(value) => {
             setWorkType(value);
@@ -103,7 +112,7 @@ function RuntimeRead() {
           }}
           options={types.data?.map((t) => ({
             value: t.workType,
-            label: `${t.workType} · ${t.actions.join(" / ")}`,
+            label: `${workTypeLabel(t.workType)} · ${t.actions.map((a) => String(formatField("action", a))).join(" / ")}`,
           }))}
         />
         <ErrorNotice error={stopped.error} />
@@ -122,10 +131,19 @@ function RuntimeRead() {
           ].map(([dataIndex, title]) => ({
             dataIndex,
             title,
-            render: (v) => String(v ?? "—"),
+            render: (v) => formatField(dataIndex, v),
           }))}
         />
         <Space wrap>
+          <CursorBack
+            name={"CentralRuntime.stoppedAfter"}
+            after={stoppedAfter}
+            onPrevious={setStoppedAfter}
+            initial={""}
+            disabled={stopped.loading || !!stopped.error}
+            count={stopped.data?.length}
+            pageSize={50}
+          />
           <Button
             disabled={!stoppedAfter || stopped.loading}
             onClick={() => setStoppedAfter("")}
@@ -160,10 +178,19 @@ function RuntimeRead() {
           ].map(([dataIndex, title]) => ({
             dataIndex,
             title,
-            render: (v) => String(v ?? "—"),
+            render: (v) => formatField(dataIndex, v),
           }))}
         />
         <Space wrap>
+          <CursorBack
+            name={"CentralRuntime.historyAfter"}
+            after={historyAfter}
+            onPrevious={setHistoryAfter}
+            initial={0}
+            disabled={history.loading || !!history.error}
+            count={history.data?.length}
+            pageSize={50}
+          />
           <Button
             disabled={!historyAfter || history.loading}
             onClick={() => setHistoryAfter(0)}
@@ -208,7 +235,7 @@ function RuntimeRead() {
             {
               title: "证据说明",
               dataIndex: "evidence",
-              render: (v) => String(v ?? "—"),
+              render: (v) => formatField("evidence", v),
             },
           ]}
         />

@@ -1,4 +1,6 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -177,9 +179,15 @@ function DirectorySection({
 }) {
   const merchant = kind === Kind.MERCHANT,
     label = merchant ? "商家" : "门店";
-  const [after, setAfter] = useRouteState(`DirectorySection.${kind}.after`, "");
+  const [after, setAfter] = useCursorState(
+    `DirectorySection.${kind}.after`,
+    "",
+  );
+  const filters = useListFilters("DirectorySection", `/admin/${kind}`, () =>
+    setAfter(""),
+  );
   const rows = useResource<Entry[]>(
-    `/admin/${kind}?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/${kind}?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   const action = useResource<{ allowed: boolean }>(
     `/operations/directory/${kind}/create-access`,
@@ -272,6 +280,7 @@ function DirectorySection({
           重新核验权限与目录
         </Button>
       </Space>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<Entry>
@@ -299,6 +308,15 @@ function DirectorySection({
         />
       )}
       <Space>
+        <CursorBack
+          name={`DirectorySection.${kind}.after`}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}
@@ -307,7 +325,7 @@ function DirectorySection({
         </Button>
         <Button
           disabled={
-            rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => {
             const last = rows.data!.at(-1)!;

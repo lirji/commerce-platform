@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { Alert, Button, Card, Form, Input, Space, Table, Tabs } from "antd";
 import { LifecycleEffects } from "./LifecycleEffects";
@@ -47,8 +48,8 @@ export function MarketingEffects({ store }: { store: string }) {
     from: instant(initialDate(-86400 * 30)),
     to: instant(initialDate(86400)),
   });
-  const [after, setAfter] = useRouteState("after", "");
-  const [journeyAfter, setJourneyAfter] = useRouteState("journeyAfter", "");
+  const [after, setAfter] = useCursorState("after", "");
+  const [journeyAfter, setJourneyAfter] = useCursorState("journeyAfter", "");
   const [cursor, setCursor] = useRouteState("cursor", "");
   const [rebuildDone, setRebuildDone] = useState(false);
   const query = `storeId=${encode(store)}&from=${encode(range.from)}&to=${encode(range.to)}`;
@@ -161,11 +162,24 @@ export function MarketingEffects({ store }: { store: string }) {
                   ]}
                 />
                 <PagerActions>
+                  <CursorBack
+                    name={"after"}
+                    after={after}
+                    onPrevious={setAfter}
+                    initial={""}
+                    disabled={report.loading || !!report.error}
+                    count={report.data?.rows.length}
+                    pageSize={50}
+                  />
                   <Button onClick={() => setAfter("")} disabled={!after}>
                     回到首页
                   </Button>
                   <Button
-                    disabled={report.data?.rows.length !== 50}
+                    disabled={
+                      report.loading ||
+                      !!report.error ||
+                      report.data?.rows.length !== 50
+                    }
                     onClick={() => setAfter(report.data!.rows.at(-1)!.seriesId)}
                   >
                     下一页
@@ -206,6 +220,15 @@ export function MarketingEffects({ store }: { store: string }) {
                   ]}
                 />
                 <PagerActions>
+                  <CursorBack
+                    name={"journeyAfter"}
+                    after={journeyAfter}
+                    onPrevious={setJourneyAfter}
+                    initial={""}
+                    disabled={journeys.loading || !!journeys.error}
+                    count={journeys.data?.length}
+                    pageSize={50}
+                  />
                   <Button
                     onClick={() => setJourneyAfter("")}
                     disabled={!journeyAfter}
@@ -213,7 +236,11 @@ export function MarketingEffects({ store }: { store: string }) {
                     回到首页
                   </Button>
                   <Button
-                    disabled={journeys.data?.length !== 50}
+                    disabled={
+                      journeys.loading ||
+                      !!journeys.error ||
+                      journeys.data?.length !== 50
+                    }
                     onClick={() =>
                       setJourneyAfter(journeys.data!.at(-1)!.journeyId)
                     }

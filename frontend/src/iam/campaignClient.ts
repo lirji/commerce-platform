@@ -1,3 +1,4 @@
+import { listGuardPath } from "../shared/listFilters";
 import { ApiError, type request } from "../shared/api";
 import type { Campaign } from "../shared/contracts";
 import { CentralError, HTTP, type Context } from "./api";
@@ -78,10 +79,13 @@ export function campaignClient(
     options: Parameters<typeof request>[1] = {},
   ) => {
     const method = options.method ?? "GET";
+    const guardedPath = listGuardPath(path);
     let directory = false;
     for (const base of ["/admin/campaigns", "/admin/campaign-budgets"]) {
       if (!path.startsWith(`${base}?`)) continue;
-      const query = new URLSearchParams(path.slice(path.indexOf("?") + 1));
+      const query = new URLSearchParams(
+        guardedPath.slice(guardedPath.indexOf("?") + 1),
+      );
       directory =
         Array.from(query.keys()).length === 2 &&
         query.has("after") &&

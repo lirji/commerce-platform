@@ -1,3 +1,4 @@
+import { workTypeLabel } from "../shared/ui";
 import {
   Alert,
   Button,
@@ -17,7 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { encode, request, useResource } from "../shared/api";
 import { useIntent } from "../shared/useIntent";
-import { useRouteState } from "../shared/routeState";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   ErrorNotice,
   ListPanel,
@@ -180,8 +181,8 @@ function Recovery() {
   const [tab, setTab] = useRouteState("tab", "stopped");
   const [workType, setWorkType] = useRouteState("workType", "");
   const [failureClass, setFailureClass] = useRouteState("failureClass", "");
-  const [after, setAfter] = useRouteState("after", "");
-  const [auditAfter, setAuditAfter] = useRouteState("auditAfter", 0);
+  const [after, setAfter] = useCursorState("after", "");
+  const [auditAfter, setAuditAfter] = useCursorState("auditAfter", 0);
   const [selected, setSelected] = useState<string[]>([]);
   const [detail, setDetail] = useState<Stopped>();
   const [form] = Form.useForm<{ action: string; reason: string }>();
@@ -252,7 +253,7 @@ function Recovery() {
                           style={{ width: 250 }}
                           options={types.data?.map((t) => ({
                             value: t.workType,
-                            label: t.workType,
+                            label: workTypeLabel(t.workType),
                           }))}
                           onChange={(v) => {
                             setWorkType(v);
@@ -286,7 +287,10 @@ function Recovery() {
                     </Space>
                   }
                   count={rows.data?.length ?? 0}
+                  loading={rows.loading}
+                  error={rows.error}
                   after={after}
+                  cursorName={"after"}
                   onHome={() => {
                     setAfter("");
                     setSelected([]);
@@ -466,7 +470,10 @@ function Recovery() {
                 <ErrorNotice error={history.error} />
                 <ListPanel
                   count={history.data?.length ?? 0}
+                  loading={history.loading}
+                  error={history.error}
                   after={auditAfter}
+                  cursorName={"auditAfter"}
                   onHome={() => setAuditAfter(0)}
                   onNext={() => setAuditAfter(history.data!.at(-1)!.id)}
                 >
@@ -558,7 +565,7 @@ function Recovery() {
 
 function Replay() {
   const [tab, setTab] = useRouteState("tab", "jobs");
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
   const [selected, setSelected] = useState<string>();
   const jobs = useResource<Job[]>(
     `${BASE}/replays?after=${encode(after)}&limit=50`,
@@ -655,7 +662,10 @@ function Replay() {
             children: (
               <ListPanel
                 count={jobs.data?.length ?? 0}
+                loading={jobs.loading}
+                error={jobs.error}
                 after={after}
+                cursorName={"after"}
                 onHome={() => setAfter("")}
                 onNext={() => setAfter(jobs.data!.at(-1)!.jobId)}
               >

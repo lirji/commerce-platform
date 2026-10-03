@@ -1,3 +1,7 @@
+import { Status } from "../shared/ui";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -566,8 +570,13 @@ function DirectExecution({
   );
 }
 function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
-  const [after, setAfter] = useState(""),
+  const [after, setAfter] = useCursorState("CentralOpsPages.after", ""),
     [target, setTarget] = useState("");
+  const filters = useListFilters(
+    "CentralOpsPages.after",
+    "/admin/ops-pages",
+    () => setAfter(""),
+  );
   const list = useResource<Governed<PageDefinition>[]>(
       `/admin/ops-pages?after=${after}&limit=50`,
     ),
@@ -583,6 +592,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
         title="页面最新版本"
         extra={<Button onClick={list.refresh}>刷新列表</Button>}
       >
+        {filters.toolbar}
         <ErrorNotice error={list.error} />
         <Table<Governed<PageDefinition>>
           rowKey={(r) => r.content.pageId}
@@ -598,7 +608,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
             {
               title: "状态",
               dataIndex: "status",
-              render: (v) => <Tag>{v}</Tag>,
+              render: (v) => <Status value={String(v)} />,
             },
             {
               title: "详情",
@@ -611,11 +621,20 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
           ]}
         />
         <Space wrap style={{ marginTop: 12 }}>
+          <CursorBack
+            name={"CentralOpsPages.after"}
+            after={after}
+            onPrevious={setAfter}
+            initial={""}
+            disabled={list.loading || !!list.error}
+            count={list.data?.length}
+            pageSize={filters.limit}
+          />
           <Button disabled={!after} onClick={() => setAfter("")}>
             首批
           </Button>
           <Button
-            disabled={list.data?.length !== 50 || list.loading}
+            disabled={list.data?.length !== filters.limit || list.loading}
             onClick={() => setAfter(list.data?.at(-1)?.content.pageId ?? "")}
           >
             下一批
@@ -638,7 +657,11 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
             scroll={{ x: 540 }}
             columns={[
               { title: "版本", render: (_, r) => r.content.version },
-              { title: "状态", dataIndex: "status" },
+              {
+                title: "状态",
+                dataIndex: "status",
+                render: (value: string) => <Status value={value} />,
+              },
               { title: "控制版本", dataIndex: "lockVersion" },
             ]}
           />

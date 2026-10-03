@@ -1,3 +1,4 @@
+import { listGuardPath } from "../shared/listFilters";
 import { ApiError, type request } from "../shared/api";
 import { CentralError, HTTP, type Context } from "./api";
 
@@ -147,8 +148,9 @@ export function operationsClient(
     path: string,
     options: Parameters<typeof request>[1] = {},
   ): Promise<T> => {
+    const guardedPath = listGuardPath(path);
     const method = options.method ?? "GET",
-      url = new URL(path, "https://closed.invalid");
+      url = new URL(guardedPath, "https://closed.invalid");
     const base = url.pathname,
       query = url.searchParams;
     const match = (pattern: string) => new RegExp(`^${pattern}$`).test(base);

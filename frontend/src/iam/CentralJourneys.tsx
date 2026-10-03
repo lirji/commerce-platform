@@ -1,3 +1,7 @@
+import { RecordFields } from "../shared/ui";
+import { useListFilters } from "../shared/listFilters";
+import { Pager, Status } from "../shared/ui";
+import { useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -119,9 +123,7 @@ function useQualifications(
   return { allowed, error };
 }
 function JsonResult({ value }: { value: unknown }) {
-  return (
-    <pre className="central-journey-json">{JSON.stringify(value, null, 2)}</pre>
-  );
+  return <RecordFields value={value} />;
 }
 function Shell({ area, context, onLogout }: { area: Area } & Props) {
   const client = useMemo(
@@ -152,7 +154,7 @@ export function CentralMarketingExecutions(props: Props) {
 function Workspace({ area, client }: { area: Area; client: typeof request }) {
   const { modal } = App.useApp();
   const [revision, setRevision] = useState(0),
-    [after, setAfter] = useState("");
+    [after, setAfter] = useCursorState("CentralJourneys.after", "");
   const command = useJourneyCommand(client),
     qualification = useQualifications(client, area, revision);
   const [open, setOpen] = useState<string>(),
@@ -162,7 +164,10 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
   const changed = useRef(false);
   const [historyId, setHistoryId] = useState(""),
     [historyTarget, setHistoryTarget] = useState(""),
-    [historyAfter, setHistoryAfter] = useState(-1);
+    [historyAfter, setHistoryAfter] = useCursorState(
+      "CentralJourneys.historyAfter",
+      -1,
+    );
   const history = useResource<{
     instance: JourneyInstance;
     definition: Journey;
@@ -197,15 +202,26 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
     deliveries: "/admin/marketing-effects/deliveries",
     counts: "/admin/journey-effects",
   };
+  const filters = useListFilters(
+    `Journey.${area}`,
+    area === "definitions"
+      ? "/admin/journeys"
+      : area === "instances"
+        ? "/admin/journey-instances"
+        : area === "scans"
+          ? "/admin/journey-scans"
+          : "",
+    () => setAfter(""),
+  );
   const listPath =
     area === "definitions"
-      ? `/admin/journeys?after=${encodeURIComponent(after)}&limit=50`
+      ? `/admin/journeys?after=${encodeURIComponent(after)}&${filters.query}`
       : area === "instances"
-        ? `/admin/journey-instances?after=${encodeURIComponent(after)}&limit=50`
+        ? `/admin/journey-instances?after=${encodeURIComponent(after)}&${filters.query}`
         : area === "scans"
-          ? `/admin/journey-scans?after=${encodeURIComponent(after)}&limit=50`
+          ? `/admin/journey-scans?after=${encodeURIComponent(after)}&${filters.query}`
           : area === "executions"
-            ? `/admin/marketing-executions?after=${encodeURIComponent(after)}&limit=50`
+            ? `/admin/marketing-executions?after=${encodeURIComponent(after)}&${filters.query}`
             : range
               ? `${paths[series as keyof typeof paths]}?${query}`
               : null;
@@ -410,11 +426,11 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
               (row as unknown as Governed<Journey>).content.version,
           },
           {
-            title: "状态 / 状态CAS",
+            title: "状态 / 状态版本",
             key: "state",
             render: (_: unknown, row: Row) => (
               <>
-                <Tag>{String(row.status)}</Tag>
+                <Status value={String(row.status)} />
                 {String(row.lockVersion)}
               </>
             ),
@@ -479,10 +495,14 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
               render: (_: unknown, row: Row) =>
                 `${row.journeyId} / ${row.journeyVersion}`,
             },
-            { title: "状态", dataIndex: "status" },
+            {
+              title: "状态",
+              dataIndex: "status",
+              render: (value: string) => <Status value={value} />,
+            },
             { title: "当前节点", dataIndex: "currentNode" },
             { title: "已提交步数", dataIndex: "steps" },
-            { title: "进度CAS", dataIndex: "version" },
+            { title: "进度版本", dataIndex: "version" },
             { title: "执行截止", dataIndex: "deadline" },
             {
               title: "操作",
@@ -506,7 +526,11 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           ? [
               { title: "旅程", dataIndex: "journeyId" },
               { title: "固定内容版本", dataIndex: "journeyVersion" },
-              { title: "状态", dataIndex: "status" },
+              {
+                title: "状态",
+                dataIndex: "status",
+                render: (value: string) => <Status value={value} />,
+              },
               { title: "检查点", dataIndex: "memberCursor" },
               {
                 title: "扫描 / 入组",
@@ -514,7 +538,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                 render: (_: unknown, row: Row) =>
                   `${row.scanned} / ${row.enrolled}`,
               },
-              { title: "进度CAS", dataIndex: "version" },
+              { title: "进度版本", dataIndex: "version" },
               { title: "下次扫描", dataIndex: "nextDue" },
               { title: "失败码", dataIndex: "errorCode" },
               {
@@ -560,9 +584,17 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                 },
                 { title: "活动", dataIndex: "campaignId" },
                 { title: "固定版本", dataIndex: "campaignVersion" },
-                { title: "状态", dataIndex: "status" },
+                {
+                  title: "状态",
+                  dataIndex: "status",
+                  render: (value: string) => <Status value={value} />,
+                },
                 { title: "成交优惠", dataIndex: "discountAmount" },
-                { title: "权益真实状态", dataIndex: "grantStatus" },
+                {
+                  title: "权益真实状态",
+                  dataIndex: "grantStatus",
+                  render: (value: string) => <Status value={value} />,
+                },
                 { title: "失败分类", dataIndex: "failureClass" },
               ]
             : Object.keys(rows[0] ?? {}).map((key) => ({
@@ -696,7 +728,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
       <>
         {field("journeyId", "实际旅程编号")}
         {field("version", "固定内容版本", true)}
-        {field("expectedVersion", "当前状态CAS", true)}
+        {field("expectedVersion", "当前状态版本", true)}
       </>
     );
   else if (open === "enroll")
@@ -735,7 +767,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
       <>
         {field("journeyId", "旅程编号")}
         {field("version", "固定内容版本", true)}
-        {field("expectedVersion", "实际扫描进度CAS", true)}
+        {field("expectedVersion", "实际扫描进度版本", true)}
         {field("reason", "恢复原因")}
         <Alert
           type="info"
@@ -760,7 +792,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
         title={titles[area]}
         description={
           area === "definitions"
-            ? "固定内容、审批状态和状态CAS分别展示；新版本不会改写已有实例。"
+            ? "固定内容、审批状态和状态版本分别展示；新版本不会改写已有实例。"
             : area === "effects"
               ? "读取真实成交、退款和覆盖口径；观察结果不能当作因果ROI。"
               : "查看真实持久进度、固定版本及已提交结果。"
@@ -925,6 +957,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           </Space>
         }
       >
+        {filters.toolbar}
         <ErrorNotice error={list.error} />
         {list.error instanceof ApiError &&
           list.error.status === HTTP.FORBIDDEN && (
@@ -971,24 +1004,27 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                 : "本批没有实际记录",
           }}
         />
-        {rows.length === 50 && (
-          <Button
-            onClick={() => {
-              const row = rows.at(-1)!;
-              setAfter(
-                String(
-                  row.instanceId ??
-                    row.orderId ??
-                    row.seriesId ??
-                    (row.content as Row | undefined)?.journeyId ??
-                    row.journeyId,
-                ),
-              );
-            }}
-          >
-            下一批50条
-          </Button>
-        )}
+        <Pager
+          after={after}
+          cursorName="CentralJourneys.after"
+          count={rows.length}
+          pageSize={filters.limit}
+          loading={list.loading}
+          error={list.error}
+          onHome={() => setAfter("")}
+          onNext={() => {
+            const row = rows.at(-1)!;
+            setAfter(
+              String(
+                row.instanceId ??
+                  row.orderId ??
+                  row.seriesId ??
+                  (row.content as Row | undefined)?.journeyId ??
+                  row.journeyId,
+              ),
+            );
+          }}
+        />
       </Card>
       {area === "instances" && (
         <Card title="按实例读取固定版本与历史">
@@ -1029,17 +1065,20 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
               />
               <JourneyMap journey={history.data.definition} />
               <JsonResult value={history.data} />
-              {history.data.steps.length === 50 && (
-                <Button
-                  onClick={() =>
-                    setHistoryAfter(
-                      Number(history.data!.steps.at(-1)!.transitionVersion),
-                    )
-                  }
-                >
-                  继续读取历史
-                </Button>
-              )}
+              <Pager
+                after={historyAfter}
+                initial={-1}
+                cursorName="CentralJourneys.historyAfter"
+                count={history.data.steps.length}
+                loading={history.loading}
+                error={history.error}
+                onHome={() => setHistoryAfter(-1)}
+                onNext={() =>
+                  setHistoryAfter(
+                    Number(history.data!.steps.at(-1)!.transitionVersion),
+                  )
+                }
+              />
             </>
           )}
         </Card>

@@ -1,3 +1,6 @@
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { Alert, Button, Card, Input, Space, Table, Typography } from "antd";
@@ -173,10 +176,15 @@ export function BatchCatalogAction({
 }
 /** 计划和逐项回执独立展示，不将受理误显示成调价成功。 */
 export function CatalogJobs({ store }: { store: string }) {
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useCursorState("CatalogScheduling.after", "");
   const [selected, setSelected] = useState<Job>();
+  const filters = useListFilters(
+    "CatalogScheduling.after",
+    "/operations/catalog-jobs",
+    () => setAfter(""),
+  );
   const jobs = useResource<Job[]>(
-    `/operations/catalog-jobs?storeId=${encode(store)}&after=${encode(after)}`,
+    `/operations/catalog-jobs?storeId=${encode(store)}&after=${encode(after)}&${filters.query}`,
   );
   const receipts = useResource<Receipt[]>(
     selected
@@ -215,6 +223,7 @@ export function CatalogJobs({ store }: { store: string }) {
         title="从「销售规格与上下架」勾选商品后创建计划"
         description="任务保留创建人的经营权限边界。撤权或临时失败会退避重试，连续5次失败后隔离；取消仅停止尚未执行的项目。"
       />
+      {filters.toolbar}
       <ErrorNotice error={jobs.error ?? command.error} />
       <Table<Job>
         rowKey={(r) => r.definition.jobId}
@@ -307,11 +316,22 @@ export function CatalogJobs({ store }: { store: string }) {
         ]}
       />
       <PagerActions>
+        <CursorBack
+          name={"CatalogScheduling.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={jobs.loading || !!jobs.error}
+          count={jobs.data?.length}
+          pageSize={filters.limit}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           计划首页
         </Button>
         <Button
-          disabled={jobs.data?.length !== 50}
+          disabled={
+            jobs.loading || !!jobs.error || jobs.data?.length !== filters.limit
+          }
           onClick={() => setAfter(jobs.data!.at(-1)!.definition.jobId)}
         >
           下一页计划
@@ -369,7 +389,10 @@ export function ChannelPrices({
   sku?: JobSku;
   onClose: () => void;
 }) {
-  const [historyAfter, setHistoryAfter] = useState(0);
+  const [historyAfter, setHistoryAfter] = useCursorState(
+    "CatalogScheduling.historyAfter",
+    0,
+  );
   const [channel, setChannel] = useState<string>();
   const prices = useResource<Price[]>(
     sku
@@ -507,11 +530,24 @@ export function ChannelPrices({
             ]}
           />
           <PagerActions>
+            <CursorBack
+              name={"CatalogScheduling.historyAfter"}
+              after={historyAfter}
+              onPrevious={setHistoryAfter}
+              initial={0}
+              disabled={history.loading || !!history.error}
+              count={history.data?.length}
+              pageSize={50}
+            />
             <Button disabled={!historyAfter} onClick={() => setHistoryAfter(0)}>
               最早渠道记录
             </Button>
             <Button
-              disabled={history.data?.length !== 100}
+              disabled={
+                history.loading ||
+                !!history.error ||
+                history.data?.length !== 100
+              }
               onClick={() => setHistoryAfter(history.data!.at(-1)!.version)}
             >
               下一页渠道记录

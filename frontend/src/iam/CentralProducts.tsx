@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { RecordModal } from "../shared/interactions";
 import {
   Alert,
@@ -305,6 +307,7 @@ function Products({
     () => new URLSearchParams(location.search),
   );
   const [revision, setRevision] = useState(0);
+  const [cursor, setCursor] = useCursorState("cursor", "");
   const dirty = useRef(false);
   const { modal } = App.useApp();
   const guard = (action: () => void) => {
@@ -336,14 +339,14 @@ function Products({
     return () => removeEventListener("popstate", sync);
   }, []);
   function navigate(values: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
+    if (values.cursor !== undefined) setCursor(values.cursor ?? "");
+    const next = new URLSearchParams(location.search);
     for (const [key, value] of Object.entries(values))
       value ? next.set(key, value) : next.delete(key);
     history.pushState(null, "", `${location.pathname}?${next}`);
     setParams(next);
   }
   const search = params.get("search") ?? "",
-    cursor = params.get("cursor") ?? "",
     selected = params.get("product");
   const page = useCentral<Page>(
     context,
@@ -425,15 +428,24 @@ function Products({
               },
             ]}
           />
-          <Space>
+          <Space wrap>
+            <CursorBack
+              name="cursor"
+              after={cursor}
+              initial=""
+              onPrevious={(value) => navigate({ cursor: value, product: null })}
+              disabled={page.loading || !!page.error}
+              count={page.data?.items.length}
+              pageSize={25}
+            />
             <Button
-              disabled={!cursor}
+              disabled={!cursor || page.loading || !!page.error}
               onClick={() => navigate({ cursor: null, product: null })}
             >
               回到首页
             </Button>
             <Button
-              disabled={!page.data?.nextCursor}
+              disabled={!page.data?.nextCursor || page.loading || !!page.error}
               onClick={() =>
                 navigate({
                   cursor: page.data?.nextCursor ?? null,

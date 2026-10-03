@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -269,7 +270,7 @@ function BehaviorSearch() {
 }
 
 function BehaviorDetail({ member }: { member: string }) {
-  const [after, setAfter] = useRouteState("BehaviorDetail.after", 0);
+  const [after, setAfter] = useCursorState("BehaviorDetail.after", 0, member);
   const detail = useResource<Detail>(
     `/admin/member-behavior/${encodeURIComponent(member)}`,
   );
@@ -396,6 +397,15 @@ function BehaviorDetail({ member }: { member: string }) {
             />
           )}
           <Space>
+            <CursorBack
+              name={"BehaviorDetail.after"}
+              after={after}
+              onPrevious={setAfter}
+              initial={0}
+              disabled={rows.loading || !!rows.error}
+              count={rows.data?.length}
+              pageSize={50}
+            />
             <Button
               disabled={!after || rows.loading || !!rows.error}
               onClick={() => setAfter(0)}

@@ -1,4 +1,7 @@
-import { useRouteState } from "../shared/routeState";
+import { listGuardPath } from "../shared/listFilters";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -67,15 +70,20 @@ function offersClient(context: Context, expired: () => void): typeof request {
     path: string,
     options: Parameters<typeof request>[1] = {},
   ) => {
+    const guardedPath = listGuardPath(path);
     const method = options.method ?? "GET";
     if (!(
       (method === "GET" &&
         (/^\/admin\/point-offers\?storeId=[A-Za-z0-9_-]{1,64}&after=[A-Za-z0-9_-]{0,64}&limit=50$/.test(
-          path,
+          guardedPath,
         ) ||
-          /^\/operations\/point-offers\/(define|status)-access$/.test(path))) ||
+          /^\/operations\/point-offers\/(define|status)-access$/.test(
+            guardedPath,
+          ))) ||
       (method === "POST" &&
-        /^\/admin\/point-offers(\/[A-Za-z0-9_-]{1,64}\/status)?$/.test(path))
+        /^\/admin\/point-offers(\/[A-Za-z0-9_-]{1,64}\/status)?$/.test(
+          guardedPath,
+        ))
     ))
       throw new ApiError(HTTP.FORBIDDEN, "此入口不支持该操作");
     const headers: Record<string, string> = {
@@ -143,12 +151,16 @@ function OfferDirectory() {
   );
 }
 function OfferList({ store }: { store: string }) {
-  const [after, setAfter] = useRouteState("OfferList.after", "");
+  const [after, setAfter] = useCursorState("OfferList.after", "", store);
+  const filters = useListFilters("OfferList.after", "/admin/point-offers", () =>
+    setAfter(""),
+  );
   const rows = useResource<OfferView[]>(
-    `/admin/point-offers?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/point-offers?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&${filters.query}`,
   );
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<OfferView>
@@ -202,6 +214,15 @@ function OfferList({ store }: { store: string }) {
         />
       )}
       <Space>
+        <CursorBack
+          name={"OfferList.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}
@@ -210,7 +231,7 @@ function OfferList({ store }: { store: string }) {
         </Button>
         <Button
           disabled={
-            rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data!.at(-1)!.content.offerId)}
         >

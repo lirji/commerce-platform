@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -117,7 +118,7 @@ function growthClient(context: Context, expired: () => void): typeof request {
 }
 
 function PolicyList() {
-  const [after, setAfter] = useRouteState("PolicyList.after", 0);
+  const [after, setAfter] = useCursorState("PolicyList.after", 0);
   const rows = useResource<Policy[]>(
     `/admin/member-growth/policies?after=${after}&limit=${PAGE_SIZE}`,
   );
@@ -154,6 +155,15 @@ function PolicyList() {
         />
       )}
       <Space>
+        <CursorBack
+          name={"PolicyList.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={0}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter(0)}
@@ -215,7 +225,7 @@ function WalletSearch() {
 }
 
 function WalletDetails({ member }: { member: string }) {
-  const [after, setAfter] = useRouteState("WalletDetails.after", 0);
+  const [after, setAfter] = useCursorState("WalletDetails.after", 0, member);
   const wallet = useResource<Wallet>(
     `/admin/member-growth/${encodeURIComponent(member)}`,
   );
@@ -254,6 +264,15 @@ function WalletDetails({ member }: { member: string }) {
         />
       )}
       <Space>
+        <CursorBack
+          name={"WalletDetails.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={0}
+          disabled={ledger.loading || !!ledger.error}
+          count={ledger.data?.length}
+          pageSize={50}
+        />
         <Button
           disabled={
             !after || ledger.loading || !!ledger.error || !!wallet.error

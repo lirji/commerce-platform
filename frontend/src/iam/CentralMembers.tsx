@@ -1,5 +1,7 @@
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
 import { RecordModal } from "../shared/interactions";
-import { useRouteState } from "../shared/routeState";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -203,9 +205,12 @@ export function CentralMembers({
 }
 
 function MemberList() {
-  const [after, setAfter] = useRouteState("MemberList.after", "");
+  const [after, setAfter] = useCursorState("MemberList.after", "");
+  const filters = useListFilters("MemberList", "/admin/members", () =>
+    setAfter(""),
+  );
   const rows = useResource<Member[]>(
-    `/admin/members?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/members?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   const [selected, setSelected] = useState<Member>();
   return (
@@ -216,6 +221,7 @@ function MemberList() {
         </Typography.Text>
         <Button onClick={() => rows.refresh()}>刷新会员</Button>
       </Space>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<Member>
@@ -245,6 +251,15 @@ function MemberList() {
         />
       )}
       <Space>
+        <CursorBack
+          name={"MemberList.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}
@@ -253,7 +268,7 @@ function MemberList() {
         </Button>
         <Button
           disabled={
-            rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data!.at(-1)!.memberId)}
         >
@@ -276,7 +291,11 @@ function MemberList() {
 }
 
 function MemberHistory({ member }: { member: Member }) {
-  const [after, setAfter] = useRouteState("MemberHistory.after", 0);
+  const [after, setAfter] = useCursorState(
+    "MemberHistory.after",
+    0,
+    member.memberId,
+  );
   const rows = useResource<History[]>(
     `/admin/members/${encodeURIComponent(member.memberId)}/history?after=${after}&limit=${PAGE_SIZE}`,
   );
@@ -327,6 +346,15 @@ function MemberHistory({ member }: { member: Member }) {
         />
       )}
       <Space>
+        <CursorBack
+          name={"MemberHistory.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={0}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter(0)}

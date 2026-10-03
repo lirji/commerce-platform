@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { useCursorState } from "../shared/routeState";
 import { Button, Form, Modal, Table } from "antd";
 import { useState } from "react";
 import type { Campaign, Governed, Rule } from "../shared/contracts";
@@ -17,18 +18,25 @@ import {
   Status,
   Workbench,
   money,
+  time,
 } from "../shared/ui";
 import { MarketingDetails } from "./MarketingDetails";
 import { CampaignPreview } from "./CampaignPreview";
 import { CampaignEditor, Governance, RuleEditor } from "../shared/marketing";
+const layouts: Record<string, { width: number; benefits: boolean }> = {
+  rules: { width: 850, benefits: false },
+  campaigns: { width: 1450, benefits: true },
+};
 export function Marketing({ kind, store }: { kind: string; store: string }) {
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
   const path = kind === "rules" ? "/admin/rules" : "/admin/campaigns";
+  const layout = layouts[kind] ?? layouts.campaigns;
+  const filters = useListFilters(`Marketing.${kind}`, path, () => setAfter(""));
   const resource = useResource<
     Governed<
       Campaign | { ruleId: string; version: number; name: string; rule: Rule }
     >[]
-  >(`${path}?after=${encode(after)}`);
+  >(`${path}?after=${encode(after)}&${filters.query}`);
   const last = resource.data?.at(-1)?.content;
   const [detail, setDetail] =
     useState<
@@ -64,10 +72,15 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           </>
         }
       />
+      {filters.toolbar}
       <ErrorNotice error={resource.error} />
       <ListPanel
+        pageSize={filters.limit}
         count={resource.data?.length ?? 0}
+        loading={resource.loading}
+        error={resource.error}
         after={after}
+        cursorName={"after"}
         onHome={() => setAfter("")}
         onNext={() => {
           if (last)
@@ -81,7 +94,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           dataSource={resource.data}
           loading={resource.loading}
           pagination={false}
-          scroll={{ x: 720 }}
+          scroll={{ x: layout.width }}
           columns={[
             {
               title: "名称",
@@ -97,13 +110,98 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
               ),
             },
             { title: "版本", render: (_, r) => r.content.version },
-            {
-              title: "优惠",
-              render: (_, r) =>
-                "discountAmount" in r.content
-                  ? money(r.content.discountAmount)
-                  : "—",
-            },
+            ...(!layout.benefits
+              ? []
+              : [
+                  {
+                    title: "门店",
+                    render: (
+                      _: unknown,
+                      r: Governed<
+                        | Campaign
+                        | {
+                            ruleId: string;
+                            version: number;
+                            name: string;
+                            rule: Rule;
+                          }
+                      >,
+                    ) =>
+                      "storeId" in r.content ? r.content.storeId : "不适用",
+                  },
+                  {
+                    title: "使用门槛",
+                    render: (
+                      _: unknown,
+                      r: Governed<
+                        | Campaign
+                        | {
+                            ruleId: string;
+                            version: number;
+                            name: string;
+                            rule: Rule;
+                          }
+                      >,
+                    ) =>
+                      "minimumSpend" in r.content
+                        ? money(r.content.minimumSpend)
+                        : "不适用",
+                  },
+                  {
+                    title: "优惠金额",
+                    render: (
+                      _: unknown,
+                      r: Governed<
+                        | Campaign
+                        | {
+                            ruleId: string;
+                            version: number;
+                            name: string;
+                            rule: Rule;
+                          }
+                      >,
+                    ) =>
+                      "discountAmount" in r.content
+                        ? money(r.content.discountAmount)
+                        : "不适用",
+                  },
+                  {
+                    title: "生效时间",
+                    render: (
+                      _: unknown,
+                      r: Governed<
+                        | Campaign
+                        | {
+                            ruleId: string;
+                            version: number;
+                            name: string;
+                            rule: Rule;
+                          }
+                      >,
+                    ) =>
+                      "validFrom" in r.content
+                        ? time(r.content.validFrom)
+                        : "不适用",
+                  },
+                  {
+                    title: "截止时间",
+                    render: (
+                      _: unknown,
+                      r: Governed<
+                        | Campaign
+                        | {
+                            ruleId: string;
+                            version: number;
+                            name: string;
+                            rule: Rule;
+                          }
+                      >,
+                    ) =>
+                      "validTo" in r.content
+                        ? time(r.content.validTo)
+                        : "不适用",
+                  },
+                ]),
             {
               title: "状态",
               dataIndex: "status",

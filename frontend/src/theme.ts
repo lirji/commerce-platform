@@ -105,9 +105,18 @@ export const consoleTheme: ThemeConfig = {
     Table: {
       headerBg: palette.raised,
       rowHoverBg: palette.raised,
-      headerColor: palette.muted,
+      headerColor: palette.ink,
+      cellPaddingBlock: 10,
+      cellPaddingInline: 12,
+      cellPaddingBlockMD: 10,
+      cellPaddingInlineMD: 12,
     },
-    Card: { headerFontSize: 15, borderRadiusLG: 12, headerHeight: 56 },
+    Card: {
+      headerFontSize: 15,
+      borderRadiusLG: 12,
+      headerHeight: 48,
+      bodyPadding: 16,
+    },
     Modal: { borderRadiusLG: 12, paddingContentHorizontalLG: 20 },
     Tabs: {
       itemSelectedColor: palette.accent,

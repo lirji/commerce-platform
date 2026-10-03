@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
 import {
@@ -67,9 +68,9 @@ export function MemberGrowth({
 }) {
   const [tab, setTab] = useRouteState("tab", "behavior");
   const [member, setMember] = useRouteState("member", "");
-  const [tagAfter, setTagAfter] = useRouteState("tagAfter", "");
-  const [after, setAfter] = useRouteState("after", 0);
-  const [policyAfter, setPolicyAfter] = useRouteState("policyAfter", 0);
+  const [tagAfter, setTagAfter] = useCursorState("tagAfter", "");
+  const [after, setAfter] = useCursorState("after", 0);
+  const [policyAfter, setPolicyAfter] = useCursorState("policyAfter", 0);
   const base = admin
     ? member
       ? "/admin/member-growth/" + encode(member)
@@ -217,6 +218,15 @@ export function MemberGrowth({
                       ]}
                     />
                     <PagerActions>
+                      <CursorBack
+                        name={"after"}
+                        after={after}
+                        onPrevious={setAfter}
+                        initial={0}
+                        disabled={ledger.loading || !!ledger.error}
+                        count={ledger.data?.length}
+                        pageSize={50}
+                      />
                       <Button
                         onClick={() => setAfter(0)}
                         disabled={after === 0}
@@ -224,7 +234,11 @@ export function MemberGrowth({
                         最早记录
                       </Button>
                       <Button
-                        disabled={ledger.data?.length !== 50}
+                        disabled={
+                          ledger.loading ||
+                          !!ledger.error ||
+                          ledger.data?.length !== 50
+                        }
                         onClick={() =>
                           setAfter(ledger.data!.at(-1)!.sequenceId)
                         }
@@ -300,6 +314,17 @@ export function MemberGrowth({
                           ]}
                         />
                         <PagerActions>
+                          <CursorBack
+                            name={"tagAfter"}
+                            after={tagAfter}
+                            onPrevious={setTagAfter}
+                            initial={""}
+                            disabled={
+                              assignments.loading || !!assignments.error
+                            }
+                            count={assignments.data?.length}
+                            pageSize={50}
+                          />
                           <Button
                             disabled={!tagAfter}
                             onClick={() => setTagAfter("")}
@@ -307,7 +332,11 @@ export function MemberGrowth({
                             标签首页
                           </Button>
                           <Button
-                            disabled={assignments.data?.length !== 50}
+                            disabled={
+                              assignments.loading ||
+                              !!assignments.error ||
+                              assignments.data?.length !== 50
+                            }
                             onClick={() =>
                               setTagAfter(assignments.data!.at(-1)!.tagId)
                             }
@@ -413,6 +442,15 @@ export function MemberGrowth({
                         ]}
                       />
                       <PagerActions>
+                        <CursorBack
+                          name={"policyAfter"}
+                          after={policyAfter}
+                          onPrevious={setPolicyAfter}
+                          initial={0}
+                          disabled={policies.loading || !!policies.error}
+                          count={policies.data?.length}
+                          pageSize={50}
+                        />
                         <Button
                           disabled={!policyAfter}
                           onClick={() => setPolicyAfter(0)}
@@ -420,7 +458,11 @@ export function MemberGrowth({
                           最早版本
                         </Button>
                         <Button
-                          disabled={policies.data?.length !== 50}
+                          disabled={
+                            policies.loading ||
+                            !!policies.error ||
+                            policies.data?.length !== 50
+                          }
                           onClick={() =>
                             setPolicyAfter(policies.data!.at(-1)!.version)
                           }

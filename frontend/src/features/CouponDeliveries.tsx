@@ -1,4 +1,6 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { Alert, Button, Space, Table } from "antd";
@@ -54,12 +56,18 @@ type Audience = {
 };
 /** 发券和撤销进度均来自持久任务，不能把按钮点击当作完成。 */
 export function CouponDeliveries({ store }: { store: string }) {
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
   const [selected, setSelected] = useState<Batch>();
-  const [recipientAfter, setRecipientAfter] = useState("");
+  const [recipientAfter, setRecipientAfter] = useCursorState(
+    "CouponDeliveries.recipientAfter",
+    "",
+  );
+  const filters = useListFilters("after", "/admin/coupon-deliveries", () =>
+    setAfter(""),
+  );
   const batches = useResource<Batch[]>(
     store
-      ? `/admin/coupon-deliveries?storeId=${encode(store)}&after=${encode(after)}`
+      ? `/admin/coupon-deliveries?storeId=${encode(store)}&after=${encode(after)}&${filters.query}`
       : null,
   );
   const coupons = useResource<{ content: CouponDefinition; issued: number }[]>(
@@ -119,6 +127,7 @@ export function CouponDeliveries({ store }: { store: string }) {
           </Space>
         }
       />
+      {filters.toolbar}
       <ErrorNotice error={batches.error} />
       <ErrorNotice error={coupons.error} />
       <ErrorNotice error={audiences.error} />
@@ -129,6 +138,7 @@ export function CouponDeliveries({ store }: { store: string }) {
         style={{ marginBottom: 16 }}
       />
       <ListPanel
+        pageSize={filters.limit}
         toolbar={
           <CommandModal
             title="创建定向发券"
@@ -192,7 +202,10 @@ export function CouponDeliveries({ store }: { store: string }) {
           />
         }
         count={batches.data?.length ?? 0}
+        loading={batches.loading}
+        error={batches.error}
         after={after}
+        cursorName={"after"}
         onHome={() => setAfter("")}
         onNext={() => setAfter(batches.data!.at(-1)!.content.batchId)}
         homeLabel="批次首页"
@@ -322,6 +335,15 @@ export function CouponDeliveries({ store }: { store: string }) {
           ]}
         />
         <PagerActions>
+          <CursorBack
+            name={"CouponDeliveries.recipientAfter"}
+            after={recipientAfter}
+            onPrevious={setRecipientAfter}
+            initial={""}
+            disabled={recipients.loading || !!recipients.error}
+            count={recipients.data?.length}
+            pageSize={filters.limit}
+          />
           <Button
             disabled={!recipientAfter}
             onClick={() => setRecipientAfter("")}
@@ -329,7 +351,11 @@ export function CouponDeliveries({ store }: { store: string }) {
             回执首页
           </Button>
           <Button
-            disabled={recipients.data?.length !== 50}
+            disabled={
+              recipients.loading ||
+              !!recipients.error ||
+              recipients.data?.length !== 50
+            }
             onClick={() => setRecipientAfter(recipients.data!.at(-1)!.memberId)}
           >
             下一页收件人

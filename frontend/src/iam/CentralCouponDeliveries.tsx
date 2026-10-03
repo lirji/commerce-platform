@@ -1,3 +1,4 @@
+import { useListFilters } from "../shared/listFilters";
 import {
   Alert,
   App,
@@ -23,7 +24,7 @@ import {
   useResource,
   type request,
 } from "../shared/api";
-import { useRouteState } from "../shared/routeState";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import { ErrorNotice, PageHead, initialDate } from "../shared/ui";
 import { HTTP, type Context } from "./api";
 import {
@@ -326,7 +327,11 @@ function CursorControls({
   );
 }
 function Recipients({ batchId }: { batchId: string }) {
-  const [after, setAfter] = useRouteState("DeliveryRecipients.after", "");
+  const [after, setAfter] = useCursorState(
+    "DeliveryRecipients.after",
+    "",
+    batchId,
+  );
   const rows = useResource<DeliveryRecipient[]>(
     deliveryIdentifier.test(batchId)
       ? `/admin/coupon-deliveries/${encodeURIComponent(batchId)}/recipients?after=${encodeURIComponent(after)}&limit=${DELIVERY_PAGE_SIZE}`
@@ -397,13 +402,18 @@ function Directory({
   select: (value: DeliveryView) => void;
 }) {
   const [store, setStore] = useRouteState("Delivery.store", ""),
-    [after, setAfter] = useRouteState("Delivery.after", "");
+    [after, setAfter] = useCursorState("Delivery.after", "", store);
   const [detail, setDetail] = useRouteState("Delivery.detail", "");
   const [form] = Form.useForm<{ storeId: string }>(),
     [lookup] = Form.useForm<{ batchId: string }>();
+  const filters = useListFilters(
+    "Delivery.after",
+    "/admin/coupon-deliveries",
+    () => setAfter(""),
+  );
   const rows = useResource<DeliveryView[]>(
     deliveryIdentifier.test(store)
-      ? `/admin/coupon-deliveries?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&limit=${DELIVERY_PAGE_SIZE}`
+      ? `/admin/coupon-deliveries?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&${filters.query}`
       : null,
   );
   useEffect(() => {
@@ -452,6 +462,7 @@ function Directory({
           description="目录仅显示实际授权结果；创建、控制和推进可在各自页签独立执行。"
         />
       )}
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {deliveryIdentifier.test(store) && !rows.error && (
         <>
@@ -693,7 +704,7 @@ function Operation({
           !value.reason?.trim() ||
           value.reason.length > 256
         )
-          throw new Error("请填写实际批次、进度CAS、动作与操作原因");
+          throw new Error("请填写实际批次、进度版本、动作与操作原因");
         path = `/admin/coupon-deliveries/${encodeURIComponent(value.batchId!)}/control`;
         body = {
           expectedVersion: value.expectedVersion,
@@ -728,7 +739,7 @@ function Operation({
           <Alert
             type="warning"
             title="批次版本或状态冲突"
-            description="核对实际进度CAS及任务状态，再重新核验权限并调整输入。"
+            description="核对实际进度版本及任务状态，再重新核验权限并调整输入。"
           />
         )}
       <Qualification action={action} access={access} recheck={recheck} />

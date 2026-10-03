@@ -1,4 +1,4 @@
-import { useRouteState } from "../shared/routeState";
+import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import {
   Alert,
@@ -250,7 +250,7 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
   );
 }
 export function OpsPages({ store }: { store: string }) {
-  const [after, setAfter] = useRouteState("after", "");
+  const [after, setAfter] = useCursorState("after", "");
   const r = useResource<Governed<PageDefinition>[]>(
     `/admin/ops-pages?after=${encode(after)}`,
   );
@@ -343,7 +343,10 @@ export function OpsPages({ store }: { store: string }) {
           ]}
         />
         <Pager
+          loading={r.loading}
+          error={r.error}
           after={after}
+          cursorName={"after"}
           count={r.data?.length ?? 0}
           onHome={() => setAfter("")}
           onNext={() => setAfter(r.data!.at(-1)!.content.pageId)}

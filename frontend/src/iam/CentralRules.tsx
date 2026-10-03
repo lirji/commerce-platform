@@ -1,4 +1,8 @@
-import { useRouteState } from "../shared/routeState";
+import { Status } from "../shared/ui";
+import { listGuardPath } from "../shared/listFilters";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -54,11 +58,14 @@ function ruleClient(context: Context, expired: () => void): typeof request {
     path: string,
     options: Parameters<typeof request>[1] = {},
   ) => {
+    const guardedPath = listGuardPath(path);
     const method = options.method ?? "GET";
     let directory = false,
       publication = false;
     if (path.startsWith("/admin/rules?")) {
-      const query = new URLSearchParams(path.slice(path.indexOf("?") + 1));
+      const query = new URLSearchParams(
+        guardedPath.slice(guardedPath.indexOf("?") + 1),
+      );
       directory =
         Array.from(query.keys()).length === 2 &&
         query.has("after") &&
@@ -114,9 +121,12 @@ function ruleClient(context: Context, expired: () => void): typeof request {
 }
 
 function Directory() {
-  const [after, setAfter] = useRouteState("Directory.after", "");
+  const [after, setAfter] = useCursorState("Directory.after", "");
+  const filters = useListFilters("Directory.after", "/admin/rules", () =>
+    setAfter(""),
+  );
   const rows = useResource<RuleView[]>(
-    `/admin/rules?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/rules?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   const fields = useResource<Record<string, string>>("/admin/rule-fields");
   return (
@@ -137,6 +147,7 @@ function Directory() {
       >
         刷新规则目录
       </Button>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<RuleView>
@@ -150,7 +161,11 @@ function Directory() {
             { title: "规则编号", dataIndex: ["content", "ruleId"] },
             { title: "版本", dataIndex: ["content", "version"] },
             { title: "名称", dataIndex: ["content", "name"] },
-            { title: "状态", dataIndex: "status" },
+            {
+              title: "状态",
+              dataIndex: "status",
+              render: (value: string) => <Status value={value} />,
+            },
             {
               title: "规则条件",
               render: (_, r) => <RuleSummary rule={r.content.rule} />,
@@ -159,6 +174,15 @@ function Directory() {
         />
       )}
       <Space>
+        <CursorBack
+          name={"Directory.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}
@@ -167,7 +191,7 @@ function Directory() {
         </Button>
         <Button
           disabled={
-            rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data!.at(-1)!.content.ruleId)}
         >

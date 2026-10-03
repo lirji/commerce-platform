@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { RecordModal } from "../shared/interactions";
 import {
   Alert,
@@ -37,7 +39,7 @@ export function Shop({
   onOrder: () => void;
 }) {
   const [filters, setFilters] = useState("");
-  const [after, setAfter] = useState("");
+  const [after, setAfter] = useCursorState("Shop.after", "");
   const products = useResource<CatalogItem[]>(
     store
       ? `/catalog/search?storeId=${encode(store)}&after=${encode(after)}&${filters}`
@@ -356,11 +358,24 @@ export function Shop({
                 : `本页 ${products.data?.length ?? 0} 件`}
             </span>
             <PagerActions>
+              <CursorBack
+                name={"Shop.after"}
+                after={after}
+                onPrevious={setAfter}
+                initial={""}
+                disabled={products.loading || !!products.error}
+                count={products.data?.length}
+                pageSize={50}
+              />
               <Button disabled={!after} onClick={() => setAfter("")}>
                 商品首页
               </Button>
               <Button
-                disabled={products.data?.length !== 50}
+                disabled={
+                  products.loading ||
+                  !!products.error ||
+                  products.data?.length !== 50
+                }
                 onClick={() => setAfter(products.data!.at(-1)!.skuId)}
               >
                 下一页商品

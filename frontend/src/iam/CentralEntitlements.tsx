@@ -1,4 +1,8 @@
-import { useRouteState } from "../shared/routeState";
+import { listGuardPath } from "../shared/listFilters";
+import { useListFilters } from "../shared/listFilters";
+import { Status } from "../shared/ui";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -59,11 +63,14 @@ function entitlementClient(
     path: string,
     options: Parameters<typeof request>[1] = {},
   ) => {
+    const guardedPath = listGuardPath(path);
     const method = options.method ?? "GET";
     let directory = false,
       resolve = false;
     if (path.startsWith("/admin/entitlements?")) {
-      const query = new URLSearchParams(path.slice(path.indexOf("?") + 1));
+      const query = new URLSearchParams(
+        guardedPath.slice(guardedPath.indexOf("?") + 1),
+      );
       directory =
         Array.from(query.keys()).length === 2 &&
         query.has("after") &&
@@ -112,15 +119,19 @@ function entitlementClient(
 }
 
 function Directory() {
-  const [after, setAfter] = useRouteState("Directory.after", "");
+  const [after, setAfter] = useCursorState("Directory.after", "");
+  const filters = useListFilters("Directory.after", "/admin/entitlements", () =>
+    setAfter(""),
+  );
   const rows = useResource<Entitlement[]>(
-    `/admin/entitlements?after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/entitlements?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       <Typography.Text type="secondary">
         当前组织的权益实例，包含各状态；处理补偿需要独立权限。
       </Typography.Text>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<Entitlement>
@@ -135,7 +146,11 @@ function Directory() {
             { title: "权益定义编号", dataIndex: "benefitId" },
             { title: "定义版本", dataIndex: "benefitVersion" },
             { title: "名称", dataIndex: "name" },
-            { title: "状态", dataIndex: "status" },
+            {
+              title: "状态",
+              dataIndex: "status",
+              render: (value: string) => <Status value={value} />,
+            },
             { title: "总单位数", dataIndex: "units" },
             { title: "剩余单位数", dataIndex: "remainingUnits" },
             { title: "欠项单位数", dataIndex: "debtUnits" },
@@ -156,6 +171,15 @@ function Directory() {
         />
       )}
       <Space wrap>
+        <CursorBack
+          name={"Directory.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter("")}
@@ -164,7 +188,7 @@ function Directory() {
         </Button>
         <Button
           disabled={
-            rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => setAfter(rows.data!.at(-1)!.grantId)}
         >

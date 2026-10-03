@@ -1,3 +1,5 @@
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import {
   Alert,
@@ -52,7 +54,7 @@ type Bundle = {
 export function MemberCycles({ admin }: { admin: boolean }) {
   const [member, setMember] = useState("");
   const [policyVersion, setPolicyVersion] = useState(1);
-  const [after, setAfter] = useState(0);
+  const [after, setAfter] = useCursorState("MemberCycles.after", 0);
   const cycle = useResource<Cycle>(
     admin
       ? member
@@ -274,11 +276,24 @@ export function MemberCycles({ admin }: { admin: boolean }) {
               ]}
             />
             <PagerActions>
+              <CursorBack
+                name={"MemberCycles.after"}
+                after={after}
+                onPrevious={setAfter}
+                initial={0}
+                disabled={policies.loading || !!policies.error}
+                count={policies.data?.length}
+                pageSize={50}
+              />
               <Button disabled={!after} onClick={() => setAfter(0)}>
                 最早周期策略
               </Button>
               <Button
-                disabled={policies.data?.length !== 50}
+                disabled={
+                  policies.loading ||
+                  !!policies.error ||
+                  policies.data?.length !== 50
+                }
                 onClick={() => setAfter(policies.data!.at(-1)!.version)}
               >
                 下一页周期策略

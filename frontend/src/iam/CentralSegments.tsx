@@ -1,3 +1,5 @@
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
 import {
   Alert,
   App,
@@ -26,7 +28,7 @@ import {
 } from "../shared/api";
 import type { Rule } from "../shared/contracts";
 import { RuleEditor, RuleSummary } from "../shared/marketing";
-import { useRouteState } from "../shared/routeState";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import { ErrorNotice, PageHead } from "../shared/ui";
 import { HTTP, type Context } from "./api";
 import {
@@ -254,7 +256,7 @@ function Runs({
   segment: string;
   select: (value: SegmentRun) => void;
 }) {
-  const [after, setAfter] = useRouteState("SegmentRuns.after", "");
+  const [after, setAfter] = useCursorState("SegmentRuns.after", "", segment);
   const rows = useResource<SegmentRun[]>(
     `/admin/segments/${encodeURIComponent(segment)}/runs?after=${encodeURIComponent(after)}&limit=${SEGMENT_PAGE_SIZE}`,
   );
@@ -305,6 +307,15 @@ function Runs({
         />
       )}
       <Space wrap>
+        <CursorBack
+          name={"SegmentRuns.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           回到首批记录
         </Button>
@@ -354,10 +365,15 @@ function Directory({
   selectDefinition: (value: SegmentView) => void;
   selectRun: (value: SegmentRun) => void;
 }) {
-  const [after, setAfter] = useRouteState("SegmentDirectory.after", ""),
+  const [after, setAfter] = useCursorState("SegmentDirectory.after", ""),
     [detail, setDetail] = useRouteState("SegmentDirectory.detail", "");
+  const filters = useListFilters(
+    "SegmentDirectory.after",
+    "/admin/segments",
+    () => setAfter(""),
+  );
   const rows = useResource<SegmentView[]>(
-    `/admin/segments?after=${encodeURIComponent(after)}&limit=${SEGMENT_PAGE_SIZE}`,
+    `/admin/segments?after=${encodeURIComponent(after)}&${filters.query}`,
   );
   const refresh = rows.refresh;
   useEffect(() => {
@@ -370,6 +386,7 @@ function Directory({
         查看真实最新定义与运行记录。新定义会关闭未来周期刷新，已开始的任务仍固定原定义版本。
       </Typography.Text>
       <Button onClick={refresh}>刷新定义目录</Button>
+      {filters.toolbar}
       <ErrorNotice error={rows.error} />
       {!rows.error && (
         <Table<SegmentView>
@@ -426,14 +443,21 @@ function Directory({
         />
       )}
       <Space wrap>
+        <CursorBack
+          name={"SegmentDirectory.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={""}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={filters.limit}
+        />
         <Button disabled={!after} onClick={() => setAfter("")}>
           回到首页
         </Button>
         <Button
           disabled={
-            rows.loading ||
-            !!rows.error ||
-            rows.data?.length !== SEGMENT_PAGE_SIZE
+            rows.loading || !!rows.error || rows.data?.length !== filters.limit
           }
           onClick={() => {
             setDetail("");

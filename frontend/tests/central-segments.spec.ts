@@ -450,6 +450,11 @@ test("严格入口拒绝方法/路径/游标越界，损坏或错目标回执不
       const invalid = [
         ["/admin/segments?after=&limit=51", "GET"],
         ["/admin/segments?after=&limit=50&limit=50", "GET"],
+        ["/admin/segments?after=&limit=10&enabled=no", "GET"],
+        ["/admin/segments?after=&limit=10&status=ACTIVE", "GET"],
+        ["/admin/segments?after=&limit=10&unknown=value", "GET"],
+        [`/admin/segments?after=&limit=10&q=${"x".repeat(65)}`, "GET"],
+        ["https://example.invalid/admin/segments?after=&limit=10", "GET"],
         ["/admin/segments/S/runs?after=%2Fescape&limit=50", "GET"],
         ["/admin/segments/S/runs?after=&limit=50", "POST"],
         ["/operations/segments/read-access", "GET"],
@@ -471,6 +476,14 @@ test("严格入口拒绝方法/路径/游标越界，损坏或错目标回执不
           }
         }
         const invalidFetches = fetched;
+        let filteredUrl = "";
+        window.fetch = async (input) => {
+          filteredUrl = String(input);
+          return new Response("[]", { status: 200 });
+        };
+        await client("/admin/segments?after=&limit=10&q=VIP%25_&enabled=false");
+        window.fetch = async () =>
+          new Response(JSON.stringify(view), { status: 200 });
         let wrongTarget = false,
           damaged = false,
           invalidRule = false;
@@ -516,6 +529,7 @@ test("严格入口拒绝方法/路径/游标越界，损坏或错目标回执不
         return {
           rejected,
           invalidFetches,
+          filteredUrl,
           wrongTarget,
           damaged,
           invalidRule,
@@ -529,6 +543,7 @@ test("严格入口拒绝方法/路径/游标越界，损坏或错目标回执不
   );
   expect(result.rejected.every(Boolean)).toBe(true);
   expect(result.invalidFetches).toBe(0);
+  expect(result.filteredUrl).toContain("limit=10&q=VIP%25_&enabled=false");
   expect(result.wrongTarget).toBe(true);
   expect(result.damaged).toBe(true);
   expect(result.invalidRule).toBe(true);

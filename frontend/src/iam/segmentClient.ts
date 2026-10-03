@@ -1,3 +1,4 @@
+import { listGuardPath } from "../shared/listFilters";
 import { ApiError, type request } from "../shared/api";
 import type { Rule } from "../shared/contracts";
 import { CentralError, HTTP, type Context } from "./api";
@@ -173,16 +174,17 @@ export function segmentClient(
     options: Parameters<typeof request>[1] = {},
   ) => {
     const method = options.method ?? "GET";
+    const guardedPath = listGuardPath(path);
     let directory = false,
       runs = false,
       target = false,
       viewCommand = false;
     try {
-      const queryIndex = path.indexOf("?");
+      const queryIndex = guardedPath.indexOf("?");
       const base = queryIndex < 0 ? path : path.slice(0, queryIndex);
       const runList = /^\/admin\/segments\/([^/]+)\/runs$/.exec(base);
       if (queryIndex >= 0 && (base === "/admin/segments" || runList)) {
-        const query = new URLSearchParams(path.slice(queryIndex + 1));
+        const query = new URLSearchParams(guardedPath.slice(queryIndex + 1));
         const bounded =
           Array.from(query.keys()).length === 2 &&
           query.has("after") &&

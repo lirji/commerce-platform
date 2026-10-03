@@ -60,6 +60,11 @@ export default function CentralOrders(props: OperationsProps) {
               ["storeId", "门店"],
               ["status", "状态"],
               ["payable", "应付金额"],
+              ["memberId", "会员编号"],
+              ["merchantId", "商家编号"],
+              ["paymentKind", "付款方式"],
+              ["createdAt", "创建时间"],
+              ["expiresAt", "付款截止"],
             ]}
             fields={fields}
             detailPath={(id) => `/admin/orders/${id}`}

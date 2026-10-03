@@ -1,4 +1,6 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -205,9 +207,12 @@ function Inventory({
   client: typeof request;
   markDirty: (v: boolean) => void;
 }) {
-  const [after, setAfter] = useRouteState("Inventory.after", "");
+  const [after, setAfter] = useCursorState("Inventory.after", "", store);
+  const filters = useListFilters("Inventory.after", "/admin/inventory", () =>
+    setAfter(""),
+  );
   const rows = useResource<Stock[]>(
-    `/admin/inventory?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&limit=${PAGE_SIZE}`,
+    `/admin/inventory?storeId=${encodeURIComponent(store)}&after=${encodeURIComponent(after)}&${filters.query}`,
   );
   const actions = useResource<{ receive: boolean }>(
     `/operations/inventory/actions?storeId=${encodeURIComponent(store)}`,
@@ -293,6 +298,7 @@ function Inventory({
         <Typography.Paragraph type="secondary">
           可售、预占与已售分别记录；资金未知期间保留占用。
         </Typography.Paragraph>
+        {filters.toolbar}
         <ErrorNotice error={rows.error} />
         <ErrorNotice error={actions.error} />
         {!rows.error && (
@@ -312,6 +318,15 @@ function Inventory({
           />
         )}
         <Space style={{ marginTop: 16 }}>
+          <CursorBack
+            name={"Inventory.after"}
+            after={after}
+            onPrevious={setAfter}
+            initial={""}
+            disabled={rows.loading || !!rows.error}
+            count={rows.data?.length}
+            pageSize={filters.limit}
+          />
           <Button
             disabled={!after || rows.loading || !!rows.error}
             onClick={() => setAfter("")}
@@ -320,7 +335,9 @@ function Inventory({
           </Button>
           <Button
             disabled={
-              rows.loading || !!rows.error || rows.data?.length !== PAGE_SIZE
+              rows.loading ||
+              !!rows.error ||
+              rows.data?.length !== filters.limit
             }
             onClick={() => setAfter(rows.data!.at(-1)!.skuId)}
           >

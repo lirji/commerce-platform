@@ -1,4 +1,6 @@
-import { useRouteState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import {
   BatchCatalogAction,
@@ -89,8 +91,8 @@ export function ProductOperations({
   const [tab, setTab] = useRouteState("tab", "sku");
   const [batch, setBatch] = useState<Sku[]>([]);
   const [channelSku, setChannelSku] = useState<Sku>();
-  const [productAfter, setProductAfter] = useRouteState("productAfter", "");
-  const [skuAfter, setSkuAfter] = useRouteState("skuAfter", "");
+  const [productAfter, setProductAfter] = useCursorState("productAfter", "");
+  const [skuAfter, setSkuAfter] = useCursorState("skuAfter", "");
   const [filters, setFilters] = useRouteState("filters", "");
   const [presentation, setPresentation] = useState<Product>();
   const [barcode, setBarcode] = useState<Sku>();
@@ -98,10 +100,18 @@ export function ProductOperations({
     store ? `/operations/catalog-categories?storeId=${encode(store)}` : null,
   );
   const [selected, setSelected] = useState<Sku>();
-  const [historyAfter, setHistoryAfter] = useState(0);
+  const [historyAfter, setHistoryAfter] = useCursorState(
+    "ProductOperations.historyAfter",
+    0,
+  );
+  const productFilters = useListFilters(
+    "ProductOperations.products",
+    "/operations/products",
+    () => setProductAfter(""),
+  );
   const products = useResource<Product[]>(
     store
-      ? `/operations/products?storeId=${encode(store)}&after=${encode(productAfter)}`
+      ? `/operations/products?storeId=${encode(store)}&after=${encode(productAfter)}&${productFilters.query}`
       : null,
   );
   const skus = useResource<Sku[]>(
@@ -136,6 +146,7 @@ export function ProductOperations({
           description="商品、规格、价格与上下架。历史报价保留原价格，修订需填写原因。"
         />
       )}
+      {productFilters.toolbar}
       <ErrorNotice error={products.error} />
       <ErrorNotice error={skus.error} />
       <Tabs
@@ -171,7 +182,10 @@ export function ProductOperations({
                   </>
                 }
                 count={skus.data?.length ?? 0}
+                loading={skus.loading}
+                error={skus.error}
                 after={skuAfter}
+                cursorName={"skuAfter"}
                 onHome={() => changeSkuPage("")}
                 onNext={() => changeSkuPage(skus.data!.at(-1)!.skuId)}
                 homeLabel="回到首页"
@@ -314,8 +328,12 @@ export function ProductOperations({
                     onDone={refresh}
                   />
                 }
+                pageSize={productFilters.limit}
                 count={products.data?.length ?? 0}
+                loading={products.loading}
+                error={products.error}
                 after={productAfter}
+                cursorName={"productAfter"}
                 onHome={() => setProductAfter("")}
                 onNext={() => setProductAfter(products.data!.at(-1)!.productId)}
                 homeLabel="回到首页"
@@ -464,9 +482,20 @@ export function ProductOperations({
           ]}
         />
         <Space>
+          <CursorBack
+            name={"ProductOperations.historyAfter"}
+            after={historyAfter}
+            onPrevious={setHistoryAfter}
+            initial={0}
+            disabled={history.loading || !!history.error}
+            count={history.data?.length}
+            pageSize={50}
+          />
           <Button onClick={() => setHistoryAfter(0)}>最早记录</Button>
           <Button
-            disabled={history.data?.length !== 50}
+            disabled={
+              history.loading || !!history.error || history.data?.length !== 50
+            }
             onClick={() => setHistoryAfter(history.data!.at(-1)!.revision)}
           >
             下一页

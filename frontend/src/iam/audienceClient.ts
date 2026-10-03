@@ -1,3 +1,4 @@
+import { listGuardPath } from "../shared/listFilters";
 import { ApiError, type request } from "../shared/api";
 import { CentralError, HTTP, type Context } from "./api";
 
@@ -26,9 +27,12 @@ export function audienceClient(
     options: Parameters<typeof request>[1] = {},
   ) => {
     const method = options.method ?? "GET";
+    const guardedPath = listGuardPath(path);
     let directory = false;
     if (path.startsWith("/admin/audiences?")) {
-      const query = new URLSearchParams(path.slice(path.indexOf("?") + 1));
+      const query = new URLSearchParams(
+        guardedPath.slice(guardedPath.indexOf("?") + 1),
+      );
       directory =
         Array.from(query.keys()).length === 2 &&
         query.has("after") &&

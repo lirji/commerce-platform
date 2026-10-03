@@ -1,4 +1,5 @@
-import { useRouteState } from "../shared/routeState";
+import { CursorBack } from "../shared/pagination";
+import { useRouteState, useCursorState } from "../shared/routeState";
 import {
   Alert,
   App,
@@ -282,7 +283,7 @@ export function CentralCycles({
 }
 
 function Policies() {
-  const [after, setAfter] = useRouteState("Policies.after", 0),
+  const [after, setAfter] = useCursorState("Policies.after", 0),
     rows = useResource<Policy[]>(
       `/admin/member-cycles/policies?after=${after}&limit=${PAGE_SIZE}`,
     );
@@ -315,6 +316,15 @@ function Policies() {
       )}
       <Space wrap>
         <Button onClick={rows.refresh}>刷新政策</Button>
+        <CursorBack
+          name={"Policies.after"}
+          after={after}
+          onPrevious={setAfter}
+          initial={0}
+          disabled={rows.loading || !!rows.error}
+          count={rows.data?.length}
+          pageSize={50}
+        />
         <Button
           disabled={!after || rows.loading || !!rows.error}
           onClick={() => setAfter(0)}
