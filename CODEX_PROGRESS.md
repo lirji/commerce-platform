@@ -1,30 +1,32 @@
-# Codex Progress — 单一菜单声明（MG01，DONE）
+# Codex Progress — 本人业务导航提示（MG07，DONE）
 
 ## 任务目标
-按 Auth 已批准 MG00–MG19 治理计划，电商 MG01 从同一结构化声明生成导航和发布候选；后续治理实现由 Auth 项目连续推进。本轮无生产部署。
+按Auth已批准MG00–MG19计划连续交付，下一片MG08导航过滤，之后Auth剩余治理片；不生产部署，不改原目录或业务Grant。
 
 ## 已完成
-- 原目录分支 feat/menu-catalog-source，基线 c9eb50c；共享 catalog.json 保留44菜单／123能力，6组35经营页面＋协作入口，旧兼容节点保留。
-- 导航、协作名称、构建校验和固定 Git 提交导出均读取声明；显式版本、不登录、不建角色或Grant。
-- 4项 Node 行为测试、旧导航逐项名称／顺序比较、真实格式化和 frontend build PASS；卫生门禁无阻断，统一 formatter 发现有限制。
+- Auth MG00–MG06DONE，MG07生产方109b1ed已main正常推送，精确CI37107379738观察in_progress（未冒称通过）。
+- MG07消费方DONE：新独立Nav链路、本地OPERATOR精确映射、3单测／构建／22实际跨仓HTTP／卫生无BLOCKING PASS，固定SDK准确生产方提交及protocol／SDK嵌套字节PASS。
+- D-ENV用户明确测试／生产独立权限实例与数据库，不自动生产部署。
 
 ## 已修改文件
-- frontend/src/iam/catalog.json、navigation.ts、CentralShell.tsx、tsconfig、package.json、scripts四个工具／测试。
-- .github/workflows/verify.yml、docs/design/menu-catalog-source/README.md、本进度。
+- 三CentralNavigation类、CentralNavigationTest、scripts/auth-sdk-source.ref。
+- docs/design/menu-catalog-source/MG07_NAVIGATION.md、当前检查点（旧历史保留）。
 
-## 验证回执
-- 本地 b109f20 固定提交CLI与Auth导出器JSON逐字段完全相等，44菜单／123能力；仅生成候选，零发布或授权写入。
-- b109f20/b34891d已正常远程main；CI37100533319构建／真实MySQL／四个菜单测试成功，但Node Playwright导入JSON缺少type属性失败。已补JSON导入属性，构建和实际Playwright发现PASS，修复47ebb65的精确CI37100968743 SUCCESS，全部必需步骤通过。Auth全计划继续。
+## 未完成
+- MG07 Commerce正常Git交付及精确CI观察。
+- MG08–MG19全任务持续ACTIVE，下一步前端Nav真实消费。
 
 ## 当前问题
-- 无阻断；已有生产目录v2和业务Grant不改动，不重做旧部署。
+- 无产品阻断。真实演练先前V48迁移Owner、revoke脚本状态假设、不同Maven仓库失败已闭环，保留日志。没有改共享全局配置／原数据。
+- 初次固定字节检查猜错groupId路径，按POM真实位置复验PASS。
 
 ## 下一步建议
-1. MG01已正常合并／推送远程main，产品及CI验证完成，不重复改声明／导出器或发布原commerce v2。
-2. Auth全计划ACTIVE，MG00–MG03 DONE；MG04实施中。Commerce下一次产品改动在MG07／MG08契约与依赖满足后继续。保留旧工作树／私密证据，不清理。
+1. 显式路径交付已验证MG07消费方，不夹带他任务改动。
+2. 接入MG08侧栏、移动、搜索、默认入口和深链，绑定MG07真实camelCase DTO及声明稳定ID。
+3. 保留原业务DB、部署、目录v2、历史工作树／证据，不清理，不等继续。
 
 ## 恢复 Prompt
-读取本节和Auth menu-role-governance/PROGRESS_STATE；Commerce MG01已完成，47ebb65精确CI成功。继续Auth后续MG04–MG19，不重复Owner发布或生产部署。
+读本段及Auth menu-role-governance/PROGRESS_STATE，完成MG07 Git后立刻MG08和剩余全计划，不重做旧发布／部署。
 
 ---
 
