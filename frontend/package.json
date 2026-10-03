@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/check-menu-catalog.mjs && tsc --noEmit && vite build",
     "e2e": "playwright test"
   },
   "dependencies": {

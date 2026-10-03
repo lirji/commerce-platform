@@ -1,0 +1,1109 @@
+{
+  "schema_version": "1",
+  "application": "commerce",
+  "capabilities": [
+    {
+      "code": "commerce.aftersale.approve",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.aftersale.read",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.aftersale.receive_return",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.aftersale.reject",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.audience.create",
+      "resource_type": "audience",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.audience.read",
+      "resource_type": "audience",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.budget.read",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.approve",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.create",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.pause",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.preview",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.publish",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.read",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.reject",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.campaign.submit",
+      "resource_type": "campaign",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.catalog.operate",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.coupon_definition.create",
+      "resource_type": "coupon_definition",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.coupon_definition.read",
+      "resource_type": "coupon_definition",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.coupon_delivery.control",
+      "resource_type": "coupon_delivery",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.coupon_delivery.create",
+      "resource_type": "coupon_delivery",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.coupon_delivery.pump",
+      "resource_type": "coupon_delivery",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.coupon_delivery.read",
+      "resource_type": "coupon_delivery",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.cycle_benefit.define",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.cycle_benefit.grant",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.cycle_benefit.read",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.dashboard.read",
+      "resource_type": "commerce_tenant",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.entitlement.read",
+      "resource_type": "entitlement",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.entitlement.resolve",
+      "resource_type": "entitlement",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.entitlement_definition.create",
+      "resource_type": "entitlement_definition",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.entitlement_definition.read",
+      "resource_type": "entitlement_definition",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.event.pump",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.event.read",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.event.retry",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.fulfillment.deliver",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.fulfillment.read",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.fulfillment.ship",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.growth.adjust",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.growth.policy.publish",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.growth.policy.read",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.growth.read",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.growth.recalculate",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.inventory.read",
+      "resource_type": "store",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.inventory.receive",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.approve",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.create",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.pause",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.preview",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.publish",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.pump",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.read",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.reject",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.submit",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey.validate",
+      "resource_type": "journey",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey_instance.control",
+      "resource_type": "journey_instance",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey_instance.create",
+      "resource_type": "journey_instance",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey_instance.read",
+      "resource_type": "journey_instance",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey_scan.read",
+      "resource_type": "journey_scan",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.journey_scan.retry",
+      "resource_type": "journey_scan",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.marketing_effect.read",
+      "resource_type": "marketing_report",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.marketing_effect.rebuild",
+      "resource_type": "marketing_report",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.marketing_execution.read",
+      "resource_type": "marketing_report",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member.create",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member.profile.update",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member.read",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member.status.update",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_behavior.read",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_behavior.rebuild",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_behavior.update",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_cycle.evaluate",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_cycle.policy.publish",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_cycle.policy.read",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_cycle.read",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_tag.assign",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_tag.define",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.member_tag.read",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.merchant.create",
+      "resource_type": "merchant",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.merchant.read",
+      "resource_type": "merchant",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.ops_page.approve",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.create",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.execute",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.pause",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.preview",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.publish",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.read",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.reject",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.rollback",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.ops_page.submit",
+      "resource_type": "ops_page",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.order.expire",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.order.expiry.retry",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.order.read",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.payment.read",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.payment.reconcile",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.point_offer.define",
+      "resource_type": "point_offer",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.point_offer.read",
+      "resource_type": "point_offer",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.point_offer.status.update",
+      "resource_type": "point_offer",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.points.adjust",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.points.expire",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.points.policy.publish",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.points.policy.read",
+      "resource_type": "commerce_member_policy",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.points.read",
+      "resource_type": "commerce_member",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.product.export",
+      "resource_type": "product",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.product.read",
+      "resource_type": "product",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.product.update",
+      "resource_type": "product",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.refund.read",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.refund.reconcile",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.rule.create",
+      "resource_type": "marketing_rule",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.rule.publish",
+      "resource_type": "marketing_rule",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.rule.read",
+      "resource_type": "marketing_rule",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.runtime.read",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.runtime.recover",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.runtime.replay.control",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.runtime.replay.create",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.runtime.replay.preview",
+      "resource_type": "commerce_runtime",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.segment.control",
+      "resource_type": "segment",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.segment.create",
+      "resource_type": "segment",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.segment.pump",
+      "resource_type": "segment",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.segment.read",
+      "resource_type": "segment",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.segment.refresh",
+      "resource_type": "segment",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.segment.schedule",
+      "resource_type": "segment",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.store.create",
+      "resource_type": "store",
+      "risk_level": "HIGH"
+    },
+    {
+      "code": "commerce.store.directory.read",
+      "resource_type": "store",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.store.manage",
+      "resource_type": "store",
+      "risk_level": "NORMAL"
+    },
+    {
+      "code": "commerce.store.read",
+      "resource_type": "store",
+      "risk_level": "NORMAL"
+    }
+  ],
+  "menus": [
+    {
+      "code": "group.catalog",
+      "parent": null,
+      "route": null,
+      "any_of": [],
+      "label": "商品与门店",
+      "position": 21
+    },
+    {
+      "code": "group.marketing",
+      "parent": null,
+      "route": null,
+      "any_of": [],
+      "label": "营销资产",
+      "position": 26
+    },
+    {
+      "code": "group.member",
+      "parent": null,
+      "route": null,
+      "any_of": [],
+      "label": "会员经营",
+      "position": 12
+    },
+    {
+      "code": "group.overview",
+      "parent": null,
+      "route": null,
+      "any_of": [],
+      "label": "经营总览",
+      "position": 0
+    },
+    {
+      "code": "group.platform",
+      "parent": null,
+      "route": null,
+      "any_of": [],
+      "label": "运营与运行",
+      "position": 8
+    },
+    {
+      "code": "group.trade",
+      "parent": null,
+      "route": null,
+      "any_of": [],
+      "label": "交易协作",
+      "position": 2
+    },
+    {
+      "code": "menu.collaboration.products",
+      "parent": null,
+      "route": "/collaboration/products",
+      "any_of": [
+        "commerce.product.export",
+        "commerce.product.read",
+        "commerce.product.update"
+      ],
+      "label": "商品协作",
+      "position": 41
+    },
+    {
+      "code": "menu.operations.aftersales",
+      "parent": "group.trade",
+      "route": "/operations/aftersales",
+      "any_of": [
+        "commerce.aftersale.approve",
+        "commerce.aftersale.read",
+        "commerce.aftersale.receive_return",
+        "commerce.aftersale.reject"
+      ],
+      "label": "售后",
+      "position": 6
+    },
+    {
+      "code": "menu.operations.audiences",
+      "parent": "group.marketing",
+      "route": "/operations/audiences",
+      "any_of": ["commerce.audience.create", "commerce.audience.read"],
+      "label": "人群快照",
+      "position": 31
+    },
+    {
+      "code": "menu.operations.campaign-budgets",
+      "parent": "group.marketing",
+      "route": "/operations/campaign-budgets",
+      "any_of": ["commerce.budget.read"],
+      "label": "活动预算",
+      "position": 40
+    },
+    {
+      "code": "menu.operations.campaigns",
+      "parent": "group.marketing",
+      "route": "/operations/campaigns",
+      "any_of": [
+        "commerce.campaign.approve",
+        "commerce.campaign.create",
+        "commerce.campaign.pause",
+        "commerce.campaign.preview",
+        "commerce.campaign.publish",
+        "commerce.campaign.read",
+        "commerce.campaign.reject",
+        "commerce.campaign.submit"
+      ],
+      "label": "活动管理",
+      "position": 39
+    },
+    {
+      "code": "menu.operations.catalog",
+      "parent": "group.catalog",
+      "route": "/operations/catalog",
+      "any_of": ["commerce.catalog.operate"],
+      "label": "商品经营",
+      "position": 23
+    },
+    {
+      "code": "menu.operations.coupon-definitions",
+      "parent": "group.marketing",
+      "route": "/operations/coupon-definitions",
+      "any_of": [
+        "commerce.coupon_definition.create",
+        "commerce.coupon_definition.read"
+      ],
+      "label": "优惠券定义",
+      "position": 27
+    },
+    {
+      "code": "menu.operations.coupon-deliveries",
+      "parent": "group.marketing",
+      "route": "/operations/coupon-deliveries",
+      "any_of": [
+        "commerce.coupon_delivery.control",
+        "commerce.coupon_delivery.create",
+        "commerce.coupon_delivery.pump",
+        "commerce.coupon_delivery.read"
+      ],
+      "label": "定向发券",
+      "position": 33
+    },
+    {
+      "code": "menu.operations.dashboard",
+      "parent": "group.overview",
+      "route": "/operations/dashboard",
+      "any_of": ["commerce.dashboard.read"],
+      "label": "经营总览",
+      "position": 1
+    },
+    {
+      "code": "menu.operations.directory",
+      "parent": "group.catalog",
+      "route": "/operations/directory",
+      "any_of": [
+        "commerce.merchant.create",
+        "commerce.merchant.read",
+        "commerce.store.create",
+        "commerce.store.directory.read"
+      ],
+      "label": "商家与门店",
+      "position": 25
+    },
+    {
+      "code": "menu.operations.entitlement-definitions",
+      "parent": "group.marketing",
+      "route": "/operations/entitlement-definitions",
+      "any_of": [
+        "commerce.entitlement_definition.create",
+        "commerce.entitlement_definition.read"
+      ],
+      "label": "权益定义",
+      "position": 28
+    },
+    {
+      "code": "menu.operations.entitlements",
+      "parent": "group.marketing",
+      "route": "/operations/entitlements",
+      "any_of": ["commerce.entitlement.read", "commerce.entitlement.resolve"],
+      "label": "权益台账",
+      "position": 29
+    },
+    {
+      "code": "menu.operations.events",
+      "parent": "group.platform",
+      "route": "/operations/events",
+      "any_of": [
+        "commerce.event.pump",
+        "commerce.event.read",
+        "commerce.event.retry"
+      ],
+      "label": "事件处理",
+      "position": 10
+    },
+    {
+      "code": "menu.operations.fulfillments",
+      "parent": "group.trade",
+      "route": "/operations/fulfillments",
+      "any_of": [
+        "commerce.fulfillment.deliver",
+        "commerce.fulfillment.read",
+        "commerce.fulfillment.ship"
+      ],
+      "label": "履约",
+      "position": 5
+    },
+    {
+      "code": "menu.operations.inventory",
+      "parent": "group.catalog",
+      "route": "/operations/inventory",
+      "any_of": ["commerce.inventory.read", "commerce.inventory.receive"],
+      "label": "库存作业",
+      "position": 24
+    },
+    {
+      "code": "menu.operations.journey-instances",
+      "parent": "group.marketing",
+      "route": "/operations/journey-instances",
+      "any_of": [
+        "commerce.journey_instance.control",
+        "commerce.journey_instance.create",
+        "commerce.journey_instance.read"
+      ],
+      "label": "旅程实例",
+      "position": 35
+    },
+    {
+      "code": "menu.operations.journey-scans",
+      "parent": "group.marketing",
+      "route": "/operations/journey-scans",
+      "any_of": ["commerce.journey_scan.read", "commerce.journey_scan.retry"],
+      "label": "生命周期扫描",
+      "position": 36
+    },
+    {
+      "code": "menu.operations.journeys",
+      "parent": "group.marketing",
+      "route": "/operations/journeys",
+      "any_of": [
+        "commerce.journey.approve",
+        "commerce.journey.create",
+        "commerce.journey.pause",
+        "commerce.journey.preview",
+        "commerce.journey.publish",
+        "commerce.journey.pump",
+        "commerce.journey.read",
+        "commerce.journey.reject",
+        "commerce.journey.submit",
+        "commerce.journey.validate"
+      ],
+      "label": "旅程定义",
+      "position": 34
+    },
+    {
+      "code": "menu.operations.marketing-effects",
+      "parent": "group.marketing",
+      "route": "/operations/marketing-effects",
+      "any_of": [
+        "commerce.marketing_effect.read",
+        "commerce.marketing_effect.rebuild"
+      ],
+      "label": "营销效果",
+      "position": 37
+    },
+    {
+      "code": "menu.operations.marketing-executions",
+      "parent": "group.marketing",
+      "route": "/operations/marketing-executions",
+      "any_of": ["commerce.marketing_execution.read"],
+      "label": "营销执行",
+      "position": 38
+    },
+    {
+      "code": "menu.operations.member-behavior",
+      "parent": "group.member",
+      "route": "/operations/member-behavior",
+      "any_of": [
+        "commerce.member_behavior.read",
+        "commerce.member_behavior.rebuild",
+        "commerce.member_behavior.update"
+      ],
+      "label": "会员行为",
+      "position": 14
+    },
+    {
+      "code": "menu.operations.member-cycle-benefits",
+      "parent": "group.member",
+      "route": "/operations/member-cycle-benefits",
+      "any_of": [
+        "commerce.cycle_benefit.define",
+        "commerce.cycle_benefit.grant",
+        "commerce.cycle_benefit.read"
+      ],
+      "label": "周期权益",
+      "position": 19
+    },
+    {
+      "code": "menu.operations.member-cycles",
+      "parent": "group.member",
+      "route": "/operations/member-cycles",
+      "any_of": [
+        "commerce.member_cycle.evaluate",
+        "commerce.member_cycle.policy.publish",
+        "commerce.member_cycle.policy.read",
+        "commerce.member_cycle.read"
+      ],
+      "label": "会员周期",
+      "position": 18
+    },
+    {
+      "code": "menu.operations.member-growth",
+      "parent": "group.member",
+      "route": "/operations/member-growth",
+      "any_of": [
+        "commerce.growth.adjust",
+        "commerce.growth.policy.publish",
+        "commerce.growth.policy.read",
+        "commerce.growth.read",
+        "commerce.growth.recalculate"
+      ],
+      "label": "成长与等级",
+      "position": 15
+    },
+    {
+      "code": "menu.operations.member-points",
+      "parent": "group.member",
+      "route": "/operations/member-points",
+      "any_of": [
+        "commerce.points.adjust",
+        "commerce.points.expire",
+        "commerce.points.policy.publish",
+        "commerce.points.policy.read",
+        "commerce.points.read"
+      ],
+      "label": "积分账户",
+      "position": 17
+    },
+    {
+      "code": "menu.operations.member-tags",
+      "parent": "group.member",
+      "route": "/operations/member-tags",
+      "any_of": [
+        "commerce.member_tag.assign",
+        "commerce.member_tag.define",
+        "commerce.member_tag.read"
+      ],
+      "label": "会员标签",
+      "position": 16
+    },
+    {
+      "code": "menu.operations.members",
+      "parent": "group.member",
+      "route": "/operations/members",
+      "any_of": [
+        "commerce.member.create",
+        "commerce.member.profile.update",
+        "commerce.member.read",
+        "commerce.member.status.update"
+      ],
+      "label": "会员档案",
+      "position": 13
+    },
+    {
+      "code": "menu.operations.ops-pages",
+      "parent": "group.platform",
+      "route": "/operations/ops-pages",
+      "any_of": [
+        "commerce.ops_page.approve",
+        "commerce.ops_page.create",
+        "commerce.ops_page.execute",
+        "commerce.ops_page.pause",
+        "commerce.ops_page.preview",
+        "commerce.ops_page.publish",
+        "commerce.ops_page.read",
+        "commerce.ops_page.reject",
+        "commerce.ops_page.rollback",
+        "commerce.ops_page.submit"
+      ],
+      "label": "运营页面",
+      "position": 9
+    },
+    {
+      "code": "menu.operations.orders",
+      "parent": "group.trade",
+      "route": "/operations/orders",
+      "any_of": [
+        "commerce.order.expire",
+        "commerce.order.expiry.retry",
+        "commerce.order.read"
+      ],
+      "label": "订单",
+      "position": 3
+    },
+    {
+      "code": "menu.operations.payments",
+      "parent": "group.trade",
+      "route": "/operations/payments",
+      "any_of": ["commerce.payment.read", "commerce.payment.reconcile"],
+      "label": "支付",
+      "position": 4
+    },
+    {
+      "code": "menu.operations.point-offers",
+      "parent": "group.member",
+      "route": "/operations/point-offers",
+      "any_of": [
+        "commerce.point_offer.define",
+        "commerce.point_offer.read",
+        "commerce.point_offer.status.update"
+      ],
+      "label": "积分兑换",
+      "position": 20
+    },
+    {
+      "code": "menu.operations.products",
+      "parent": "group.catalog",
+      "route": "/operations/products",
+      "any_of": [
+        "commerce.product.export",
+        "commerce.product.read",
+        "commerce.product.update"
+      ],
+      "label": "授权商品",
+      "position": 22
+    },
+    {
+      "code": "menu.operations.refunds",
+      "parent": "group.trade",
+      "route": "/operations/refunds",
+      "any_of": ["commerce.refund.read", "commerce.refund.reconcile"],
+      "label": "退款",
+      "position": 7
+    },
+    {
+      "code": "menu.operations.rules",
+      "parent": "group.marketing",
+      "route": "/operations/rules",
+      "any_of": [
+        "commerce.rule.create",
+        "commerce.rule.publish",
+        "commerce.rule.read"
+      ],
+      "label": "动态规则",
+      "position": 30
+    },
+    {
+      "code": "menu.operations.runtime",
+      "parent": "group.platform",
+      "route": "/operations/runtime",
+      "any_of": [
+        "commerce.runtime.read",
+        "commerce.runtime.recover",
+        "commerce.runtime.replay.control",
+        "commerce.runtime.replay.create",
+        "commerce.runtime.replay.preview"
+      ],
+      "label": "运行恢复",
+      "position": 11
+    },
+    {
+      "code": "menu.operations.segments",
+      "parent": "group.marketing",
+      "route": "/operations/segments",
+      "any_of": [
+        "commerce.segment.control",
+        "commerce.segment.create",
+        "commerce.segment.pump",
+        "commerce.segment.read",
+        "commerce.segment.refresh",
+        "commerce.segment.schedule"
+      ],
+      "label": "动态人群",
+      "position": 32
+    },
+    {
+      "code": "products",
+      "parent": null,
+      "route": "/products",
+      "any_of": ["commerce.product.read"],
+      "label": null,
+      "position": null
+    },
+    {
+      "code": "stores",
+      "parent": null,
+      "route": "/stores",
+      "any_of": ["commerce.store.read"],
+      "label": null,
+      "position": null
+    }
+  ]
+}

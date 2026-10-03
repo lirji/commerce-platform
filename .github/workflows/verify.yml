@@ -43,6 +43,8 @@ jobs:
           git -C .local/auth-sdk-source checkout --detach FETCH_HEAD
       - name: Create isolated CI resources
         run: python3 scripts/ci-configure.py
+      - name: Verify shared menu declaration and exporter
+        run: node --test frontend/scripts/catalog-source.test.mjs
       - name: Build and verify real MySQL semantics
         run: scripts/build.sh 2>&1 | tee docs/evidence/s10b/ci-build.log
       - name: Audit frontend dependencies

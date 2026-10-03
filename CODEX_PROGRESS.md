@@ -1,3 +1,32 @@
+# Codex Progress — 单一菜单声明（MG01，ACTIVE）
+
+## 任务目标
+按 Auth 已批准 MG00–MG19 治理计划，电商 MG01 从同一结构化声明生成导航和发布候选；后续治理实现由 Auth 项目连续推进。本轮无生产部署。
+
+## 已完成
+- 原目录分支 feat/menu-catalog-source，基线 c9eb50c；共享 catalog.json 保留44菜单／123能力，6组35经营页面＋协作入口，旧兼容节点保留。
+- 导航、协作名称、构建校验和固定 Git 提交导出均读取声明；显式版本、不登录、不建角色或Grant。
+- 4项 Node 行为测试、旧导航逐项名称／顺序比较、真实格式化和 frontend build PASS；卫生门禁无阻断，统一 formatter 发现有限制。
+
+## 已修改文件
+- frontend/src/iam/catalog.json、navigation.ts、CentralShell.tsx、tsconfig、package.json、scripts四个工具／测试。
+- .github/workflows/verify.yml、docs/design/menu-catalog-source/README.md、本进度。
+
+## 未完成
+- 固定提交CLI与Auth导出器对比、Git提交和精确远程CI收尾；Auth MG02–MG19仍待连续实施。
+
+## 当前问题
+- 无阻断；已有生产目录v2和业务Grant不改动，不重做旧部署。
+
+## 下一步建议
+1. 提交后对固定HEAD生成候选，与Auth工具结果核对；必要验证通过后按持续授权正常推送／合入main。
+2. 更新MG01回执和Auth进度，直接继续MG02。保留历史工作树和忽略证据。
+
+## 恢复 Prompt
+读取本节和Auth menu-role-governance/PROGRESS_STATE；单一声明MG01收尾后继续全计划，不在切片之间等待继续，不自动发布目录或生产部署。
+
+---
+
 # Codex Progress
 
 ## 当前任务：紧凑按钮与分页间距修正（DONE）

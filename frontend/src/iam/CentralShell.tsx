@@ -3,7 +3,7 @@ import { Avatar, Button, Grid, Layout, Menu, Space, Typography } from "antd";
 import { useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../shared/Icon";
 import { WorkspaceBrand, WorkspaceSearch } from "../shared/WorkspaceChrome";
-import { centralGroups } from "./navigation";
+import { centralGroups, collaborationMenu } from "./navigation";
 
 /** 壳层仅承载导航和视觉，原页面继续负责独立权限、凭据及未保存/未知结果保护。 */
 export function CentralShell({
@@ -69,7 +69,7 @@ export function CentralShell({
             <span>{collaboration ? "门店协作" : active?.label}</span>
             <strong>
               {collaboration
-                ? "商品协作"
+                ? collaborationMenu.label
                 : active?.pages.find(
                     ([path]) => path === location.pathname,
                   )?.[1]}
