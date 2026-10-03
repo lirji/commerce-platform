@@ -10,6 +10,8 @@
 
 首轮响应式导航尚未完成ResizeObserver更新时立即读宽度失败，测试改为等待布局稳定；随后发现内置搜索按钮残留8px圆角，已统一修正为6px。历史失败和截图保留在 `.local/compact-buttons-pagination/`，当前PASS须绑定最终源码指纹，不能借用改动前结果。中央与普通页面用例在明确的接口边界返回公开DTO，不作为真实SSO或数据库授权证据。
 
-最终源码/测试指纹为 `312f7d639f92cc344b7003eb36edbd4b6f5a21e0c720a3172262f79dd2bdefb5`，JAR中61个前端文件与当前dist逐字节一致；卫生门禁无阻断，统一formatter自动发现存在限制，但实际项目Prettier检查PASS。精确源码CI与本机Docker8602更新在正常Git交付后执行。Docker只替换既有app镜像，保留环境值、端口、dev-infra和数据库；旧 `commerce-platform:rev-aeed09e` 为回退镜像。没有数据库迁移、灌数据或新业务写入，尚未声明部署完成。
+最终源码/测试指纹为 `312f7d639f92cc344b7003eb36edbd4b6f5a21e0c720a3172262f79dd2bdefb5`，JAR中61个前端文件与当前dist逐字节一致；卫生门禁无阻断，统一formatter自动发现存在限制，但实际项目Prettier检查PASS。精确源码CI与本机Docker8602更新均已PASS，详见 [部署交付记录](DEPLOYMENT_RESULT.md)。Docker只替换既有app镜像，保留环境值、端口、dev-infra和数据库；旧 `commerce-platform:rev-aeed09e` 为回退镜像。没有数据库迁移、灌数据或新业务写入，部署后的全部环境值、端口与网络已核对一致，运行健康及实际资产PASS。
 
 第二轮按实际差异复核（由同一Agent执行）：页面文件仅替换分页容器，原查询参数、游标历史、禁用条件、权限与请求逻辑没有变化；共享样式没有添加依赖或调整状态机。普通、危险、禁用操作保留组件本身语义，删除旧行操作CSS对禁用状态的覆盖。没有产品开放Finding；旧失败证据不作当前PASS证据。
+
+当前源码CI：74套件554项（549 PASS / 5条件SKIP），浏览器46 PASS / 21条件SKIP；本机Docker23界面PASS / 1中央条件SKIP。真实扫描页面使用已有凭据进行7个GET、0业务命令，三个屏宽的间距与按钮尺寸均PASS。

@@ -1,45 +1,43 @@
 # Codex Progress
 
-## 当前任务：紧凑按钮与分页间距修正（VERIFYING）
+## 当前任务：紧凑按钮与分页间距修正（DONE）
 
 ## 任务目标
 
-按用户截图反馈，删除 Claude frontend-design SKILL 的按钮颜色规定，重新设计全站共享按钮，并解决数量、页码和按钮粘连；连续完成验证、正常 main 发布和已有授权的本机 Docker8602更新。
+按用户截图反馈，删除Claude frontend-design SKILL的按钮颜色规定，重新设计全站共享按钮，修复数量、页码与导航粘连；完成正常main发布、必要验证和已授权本机Docker8602更新。
 
 ## 已完成
 
-- 创建 fix/compact-buttons-pagination，基线37cd177；用户已有跟踪/未跟踪改动为空。
-- 个人和 marketplace Claude SKILL 删除按钮颜色规则，补充按实际密度检查尺寸，保持副本一致并校验通过；旧版本备份至 ~/.claude/skill-backups/frontend-design/20261003T050744Z/。
-- 全站按钮32px高度、14px文字、10px水平内边距、6px圆角；重做默认/悬停/禁用状态，行操作与会员分类共享紧凑样式。输入控件随共享高度对齐。
-- 分页采用原生 flex，摘要、页码、上一页分别参与间距和换行；统一共享 Pager/PagerActions 及原来直接使用 Space 的28处分页组。
-- 前端编译通过；最终43项经营/会员/中央回归PASS、36中央路由三屏宽覆盖；实际截图、Prettier与卫生门禁通过。首轮会员、行操作、弹层9项通过，新增扫描用例首次在响应式导航更新前读宽度失败，补为等待 ResizeObserver 稳定的实际布局检查；原证据保留。
+- 个人与marketplace两份Claude SKILL删除按钮颜色规定，并补充按实际密度判断尺寸。副本一致、校验PASS，旧版备份 ~/.claude/skill-backups/frontend-design/20261003T050744Z/。
+- 按钮统一32px高、14px字、10px水平内边距、6px圆角，重做默认/悬停/禁用样式；内置搜索、分类、行操作、弹层共用度量，控件高度对齐。
+- 原生flex让分页数量、页码、按钮分别参与间距和换行，统一共享组件与28个直接Space分页组，保留真实游标、筛选、权限、关闭与命令未知结果保护。
+- fix/compact-buttons-pagination源码f039e12已正常合入推送main；main CI37099263074与分支CI37099263170均SUCCESS。554实库/架构测试（549PASS/5既有SKIP）、CI浏览器46PASS/21条件SKIP；本地43回归全部PASS、中央36路由三屏宽覆盖。
+- 编译、实际Prettier、卫生门禁与61个JAR前端文件核验PASS；卫生工具仅统一formatter发现限制，早期测试及搜索圆角失败保留并已闭环。
+- Docker已更新rev-f039e12，8602 healthy/UP、匿名401，61实际HTTP资产逐字节一致；23Docker界面PASS/1中央条件SKIP。既有凭据直接打开真实扫描页，身份200、7GET、0业务命令，桌面/390/320px间距和尺寸PASS。
+- 全部容器env、端口、密钥、数据库与dev-infra保留，无迁移/灌数据/清空卷；回退rev-aeed09e保留。自有18601/18602预览停止，未新建或清理工作树。
 
 ## 已修改文件
 
-- frontend/src/theme.ts、style.css、workspace.css；shared/{pagination,interactions,ui}.tsx。
-- 21个页面文件仅变更分页容器，不改查询、权限或写入规则。
-- frontend/tests/presentation.ts、interaction-refresh.spec.ts、visual-refresh.spec.ts、新增 compact-buttons-pagination.spec.ts。
-- docs/design/frontend-usability.md、docs/PROGRESS_STATE.json 和本检查点；精确清单见 Git diff。
+- f039e12包含36个路径：共享theme/style/workspace、分页组件、21页面的分页容器、尺寸回归及扫描用例，相关设计与进度记录。
+- 正式验证与部署记录 docs/delivery/compact-buttons-pagination/；私密证据与凭据留在.local/，不提交运行凭据。最终文档Git回执写入私密delivery.json。
 
 ## 未完成
 
-- 本地界面与制品验证均已通过；继续Git/CI及本机Docker交付。
-- 有界提交、正常 main 合并推送、精确 CI、本机 Docker更新及资产/健康核验。
+- 产品改造与本机部署无未完成项；文档收尾按正常Git授权发布后核对终态，不引用自身制造无限提交。
 
 ## 当前问题
 
-- 无产品阻断；中央界面通过公开DTO测试边界验证，不把页面夹具说成真实SSO。
-- 原任务记录及私密证据保留；不清理数据、配置、制品或其他工作树。
+- 无阻断。真实SSO条件SKIP透明保留，中央公开DTO边界不冒充PKCE/授权验收。
+- 既有历史工作树、私密配置、证据、制品与回退镜像保留，不自动清理。
 
 ## 下一步建议
 
-1. 当前 .local/compact-buttons-pagination/browser-current/ 43项PASS；源指纹312f7d639f92cc344b7003eb36edbd4b6f5a21e0c720a3172262f79dd2bdefb5，不再扩大样式或测试范围。
-2. 固化源码指纹/验证记录后正常 Git main 发布并等精确CI通过。
-3. 使用现有 .local/compose.env，仅更新镜像标签；保留env/端口/dev-infra，失败可回退rev-aeed09e。
+1. 核对.local/compact-buttons-pagination/DEPLOYMENT_RESULT.json和delivery.json终态；DONE后不重复构建或部署。
+2. 新的具体页面反馈在本次交付基线上开启有界任务。
 
 ## 恢复 Prompt
 
-读取本检查点及 .local/compact-buttons-pagination/，从未完成部分继续，不重新规划、不等待“继续”。当前任务是按钮缩小和分页间距，保持已有真实筛选、权限与紧凑弹窗；部署目标仍为本机8602，不清理数据库或其他工作树。
+读取本检查点和docs/delivery/compact-buttons-pagination/DEPLOYMENT_RESULT.md。当前32px按钮、分页间距、SKILL更新、main源码CI与本机8602部署已完成，仅核对私密文档Git回执，不重做设计、不清理数据或其他工作树。
 
 ---
 
