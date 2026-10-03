@@ -1,6 +1,6 @@
 # Codex Progress
 
-## 当前任务：弹窗紧凑样式调整（本地验证 PASS，Git / CI / Docker 更新中）
+## 当前任务：弹窗紧凑样式调整与本地 Docker 部署 PASS（2026-10-02 PDT）
 
 ## 任务目标
 
@@ -17,32 +17,34 @@
 - 实际宽高上限、居中、滚动、按钮、焦点、草稿、未知结果和401卸载均验证；截图等待入场动画结束。真实支付/授权业务本地未重跑，等待精确远程全库CI。
 - 首轮两个真实接口测试缺少preview后端；两个客户端源码导入用例需dev服务器。保留失败证据，使用匹配测试环境后中央19项全通过，不改业务断言或超时。
 
+- 产品提交 `7870aa1878d0a55952f56edb6c0968cb28145da8` 已正常分支/main推送，精确main CI37093269697终态SUCCESS。后端553项（548PASS/5条件SKIP）、浏览器43PASS/20条件SKIP，无失败。
+- 已部署本机 `commerce-platform:rev-7870aa1`，入口http://127.0.0.1:8602，healthy/UP/匿名401及61资产一致PASS；实际Docker页面13项回归全PASS，320px购物袋最终截图已复核。
+- 数据库、环境变量值、地址密钥和网络保留，私密Compose只改镜像标签；旧rev-70d0740保留，无需回滚。自有18601/18602/18603预览停止。
+
 ## 已修改文件
 
 - `frontend/src/shared/interactions.tsx`、`shared/marketing.tsx`、`theme.ts`、`style.css`、`workspace.css`：共享尺寸与内容布局。
 - 经营、中央、会员及两处导航弹层的显式width；准确清单以Git本任务diff为准，无后端/依赖/数据库改动。
 - `frontend/tests/presentation.ts`、`interaction-refresh.spec.ts`、`b-console-craft.spec.ts`：入场帧等待、实际紧凑尺寸与旅程初始收起行为。
-- `docs/design/frontend-modal-buttons.md`、本进度文件；受控证据 `.local/compact-modals/`。
+- `docs/design/frontend-modal-buttons.md`、`docs/delivery/compact-modal-deployment.md`、本进度文件；受控证据 `.local/compact-modals/`。
 
 ## 未完成
 
-- 按用户持续授权完成任务提交、分支/main推送，等待精确CI；不得将运行中写成成功。
-- CI通过后沿用本机8602的现有配置构建并更新Commerce容器，核对实际JAR、61资源、健康/匿名401与Docker页面回归，保留旧镜像用于回滚。
+- 产品和Docker部署无未完成项。当前仅部署/进度文档Git收尾；最终提交、main推送和文档CI终态以 `.local/compact-modals/DEPLOYMENT_RESULT.json` 为准，不循环追加引用自身提交。
 
 ## 当前问题
 
-- 无产品阻塞。前一文档main CI37092740384已SUCCESS。
+- 无产品或部署阻塞。产品精确main CI37093269697与任务分支CI均SUCCESS；前一文档main CI37092740384亦SUCCESS。
 - 本地测试边界使用正式DTO，不硬编码产品数据或冒充真实资金/授权验收。原数据、配置、失败证据及历史工作树保留。
 
 ## 下一步建议
 
-1. 仅提交本任务路径并正常合入推送main，核对新提交CI終态。
-2. 门禁通过后更新本机Docker并写`.local/compact-modals/DEPLOYMENT_RESULT.json`。
-3. 停止本任务自有18601/18602/18603预览，保持8602应用运行。
+1. 按限定文档路径提交并正常推送main，在私密最终回执写Git实际结果；文档提交不改变产品代码，不重复部署。
+2. 回执DONE则本任务完成。直接使用8602查看紧凑版；不清理数据库、镜像、证据或工作树。
 
 ## 恢复 Prompt
 
-读取CODEX_PROGRESS.md、`.local/compact-modals/delivery.json`和DEPLOYMENT_RESULT.json，从Git/CI/Docker首个未完成步骤继续。样式与本地验证已完成，不重新规划、不清理用户数据、不新工作树；最终回执DONE则完成。本机Docker已获用户同一任务部署授权，不部署其他环境或项目。
+读取CODEX_PROGRESS.md、`.local/compact-modals/delivery.json`和DEPLOYMENT_RESULT.json。产品7870aa1精确CI已SUCCESS，Docker rev-7870aa1部署已PASS，39项本地与13项Docker回归通过。只继续尚未完成的文档Git收尾；回执DONE则结束，不重新规划、部署或清理数据。私密回执记录文档最终CI状态，未结束不宣称成功。
 
 ---
 
