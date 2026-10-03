@@ -1,32 +1,35 @@
-# Codex Progress — 本人业务导航提示（MG07，DONE）
+# Codex Progress — 电商导航过滤（MG08，DONE）
 
 ## 任务目标
-按Auth已批准MG00–MG19计划连续交付，下一片MG08导航过滤，之后Auth剩余治理片；不生产部署，不改原目录或业务Grant。
+持续完成Auth批准MG00–MG19，当前MG08，之后MG09–MG19。不生产部署，不重发原目录或修改原Grant。
 
 ## 已完成
-- Auth MG00–MG06DONE，MG07生产方109b1ed已main正常推送，精确CI37107379738观察in_progress（未冒称通过）。
-- MG07消费方DONE：新独立Nav链路、本地OPERATOR精确映射、3单测／构建／22实际跨仓HTTP／卫生无BLOCKING PASS，固定SDK准确生产方提交及protocol／SDK嵌套字节PASS。
-- D-ENV用户明确测试／生产独立权限实例与数据库，不自动生产部署。
+- MG07 Auth109b1ed／Commerce8da6f4b已main正常推送，准确CI37107379738及37107505687／37107501809全部SUCCESS；固定SDKsource.ref／嵌套字节PASS。
+- MG08 product源码已写：本人Nav网络／严格当前context、StableID与compiledroute交集；侧栏移动搜索同模型、组织默认入口／安全回跳、初次禁止深链不挂页、401清会话、上下文切换取消旧请求，刷新保留已打开原表单。
+- 5规则测试、类型／构建、4catalog工具PASS；实际Prettier、卫生domain无BLOCKING（统一formatter发现限制）。
+- 实际UI新PG／MySQL／真实PKCE／全44菜单声明：第一轮3组PASS后动画未稳定溢出；第二轮三宽度移动弹层全部PASS，到协作检查因未打开折叠组而夹具失败；仅修有界等待和测试实际点击，不放宽产品。失败全保留。
 
 ## 已修改文件
-- 三CentralNavigation类、CentralNavigationTest、scripts/auth-sdk-source.ref。
-- docs/design/menu-catalog-source/MG07_NAVIGATION.md、当前检查点（旧历史保留）。
+- frontend/src/iam/businessNavigation.ts／central-navigation.spec.ts，CentralProducts／CentralShell／api／navigation／session／main。
+- 现有central-workspace.spec.ts按正式Nav DTO更新，authority／client从显式测试环境读取；docs/design/menu-catalog-source/MG08_NAVIGATION.md。
+- 本检查点当前段（旧历史保留）；Auth实际UIrunner两个新文件＋原runner可选UI模式。
 
 ## 未完成
-- MG07 Commerce正常Git交付及精确CI观察。
-- MG08–MG19全任务持续ACTIVE，下一步前端Nav真实消费。
+- MG08正常Git交付及精确CI观察，然后MG09–MG19继续ACTIVE。
+- 最终实际轮mg07-218a25ab8830：25HTTP／15浏览器组／36路由三宽度公开DTO回归PASS；14当前产品截图实看，最终构建／Prettier／卫生终态PASS（统一formatter识别限制）。
 
 ## 当前问题
-- 无产品阻断。真实演练先前V48迁移Owner、revoke脚本状态假设、不同Maven仓库失败已闭环，保留日志。没有改共享全局配置／原数据。
-- 初次固定字节检查猜错groupId路径，按POM真实位置复验PASS。
+- 无产品／必要验证阻断。最终源指纹8c1e3ac09518d4cae2a8071b82ac2057a9e66ef2f64fadcf911ee48e399a06b1。Nav刷新保留业务表单，新增全局退出仅未打开业务页可用，原页面自己的离开保护保留。
+- 改DOM检查等待动画／布局稳定，有界5秒且保留诊断；闭集常量卫生问题已修复并5单测／build／终态PASS。
+- 所有mock仅tests且明确客户端边界；实际普通浏览器全部走DB/API，没有硬编码页面数据。
 
 ## 下一步建议
-1. 显式路径交付已验证MG07消费方，不夹带他任务改动。
-2. 接入MG08侧栏、移动、搜索、默认入口和深链，绑定MG07真实camelCase DTO及声明稳定ID。
-3. 保留原业务DB、部署、目录v2、历史工作树／证据，不清理，不等继续。
+1. 显式路径交付已DONE MG08，现有全部失败已保留和闭环。
+2. 跟踪精确CI后返回Auth MG09；不把当前片等同全计划完成。
+3. 返回Auth继续MG09–MG19，不等继续，原DB／部署／目录v2和私密证据／历史工作树保留，不清理。
 
 ## 恢复 Prompt
-读本段及Auth menu-role-governance/PROGRESS_STATE，完成MG07 Git后立刻MG08和剩余全计划，不重做旧发布／部署。
+读取本节及Auth menu-role-governance/PROGRESS_STATE，从MG08未完成必要验证继续，再顺序MG09–MG19。不要重做原目录发布，不要提前DONE，不等继续。
 
 ---
 

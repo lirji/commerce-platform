@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import { centralRoutes } from "./iam/navigation";
+import { centralRoutes, centralEntry } from "./iam/navigation";
 import ReactDOM from "react-dom/client";
 import { ConfigProvider, App as AntApp, Spin } from "antd";
 import zhCN from "antd/locale/zh_CN";
@@ -37,7 +37,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             </div>
           }
         >
-          {[...centralRoutes, "/iam/callback"].includes(location.pathname) ? (
+          {[centralEntry, ...centralRoutes, "/iam/callback"].includes(
+            location.pathname,
+          ) ? (
             <CentralProducts />
           ) : (
             <App />

@@ -26,8 +26,29 @@ import { PageHead } from "../shared/ui";
 import { ProductExport } from "./ProductExport";
 import { CentralShell } from "./CentralShell";
 import type { User } from "oidc-client-ts";
-import { enabled, login, manager, session } from "./session";
-import { central, CentralError, HTTP, useCentral, type Context } from "./api";
+import {
+  enabled,
+  login,
+  manager,
+  session,
+  clearSession,
+  safeReturn,
+} from "./session";
+import {
+  central,
+  CentralError,
+  HTTP,
+  useCentral,
+  sessionInvalidatedEvent,
+  type Context,
+} from "./api";
+import { centralEntry } from "./navigation";
+import {
+  deploymentEnvironment,
+  navigationModel,
+  useBusinessNavigation,
+  NavigationState,
+} from "./businessNavigation";
 
 const CentralOrders = lazy(() => import("./CentralOrders"));
 const CentralPayments = lazy(() => import("./CentralPayments"));
@@ -195,11 +216,17 @@ function ErrorView({ error }: { error?: Error }) {
 export function CentralProducts() {
   const [user, setUser] = useState<User | null>();
   const [error, setError] = useState<Error>();
+  const [address, setAddress] = useState(
+    () => location.pathname + location.search,
+  );
   useEffect(() => {
     let active = true;
     session()
       .then((u) => {
-        if (active) setUser(u);
+        if (active) {
+          setAddress(location.pathname + location.search);
+          setUser(u);
+        }
       })
       .catch(() => {
         if (active) {
@@ -207,11 +234,27 @@ export function CentralProducts() {
           setUser(null);
         }
       });
-    const expired = () => setUser(null);
+    const expired = () => {
+      setUser(null);
+      void clearSession().catch(() =>
+        setError(new Error("本地登录状态清理失败，请重新登录")),
+      );
+    };
+    const loaded = (value: User) => setUser(value);
+    const unloaded = () => setUser(null);
+    const changed = () => setAddress(location.pathname + location.search);
     manager?.events.addAccessTokenExpired(expired);
+    manager?.events.addUserLoaded(loaded);
+    manager?.events.addUserUnloaded(unloaded);
+    addEventListener(sessionInvalidatedEvent, expired);
+    addEventListener("popstate", changed);
     return () => {
       active = false;
       manager?.events.removeAccessTokenExpired(expired);
+      manager?.events.removeUserLoaded(loaded);
+      manager?.events.removeUserUnloaded(unloaded);
+      removeEventListener(sessionInvalidatedEvent, expired);
+      removeEventListener("popstate", changed);
     };
   }, []);
   if (!enabled)
@@ -234,9 +277,65 @@ export function CentralProducts() {
         </Card>
       </div>
     );
-  const tenant = new URLSearchParams(location.search).get("tenant_id") ?? "";
+  const url = new URL(address, location.origin);
+  const tenant = url.searchParams.get("tenant_id") ?? "";
   if (!uuid.test(tenant))
     return <Alert type="info" title="请从工作台选择组织后进入商城" />;
+  const environment =
+    url.searchParams.get("environment") ?? deploymentEnvironment;
+  return (
+    <NavigationWorkspace
+      key={JSON.stringify([
+        user.profile.sub,
+        user.access_token,
+        tenant,
+        environment,
+        url.pathname,
+      ])}
+      user={user}
+      tenant={tenant}
+      environment={environment}
+      path={url.pathname}
+      onLogout={async () => {
+        setUser(null);
+        await clearSession().catch(() =>
+          setError(new Error("本地登录状态清理失败，请重新登录")),
+        );
+      }}
+    />
+  );
+}
+
+/** 导航只控制入口；已打开页面的原表单和未知命令不因只读刷新被卸载。 */
+function NavigationWorkspace({
+  user,
+  tenant,
+  environment,
+  path,
+  onLogout,
+}: {
+  user: User;
+  tenant: string;
+  environment: string;
+  path: string;
+  onLogout: () => Promise<void>;
+}) {
+  const navigation = useBusinessNavigation(
+    { token: user.access_token, tenant },
+    environment,
+  );
+  const model = navigationModel(navigation.view);
+  const allowed = model.routes.has(path);
+  const [opened, setOpened] = useState(false);
+  useEffect(() => {
+    if (allowed) setOpened(true);
+  }, [allowed]);
+  useEffect(() => {
+    if (path === centralEntry && navigation.view && model.first) {
+      const query = new URLSearchParams({ tenant_id: tenant, environment });
+      location.replace(safeReturn(`${model.first}?${query}`));
+    }
+  }, [path, navigation.view, model.first, tenant, environment]);
   // 固定入口与组件一一对应，新增页面不再加深路由条件分支。
   const pages: Record<string, ComponentType<Parameters<typeof Products>[0]>> = {
     "/operations/journeys": CentralJourneys,
@@ -274,25 +373,62 @@ export function CentralProducts() {
     "/operations/inventory": CentralInventory,
     "/operations/catalog": CentralCatalog,
   };
-  const Page = pages[location.pathname] ?? Products;
+  const Page = pages[path] ?? Products;
+  const title = navigation.loading
+    ? "正在加载可访问页面"
+    : navigation.error?.status === HTTP.FORBIDDEN
+      ? "当前成员没有此组织或环境的访问权限"
+      : navigation.error
+        ? "页面导航暂不可用"
+        : navigation.view?.state === NavigationState.NO_ACCESS
+          ? "当前组织暂无可访问页面"
+          : !model.first
+            ? "当前应用版本没有可用页面"
+            : !allowed && path !== centralEntry
+              ? "当前页面没有访问权限"
+              : undefined;
   return (
-    <CentralShell tenant={tenant} subject={user.profile.sub}>
-      <Suspense
-        fallback={
-          <div className="page-loading">
-            <Spin description="正在加载已授权工作区" />
-          </div>
-        }
-      >
-        <Page
-          key={`${user.profile.sub}:${tenant}`}
-          context={{ token: user.access_token, tenant }}
-          onLogout={async () => {
-            await manager?.removeUser();
-            setUser(null);
-          }}
+    <CentralShell tenant={tenant} subject={user.profile.sub} navigation={model}>
+      <Space wrap style={{ marginBottom: 16 }}>
+        <Button onClick={navigation.refresh} loading={navigation.loading}>
+          刷新页面权限
+        </Button>
+        {!allowed && !opened && (
+          <Button onClick={() => void onLogout()}>退出统一身份</Button>
+        )}
+      </Space>
+      {title && (
+        <Alert
+          showIcon
+          style={{ marginBottom: 16 }}
+          type={
+            navigation.error ? "error" : navigation.loading ? "info" : "warning"
+          }
+          title={title}
+          description={
+            navigation.error
+              ? "请稍后刷新页面权限；当前菜单已清空。"
+              : opened
+                ? "当前页面的操作仍会重新核验权限；已填写内容保留。"
+                : "请使用菜单中的可访问页面，或联系管理员核对授权。"
+          }
         />
-      </Suspense>
+      )}
+      {path !== centralEntry && (allowed || opened) && (
+        <Suspense
+          fallback={
+            <div className="page-loading">
+              <Spin description="正在加载已授权工作区" />
+            </div>
+          }
+        >
+          <Page
+            key={`${user.profile.sub}:${tenant}`}
+            context={{ token: user.access_token, tenant }}
+            onLogout={onLogout}
+          />
+        </Suspense>
+      )}
     </CentralShell>
   );
 }

@@ -24,6 +24,12 @@ export class CentralError extends Error {
   }
 }
 export type Context = { token: string; tenant: string };
+export const sessionInvalidatedEvent = "central-session-invalidated";
+/** 商品客户端与导航共同通知会话边界，401不能保留旧页面数据。 */
+export function invalidateSession(status: number) {
+  if (status === HTTP.UNAUTHORIZED)
+    dispatchEvent(new Event(sessionInvalidatedEvent));
+}
 export async function central<T>(
   context: Context,
   path: string,
@@ -44,7 +50,10 @@ export async function central<T>(
     signal: signal ?? AbortSignal.timeout(15000),
   });
   const result = await response.json();
-  if (!response.ok) throw new CentralError(response.status, result.traceId);
+  if (!response.ok) {
+    invalidateSession(response.status);
+    throw new CentralError(response.status, result.traceId);
+  }
   return result;
 }
 /** 路由、租户或身份变化立即清空数据，旧响应不能覆盖新上下文。 */

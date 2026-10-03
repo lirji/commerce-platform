@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { centralRoutes } from "../src/iam/navigation";
+import { centralRoutes, compiledMenus } from "../src/iam/navigation";
 import { mkdirSync } from "node:fs";
 import { assertButtonSizes, assertCentered } from "./presentation";
 
@@ -14,30 +14,63 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
   const errors: string[] = [];
   const forbiddenReads: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.addInitScript(() => {
-    sessionStorage.setItem(
-      "oidc.user:http://127.0.0.1:18090:commerce-ui-contract",
-      JSON.stringify({
-        access_token: "fixture-central",
-        token_type: "Bearer",
-        scope: "openid profile",
-        profile: { sub: "employee" },
-        expires_at: Math.floor(Date.now() / 1000) + 1800,
-      }),
-    );
-  });
+  await page.addInitScript(
+    ({ authority, client }) => {
+      sessionStorage.setItem(
+        `oidc.user:${authority}:${client}`,
+        JSON.stringify({
+          access_token: "fixture-central",
+          token_type: "Bearer",
+          scope: "openid profile",
+          profile: { sub: "employee" },
+          expires_at: Math.floor(Date.now() / 1000) + 1800,
+        }),
+      );
+    },
+    {
+      authority:
+        process.env.COMMERCE_CENTRAL_AUTHORITY ?? "http://127.0.0.1:18090",
+      client: process.env.COMMERCE_CENTRAL_CLIENT ?? "commerce-ui-contract",
+    },
+  );
   await page.route("**/v1/**", (route) => {
     const path = new URL(route.request().url()).pathname;
     if (["/v1/me", "/v1/stores", "/v1/runtime-capabilities"].includes(path))
       forbiddenReads.push(path);
+    // 此项明确是公开DTO界面夹具；新增导航需提供正式本人契约，不回退全菜单。
     const json =
-      path.includes("/access") || path.endsWith("-access")
-        ? { allowed: false, receive: false, update: false }
-        : path === "/v1/operations/scoped/product"
-          ? { items: [], stores: 0, total: 0 }
-          : path.endsWith("/rule-fields")
-            ? {}
-            : [];
+      path === "/v1/operations/navigation"
+        ? {
+            schemaVersion: "1",
+            requestId: tenant,
+            context: {
+              principalId: tenant,
+              membershipId: tenant,
+              membershipGeneration: 1,
+              membershipVersion: 1,
+              principalVersion: 1,
+              tenantId: tenant,
+              applicationId: "commerce",
+              environment: "test",
+              actorType: "HUMAN",
+              callerServiceId: "ui-fixture",
+              traceId: tenant,
+            },
+            manifestVersion: 1,
+            contentHash: "a".repeat(64),
+            presentationHash: "b".repeat(64),
+            observedAt: new Date().toISOString(),
+            state: "AVAILABLE",
+            menus: compiledMenus.map(({ any_of: _binding, ...menu }) => menu),
+            capabilityHints: ["commerce.product.read"],
+          }
+        : path.includes("/access") || path.endsWith("-access")
+          ? { allowed: false, receive: false, update: false }
+          : path === "/v1/operations/scoped/product"
+            ? { items: [], stores: 0, total: 0 }
+            : path.endsWith("/rule-fields")
+              ? {}
+              : [];
     return route.fulfill({ json });
   });
   const folder = `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/b-console-experience"}/central-screenshots`;

@@ -2,6 +2,9 @@ import declaration from "./catalog.json" with { type: "json" };
 
 /** 导航与Owner发布候选消费同一声明；静态入口配置不代表用户持有业务授权。 */
 const menus = declaration.menus;
+/** 无业务授权含义的组织入口；落地页由本人导航结果选择。 */
+export const centralEntry = "/operations";
+export const compiledMenus = menus;
 const ordered = <T extends { position: number | null; code: string }>(
   values: T[],
 ) =>

@@ -1,7 +1,7 @@
 import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 export const enabled = import.meta.env.VITE_IAM_ENABLED === "true";
 export { centralRoutes as routes } from "./navigation";
-import { centralRoutes as routes } from "./navigation";
+import { centralRoutes as routes, centralEntry } from "./navigation";
 export const manager = enabled
   ? new UserManager({
       authority: import.meta.env.VITE_IAM_AUTHORITY,
@@ -17,10 +17,18 @@ export const manager = enabled
   : null;
 /** 回跳只保留固定本应用路由和非授权性的组织上下文，不接受外部URL。 */
 export function safeReturn(value: unknown) {
-  if (typeof value !== "string") return "/operations/products";
-  const url = new URL(value, location.origin);
-  if (url.origin !== location.origin || !routes.includes(url.pathname))
-    return "/operations/products";
+  if (typeof value !== "string") return centralEntry;
+  let url: URL;
+  try {
+    url = new URL(value, location.origin);
+  } catch {
+    return centralEntry;
+  }
+  if (
+    url.origin !== location.origin ||
+    ![centralEntry, ...routes].includes(url.pathname)
+  )
+    return centralEntry;
   const result = new URL(url.pathname, location.origin);
   for (const name of [
     "tenant_id",
@@ -51,7 +59,7 @@ export function session() {
             })
             .catch((error) => {
               // 失败回调同样清除授权码，不将一次性凭据残留在地址栏。
-              history.replaceState(null, "", "/operations/products");
+              history.replaceState(null, "", centralEntry);
               throw error;
             })
         : manager.getUser();
@@ -61,4 +69,9 @@ export async function login() {
   await manager?.signinRedirect({
     state: safeReturn(location.pathname + location.search),
   });
+}
+/** 清除共享恢复Promise，避免退出后复用首次读取的旧用户。 */
+export async function clearSession() {
+  initialization = undefined;
+  await manager?.removeUser();
 }
