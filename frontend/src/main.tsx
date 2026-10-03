@@ -16,6 +16,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ConfigProvider
       locale={zhCN}
+      componentSize="middle"
+      modal={{ centered: true }}
       button={{ autoInsertSpace: false }}
       form={{
         requiredMark: (label, { required }) => (

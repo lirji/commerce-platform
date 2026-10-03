@@ -120,22 +120,15 @@
 .admin-app .ant-table-cell-fix-right {
   box-shadow: -1px 0 0 var(--line);
 }
-.record-drawer .ant-drawer-header {
-  border-bottom-color: var(--line);
-  padding: 24px;
-}
-.record-drawer .ant-drawer-title {
+.record-modal .ant-modal-title {
   font-size: 20px;
   letter-spacing: -0.4px;
 }
-.record-drawer .ant-drawer-footer {
-  background: var(--raised);
-}
-.record-drawer .ant-descriptions-item-label {
+.record-modal .ant-descriptions-item-label {
   color: var(--muted);
   font-size: 13px;
 }
-.record-drawer .ant-descriptions-bordered .ant-descriptions-view {
+.record-modal .ant-descriptions-bordered .ant-descriptions-view {
   border-radius: 8px;
   overflow: hidden;
 }
@@ -660,7 +653,7 @@
 }
 .trend-controls .ant-btn {
   width: 38px;
-  height: 44px;
+  padding-inline: 0;
 }
 .trend-help {
   color: var(--muted);

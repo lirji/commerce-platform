@@ -1,5 +1,5 @@
 import { useRouteState } from "../shared/routeState";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import {
   Button,
   Card,
@@ -10,7 +10,7 @@ import {
   Space,
   Table,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   JourneyNodeKind,
   type Governed,
@@ -101,7 +101,6 @@ function NodesEditor({
             </Space>
             <Button
               danger
-              size="small"
               onClick={() => onChange?.(value.filter((_, j) => i !== j))}
             >
               移除
@@ -288,9 +287,6 @@ export function Journeys({ store }: { store: string }) {
   const command = useCommand();
   const [form] = Form.useForm();
   const closing = useDirtyClose(form, command.busy, () => setOpen(false));
-  useEffect(() => {
-    if (open) form.resetFields();
-  }, [open, draft, form]);
   return (
     <Workbench>
       {closing.contextHolder}
@@ -401,7 +397,6 @@ export function Journeys({ store }: { store: string }) {
                 <RowActions>
                   <Button
                     type="link"
-                    size="small"
                     onClick={(event) => {
                       // Safari 点击按钮不一定赋予焦点，显式保存打开详情的返回位置。
                       event.currentTarget.focus({ preventScroll: true });
@@ -412,7 +407,6 @@ export function Journeys({ store }: { store: string }) {
                   </Button>
                   <Button
                     type="link"
-                    size="small"
                     onClick={() => {
                       setDraft({
                         ...r.content,
@@ -440,12 +434,12 @@ export function Journeys({ store }: { store: string }) {
         />
       </ListPanel>
       <JourneyScans />
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title="旅程节点与版本"
         initialExpanded
         open={!!detail}
-        onClose={() => setDetail(undefined)}
+        onCancel={() => setDetail(undefined)}
         width={720}
       >
         {detail && (
@@ -468,12 +462,16 @@ export function Journeys({ store }: { store: string }) {
             journey={detail.content}
           />
         )}
-      </Drawer>
-      <Drawer
+      </RecordModal>
+      <RecordModal
         title="旅程编辑器"
-        size={860}
+        width={860}
         open={open}
-        onClose={closing.requestClose}
+        afterOpenChange={(visible) => {
+          // Modal 延后挂载内容；须在表单读到当前草稿初始值后重置，避免新建沿用上一版本。
+          if (visible) form.resetFields();
+        }}
+        onCancel={closing.requestClose}
         keyboard={!command.busy}
         mask={{ closable: !command.busy }}
         footer={
@@ -697,7 +695,7 @@ export function Journeys({ store }: { store: string }) {
             <NodesEditor />
           </Form.Item>
         </Form>
-      </Drawer>
+      </RecordModal>
     </Workbench>
   );
 }

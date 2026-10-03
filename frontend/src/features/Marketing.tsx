@@ -5,7 +5,7 @@ import type { Campaign, Governed, Rule } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
   ActionButton,
-  RecordDrawer as Drawer,
+  RecordModal,
   RowActions,
   FormActions,
   useDirtyClose,
@@ -115,7 +115,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
               className: "row-actions-cell",
               render: (_, r) => (
                 <RowActions>
-                  <Button type="link" size="small" onClick={() => setDetail(r)}>
+                  <Button type="link" onClick={() => setDetail(r)}>
                     查看配置
                   </Button>
                   {"campaignId" in r.content && (
@@ -161,15 +161,15 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           ]}
         />
       </ListPanel>
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title="版本配置"
         open={!!detail}
-        onClose={() => setDetail(undefined)}
+        onCancel={() => setDetail(undefined)}
         width={720}
       >
         {detail && <MarketingDetails record={detail} />}
-      </Drawer>
+      </RecordModal>
       <Modal
         title="新建规则资产"
         open={open}

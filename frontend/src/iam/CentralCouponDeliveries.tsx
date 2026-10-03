@@ -499,7 +499,6 @@ function Directory({
                 render: (_, value) => (
                   <Button
                     type="link"
-                    size="small"
                     onClick={() => open(value.content.batchId)}
                   >
                     详情与收件人

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Order } from "../src/shared/contracts";
+import { assertButtonSizes, assertCentered } from "./presentation";
 
 // 仅在测试边界返回正式 DTO；产品页面始终读取真实接口。
 async function openCampaign(page: Page) {
@@ -48,6 +49,9 @@ async function openCampaign(page: Page) {
     await route.fulfill({ json: body });
   });
   await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "进入平台", exact: true }),
+  ).toHaveCSS("height", "38px");
   await page.getByLabel("访问凭据", { exact: true }).fill("ui-test-credential");
   await page.getByRole("button", { name: "进入平台", exact: true }).click();
   await expect(
@@ -72,18 +76,21 @@ test("行操作尺寸一致，单页隐藏无用分页，配置使用业务语�
       ),
     );
   expect(heights.length).toBe(4);
-  expect(new Set(heights).size).toBe(1);
+  expect(new Set(heights)).toEqual(new Set([38]));
+  await assertButtonSizes(page);
   await expect(
     page.getByRole("button", { name: "下一页", exact: true }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "查看配置", exact: true }).click();
-  const drawer = page.getByRole("dialog");
-  await expect(drawer.locator(".rule-summary")).toHaveText("会员等级等于VIP");
-  await drawer.getByRole("button", { name: "展开视图", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await assertCentered(page);
+  await assertButtonSizes(page);
+  await expect(dialog.locator(".rule-summary")).toHaveText("会员等级等于VIP");
+  await dialog.getByRole("button", { name: "展开视图", exact: true }).click();
   await expect(
-    drawer.getByRole("button", { name: "收起视图", exact: true }),
+    dialog.getByRole("button", { name: "收起视图", exact: true }),
   ).toBeVisible();
-  await drawer.getByRole("button", { name: "返回列表", exact: true }).click();
+  await dialog.getByRole("button", { name: "返回列表", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
@@ -102,6 +109,8 @@ test("复制版本支持未保存提醒、继续编辑与丢弃，窄屏固定�
     "尚未保存的名称",
   );
   await page.setViewportSize({ width: 390, height: 844 });
+  await assertCentered(page);
+  await assertButtonSizes(page);
   const save = await page
     .getByRole("button", { name: "保存活动草稿", exact: true })
     .boundingBox();
@@ -247,4 +256,131 @@ test("完整订单详情显式显示加载与无权错误，可重试并返回�
   await expect(
     page.getByRole("button", { name: "查看详情", exact: true }),
   ).toBeVisible();
+});
+
+test("320px 导航、详情和编辑弹层居中且按钮共用尺寸，关闭后返回触发入口", async ({
+  page,
+}) => {
+  await openCampaign(page);
+  await page.setViewportSize({ width: 320, height: 844 });
+  const menu = page.getByRole("button", { name: "打开经营导航", exact: true });
+  await menu.click();
+  await assertCentered(page);
+  await assertButtonSizes(page);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "关闭", exact: true })
+    .click();
+  await expect(menu).toBeFocused();
+  const opener = page.getByRole("button", { name: "查看配置", exact: true });
+  await opener.click();
+  await assertCentered(page);
+  await assertButtonSizes(page);
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/frontend-modal-buttons"}/campaign-detail-320.png`,
+  });
+  await page.getByRole("button", { name: "返回列表", exact: true }).click();
+  await expect(opener).toBeFocused();
+  await page.getByRole("button", { name: "复制新版本", exact: true }).click();
+  await assertCentered(page);
+  await assertButtonSizes(page);
+  await expect(
+    page.getByRole("button", { name: "保存活动草稿", exact: true }),
+  ).toBeInViewport();
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/frontend-modal-buttons"}/campaign-edit-320.png`,
+  });
+  const body = page.getByRole("dialog").locator(".ant-modal-body");
+  expect(
+    await body.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("会员商城、分类、商品详情与购物袋共用按钮尺寸，三种屏宽弹层居中", async ({
+  page,
+}) => {
+  // 仅测试展示边界；产品仍从接口取正式 CatalogItem，未模拟报价或下单成功。
+  const sku = {
+    skuId: "sku-display",
+    storeId: "store-display",
+    title: "测试咖啡",
+    unitPrice: "59.00",
+    revision: 1,
+    status: "ACTIVE",
+    categoryId: "category-display",
+    categoryName: "咖啡",
+    description: "展示回归",
+    images: [],
+    specifications: [],
+  };
+  await page.route("**/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    let json: unknown = [];
+    if (path === "/v1/me")
+      json = { tenantId: "ui-test", actorId: "member", role: "MEMBER" };
+    else if (path === "/v1/stores")
+      json = [
+        {
+          storeId: "store-display",
+          merchantId: "merchant-display",
+          name: "展示店铺",
+          status: "ACTIVE",
+          version: 1,
+        },
+      ];
+    else if (path === "/v1/runtime-capabilities")
+      json = { sandboxEnabled: false, workersEnabled: false };
+    else if (path === "/v1/catalog/search") json = [sku];
+    else if (path === "/v1/catalog/items/sku-display") json = sku;
+    else if (path === "/v1/catalog/categories")
+      json = [
+        {
+          categoryId: "category-display",
+          storeId: "store-display",
+          name: "咖啡",
+          depth: 1,
+          status: "ACTIVE",
+          version: 1,
+        },
+      ];
+    else if (path === "/v1/members/me/points") json = { available: 0 };
+    await route.fulfill({ json });
+  });
+  await page.goto("/");
+  await page
+    .getByLabel("访问凭据", { exact: true })
+    .fill("member-display-fixture");
+  await page.getByRole("button", { name: "进入平台", exact: true }).click();
+  await expect(page.locator(".shop-channel")).toHaveCount(2);
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+    await assertButtonSizes(page);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
+    await page.getByRole("button", { name: "测试咖啡", exact: true }).click();
+    await assertCentered(page);
+    await assertButtonSizes(page);
+    await page.screenshot({
+      path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/frontend-modal-buttons"}/member-product-${width}.png`,
+    });
+    await page.getByRole("button", { name: "返回店铺", exact: true }).click();
+  }
+  await page.getByRole("button", { name: "加入购物袋", exact: true }).click();
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+    await page.getByRole("button", { name: "购物袋 · 1", exact: true }).click();
+    await assertCentered(page);
+    await assertButtonSizes(page);
+    await page.screenshot({
+      path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/frontend-modal-buttons"}/member-checkout-${width}.png`,
+    });
+    await page.getByRole("button", { name: "返回列表", exact: true }).click();
+  }
 });

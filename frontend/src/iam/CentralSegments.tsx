@@ -295,12 +295,8 @@ function Runs({
               width: 150,
               render: (_, row) => (
                 <Space>
-                  <Button size="small" onClick={() => setRunId(row.runId)}>
-                    查看
-                  </Button>
-                  <Button size="small" onClick={() => select(row)}>
-                    控制
-                  </Button>
+                  <Button onClick={() => setRunId(row.runId)}>查看</Button>
+                  <Button onClick={() => select(row)}>控制</Button>
                 </Space>
               ),
             },
@@ -416,13 +412,10 @@ function Directory({
               width: 200,
               render: (_, row) => (
                 <Space>
-                  <Button
-                    size="small"
-                    onClick={() => setDetail(row.content.segmentId)}
-                  >
+                  <Button onClick={() => setDetail(row.content.segmentId)}>
                     详情与记录
                   </Button>
-                  <Button size="small" onClick={() => selectDefinition(row)}>
+                  <Button onClick={() => selectDefinition(row)}>
                     调整调度
                   </Button>
                 </Space>

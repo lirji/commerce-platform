@@ -1,13 +1,5 @@
-import {
-  Avatar,
-  Button,
-  Drawer,
-  Grid,
-  Layout,
-  Menu,
-  Space,
-  Typography,
-} from "antd";
+import { RecordModal } from "../shared/interactions";
+import { Avatar, Button, Grid, Layout, Menu, Space, Typography } from "antd";
 import { useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../shared/Icon";
 import { WorkspaceBrand, WorkspaceSearch } from "../shared/WorkspaceChrome";
@@ -116,15 +108,16 @@ export function CentralShell({
           统一电商业务平台<span>企业经营 · 按授权范围操作</span>
         </Layout.Footer>
       </Layout>
-      <Drawer
+      <RecordModal
         title="经营导航"
-        placement="left"
-        size={280}
+        expandable={false}
+        footer={null}
+        width={480}
         open={open}
-        onClose={() => setOpen(false)}
+        onCancel={() => setOpen(false)}
       >
         {navigation}
-      </Drawer>
+      </RecordModal>
     </Layout>
   );
 }

@@ -1,7 +1,7 @@
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
 import {
-  RecordDrawer as Drawer,
+  RecordModal,
   FormActions,
   useDirtyClose,
 } from "../shared/interactions";
@@ -298,11 +298,11 @@ export function ProductPresentation({
       : null,
   );
   return (
-    <Drawer
+    <RecordModal
       title={`${product?.title ?? "商品"} · 展示资料`}
       open={!!product}
-      onClose={onClose}
-      size="large"
+      onCancel={onClose}
+      width={960}
     >
       <ErrorNotice error={profile.error} />
       {product && profile.data && (
@@ -413,7 +413,7 @@ export function ProductPresentation({
           />
         </>
       )}
-    </Drawer>
+    </RecordModal>
   );
 }
 export function BarcodeEditor({
@@ -433,11 +433,11 @@ export function BarcodeEditor({
       : null,
   );
   return (
-    <Drawer
+    <RecordModal
       title={`${sku?.title ?? "规格"} · 条码资料`}
       open={!!sku}
-      onClose={onClose}
-      size="default"
+      onCancel={onClose}
+      width={720}
     >
       <ErrorNotice error={barcode.error} />
       {sku && barcode.data && (
@@ -468,7 +468,7 @@ export function BarcodeEditor({
           />
         </>
       )}
-    </Drawer>
+    </RecordModal>
   );
 }
 /** 绑定模板后只展示其允许值；自由规格保留原输入方式。 */
@@ -618,10 +618,10 @@ export function VariantCreator({
       >
         创建销售规格
       </Button>
-      <Drawer
+      <RecordModal
         title="创建销售规格"
         open={open}
-        onClose={closing.requestClose}
+        onCancel={closing.requestClose}
         keyboard={!command.busy}
         mask={{ closable: !command.busy }}
         footer={
@@ -637,7 +637,7 @@ export function VariantCreator({
           </FormActions>
         }
         destroyOnHidden
-        size={720}
+        width={720}
       >
         <VariantForm
           form={form}
@@ -649,7 +649,7 @@ export function VariantCreator({
             onDone();
           }}
         />
-      </Drawer>
+      </RecordModal>
     </>
   );
 }

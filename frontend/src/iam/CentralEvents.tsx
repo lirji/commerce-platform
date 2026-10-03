@@ -93,9 +93,7 @@ function EventPump({
         >
           推进一次事件批次
         </Button>
-        <Button size="small" onClick={access.refresh}>
-          核验推进资格
-        </Button>
+        <Button onClick={access.refresh}>核验推进资格</Button>
       </Space>
       <ErrorNotice error={access.error} />
       <Modal

@@ -17,6 +17,18 @@ select,
 textarea {
   font: inherit;
 }
+/* 搜索按钮与输入框分开，完整圆角与普通操作按钮一致。 */
+.ant-input-search.ant-space-compact
+  > .ant-input-search-btn.ant-btn-compact-last-item {
+  border-radius: 8px;
+  border-start-start-radius: 8px;
+  border-end-start-radius: 8px;
+  margin-inline-start: 8px;
+}
+.ant-input-search.ant-space-compact > .ant-input-compact-first-item {
+  border-start-end-radius: 8px;
+  border-end-end-radius: 8px;
+}
 .required-mark {
   color: var(--error);
   margin-inline-end: 4px;
@@ -102,12 +114,9 @@ textarea {
   background: transparent;
 }
 .login-submit.ant-btn {
-  min-height: 48px;
   margin-top: 4px;
   border-radius: 8px;
-  font-size: 15px;
   font-weight: 650;
-  letter-spacing: 0.02em;
 }
 .login-meta {
   display: grid;
@@ -285,9 +294,6 @@ textarea {
   max-width: 100%;
 }
 .row-actions .ant-btn {
-  height: 32px;
-  padding-inline: 8px;
-  font-size: 12px;
   box-shadow: none;
 }
 .row-actions .ant-btn-default {
@@ -298,20 +304,13 @@ textarea {
 .row-actions .ant-space {
   gap: 2px !important;
 }
-.drawer-header-actions,
+.modal-header-actions,
 .form-actions,
-.drawer-read-actions {
+.modal-read-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-}
-.record-drawer .ant-drawer-content-wrapper {
-  max-width: 100vw;
-}
-.record-drawer .ant-drawer-footer {
-  padding: 16px 24px;
-  background: var(--surface);
 }
 .overlay-intro {
   color: var(--muted);
@@ -358,13 +357,6 @@ textarea {
 .list-count {
   font-size: 12px;
   color: var(--muted);
-}
-.record-drawer .ant-drawer-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--line);
-}
-.record-drawer .ant-drawer-body {
-  padding: 22px 24px 32px;
 }
 .record-hero {
   margin-bottom: 22px;
@@ -470,7 +462,7 @@ textarea {
 .detail-block {
   margin-top: 18px;
 }
-.workspace .ant-drawer-title {
+.workspace .ant-modal-title {
   font-weight: 650;
 }
 .workspace .ant-tabs-nav {
@@ -480,7 +472,7 @@ textarea {
   color: var(--muted);
 }
 .shop-channel.is-active,
-.shop-channel:hover {
+.shop-channel.ant-btn:hover {
   border-color: var(--focus);
   color: var(--focus);
 }
@@ -719,10 +711,9 @@ textarea {
 .ant-modal .ant-form {
   margin-top: 24px;
 }
-.ant-modal .ant-modal-close,
-.ant-drawer .ant-drawer-close {
-  min-width: 44px;
-  min-height: 44px;
+.ant-modal .ant-modal-close {
+  width: 38px;
+  height: 38px;
 }
 .list-toolbar {
   display: flex;
@@ -747,11 +738,6 @@ textarea {
 .list-panel .ant-table-tbody > tr > td {
   padding: 18px 20px;
   vertical-align: middle;
-}
-.row-actions .ant-btn {
-  padding-inline: 8px;
-  height: 32px;
-  font-size: 12px;
 }
 .primary-cell .muted {
   font-size: 12px;
@@ -1089,9 +1075,6 @@ textarea {
   padding-inline: 18px;
   font-size: 14px;
 }
-.member-app .ant-btn:not(.ant-btn-sm) {
-  min-height: 44px;
-}
 .member-app .page-head h2 {
   font-size: 24px !important;
 }
@@ -1145,23 +1128,18 @@ textarea {
   gap: 8px;
   margin-bottom: 16px;
 }
-.shop-channel {
-  appearance: none;
-  min-height: 44px;
-  padding: 0 18px;
+.shop-channel.ant-btn {
   border: 1px solid transparent;
   border-radius: 8px;
   background: var(--raised);
   color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
 }
-.shop-channel.is-active {
+.shop-channel.ant-btn.is-active {
   background: var(--selected);
   color: var(--accent);
   font-weight: 600;
 }
-.shop-channel:hover {
+.shop-channel.ant-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -1315,11 +1293,6 @@ textarea {
   font-weight: 650;
   letter-spacing: -0.5px;
 }
-.shop-page .product-bottom .ant-btn {
-  min-height: 44px;
-  padding-inline: 14px;
-  font-size: 13px;
-}
 .shop-pager {
   width: 100%;
   justify-content: flex-end;
@@ -1384,7 +1357,6 @@ textarea {
 .product-detail-actions {
   margin-top: 16px;
 }
-.product-detail-actions .ant-btn,
 .product-detail-actions .ant-input-number {
   min-height: 44px;
 }
@@ -1401,22 +1373,15 @@ textarea {
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
-.product-modal .ant-modal-footer .ant-btn {
+.checkout-modal .ant-input-number,
+.checkout-modal .ant-select,
+.checkout-modal input.ant-input {
   min-height: 44px;
 }
-.checkout-drawer .ant-drawer-body {
-  padding: 24px;
-}
-.checkout-drawer .ant-btn,
-.checkout-drawer .ant-input-number,
-.checkout-drawer .ant-select,
-.checkout-drawer input.ant-input {
-  min-height: 44px;
-}
-.checkout-drawer .ant-input-number-input {
+.checkout-modal .ant-input-number-input {
   height: 42px;
 }
-.checkout-drawer .ant-form {
+.checkout-modal .ant-form {
   margin-top: 24px;
 }
 .coupon-value,
@@ -1534,9 +1499,6 @@ textarea {
     width: 28px;
     height: 28px;
   }
-  .ant-drawer-content-wrapper {
-    max-width: 100vw;
-  }
   .record-fields,
   .node-grid {
     grid-template-columns: 1fr;
@@ -1647,7 +1609,6 @@ textarea {
   }
   .shop-page .product-bottom .ant-btn {
     width: 100%;
-    padding-inline: 8px;
   }
   .product-fallback {
     gap: 8px;
@@ -1695,33 +1656,67 @@ textarea {
   gap: 4px;
   margin-block: 8px;
 }
-.record-drawer .ant-table-wrapper {
+.record-modal .ant-table-wrapper {
   max-width: 100%;
   overflow-x: auto;
 }
-.command-modal .ant-modal-body {
-  max-height: calc(100dvh - 260px);
-  overflow-y: auto;
-  padding-right: 4px;
+/* 弹层容器约束高度，只有内容区滚动；保存/取消入口无需滚到表单末尾。 */
+.ant-modal {
+  max-width: calc(100vw - 32px);
+}
+.ant-modal .ant-modal-container {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 32px);
+}
+.ant-modal .ant-modal-header,
+.ant-modal .ant-modal-footer {
+  flex-shrink: 0;
+}
+.ant-modal .ant-modal-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.record-modal .ant-modal-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.record-modal .ant-modal-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.record-modal-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-inline-end: 38px;
+}
+.record-modal-heading > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.modal-header-actions,
+.form-actions,
+.modal-read-actions {
+  flex-wrap: wrap;
 }
 @media (max-width: 600px) {
-  .record-drawer .ant-drawer-header {
+  .ant-modal {
+    max-width: calc(100vw - 24px);
+  }
+  .ant-modal .ant-modal-container {
+    max-height: calc(100dvh - 24px);
     padding: 16px;
   }
-  .record-drawer .ant-drawer-body {
-    padding: 20px 16px;
+  .record-modal-heading {
+    align-items: flex-start;
   }
-  .record-drawer .ant-drawer-footer {
-    padding: 12px 16px;
-  }
-  .drawer-header-actions .ant-btn {
-    padding-inline: 6px;
-  }
-  .record-drawer .ant-drawer-close {
-    margin-inline-end: 6px;
-  }
-  .command-modal .ant-modal-body {
-    max-height: calc(100dvh - 235px);
+  .modal-header-actions {
+    justify-content: flex-start;
   }
 }
 

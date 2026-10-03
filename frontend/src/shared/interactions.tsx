@@ -1,11 +1,4 @@
-import {
-  Button,
-  Drawer as AntDrawer,
-  Modal,
-  Space,
-  type DrawerProps,
-  type FormInstance,
-} from "antd";
+import { Button, Modal, Space, type ModalProps, type FormInstance } from "antd";
 import {
   Children,
   isValidElement,
@@ -19,7 +12,7 @@ import {
 const RowActionContext = createContext(false);
 export const useRowAction = () => useContext(RowActionContext);
 
-/** 行操作只影响入口按钮，弹层内的表单仍使用正常尺寸。 */
+/** 行操作仅区分入口的视觉语义；入口和弹层内按钮共用全站尺寸。 */
 export function RowActions({ children }: { children: ReactNode }) {
   return (
     <RowActionContext.Provider value>
@@ -60,6 +53,7 @@ export function useDirtyClose(
     if (busy) return;
     if (!form.isFieldsTouched()) return onClose();
     modal.confirm({
+      centered: true,
       title: "放弃本次修改？",
       content: "尚未保存的内容将被清除。你也可以继续编辑后再保存。",
       okText: "放弃修改",
@@ -70,46 +64,57 @@ export function useDirtyClose(
   return { requestClose, contextHolder };
 }
 
-/** 轻量详情保留列表上下文，长内容可临时展开，窄屏在弹层内部滚动。 */
-export function RecordDrawer({
+/** 居中弹层保留列表上下文；长内容内部滚动，表单操作始终可见。 */
+export function RecordModal({
   children,
   className,
-  size,
-  width,
+  width = 720,
   extra,
   footer,
-  onClose,
+  onCancel,
   open,
+  title,
   initialExpanded = false,
+  expandable = true,
   ...props
-}: DrawerProps & { initialExpanded?: boolean }) {
+}: Omit<ModalProps, "onCancel"> & {
+  onCancel?: () => void;
+  extra?: ReactNode;
+  initialExpanded?: boolean;
+  expandable?: boolean;
+}) {
   const [expanded, setExpanded] = useState(initialExpanded);
   useEffect(() => {
     if (!open) setExpanded(initialExpanded);
   }, [open, initialExpanded]);
   return (
-    <AntDrawer
+    <Modal
       {...props}
+      centered
       open={open}
-      onClose={onClose}
-      className={["record-drawer", className].filter(Boolean).join(" ")}
-      size={expanded ? 1120 : (size ?? width ?? 720)}
-      extra={
-        <div className="drawer-header-actions">
-          {extra}
-          <Button
-            type="text"
-            size="small"
-            onClick={() => setExpanded((v) => !v)}
-          >
-            {expanded ? "收起视图" : "展开视图"}
-          </Button>
+      onCancel={onCancel}
+      className={["record-modal", className].filter(Boolean).join(" ")}
+      width={expanded ? 1120 : width}
+      title={
+        <div className="record-modal-heading">
+          <span>{title}</span>
+          <div className="modal-header-actions">
+            {extra}
+            {expandable && (
+              <Button
+                type="text"
+                onClick={() => setExpanded((value) => !value)}
+              >
+                {expanded ? "收起视图" : "展开视图"}
+              </Button>
+            )}
+          </div>
         </div>
       }
       footer={
         footer === undefined ? (
-          <div className="drawer-read-actions">
-            <Button onClick={onClose}>返回列表</Button>
+          <div className="modal-read-actions">
+            <Button onClick={onCancel}>返回列表</Button>
           </div>
         ) : (
           footer
@@ -117,7 +122,7 @@ export function RecordDrawer({
       }
     >
       {children}
-    </AntDrawer>
+    </Modal>
   );
 }
 

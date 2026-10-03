@@ -1,5 +1,5 @@
 import { PagerActions } from "../shared/interactions";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import { Alert, Button, Card, Input, Space, Table, Typography } from "antd";
 import { useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
@@ -317,11 +317,11 @@ export function CatalogJobs({ store }: { store: string }) {
           下一页计划
         </Button>
       </PagerActions>
-      <Drawer
+      <RecordModal
         title={`${selected?.definition.name ?? "计划"} · 逐项回执`}
         open={!!selected}
-        onClose={() => setSelected(undefined)}
-        size="large"
+        onCancel={() => setSelected(undefined)}
+        width={960}
       >
         <ErrorNotice error={receipts.error} />
         <Button onClick={receipts.refresh}>刷新回执</Button>
@@ -355,7 +355,7 @@ export function CatalogJobs({ store }: { store: string }) {
             { title: "执行时间", dataIndex: "processedAt", render: time },
           ]}
         />
-      </Drawer>
+      </RecordModal>
     </Card>
   );
 }
@@ -382,14 +382,14 @@ export function ChannelPrices({
       : null,
   );
   return (
-    <Drawer
+    <RecordModal
       title={`${sku?.title ?? "商品"} · 渠道价格`}
       open={!!sku}
-      onClose={() => {
+      onCancel={() => {
         setChannel(undefined);
         onClose();
       }}
-      size="large"
+      width={960}
     >
       <Alert
         type="info"
@@ -519,6 +519,6 @@ export function ChannelPrices({
           </PagerActions>
         </>
       )}
-    </Drawer>
+    </RecordModal>
   );
 }

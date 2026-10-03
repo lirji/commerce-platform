@@ -7,7 +7,7 @@ import {
   Fields,
   instant,
   money,
-  RecordDrawer as Drawer,
+  RecordModal,
   FormActions,
   useRowAction,
 } from "../shared/ui";
@@ -38,7 +38,6 @@ export function CampaignPreview({ campaign }: { campaign: Campaign }) {
     <>
       <Button
         type={rowAction ? "link" : "default"}
-        size={rowAction ? "small" : "middle"}
         onClick={() => {
           setOpen(true);
           setResult(undefined);
@@ -47,11 +46,11 @@ export function CampaignPreview({ campaign }: { campaign: Campaign }) {
       >
         预览优惠
       </Button>
-      <Drawer
+      <RecordModal
         title={`${campaign.name} · v${campaign.version} 预览`}
         open={open}
-        onClose={() => !command.busy && setOpen(false)}
-        size={760}
+        onCancel={() => !command.busy && setOpen(false)}
+        width={760}
         footer={
           <FormActions
             onCancel={() => !command.busy && setOpen(false)}
@@ -177,7 +176,7 @@ export function CampaignPreview({ campaign }: { campaign: Campaign }) {
             />
           </>
         )}
-      </Drawer>
+      </RecordModal>
     </>
   );
 }

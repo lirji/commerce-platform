@@ -86,7 +86,6 @@ export function JourneyScans() {
             render: (_, r) => (
               <RowActions>
                 <Button
-                  size="small"
                   disabled={r.status !== "ISOLATED"}
                   onClick={() => setRetry(r)}
                 >

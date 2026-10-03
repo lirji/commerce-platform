@@ -1,3 +1,4 @@
+import { RecordModal } from "../shared/interactions";
 import {
   Alert,
   App as AntApp,
@@ -7,7 +8,6 @@ import {
   Form,
   Input,
   Layout,
-  Drawer,
   Grid,
   Spin,
   Menu,
@@ -442,7 +442,6 @@ export function App() {
                   className="login-submit"
                   htmlType="submit"
                   type="primary"
-                  size="large"
                   loading={logging}
                   block
                 >
@@ -594,12 +593,13 @@ export function App() {
         </Layout.Sider>
       )}
       {admin && compact && (
-        <Drawer
+        <RecordModal
           title="经营导航"
-          placement="left"
-          size={280}
+          expandable={false}
+          footer={null}
+          width={480}
           open={menuOpen}
-          onClose={() => setMenuOpen(false)}
+          onCancel={() => setMenuOpen(false)}
         >
           <Menu
             mode="inline"
@@ -609,7 +609,7 @@ export function App() {
             items={menu}
             onClick={({ key }) => navigate(key)}
           />
-        </Drawer>
+        </RecordModal>
       )}
       <Layout>
         <Layout.Header className="topbar">

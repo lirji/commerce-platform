@@ -81,7 +81,20 @@ export const consoleTheme: ThemeConfig = {
       itemHoverBg: palette.raised,
       groupTitleColor: palette.muted,
     },
+    // 即使组件内部使用 small/large，操作按钮仍遵守同一尺寸，避免页面再次分化。
     Button: {
+      controlHeight: 38,
+      controlHeightSM: 38,
+      controlHeightLG: 38,
+      contentFontSize: 14,
+      contentFontSizeSM: 14,
+      contentFontSizeLG: 14,
+      paddingInline: 14,
+      paddingInlineSM: 14,
+      paddingInlineLG: 14,
+      borderRadius: 8,
+      borderRadiusSM: 8,
+      borderRadiusLG: 8,
       primaryShadow: "none",
       colorPrimary: palette.accent,
       colorPrimaryHover: palette.hover,
@@ -96,7 +109,6 @@ export const consoleTheme: ThemeConfig = {
     },
     Card: { headerFontSize: 15, borderRadiusLG: 12, headerHeight: 56 },
     Modal: { borderRadiusLG: 16, paddingContentHorizontalLG: 24 },
-    Drawer: { footerPaddingBlock: 16 },
     Tabs: {
       itemSelectedColor: palette.accent,
       itemHoverColor: palette.ink,

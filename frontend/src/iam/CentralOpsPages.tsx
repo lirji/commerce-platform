@@ -102,7 +102,7 @@ function DefinitionAction({
         >
           {action === "create" ? "创建页面版本" : "只读预览页面"}
         </Button>
-        <Button size="small" onClick={access.refresh}>
+        <Button onClick={access.refresh}>
           核验{action === "create" ? "创建" : "预览"}资格
         </Button>
       </Space>
@@ -398,9 +398,7 @@ function EmbeddedAction({
             {a.label}
           </Button>
         ))}
-        <Button size="small" onClick={access.refresh}>
-          核验内嵌动作资格
-        </Button>
+        <Button onClick={access.refresh}>核验内嵌动作资格</Button>
       </Space>
       <Modal
         className="operations-modal"

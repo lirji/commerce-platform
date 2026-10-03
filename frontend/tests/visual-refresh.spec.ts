@@ -58,7 +58,7 @@ test("窄屏商品表格内部滚动，字段错误可见且关闭弹层归还�
   await expect(opener).toBeFocused();
 });
 
-test("手机商城图片、缺图提示和触达尺寸，购物袋展示真实报价", async ({
+test("手机商城图片、缺图提示和统一按钮尺寸，购物袋展示真实报价", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -87,7 +87,7 @@ test("手机商城图片、缺图提示和触达尺寸，购物袋展示真实�
     page.getByRole("button", { name: "全部商品", exact: true }),
   ]) {
     const bounds = await control.boundingBox();
-    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    expect(bounds!.height).toBe(38);
     expect(bounds!.width).toBeGreaterThanOrEqual(44);
   }
   await card.getByRole("button", { name: "加入购物袋", exact: true }).click();

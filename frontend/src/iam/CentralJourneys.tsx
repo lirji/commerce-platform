@@ -434,7 +434,6 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                 <Space wrap>
                   {Object.entries(states).map(([task, label]) => (
                     <Button
-                      size="small"
                       key={task}
                       disabled={
                         !allowed(`/operations/journeys/${task}-access`) ||

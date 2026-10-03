@@ -1,10 +1,10 @@
+import { RecordModal } from "../shared/interactions";
 import { useRouteState } from "../shared/routeState";
 import {
   Alert,
   App,
   Button,
   Card,
-  Drawer,
   Form,
   Input,
   InputNumber,
@@ -260,17 +260,17 @@ function MemberList() {
           下一页
         </Button>
       </Space>
-      <Drawer
+      <RecordModal
         title={selected ? `${selected.displayName} · 变更记录` : "变更记录"}
         open={!!selected}
-        onClose={() => setSelected(undefined)}
-        size={820}
+        onCancel={() => setSelected(undefined)}
+        width={820}
         destroyOnHidden
       >
         {selected && (
           <MemberHistory key={selected.memberId} member={selected} />
         )}
-      </Drawer>
+      </RecordModal>
     </Space>
   );
 }

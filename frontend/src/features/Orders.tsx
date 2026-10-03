@@ -26,7 +26,7 @@ import {
   PageHead,
   PrimaryCell,
   RecordHero,
-  RecordDrawer as Drawer,
+  RecordModal,
   RowActions,
   formatField,
   Status,
@@ -170,16 +170,11 @@ export function Orders({
                 width: 180,
                 render: (_, r) => (
                   <RowActions>
-                    <Button
-                      type="link"
-                      size="small"
-                      onClick={() => previewOrder(r.orderId)}
-                    >
+                    <Button type="link" onClick={() => previewOrder(r.orderId)}>
                       查看详情
                     </Button>
                     <Button
                       type="link"
-                      size="small"
                       onClick={() => openWorkspace(r.orderId)}
                     >
                       完整详情
@@ -191,11 +186,11 @@ export function Orders({
           />
         </ListPanel>
       </div>
-      <Drawer
-        className="record-drawer"
-        size={760}
+      <RecordModal
+        className="record-modal"
+        width={760}
         open={!!selected}
-        onClose={() => setSelected(undefined)}
+        onCancel={() => setSelected(undefined)}
         title="订单详情"
         extra={
           selected && (
@@ -215,7 +210,7 @@ export function Orders({
             onUpdate={resource.refresh}
           />
         )}
-      </Drawer>
+      </RecordModal>
     </Workbench>
   );
 }

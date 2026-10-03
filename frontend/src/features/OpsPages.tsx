@@ -1,5 +1,5 @@
 import { useRouteState } from "../shared/routeState";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import {
   Alert,
   Button,
@@ -11,7 +11,7 @@ import {
   Table,
   Tabs,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Governed, PageDefinition, PageRender } from "../shared/contracts";
 // 已发布页面暂停后才允许回退，沿用既有治理状态码。
 const ROLLBACK_ELIGIBLE_STATUS: Governed<PageDefinition>["status"] = "PAUSED";
@@ -262,10 +262,6 @@ export function OpsPages({ store }: { store: string }) {
   const command = useCommand();
   const closing = useDirtyClose(form, command.busy, () => setEditing(false));
   const body = (v: Values) => ({ ...v, storeId: store }) as PageDefinition;
-  // 抽屉复用同一个表单实例；切换草稿或新建时须从当前版本重新初始化。
-  useEffect(() => {
-    if (editing) form.resetFields();
-  }, [draft, editing, form]);
   return (
     <>
       {closing.contextHolder}
@@ -316,14 +312,12 @@ export function OpsPages({ store }: { store: string }) {
                 <RowActions>
                   <Button
                     type="link"
-                    size="small"
                     onClick={() => setSelected(row.content.pageId)}
                   >
                     打开 / 版本
                   </Button>
                   <Button
                     type="link"
-                    size="small"
                     onClick={() => {
                       setDraft({
                         ...row.content,
@@ -355,11 +349,11 @@ export function OpsPages({ store }: { store: string }) {
           onNext={() => setAfter(r.data!.at(-1)!.content.pageId)}
         />
       </Card>
-      <Drawer
+      <RecordModal
         title="运营页面"
-        size={1000}
+        width={1000}
         open={!!selected}
-        onClose={() => setSelected(undefined)}
+        onCancel={() => setSelected(undefined)}
         destroyOnHidden
       >
         {selected && (
@@ -378,12 +372,16 @@ export function OpsPages({ store }: { store: string }) {
             ]}
           />
         )}
-      </Drawer>
-      <Drawer
+      </RecordModal>
+      <RecordModal
         title="页面编排"
-        size={960}
+        width={960}
         open={editing}
-        onClose={closing.requestClose}
+        afterOpenChange={(visible) => {
+          // Modal 延后挂载内容；须在表单读到当前草稿初始值后重置，避免新建沿用上一版本。
+          if (visible) form.resetFields();
+        }}
+        onCancel={closing.requestClose}
         keyboard={!command.busy}
         mask={{ closable: !command.busy }}
         footer={
@@ -532,7 +530,7 @@ export function OpsPages({ store }: { store: string }) {
           </Form.List>
         </Form>
         {preview && <RenderPage render={preview} refresh={() => {}} />}
-      </Drawer>
+      </RecordModal>
     </>
   );
 }

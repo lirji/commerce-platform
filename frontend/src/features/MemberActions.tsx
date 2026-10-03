@@ -1,5 +1,5 @@
 import { PagerActions } from "../shared/interactions";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import { Button, Dropdown, Table } from "antd";
 import { MemberBehavior } from "./MemberBehavior";
 import { useState } from "react";
@@ -32,7 +32,7 @@ export function MemberActions({
   };
   return (
     <RowActions>
-      <Button type="link" size="small" onClick={() => setDetail(true)}>
+      <Button type="link" onClick={() => setDetail(true)}>
         会员详情
       </Button>
       <Dropdown
@@ -65,20 +65,18 @@ export function MemberActions({
           ],
         }}
       >
-        <Button type="link" size="small">
-          更多
-        </Button>
+        <Button type="link">更多</Button>
       </Dropdown>
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title="会员经营详情"
         open={detail}
-        onClose={() => setDetail(false)}
-        size="large"
+        onCancel={() => setDetail(false)}
+        width={960}
         destroyOnHidden
       >
         {detail && <MemberBehavior admin memberId={String(row.memberId)} />}
-      </Drawer>
+      </RecordModal>
       <CommandModal
         hideButton
         open={profileOpen}
@@ -120,12 +118,12 @@ export function MemberActions({
         build={(v) => ({ ...v, expectedVersion: row.version })}
         onDone={done}
       />
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title="会员变更记录"
         open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        size="large"
+        onCancel={() => setHistoryOpen(false)}
+        width={960}
       >
         <ErrorNotice error={history.error} />
         <Button onClick={history.refresh}>刷新</Button>
@@ -154,7 +152,7 @@ export function MemberActions({
             下一页
           </Button>
         </PagerActions>
-      </Drawer>
+      </RecordModal>
     </RowActions>
   );
 }

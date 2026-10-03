@@ -10,7 +10,7 @@ import {
   instant,
   localDateTime,
   type Values,
-  RecordDrawer as Drawer,
+  RecordModal,
   FormActions,
   useDirtyClose,
   useRowAction,
@@ -191,7 +191,6 @@ export function RuleEditor({
               />
               {rule.kind !== "NOT" && (rule.children?.length ?? 0) > 1 && (
                 <Button
-                  size="small"
                   onClick={() =>
                     change({
                       children: rule.children!.filter((_, j) => i !== j),
@@ -205,7 +204,6 @@ export function RuleEditor({
           ))}
           {rule.kind !== "NOT" && (rule.children?.length ?? 0) < 16 && (
             <Button
-              size="small"
               onClick={() =>
                 change({
                   children: [
@@ -377,7 +375,6 @@ export function CampaignEditor({
       {closing.contextHolder}
       <Button
         type={rowAction ? "link" : "primary"}
-        size={rowAction ? "small" : "middle"}
         disabled={!store}
         onClick={() => {
           command.clear();
@@ -422,11 +419,11 @@ export function CampaignEditor({
       >
         {label}
       </Button>
-      <Drawer
-        size={760}
+      <RecordModal
+        width={760}
         title={label}
         open={open}
-        onClose={closing.requestClose}
+        onCancel={closing.requestClose}
         keyboard={!command.busy}
         mask={{ closable: !command.busy }}
         footer={
@@ -617,7 +614,7 @@ export function CampaignEditor({
             />
           </div>
         </Form>
-      </Drawer>
+      </RecordModal>
     </>
   );
 }

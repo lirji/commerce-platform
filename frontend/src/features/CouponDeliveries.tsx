@@ -1,6 +1,6 @@
 import { useRouteState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import { Alert, Button, Space, Table } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
@@ -253,12 +253,12 @@ export function CouponDeliveries({ store }: { store: string }) {
           ]}
         />
       </ListPanel>
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title={`${selected?.content.name ?? "定向券"} · 收件人回执`}
         open={!!selected}
-        onClose={() => setSelected(undefined)}
-        size="large"
+        onCancel={() => setSelected(undefined)}
+        width={960}
       >
         <ErrorNotice error={recipients.error} />
         {selectedNow && (
@@ -335,7 +335,7 @@ export function CouponDeliveries({ store }: { store: string }) {
             下一页收件人
           </Button>
         </PagerActions>
-      </Drawer>
+      </RecordModal>
     </Workbench>
   );
 }

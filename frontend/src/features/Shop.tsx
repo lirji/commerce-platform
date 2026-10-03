@@ -1,9 +1,9 @@
+import { RecordModal } from "../shared/interactions";
 import {
   Alert,
   Button,
   Col,
   Descriptions,
-  Drawer,
   Form,
   Input,
   InputNumber,
@@ -238,12 +238,11 @@ export function Shop({
             <Skeleton.Button
               active
               block
-              style={{ height: 44, marginBottom: 18 }}
+              style={{ height: 38, marginBottom: 18 }}
             />
           ) : browseCategories.length > 0 ? (
             <nav className="shop-channels" aria-label="商品分类">
-              <button
-                type="button"
+              <Button
                 className={
                   "shop-channel" + (selectedCategory ? "" : " is-active")
                 }
@@ -253,10 +252,9 @@ export function Shop({
                 }}
               >
                 全部商品
-              </button>
+              </Button>
               {browseCategories.map((category) => (
-                <button
-                  type="button"
+                <Button
                   key={category.categoryId}
                   className={
                     "shop-channel" +
@@ -272,7 +270,7 @@ export function Shop({
                   }}
                 >
                   {category.name}
-                </button>
+                </Button>
               ))}
             </nav>
           ) : null}
@@ -385,12 +383,12 @@ export function Shop({
           </section>
         </>
       )}
-      <Drawer
+      <RecordModal
         title="购物袋与结算"
         open={bag}
-        onClose={() => setBag(false)}
-        size={620}
-        className="checkout-drawer"
+        onCancel={() => setBag(false)}
+        width={620}
+        className="checkout-modal"
       >
         <ErrorNotice error={command.error} />
         <ErrorNotice error={place.error} />
@@ -570,7 +568,7 @@ export function Shop({
             </Form>
           </div>
         )}
-      </Drawer>
+      </RecordModal>
     </div>
   );
 }

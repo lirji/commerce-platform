@@ -22,7 +22,7 @@ import {
   ErrorNotice,
   ListPanel,
   PageHead,
-  RecordDrawer,
+  RecordModal,
   RowActions,
   Status,
   Workbench,
@@ -496,10 +496,10 @@ function Recovery() {
           },
         ]}
       />
-      <RecordDrawer
+      <RecordModal
         title="失败证据"
         open={!!detail}
-        onClose={() => setDetail(undefined)}
+        onCancel={() => setDetail(undefined)}
       >
         {detail && (
           <Descriptions
@@ -551,7 +551,7 @@ function Recovery() {
             ]}
           />
         )}
-      </RecordDrawer>
+      </RecordModal>
     </Workbench>
   );
 }
@@ -1019,10 +1019,10 @@ function Replay() {
           },
         ]}
       />
-      <RecordDrawer
+      <RecordModal
         title="重放任务详情"
         open={!!selected}
-        onClose={() => {
+        onCancel={() => {
           if (!control.busy && !control.pending) setSelected(undefined);
         }}
         footer={
@@ -1174,7 +1174,7 @@ function Replay() {
             </div>
           </>
         )}
-      </RecordDrawer>
+      </RecordModal>
     </Workbench>
   );
 }

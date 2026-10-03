@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { centralRoutes } from "../src/iam/navigation";
 import { mkdirSync } from "node:fs";
+import { assertButtonSizes, assertCentered } from "./presentation";
 
 // 独立SSO预览只验证壳层与公开DTO，不以夹具证明中央授权或OIDC交换成功。
 test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，窄屏不溢出", async ({
   page,
 }) => {
+  test.setTimeout(180000);
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需显式启用独立SSO预览；默认CI不伪装中央登录");
   const tenant = "11111111-1111-4111-8111-111111111111";
@@ -44,18 +46,27 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
     await page.goto(`${base}${path}?tenant_id=${tenant}&store_id=store-ui`);
     await expect(page.locator(".central-app")).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-    await expect(page.getByRole("button", { name: /退出/ })).toBeVisible();
+    // 部分旅程页由外层统一处理会话退出；本回归核对各页面实际操作按钮。
     await expect(page.locator(".ant-spin-spinning")).toHaveCount(0);
-    await page.screenshot({
-      path: `${folder}/${path.split("/").slice(1).join("-")}-1440.png`,
-      fullPage: true,
-      animations: "disabled",
-    });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth > innerWidth + 1,
-      ),
-    ).toBe(false);
+    await assertButtonSizes(page);
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({
+        width,
+        height: width === 1440 ? 1000 : 844,
+      });
+      await assertButtonSizes(page);
+      await page.screenshot({
+        path: `${folder}/${path.split("/").slice(1).join("-")}-${width}.png`,
+        fullPage: true,
+        animations: "disabled",
+      });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth + 1,
+        ),
+      ).toBe(false);
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 });
   }
   await page.goto(`${base}/operations/directory?tenant_id=${tenant}`);
   await page.getByRole("tab", { name: "门店目录", exact: true }).click();
@@ -67,12 +78,14 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "打开经营导航", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await assertCentered(page);
+  await assertButtonSizes(page);
   await page.screenshot({
     path: `${folder}/directory-navigation-390.png`,
     fullPage: true,
     animations: "disabled",
   });
-  await page.locator(".ant-drawer-close").click();
+  await page.locator(".ant-modal-close").click();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth + 1,

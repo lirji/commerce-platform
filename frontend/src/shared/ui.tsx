@@ -18,7 +18,7 @@ import { palette } from "../theme";
 import { useDirtyClose, useRowAction } from "./interactions";
 export {
   RowActions,
-  RecordDrawer,
+  RecordModal,
   FormActions,
   useDirtyClose,
   useRowAction,
@@ -789,7 +789,6 @@ export function CommandModal({
       {!hideButton && (
         <Button
           type={rowAction ? "link" : (buttonType ?? "primary")}
-          size={rowAction ? "small" : "middle"}
           disabled={disabled}
           onClick={() => {
             command.clear();
@@ -891,7 +890,6 @@ export function ActionButton({
     <span>
       {contextHolder}
       <Button
-        size="small"
         type={rowAction ? "link" : "default"}
         danger={danger}
         disabled={disabled}

@@ -1,5 +1,5 @@
 import { useRouteState } from "../shared/routeState";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import { Button, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
@@ -434,7 +434,7 @@ export function AdminData({
             onRecord={() => setDetail(r)}
           />
         ) : (
-          <Button type="link" size="small" onClick={() => setDetail(r)}>
+          <Button type="link" onClick={() => setDetail(r)}>
             详情
           </Button>
         )}
@@ -684,11 +684,11 @@ export function AdminData({
           ]}
         />
       </ListPanel>
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title={detail ? detailTitle : "业务记录详情"}
         open={!!detail}
-        onClose={() => setDetail(undefined)}
+        onCancel={() => setDetail(undefined)}
         width={720}
       >
         {detail && (
@@ -724,7 +724,7 @@ export function AdminData({
             <Detail value={detail} />
           </>
         )}
-      </Drawer>
+      </RecordModal>
     </Workbench>
   );
 }

@@ -1,10 +1,10 @@
+import { RecordModal } from "../shared/interactions";
 import {
   Alert,
   App,
   Button,
   Card,
   Descriptions,
-  Drawer,
   Form,
   Input,
   Space,
@@ -457,12 +457,12 @@ function Products({
           refresh={() => setRevision((v) => v + 1)}
         />
       </Card>
-      <Drawer
+      <RecordModal
         open={!!selected}
         title="商品资料"
-        size="large"
+        width={960}
         destroyOnHidden
-        onClose={() => guard(() => navigate({ product: null }))}
+        onCancel={() => guard(() => navigate({ product: null }))}
       >
         {selected && (
           <ProductDetail
@@ -476,7 +476,7 @@ function Products({
             }}
           />
         )}
-      </Drawer>
+      </RecordModal>
     </main>
   );
 }

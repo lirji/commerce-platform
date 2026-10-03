@@ -1,5 +1,5 @@
 import { useRouteState } from "../shared/routeState";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import {
   BatchCatalogAction,
   CatalogJobs,
@@ -399,12 +399,12 @@ export function ProductOperations({
         onClose={() => setBarcode(undefined)}
         onDone={refresh}
       />
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title={`${selected?.title ?? "商品"} · 修订记录`}
         open={!!selected}
-        onClose={() => setSelected(undefined)}
-        size="large"
+        onCancel={() => setSelected(undefined)}
+        width={960}
       >
         {selected && (
           <Card className="record-identity" variant="borderless">
@@ -472,7 +472,7 @@ export function ProductOperations({
             下一页
           </Button>
         </Space>
-      </Drawer>
+      </RecordModal>
     </Workbench>
   );
 }

@@ -200,7 +200,6 @@ export function OperationsList({
     key: "details",
     render: (_, r) => (
       <Button
-        size="small"
         onClick={() => {
           setSelected(r);
           setDetailId(String(r[idField]));
@@ -375,7 +374,7 @@ export function OperationAction({
         >
           {label}
         </Button>
-        <Button size="small" loading={access.loading} onClick={access.refresh}>
+        <Button loading={access.loading} onClick={access.refresh}>
           核验{label}资格
         </Button>
       </Space>

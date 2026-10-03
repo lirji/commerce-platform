@@ -1,5 +1,5 @@
 import { useRouteState } from "../shared/routeState";
-import { RecordDrawer as Drawer, RowActions } from "../shared/interactions";
+import { RecordModal, RowActions } from "../shared/interactions";
 import { Alert, Button, Form, Modal, Space, Table } from "antd";
 import { useState } from "react";
 import type { Rule } from "../shared/contracts";
@@ -189,12 +189,12 @@ export function Segments() {
           ]}
         />
       </ListPanel>
-      <Drawer
-        className="record-drawer"
+      <RecordModal
+        className="record-modal"
         title={`${selected?.content.name ?? "人群"} · 刷新任务`}
         open={!!selected}
-        onClose={() => setSelected(undefined)}
-        size="large"
+        onCancel={() => setSelected(undefined)}
+        width={960}
       >
         <Alert
           type="info"
@@ -286,7 +286,7 @@ export function Segments() {
             下一页
           </Button>
         </Space>
-      </Drawer>
+      </RecordModal>
       <Modal
         title="发布人群定义版本"
         open={open}
