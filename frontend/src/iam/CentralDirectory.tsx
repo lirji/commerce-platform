@@ -307,7 +307,7 @@ function DirectorySection({
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={`DirectorySection.${kind}.after`}
           after={after}
@@ -334,7 +334,7 @@ function DirectorySection({
         >
           下一页
         </Button>
-      </Space>
+      </div>
       {created && (
         <Alert
           type="success"

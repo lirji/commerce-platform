@@ -250,7 +250,7 @@ function MemberList() {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"MemberList.after"}
           after={after}
@@ -274,7 +274,7 @@ function MemberList() {
         >
           下一页
         </Button>
-      </Space>
+      </div>
       <RecordModal
         title={selected ? `${selected.displayName} · 变更记录` : "变更记录"}
         open={!!selected}
@@ -345,7 +345,7 @@ function MemberHistory({ member }: { member: Member }) {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"MemberHistory.after"}
           after={after}
@@ -369,7 +369,7 @@ function MemberHistory({ member }: { member: Member }) {
         >
           下一批记录
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

@@ -213,7 +213,7 @@ function DefinitionList({ store }: { store: string }) {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"DefinitionList.after"}
           after={after}
@@ -237,7 +237,7 @@ function DefinitionList({ store }: { store: string }) {
         >
           下一批定义
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

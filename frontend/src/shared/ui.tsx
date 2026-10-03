@@ -717,7 +717,7 @@ export function Pager({
             : `本页 ${count} 条 · 每页最多${pageSize}条`}
       </span>
       {
-        <Space wrap>
+        <div className="pager-navigation">
           {typeof after === "number" ? (
             <CursorBack
               name={cursorName}
@@ -741,7 +741,7 @@ export function Pager({
           <Button disabled={blocked || count < pageSize} onClick={onNext}>
             {nextLabel}
           </Button>
-        </Space>
+        </div>
       }
     </div>
   );

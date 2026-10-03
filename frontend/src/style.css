@@ -20,9 +20,9 @@ textarea {
 /* 搜索按钮与输入框分开，完整圆角与普通操作按钮一致。 */
 .ant-input-search.ant-space-compact
   > .ant-input-search-btn.ant-btn-compact-last-item {
-  border-radius: 8px;
-  border-start-start-radius: 8px;
-  border-end-start-radius: 8px;
+  border-radius: 6px;
+  border-start-start-radius: 6px;
+  border-end-start-radius: 6px;
   margin-inline-start: 8px;
 }
 .ant-input-search.ant-space-compact > .ant-input-compact-first-item {
@@ -115,7 +115,7 @@ textarea {
 }
 .login-submit.ant-btn {
   margin-top: 4px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-weight: 650;
 }
 .login-meta {
@@ -285,7 +285,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 2px;
+  gap: 6px;
   white-space: nowrap;
 }
 .row-actions {
@@ -296,13 +296,8 @@ textarea {
 .row-actions .ant-btn {
   box-shadow: none;
 }
-.row-actions .ant-btn-default {
-  border-color: transparent;
-  background: transparent;
-  color: var(--accent);
-}
 .row-actions .ant-space {
-  gap: 2px !important;
+  gap: 6px !important;
 }
 .modal-header-actions,
 .form-actions,
@@ -1135,19 +1130,20 @@ textarea {
   margin-bottom: 16px;
 }
 .shop-channel.ant-btn {
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: var(--raised);
-  color: var(--muted);
+  border: 1px solid var(--button-border);
+  background: var(--surface);
+  color: var(--button-text);
 }
 .shop-channel.ant-btn.is-active {
-  background: var(--selected);
-  color: var(--accent);
+  border-color: var(--button-hoverBorder);
+  background: var(--button-selectedBg);
+  color: var(--button-primary);
   font-weight: 600;
 }
 .shop-channel.ant-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--button-hoverBorder);
+  background: var(--button-hoverBg);
+  color: var(--button-primary);
 }
 .shop-toolbar {
   padding: 0 0 24px;
@@ -1911,8 +1907,25 @@ body .ant-modal-root .ant-modal {
   margin-top: 10px;
   font-size: 13px;
 }
+.cursor-summary,
 .cursor-position {
+  font-size: 12px;
+  line-height: 20px;
   white-space: nowrap;
+}
+.pager-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.pager-navigation > .cursor-summary,
+.pager-navigation > .cursor-position {
+  margin-inline-end: 4px;
+}
+.pager > .pager-navigation {
+  margin-top: 0;
 }
 .mobile-row-status,
 .table-read-hint {

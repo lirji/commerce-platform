@@ -177,7 +177,7 @@ function PolicyList() {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"PolicyList.after"}
           after={after}
@@ -204,7 +204,7 @@ function PolicyList() {
         >
           下一批政策
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }
@@ -304,7 +304,7 @@ function WalletDetails({ member }: { member: string }) {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"WalletDetails.after"}
           after={after}
@@ -334,7 +334,7 @@ function WalletDetails({ member }: { member: string }) {
         >
           下一批流水
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

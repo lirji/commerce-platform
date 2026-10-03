@@ -25,7 +25,7 @@ export function CursorBack<T extends string | number>({
   return (
     <>
       {count !== undefined && (
-        <Typography.Text type="secondary">
+        <Typography.Text type="secondary" className="cursor-summary">
           本页 {count} 条 · 每页最多{pageSize}条
         </Typography.Text>
       )}

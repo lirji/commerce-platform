@@ -213,7 +213,7 @@ function OfferList({ store }: { store: string }) {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"OfferList.after"}
           after={after}
@@ -237,7 +237,7 @@ function OfferList({ store }: { store: string }) {
         >
           下一批商品
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

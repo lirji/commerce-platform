@@ -306,7 +306,7 @@ function Runs({
           locale={{ emptyText: "当前页没有运行记录" }}
         />
       )}
-      <Space wrap>
+      <div className="pager-navigation">
         <CursorBack
           name={"SegmentRuns.after"}
           after={after}
@@ -332,7 +332,7 @@ function Runs({
         >
           下一批记录
         </Button>
-      </Space>
+      </div>
       <Modal
         centered
         className="campaign-modal segment-modal"
@@ -442,7 +442,7 @@ function Directory({
           locale={{ emptyText: "当前页没有动态人群定义" }}
         />
       )}
-      <Space wrap>
+      <div className="pager-navigation">
         <CursorBack
           name={"SegmentDirectory.after"}
           after={after}
@@ -466,7 +466,7 @@ function Directory({
         >
           下一页
         </Button>
-      </Space>
+      </div>
       <Modal
         centered
         className="campaign-modal segment-modal"

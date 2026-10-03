@@ -287,7 +287,7 @@ export function Segments() {
             },
           ]}
         />
-        <Space>
+        <div className="pager-navigation">
           <CursorBack
             name={"Segments.runAfter"}
             after={runAfter}
@@ -304,7 +304,7 @@ export function Segments() {
           >
             下一页
           </Button>
-        </Space>
+        </div>
       </RecordModal>
       <Modal
         title="发布人群定义版本"

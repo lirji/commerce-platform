@@ -1,5 +1,52 @@
 # Codex Progress
 
+## 当前任务：紧凑按钮与分页间距修正（VERIFYING）
+
+## 任务目标
+
+按用户截图反馈，删除 Claude frontend-design SKILL 的按钮颜色规定，重新设计全站共享按钮，并解决数量、页码和按钮粘连；连续完成验证、正常 main 发布和已有授权的本机 Docker8602更新。
+
+## 已完成
+
+- 创建 fix/compact-buttons-pagination，基线37cd177；用户已有跟踪/未跟踪改动为空。
+- 个人和 marketplace Claude SKILL 删除按钮颜色规则，补充按实际密度检查尺寸，保持副本一致并校验通过；旧版本备份至 ~/.claude/skill-backups/frontend-design/20261003T050744Z/。
+- 全站按钮32px高度、14px文字、10px水平内边距、6px圆角；重做默认/悬停/禁用状态，行操作与会员分类共享紧凑样式。输入控件随共享高度对齐。
+- 分页采用原生 flex，摘要、页码、上一页分别参与间距和换行；统一共享 Pager/PagerActions 及原来直接使用 Space 的28处分页组。
+- 前端编译通过；最终43项经营/会员/中央回归PASS、36中央路由三屏宽覆盖；实际截图、Prettier与卫生门禁通过。首轮会员、行操作、弹层9项通过，新增扫描用例首次在响应式导航更新前读宽度失败，补为等待 ResizeObserver 稳定的实际布局检查；原证据保留。
+
+## 已修改文件
+
+- frontend/src/theme.ts、style.css、workspace.css；shared/{pagination,interactions,ui}.tsx。
+- 21个页面文件仅变更分页容器，不改查询、权限或写入规则。
+- frontend/tests/presentation.ts、interaction-refresh.spec.ts、visual-refresh.spec.ts、新增 compact-buttons-pagination.spec.ts。
+- docs/design/frontend-usability.md、docs/PROGRESS_STATE.json 和本检查点；精确清单见 Git diff。
+
+## 未完成
+
+- 本地界面与制品验证均已通过；继续Git/CI及本机Docker交付。
+- 有界提交、正常 main 合并推送、精确 CI、本机 Docker更新及资产/健康核验。
+
+## 当前问题
+
+- 无产品阻断；中央界面通过公开DTO测试边界验证，不把页面夹具说成真实SSO。
+- 原任务记录及私密证据保留；不清理数据、配置、制品或其他工作树。
+
+## 下一步建议
+
+1. 当前 .local/compact-buttons-pagination/browser-current/ 43项PASS；源指纹312f7d639f92cc344b7003eb36edbd4b6f5a21e0c720a3172262f79dd2bdefb5，不再扩大样式或测试范围。
+2. 固化源码指纹/验证记录后正常 Git main 发布并等精确CI通过。
+3. 使用现有 .local/compose.env，仅更新镜像标签；保留env/端口/dev-infra，失败可回退rev-aeed09e。
+
+## 恢复 Prompt
+
+读取本检查点及 .local/compact-buttons-pagination/，从未完成部分继续，不重新规划、不等待“继续”。当前任务是按钮缩小和分页间距，保持已有真实筛选、权限与紧凑弹窗；部署目标仍为本机8602，不清理数据库或其他工作树。
+
+---
+
+## 历史任务记录（以下检查点保留，当前任务状态以上方为准）
+
+# Codex Progress
+
 ## 当前任务：新版 Claude SKILL 全站前端可用性优化（DONE）
 
 ## 任务目标

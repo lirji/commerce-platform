@@ -481,7 +481,7 @@ export function ProductOperations({
             { title: "时间", dataIndex: "createdAt", render: time },
           ]}
         />
-        <Space>
+        <div className="pager-navigation">
           <CursorBack
             name={"ProductOperations.historyAfter"}
             after={historyAfter}
@@ -500,7 +500,7 @@ export function ProductOperations({
           >
             下一页
           </Button>
-        </Space>
+        </div>
       </RecordModal>
     </Workbench>
   );

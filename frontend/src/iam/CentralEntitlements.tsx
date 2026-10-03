@@ -170,7 +170,7 @@ function Directory() {
           ]}
         />
       )}
-      <Space wrap>
+      <div className="pager-navigation">
         <CursorBack
           name={"Directory.after"}
           after={after}
@@ -197,7 +197,7 @@ function Directory() {
         <Button disabled={rows.loading} onClick={rows.refresh}>
           刷新实例
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

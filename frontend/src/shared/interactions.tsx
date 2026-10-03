@@ -1,4 +1,4 @@
-import { Button, Modal, Space, type ModalProps, type FormInstance } from "antd";
+import { Button, Modal, type ModalProps, type FormInstance } from "antd";
 import {
   Children,
   isValidElement,
@@ -144,7 +144,8 @@ export function PagerActions({ children }: { children: ReactNode }) {
         child.type === Button &&
         child.props.disabled,
     );
+  // CursorBack 返回多个节点，使用原生 flex 让摘要、页码和按钮都参与间距布局。
   return unavailable ? null : (
-    <Space className="pager-navigation">{children}</Space>
+    <div className="pager-navigation">{children}</div>
   );
 }

@@ -121,7 +121,7 @@ function Directory({ revision }: { revision: number }) {
       <Typography.Text type="secondary">
         时间按浏览器时区显示，窗口提示依据当前设备时间；实际业务使用仍由服务端核对新鲜度。
       </Typography.Text>
-      <Space wrap>
+      <div className="pager-navigation">
         <CursorBack
           name={"AudienceDirectory.after"}
           after={after}
@@ -142,7 +142,7 @@ function Directory({ revision }: { revision: number }) {
         >
           下一页
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

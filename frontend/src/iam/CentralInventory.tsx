@@ -317,7 +317,7 @@ function Inventory({
             ]}
           />
         )}
-        <Space style={{ marginTop: 16 }}>
+        <div className="pager-navigation" style={{ marginTop: 16 }}>
           <CursorBack
             name={"Inventory.after"}
             after={after}
@@ -343,7 +343,7 @@ function Inventory({
           >
             下一页
           </Button>
-        </Space>
+        </div>
       </Card>
       <ErrorNotice error={error} />
       {canReceive ? (

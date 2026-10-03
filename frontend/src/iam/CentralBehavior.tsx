@@ -396,7 +396,7 @@ function BehaviorDetail({ member }: { member: string }) {
               ]}
             />
           )}
-          <Space>
+          <div className="pager-navigation">
             <CursorBack
               name={"BehaviorDetail.after"}
               after={after}
@@ -423,7 +423,7 @@ function BehaviorDetail({ member }: { member: string }) {
             >
               下一批交互
             </Button>
-          </Space>
+          </div>
         </Space>
       </Card>
     </Space>

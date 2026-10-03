@@ -314,7 +314,7 @@ function Policies() {
           ]}
         />
       )}
-      <Space wrap>
+      <div className="pager-navigation">
         <Button onClick={rows.refresh}>刷新政策</Button>
         <CursorBack
           name={"Policies.after"}
@@ -342,7 +342,7 @@ function Policies() {
         >
           下一批政策
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

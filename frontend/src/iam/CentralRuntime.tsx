@@ -134,7 +134,7 @@ function RuntimeRead() {
             render: (v) => formatField(dataIndex, v),
           }))}
         />
-        <Space wrap>
+        <div className="pager-navigation">
           <CursorBack
             name={"CentralRuntime.stoppedAfter"}
             after={stoppedAfter}
@@ -160,7 +160,7 @@ function RuntimeRead() {
           >
             下一批停止项
           </Button>
-        </Space>
+        </div>
         <ErrorNotice error={history.error} />
         <Table<OperationRow>
           rowKey={(r) => String(r.id)}
@@ -181,7 +181,7 @@ function RuntimeRead() {
             render: (v) => formatField(dataIndex, v),
           }))}
         />
-        <Space wrap>
+        <div className="pager-navigation">
           <CursorBack
             name={"CentralRuntime.historyAfter"}
             after={historyAfter}
@@ -207,7 +207,7 @@ function RuntimeRead() {
           >
             下一批恢复审计
           </Button>
-        </Space>
+        </div>
       </Card>
       <Card
         title="消费者真实重放安全门"

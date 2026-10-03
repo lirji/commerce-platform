@@ -227,7 +227,7 @@ function TagDictionary() {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"TagDictionary.after"}
           after={after}
@@ -251,7 +251,7 @@ function TagDictionary() {
         >
           下一批标签
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }
@@ -330,7 +330,7 @@ function Assignments({ member }: { member: string }) {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"Assignments.after"}
           after={after}
@@ -354,7 +354,7 @@ function Assignments({ member }: { member: string }) {
         >
           下一批关联
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

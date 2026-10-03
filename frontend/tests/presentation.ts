@@ -19,10 +19,10 @@ export async function assertButtonSizes(page: Page) {
     );
   expect(buttons.length).toBeGreaterThan(0);
   for (const button of buttons) {
-    expect(button.height, button.text).toBe(38);
+    expect(button.height, button.text).toBe(32);
     expect(button.font, button.text).toBe("14px");
-    expect(button.radius, button.text).toBe("8px");
-    expect(button.padding, button.text).toBe(button.icon ? "0px" : "14px");
+    expect(button.radius, button.text).toBe("6px");
+    expect(button.padding, button.text).toBe(button.icon ? "0px" : "10px");
   }
 }
 

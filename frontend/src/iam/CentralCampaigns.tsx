@@ -228,7 +228,7 @@ function Directory({
           ]}
         />
       )}
-      <Space wrap>
+      <div className="pager-navigation">
         <CursorBack
           name={"CampaignDirectory.after"}
           after={after}
@@ -249,7 +249,7 @@ function Directory({
         >
           下一页
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }
@@ -1069,7 +1069,7 @@ function Budgets() {
           ]}
         />
       )}
-      <Space wrap>
+      <div className="pager-navigation">
         <CursorBack
           name={"CampaignBudgets.after"}
           after={after}
@@ -1090,7 +1090,7 @@ function Budgets() {
         >
           下一页
         </Button>
-      </Space>
+      </div>
     </Space>
   );
 }

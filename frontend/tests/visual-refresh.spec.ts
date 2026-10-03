@@ -87,7 +87,7 @@ test("手机商城图片、缺图提示和统一按钮尺寸，购物袋展示�
     page.getByRole("button", { name: "全部商品", exact: true }),
   ]) {
     const bounds = await control.boundingBox();
-    expect(bounds!.height).toBe(38);
+    expect(bounds!.height).toBe(32);
     expect(bounds!.width).toBeGreaterThanOrEqual(44);
   }
   await card.getByRole("button", { name: "加入购物袋", exact: true }).click();

@@ -173,7 +173,7 @@ function Directory() {
           ]}
         />
       )}
-      <Space>
+      <div className="pager-navigation">
         <CursorBack
           name={"Directory.after"}
           after={after}
@@ -197,7 +197,7 @@ function Directory() {
         >
           下一批规则
         </Button>
-      </Space>
+      </div>
       <ErrorNotice error={fields.error} />
       {!fields.error && fields.data && (
         <Card title="可信规则字段">

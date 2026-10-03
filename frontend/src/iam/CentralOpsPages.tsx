@@ -620,7 +620,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
             },
           ]}
         />
-        <Space wrap style={{ marginTop: 12 }}>
+        <div className="pager-navigation" style={{ marginTop: 12 }}>
           <CursorBack
             name={"CentralOpsPages.after"}
             after={after}
@@ -639,7 +639,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
           >
             下一批
           </Button>
-        </Space>
+        </div>
       </Card>
       <Card title="直接读取发布页面">
         <Form layout="inline" onFinish={(v) => setTarget(v.pageId)}>

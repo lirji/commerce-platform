@@ -51,7 +51,7 @@ async function openCampaign(page: Page) {
   await page.goto("/");
   await expect(
     page.getByRole("button", { name: "进入平台", exact: true }),
-  ).toHaveCSS("height", "38px");
+  ).toHaveCSS("height", "32px");
   await page.getByLabel("访问凭据", { exact: true }).fill("ui-test-credential");
   await page.getByRole("button", { name: "进入平台", exact: true }).click();
   await expect(
@@ -76,7 +76,7 @@ test("行操作尺寸一致，单页明确禁用翻页，配置使用业务语�
       ),
     );
   expect(heights.length).toBe(4);
-  expect(new Set(heights)).toEqual(new Set([38]));
+  expect(new Set(heights)).toEqual(new Set([32]));
   await assertButtonSizes(page);
   await expect(
     page.getByRole("button", { name: "下一页", exact: true }),

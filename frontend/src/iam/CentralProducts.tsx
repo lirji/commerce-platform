@@ -428,7 +428,7 @@ function Products({
               },
             ]}
           />
-          <Space wrap>
+          <div className="pager-navigation">
             <CursorBack
               name="cursor"
               after={cursor}
@@ -455,7 +455,7 @@ function Products({
             >
               下一页
             </Button>
-          </Space>
+          </div>
         </Space>
       </Card>
       <Card title="限时商品导出" style={{ marginTop: 24 }}>
