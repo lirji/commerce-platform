@@ -1,0 +1,174 @@
+{
+  "task": "frontend-task-usability",
+  "status": "PASS",
+  "headSha": "292fd70d99f82f03261632a12afcdbb67e52c09b",
+  "sourceFingerprint": "8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f",
+  "runs": [
+    {
+      "branch": "main",
+      "id": 37164888755,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/lirji/commerce-platform/actions/runs/37164888755"
+    },
+    {
+      "branch": "feat/frontend-task-usability",
+      "id": 37164873337,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/lirji/commerce-platform/actions/runs/37164873337"
+    }
+  ],
+  "backend": {
+    "tests": 557,
+    "skipped": 5,
+    "failures": 0,
+    "errors": 0,
+    "suites": 75,
+    "passed": 552
+  },
+  "browser": {
+    "startTime": "2026-10-04T00:30:11.121Z",
+    "duration": 148193.853,
+    "expected": 56,
+    "skipped": 21,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "fixedRegression": [
+    {
+      "file": "commerce.spec.ts",
+      "title": "可视规则与低代码页面预览、审批、发布及窄屏",
+      "status": "expected"
+    },
+    {
+      "file": "task-usability.spec.ts",
+      "title": "页面编排快速输入不被清空，预览和重新打开使用各自完整草稿",
+      "status": "expected"
+    }
+  ],
+  "browserSkipped": [
+    {
+      "file": "central-campaigns.spec.ts",
+      "title": "活动创建独立于读取，长表单与关闭保护，丢响应后保留原意图",
+      "status": "skipped"
+    },
+    {
+      "file": "central-campaigns.spec.ts",
+      "title": "预算独立入口只读取预算，401卸载敏感视图",
+      "status": "skipped"
+    },
+    {
+      "file": "central-campaigns.spec.ts",
+      "title": "独立审批操作使用内容版本和服务端锁版本，预览展示真实DTO结构",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "创建不依赖读取，脏输入与原键未知意图在页签间保留",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "控制独立输入CAS，确定409可修正；未知后的403保留原请求",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "真实DTO固定来源与进度分开，收件人有界翻页、长编号窄屏和焦点返回",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "pump未知必须核对后显式新调用，不自动重发、不伪装幂等",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "客户端有限路径和输入、损坏或错来源回执拒绝确认、401卸载",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "503关闭资格且不降级身份，401清空实际显示的批次与弹层",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "提交中不能关闭或重复发送，确定成功后再恢复离开",
+      "status": "skipped"
+    },
+    {
+      "file": "central-coupon-deliveries.spec.ts",
+      "title": "具备多个岗位时，关闭后再打开不同表单的标签与目标保持独立",
+      "status": "skipped"
+    },
+    {
+      "file": "central-journeys.spec.ts",
+      "title": "真实旅程PKCE与窄屏未保存输入保护",
+      "status": "skipped"
+    },
+    {
+      "file": "central-segments.spec.ts",
+      "title": "创建独立于读取，手机表单、关闭保护和丢响应原意图恢复",
+      "status": "skipped"
+    },
+    {
+      "file": "central-segments.spec.ts",
+      "title": "仅调度权限直接输入真实目标，409后允许修正锁版本",
+      "status": "skipped"
+    },
+    {
+      "file": "central-segments.spec.ts",
+      "title": "读取真实DTO分开三个版本，运行详情键盘与焦点返回",
+      "status": "skipped"
+    },
+    {
+      "file": "central-segments.spec.ts",
+      "title": "pump未知不会自动重发或伪装幂等，显式确认才允许下一次",
+      "status": "skipped"
+    },
+    {
+      "file": "central-segments.spec.ts",
+      "title": "刷新受理不等于完成，实际原来源拒绝时保留未知控制意图，401清空敏感界面",
+      "status": "skipped"
+    },
+    {
+      "file": "central-segments.spec.ts",
+      "title": "严格入口拒绝方法/路径/游标越界，损坏或错目标回执不确认成功",
+      "status": "skipped"
+    },
+    {
+      "file": "central-segments.spec.ts",
+      "title": "资格503关闭写入，重新核验恢复且不回退旧ADMIN",
+      "status": "skipped"
+    },
+    {
+      "file": "central-workspace.spec.ts",
+      "title": "中央页面族统一导航，权限拒绝可见，页签刷新恢复，窄屏不溢出",
+      "status": "skipped"
+    },
+    {
+      "file": "frontend-usability.spec.ts",
+      "title": "中央订单直接展示经营字段，时间筛选发送真实UTC条件",
+      "status": "skipped"
+    }
+  ],
+  "skipPolicy": "既有环境条件SKIP透明保留，不计为PASS，也不冒充真实中央SSO/PKCE验收",
+  "previousFailedRevision": {
+    "headSha": "2ac27388bdc67658949be4fc897db78904e0f511",
+    "runs": [
+      37164064216,
+      37164052777
+    ],
+    "browserPerRun": {
+      "passed": 54,
+      "skipped": 21,
+      "failed": 1
+    },
+    "resolution": "292fd70删除打开后resetFields，关闭卸载clearOnDestroy；生产构建回归先失败后PASS"
+  },
+  "artifact": "commerce-verification，保留7天；本地副本.local/frontend-task-usability/ci-fixed-main-artifact/",
+  "documentationOnlyDelivery": "本回执绑定已验证的产品源码提交；最后文档SHA、main推送和其精确CI观察另写私密.local/frontend-task-usability/delivery.json，避免自引用提交",
+  "deployment": "NOT_REQUESTED_NOT_EXECUTED"
+}

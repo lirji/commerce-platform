@@ -2,42 +2,42 @@
 
 ## 任务目标
 
-按Claude当前个人版frontend-design优化本项目已有前端；保留32px常用按钮、居中弹层、真实权限与分页，验证后正常提交合入远程main。
+按Claude当前最新个人版frontend-design优化已有全站前端，保留32px常用按钮、居中弹层、真实权限与查询，正常任务分支提交并合入推送main。
 
 ## 已完成
 
-- 核对当前最新个人SKILL，指纹见docs/PROGRESS_STATE.json；从57804ef建立原目录任务分支feat/frontend-task-usability，初始工作区clean。
-- 共享筛选草稿提示、单条件清除、同URL重置；47文件125处读取重试；宽表键盘滚动、三类壳层跳过导航、Portal档案返回原行焦点。
-- 低代码目录接入既有关键词/状态/limit真实查询；修复真实数据下动态人群、营销日期表单、低代码表及会员成长的320px溢出。
-- 本地分轮33、17、最终8项回归全部PASS；最终8项含中央36入口三宽度。当前源码build、实际Prettier、4目录工具测试、卫生和diff检查PASS。
-- 真实现有API只读验收36入口×1440/390/320px，60次GET均200、0业务写入；20张真实截图页面族索引和关键错误/详情/成长长图已实际查看。
-- 实施及失败闭环证据见docs/delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md；完整私密证据留.local/frontend-task-usability/。
+- Claude当前个人技能及共享交互/视觉/工作台/验证规则已读取；版本SHA256见docs/PROGRESS_STATE.json。不冒充Claude原生客户端或独立Validation代理。
+- 共享筛选草稿提示、逐项清除、同URL重置、47文件125处读取重试、宽表键盘滚动、三类壳层跳过导航和Portal档案返回原行焦点；沿用原业务命令保护。
+- 低代码目录接入既有真实关键词/状态/limit；修复动态人群动作组、营销日期表单、低代码表及会员成长卡片的320px溢出。
+- 分轮33、17、8项本地回归PASS；36现有真实API入口×1440/390/320px、60GET均200、0业务写入，20张页面族截图索引和关键原图实际查看。
+- 首批源码2ac2738正常main发布后CI暴露低代码打开回调清空输入，生产构建明确复现；292fd70改关闭卸载清理，新增快速输入、预览、新版本与重新新建回归。生产5项PASS，真实只读POST预览200、2条数据、0保存/发布。
+- 最终产品292fd70正常main发布，精确main CI37164888755及分支CI37164873337均SUCCESS。75后端套件557项：552PASS/5既有条件SKIP；浏览器56PASS/21既有条件SKIP/0FAIL/flaky。原低代码真实预览审批发布和新增回归均PASS。
+- 当前源指纹8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f；构建、实际Prettier、卫生及差异检查PASS。首次CI与所有本地失败保留，并完成修复闭环。
+- 自有18601/18602/18603预览全部停止；未更新原8602容器、数据库、Auth仓库或其他工作树。
 
 ## 已修改文件
 
-- frontend/src/shared/{listFilters,ui,WorkspaceChrome,interactions}.tsx、http.ts、style.css、App、CentralShell、OpsPages及读取错误消费者；最终显式清单以本任务diff为准。
-- frontend/tests/task-usability.spec.ts、centralNavigationFixture.ts、central-workspace.spec.ts、frontend-usability.spec.ts。
-- docs/PROGRESS_STATE.json、docs/delivery/frontend-task-usability/、README.md、docs/doc-map.md及本检查点；原历史完整保留。
+- feat/frontend-task-usability两批产品提交2ac2738（65路径）和292fd70（5关联路径），包括共享交互、错误消费者、OpsPages、样式及对应测试；仅本任务显式路径，无初始用户脏改动。
+- docs/delivery/frontend-task-usability/{PLAN,IMPLEMENTATION_EVIDENCE,CI_RESULT,DELIVERY_RESULT}、docs/PROGRESS_STATE.json、README、doc-map及本检查点。
+- 完整原历史保留。源码与真实截图、artifact、旧失败、运行凭据各自留存；私密证据仅在忽略的.local/frontend-task-usability/。
 
 ## 未完成
 
-- 初次源码2ac2738已合入main；精确CI的低代码预览失败已生产复现并修复，尚需提交修复、重跑精确CI，再文档收口。
+- 产品与必要源码验收无未完成项；本次文档收口按正常Git授权发布，准确最终文档SHA/推送/CI观察只写私密delivery.json，避免自引用无限提交。
 
 ## 当前问题
 
-- CI低代码预览失败已定位：打开后延迟reset清空页面标识。生产回归先FAIL再5项PASS，真实只读预览200、0业务保存/发布；修复待Git/CI。统一卫生工具未发现formatter，实际Prettier已PASS。未运行全面屏幕阅读器、200%缩放或本轮真实中央PKCE。
-- 旧专项凭据401，现有demo身份200，用于真实只读验收；凭据不输出、不提交。不修改Auth仓库或原8602部署。
-- 首轮18601/18602已停止；为生产CI复现新启18601开发及18603生产预览，收尾仅停本轮自身进程；其他工作树、.local证据与原8602服务保留。
+- 无产品阻断。卫生工具formatter发现受限，实际PrettierPASS；本轮未运行全面屏幕阅读器、200%缩放或真实中央PKCE，不将夹具/条件SKIP当作该范围验收。
+- .local证据和已有三处历史工作树需要保留；dist、node_modules可重新生成但本轮未清理，不删除任何用户内容。
 
 ## 下一步建议
 
-1. 显式路径提交低代码初始化修复及生产回归，正常合入推送main，绑定准确headSha观察CI。
-2. CI成功后完成交付文档与进度DONE，正常提交合入推送main；最后文档SHA/CI回执留私密delivery.json，避免自引用无限提交。
-3. 停止本轮两个自有预览。未授权Docker/生产部署，不重新构建或更新运行实例。
+1. 发布本次交付文档并核对.local/frontend-task-usability/delivery.json中最后远程main与精确CI终态；完成后不重复执行本任务。
+2. 新的页面反馈在已验证产品292fd70基线上开展有界工作；Docker或生产部署需要另行明确授权。
 
 ## 恢复 Prompt
 
-读取本节、docs/PROGRESS_STATE.json与docs/delivery/frontend-task-usability/，从Git/CI未完成项继续，不重复本地验收，不重做历史任务，不部署或清理其他工作树。
+读取本节、docs/PROGRESS_STATE.json与docs/delivery/frontend-task-usability/。产品与源码CI已DONE，仅核对私密delivery.json中的文档Git/CI收口，不重新设计、跑原业务写入或部署，不清理其他工作树及证据。
 
 ---
 

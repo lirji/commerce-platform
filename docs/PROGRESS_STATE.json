@@ -1,6 +1,6 @@
 {
   "task": "frontend-task-usability",
-  "status": "IN_PROGRESS",
+  "status": "DONE",
   "branch": "feat/frontend-task-usability",
   "baseline": "57804ef",
   "skill": {
@@ -10,13 +10,13 @@
   },
   "slices": {
     "F1-shared-query-recovery-keyboard": "DONE",
-    "F2-browser-review-delivery": "IN_PROGRESS"
+    "F2-browser-review-delivery": "DONE"
   },
   "previousTask": {
     "stateBackup": ".local/frontend-task-usability/baseline-progress-state.json",
     "trackedBaseline": "57804ef:docs/PROGRESS_STATE.json"
   },
-  "next": "提交低代码表单初始化修复，正常合入推送main并重新观察精确CI，成功后文档收口；不部署",
+  "next": "本轮前端与源码CI已完成；按正常Git交付发布本次文档收口，最后文档SHA/推送/CI写私密delivery.json，不重复产品改造或部署",
   "sourceFingerprint": "8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f",
   "validation": {
     "actor": "同一实施者Codex，非独立Validation",
@@ -73,17 +73,41 @@
       "result": "PASS",
       "status": 200,
       "businessWrites": 0
+    },
+    "remoteCI": {
+      "result": "PASS",
+      "sourceCommit": "292fd70d99f82f03261632a12afcdbb67e52c09b",
+      "backend": {
+        "tests": 557,
+        "skipped": 5,
+        "failures": 0,
+        "errors": 0,
+        "suites": 75,
+        "passed": 552
+      },
+      "browser": {
+        "passed": 56,
+        "skipped": 21,
+        "failed": 0,
+        "flaky": 0
+      },
+      "evidence": "docs/delivery/frontend-task-usability/CI_RESULT.json"
     }
   },
   "delivery": {
-    "sourceCommit": null,
-    "remoteMain": "PENDING",
-    "sourceCI": "INITIAL_FAILED; product fix validated locally; next exact revision PENDING",
+    "sourceCommit": "292fd70d99f82f03261632a12afcdbb67e52c09b",
+    "remoteMain": "SOURCE_MERGED_AND_PUSHED",
+    "sourceCI": "PASS",
     "deployment": "NOT_REQUESTED_NOT_EXECUTED",
     "initialSourceCommit": "2ac27388bdc67658949be4fc897db78904e0f511",
     "failedRuns": [
       37164064216,
       37164052777
-    ]
+    ],
+    "mainRun": 37164888755,
+    "branchRun": 37164873337,
+    "documentationReceipt": ".local/frontend-task-usability/delivery.json",
+    "ownPreviews": "STOPPED_18601_18602_18603",
+    "worktrees": "NONE_CREATED; PRE_EXISTING_RETAINED"
   }
 }
