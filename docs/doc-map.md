@@ -68,4 +68,4 @@
 
 2026-10-02 CE05-Journey/效果Owner与五个真实中央SSO页面：契约 `design/enterprise-iam-integration/CONTRACTS_JOURNEYS.md`；J1/EF1真实MySQL、固定原来源与SYSTEM政策见 `implementation/enterprise-iam-integration/CE05_JOURNEY_OWNER.md`；J2/EF2真实PKCE/授权/SQL/未知回执与最终视觉证据见 `implementation/enterprise-iam-integration/CE05_JOURNEY_UI.md`。Dashboard共享登记单独见 `SHARED_DASHBOARD_PROVIDER.md`；本地验收与整体应用发布状态分别记录。
 
-2026-10-03 Claude当前个人frontend-design增量优化：真实筛选草稿与单项清除、读取失败恢复、键盘跳过导航/表内滚动/弹层焦点、低代码目录筛选及真实数据窄屏修复见 [计划](delivery/frontend-task-usability/PLAN.md) 与 [实施和验证](delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md)。36真实旧身份入口与36中央客户端入口覆盖1440/390/320px，产品292fd70正常main发布及准确CI SUCCESS见 [交付结果](delivery/frontend-task-usability/DELIVERY_RESULT.md)；本轮未更新原8602容器。
+2026-10-03 Claude当前个人frontend-design增量优化：真实筛选草稿与单项清除、读取失败恢复、键盘跳过导航/表内滚动/弹层焦点、低代码目录筛选及真实数据窄屏修复见 [计划](delivery/frontend-task-usability/PLAN.md) 与 [实施和验证](delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md)。36真实旧身份入口与36中央客户端入口覆盖1440/390/320px，产品292fd70正常main发布及准确CI SUCCESS见 [交付结果](delivery/frontend-task-usability/DELIVERY_RESULT.md)；源码阶段未更新容器，用户随后明确授权本机部署，当前8602的2851fc1制品、健康与浏览器PASS见[部署结果](delivery/frontend-task-usability/DEPLOYMENT_RESULT.md)。

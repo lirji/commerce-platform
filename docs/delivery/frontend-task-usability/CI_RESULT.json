@@ -157,10 +157,7 @@
   "skipPolicy": "既有环境条件SKIP透明保留，不计为PASS，也不冒充真实中央SSO/PKCE验收",
   "previousFailedRevision": {
     "headSha": "2ac27388bdc67658949be4fc897db78904e0f511",
-    "runs": [
-      37164064216,
-      37164052777
-    ],
+    "runs": [37164064216, 37164052777],
     "browserPerRun": {
       "passed": 54,
       "skipped": 21,
@@ -170,5 +167,12 @@
   },
   "artifact": "commerce-verification，保留7天；本地副本.local/frontend-task-usability/ci-fixed-main-artifact/",
   "documentationOnlyDelivery": "本回执绑定已验证的产品源码提交；最后文档SHA、main推送和其精确CI观察另写私密.local/frontend-task-usability/delivery.json，避免自引用提交",
-  "deployment": "NOT_REQUESTED_NOT_EXECUTED"
+  "deployment": "NOT_REQUESTED_NOT_EXECUTED",
+  "scope": "SOURCE_DELIVERY_BEFORE_EXPLICIT_DEPLOYMENT",
+  "followupDeployment": {
+    "status": "PASS_LOCAL_8602",
+    "ref": "2851fc151da80fa5ab2749f2863493f36b3585b6",
+    "record": "DEPLOYMENT_RESULT.json",
+    "sourceCIGate": "https://github.com/lirji/commerce-platform/actions/runs/37165427241"
+  }
 }

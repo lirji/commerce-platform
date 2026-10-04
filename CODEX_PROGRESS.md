@@ -2,42 +2,39 @@
 
 ## 任务目标
 
-按Claude当前最新个人版frontend-design优化已有全站前端，保留32px常用按钮、居中弹层、真实权限与查询，正常任务分支提交并合入推送main。
+按Claude当前最新个人frontend-design优化已有全站前端，并按用户后续明确授权部署既有本机Docker8602；正常任务分支提交、合入推送main，保留原数据库、密钥和回退镜像。
 
 ## 已完成
 
-- Claude当前个人技能及共享交互/视觉/工作台/验证规则已读取；版本SHA256见docs/PROGRESS_STATE.json。不冒充Claude原生客户端或独立Validation代理。
-- 共享筛选草稿提示、逐项清除、同URL重置、47文件125处读取重试、宽表键盘滚动、三类壳层跳过导航和Portal档案返回原行焦点；沿用原业务命令保护。
-- 低代码目录接入既有真实关键词/状态/limit；修复动态人群动作组、营销日期表单、低代码表及会员成长卡片的320px溢出。
-- 分轮33、17、8项本地回归PASS；36现有真实API入口×1440/390/320px、60GET均200、0业务写入，20张页面族截图索引和关键原图实际查看。
-- 首批源码2ac2738正常main发布后CI暴露低代码打开回调清空输入，生产构建明确复现；292fd70改关闭卸载清理，新增快速输入、预览、新版本与重新新建回归。生产5项PASS，真实只读POST预览200、2条数据、0保存/发布。
-- 最终产品292fd70正常main发布，精确main CI37164888755及分支CI37164873337均SUCCESS。75后端套件557项：552PASS/5既有条件SKIP；浏览器56PASS/21既有条件SKIP/0FAIL/flaky。原低代码真实预览审批发布和新增回归均PASS。
-- 当前源指纹8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f；构建、实际Prettier、卫生及差异检查PASS。首次CI与所有本地失败保留，并完成修复闭环。
-- 自有18601/18602/18603预览全部停止；未更新原8602容器、数据库、Auth仓库或其他工作树。
+- 前端源码两批2ac2738、292fd70正常main发布，生产快速输入/预览缺陷修复；75套件557项552PASS/5SKIP及浏览器56PASS/21条件SKIP，准确源码CI已SUCCESS。前端源指纹8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f。
+- 本机8602已部署commerce-platform:rev-2851fc1，精确源码2851fc151da80fa5ab2749f2863493f36b3585b6/CI37165427241 SUCCESS；容器healthy，应用UP，匿名API401。实际完成时间2026-10-04T01:24:12.708905+00:00。
+- 本轮全新隔离MySQL完整clean verify：75套件557项，552PASS/5SKIP/0FAIL/ERROR。固定SDK109b1ed重新安装至独立Maven缓存，两个嵌套SDK与固定checkout字节一致；前端61文件与JAR、容器运行JAR及全部61 HTTP文件一致。
+- Docker部署后交互10PASS/1中央SSO条件SKIP/0FAIL/flaky；29管理+7会员真实入口×1440/390/320px、61GET全200、0JS错误/业务写命令。两个真实只读预览POST200、2条实际数据、不保存/审批/发布；20真实页面截图和6关键原图实看。
+- 环境曾失去响应。用户明确允许重启；普通重启超时后官方force-stop/start恢复，5个此前运行且退出时间匹配此次重启的容器原样启动。首轮219项1支付重试失败和周期调度历史数据扫描中止报告保留；新实例完整验证通过，不改产品或测试掩盖失败。
+- 运行库仍V72，Flyway明确up-to-date/no migration。无清库、运行seed或新迁移；数据库/密钥/环境值/端口/网络/安全与资源限制保持；仅私密compose.env镜像标签更新。临时测试实例移除；旧rev-f039e12镜像和快照保留，实际未回退。
 
 ## 已修改文件
 
-- feat/frontend-task-usability两批产品提交2ac2738（65路径）和292fd70（5关联路径），包括共享交互、错误消费者、OpsPages、样式及对应测试；仅本任务显式路径，无初始用户脏改动。
-- docs/delivery/frontend-task-usability/{PLAN,IMPLEMENTATION_EVIDENCE,CI_RESULT,DELIVERY_RESULT}、docs/PROGRESS_STATE.json、README、doc-map及本检查点。
-- 完整原历史保留。源码与真实截图、artifact、旧失败、运行凭据各自留存；私密证据仅在忽略的.local/frontend-task-usability/。
+- 原前端实现与对应测试两批产品提交、源交付文档均保留；本轮部署收口只更新README、deploy/README、doc-map、PLAN、IMPLEMENTATION_EVIDENCE、CI_RESULT、DELIVERY_RESULT、PROGRESS_STATE与本检查点，新增DEPLOYMENT_RESULT.md/json。
+- 私密制品、SDK依赖checkout、Maven缓存、实际部署/恢复/失败/浏览器证据仅在忽略的.local/frontend-task-usability/deployment/。原Auth工作区、共享M2和历史3处工作树未修改/清理，没有新建任务工作树。
 
 ## 未完成
 
-- 产品与必要源码验收无未完成项；本次文档收口按正常Git授权发布，准确最终文档SHA/推送/CI观察只写私密delivery.json，避免自引用无限提交。
+- 无产品或本机部署遗留。部署文档正常提交、main推送和精确CI最后回执只写.local/frontend-task-usability/deployment/documentation-delivery.json，不在受版本控制文档中引用自身提交SHA。
 
 ## 当前问题
 
-- 无产品阻断。卫生工具formatter发现受限，实际PrettierPASS；本轮未运行全面屏幕阅读器、200%缩放或真实中央PKCE，不将夹具/条件SKIP当作该范围验收。
-- .local证据和已有三处历史工作树需要保留；dist、node_modules可重新生成但本轮未清理，不删除任何用户内容。
+- 无部署阻断；条件SKIP不能当作真实中央SSO/PKCE验收，本轮没有启用新IAM模式或生产部署。既有worker按原配置运行，不能将“配置不变”误称数据库业务内容完全静止。
+- 私有SDKcheckout、独立Maven缓存、JAR、失败/截图/CI证据和回退镜像需要保留；截图输出目录偏移已逐文件移动回项目，父目录空目录保留。三个既有历史工作树仍保留。18601/18602/18603自有预览进程保持停止。
 
 ## 下一步建议
 
-1. 发布本次交付文档并核对.local/frontend-task-usability/delivery.json中最后远程main与精确CI终态；完成后不重复执行本任务。
-2. 新的页面反馈在已验证产品292fd70基线上开展有界工作；Docker或生产部署需要另行明确授权。
+1. 以DEPLOYMENT_RESULT和实际8602运行证明核查本次已完成部署；若Git收口回执尚非DONE，只继续显式部署文档正常提交、合入推送main和准确CI观察，不重新构建/部署或重做前端。
+2. 保留数据、密钥、回退镜像和证据；没有新授权不生产部署、不清理旧工作树或共享基础设施。
 
 ## 恢复 Prompt
 
-读取本节、docs/PROGRESS_STATE.json与docs/delivery/frontend-task-usability/。产品与源码CI已DONE，仅核对私密delivery.json中的文档Git/CI收口，不重新设计、跑原业务写入或部署，不清理其他工作树及证据。
+读取本节、docs/PROGRESS_STATE.json、docs/delivery/frontend-task-usability/DEPLOYMENT_RESULT.json及.local/frontend-task-usability/deployment/documentation-delivery.json。8602已部署2851fc1且实际验证PASS；仅从确实未完成的Git文档交付继续，不重复部署，不重做前端，不灌数据，不清理用户内容。没有新的必要取舍无需再问继续。
 
 ---
 

@@ -11,6 +11,6 @@
 
 本文件与最终进度属于文档收口提交；最后文档提交SHA、正常main推送及其精确CI观察只写忽略的`.local/frontend-task-usability/delivery.json`，避免在受版本控制文档中引用自身再触发无限提交。最终文档不改产品源码，源码指纹继续为`8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f`。
 
-本轮没有数据库迁移、灌数据、新依赖、Docker配置或生产部署。现有8602服务保留原版本；源码已发布不等同部署已更新。本轮自有18601、18602、18603预览进程均已停止。
+源码交付阶段没有数据库迁移、灌数据、新依赖、Docker配置或生产部署，8602当时保留旧版本。用户随后明确要求部署并允许必要的Docker Desktop恢复，F3已将本机8602更新到2851fc1并完成制品、健康及浏览器验收，详见[部署结果](DEPLOYMENT_RESULT.md)。没有生产部署；自有18601、18602、18603预览进程继续保持停止。
 
 工作树、未提交/未跟踪路径及忽略文件已核查：本任务没有新建工作树；既有`central-journey-permissions`、`central-order-operations-permissions`和Auth下`p0-baselines/commerce`属于历史任务，全部保留。`.local/frontend-task-usability/`包含不可替代的失败、复现、真实截图及CI artifact，继续保留；凭据不提交、不输出。`frontend/dist`和`frontend/node_modules`可重建，但本轮保留现有制品和依赖以便复核，没有自动删除任何目录或用户内容。

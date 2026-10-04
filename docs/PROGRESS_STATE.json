@@ -10,13 +10,14 @@
   },
   "slices": {
     "F1-shared-query-recovery-keyboard": "DONE",
-    "F2-browser-review-delivery": "DONE"
+    "F2-browser-review-delivery": "DONE",
+    "F3-local-docker-update": "DONE"
   },
   "previousTask": {
     "stateBackup": ".local/frontend-task-usability/baseline-progress-state.json",
     "trackedBaseline": "57804ef:docs/PROGRESS_STATE.json"
   },
-  "next": "本轮前端与源码CI已完成；按正常Git交付发布本次文档收口，最后文档SHA/推送/CI写私密delivery.json，不重复产品改造或部署",
+  "next": "无产品或部署工作遗留；最终部署文档Git/main/精确CI回执在.local/frontend-task-usability/deployment/documentation-delivery.json核查",
   "sourceFingerprint": "8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f",
   "validation": {
     "actor": "同一实施者Codex，非独立Validation",
@@ -41,22 +42,14 @@
     ],
     "realReadonly": {
       "routes": 36,
-      "widths": [
-        1440,
-        390,
-        320
-      ],
+      "widths": [1440, 390, 320],
       "apiGets": 60,
       "businessWrites": 0,
       "result": "PASS"
     },
     "centralClientBoundary": {
       "routes": 36,
-      "widths": [
-        1440,
-        390,
-        320
-      ],
+      "widths": [1440, 390, 320],
       "result": "PASS"
     },
     "build": "PASS",
@@ -98,16 +91,105 @@
     "sourceCommit": "292fd70d99f82f03261632a12afcdbb67e52c09b",
     "remoteMain": "SOURCE_MERGED_AND_PUSHED",
     "sourceCI": "PASS",
-    "deployment": "NOT_REQUESTED_NOT_EXECUTED",
+    "deployment": "PASS_LOCAL_8602",
     "initialSourceCommit": "2ac27388bdc67658949be4fc897db78904e0f511",
-    "failedRuns": [
-      37164064216,
-      37164052777
-    ],
+    "failedRuns": [37164064216, 37164052777],
     "mainRun": 37164888755,
     "branchRun": 37164873337,
     "documentationReceipt": ".local/frontend-task-usability/delivery.json",
     "ownPreviews": "STOPPED_18601_18602_18603",
-    "worktrees": "NONE_CREATED; PRE_EXISTING_RETAINED"
+    "worktrees": "NONE_CREATED; PRE_EXISTING_RETAINED",
+    "deploymentDocumentationReceipt": ".local/frontend-task-usability/deployment/documentation-delivery.json"
+  },
+  "deployment": {
+    "status": "PASS",
+    "authorization": "用户本轮明确要求部署一下；目标沿用本机Docker8602",
+    "sourceRef": "2851fc151da80fa5ab2749f2863493f36b3585b6",
+    "target": {
+      "context": "desktop-linux",
+      "service": "commerce-platform-app-1",
+      "url": "http://127.0.0.1:8602"
+    },
+    "previousImage": "commerce-platform:rev-f039e12",
+    "ci": "https://github.com/lirji/commerce-platform/actions/runs/37165427241",
+    "databaseMigrationDiff": "NONE",
+    "evidence": ".local/frontend-task-usability/deployment/",
+    "buildValidation": {
+      "status": "PASS",
+      "backend": {
+        "suites": 75,
+        "tests": 557,
+        "passed": 552,
+        "skipped": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      "initialFailureRetained": true,
+      "freshIsolatedMySql": true,
+      "temporaryContainerRemoved": true,
+      "artifact": ".local/frontend-task-usability/deployment/artifact-proof.json",
+      "fixedSdkByteMatch": true,
+      "frontendFiles": 61
+    },
+    "environmentBlocker": null,
+    "pendingDecision": null,
+    "restartAuthorization": {
+      "granted": true,
+      "source": "用户明确选择允许重启并继续部署",
+      "recordedAt": "2026-10-04T01:12:02.959596+00:00"
+    },
+    "dockerRecovery": "PASS: normal restart timed out; authorized force-stop/start exit0; five existing containers stopped at restart timestamp restored",
+    "sdkRepository": "本轮私有Maven仓库，固定SDK实际缓存字节匹配；不改共享M2或Auth工作区",
+    "result": "PASS",
+    "image": "commerce-platform:rev-2851fc1",
+    "imageId": "sha256:f16e667ab554f064c0680189690c67a321e641228479fbb0aab44c4edda23d92",
+    "containerId": "b5850b1f3942bbf39b2ac6eb9e5bd91a6f5b8df209da612d5cdfd38490615bdd",
+    "jarSha256": "d990db532228116a9a432428e763c7222dc8f189367ff2dd5fd74158fb770727",
+    "health": "healthy",
+    "applicationHealth": "UP",
+    "anonymousApi": 401,
+    "frontendFiles": 61,
+    "actualHttpAssetsMatch": true,
+    "environmentValuesUnchanged": true,
+    "networkUnchanged": true,
+    "portUnchanged": true,
+    "runtimeSecurityAndLimitsUnchanged": true,
+    "privateConfigOnlyImageTagChanged": true,
+    "migrationDiff": "NONE",
+    "rollbackImage": "commerce-platform:rev-f039e12",
+    "rollback": "NOT_NEEDED",
+    "completedAt": "2026-10-04T01:24:12.708905+00:00",
+    "schemaVersion": 72,
+    "migrationApplied": false,
+    "record": "docs/delivery/frontend-task-usability/DEPLOYMENT_RESULT.json",
+    "browser": {
+      "fixtures": {
+        "passed": 10,
+        "skipped": 1,
+        "failed": 0,
+        "flaky": 0,
+        "scope": "deployed compiled UI with test-boundary API DTOs; not actual SSO"
+      },
+      "realReadonly": {
+        "result": "PASS",
+        "routes": 36,
+        "widths": [1440, 390, 320],
+        "apiGets": 61,
+        "allGets200": true,
+        "businessWrites": 0,
+        "jsErrors": 0,
+        "screenshots": 20,
+        "keyword": "PASS"
+      },
+      "realPreview": {
+        "postResponses": [200, 200],
+        "rowsDisplayed": 2,
+        "businessCommands": 0,
+        "jsErrors": 0,
+        "fastInputRetained": true
+      }
+    },
+    "temporaryTestDatabaseRemoved": true,
+    "production": false
   }
 }
