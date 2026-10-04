@@ -14,7 +14,7 @@
 
 ## 可追溯验证
 
-当前前端源文件、测试、构建配置及依赖文件集合指纹为`e4c00983e9efd706b2833c69575e706e49329a99d4cb99bc8144b9eecc50cd0d`（138个文件，逐文件SHA256索引在本地`source-fingerprint.json`）。下方路径均相对忽略目录`.local/frontend-task-usability/`。构建产物、运行凭据和真实截图不提交Git。
+当前前端源文件、测试、构建配置及依赖文件集合指纹为`8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f`（138个文件，逐文件SHA256索引在本地`source-fingerprint.json`）。下方路径均相对忽略目录`.local/frontend-task-usability/`。构建产物、运行凭据和真实截图不提交Git。
 
 |检查|实际结果|证据|
 |---|---|---|
@@ -24,10 +24,10 @@
 |广回归，修复草稿/焦点/导航夹具后|33 PASS，0 SKIP/FAIL/flaky|`final/browser-results.json`|
 |低代码接入及受影响页面回归|17 PASS，0 SKIP/FAIL/flaky|`reviewed/browser-results.json`|
 |当前最终源码回归：新交互、可用性、完整中央工作台|8 PASS，0 SKIP/FAIL/flaky|`release/browser-results.json`|
-|真实本机接口，只允许GET|36入口×1440/390/320px；60次GET均200；0业务写入；无页面JS错误；真实低代码关键词查询和清除PASS|`real-readonly/result.json`、`real-readonly-release.log`|
+|初次实现真实本机接口，只允许GET|36入口×1440/390/320px；60次GET均200；0业务写入；无页面JS错误；真实低代码关键词查询和清除PASS|`real-readonly/result.json`、`real-readonly-release.log`|
 |代码卫生、仓库约定、差异卫生|PASS，无blocking finding|`hygiene-final.json`；`git diff --check`|
 
-上述33/17/8为不同修改阶段的独立运行记录，不合计成一次测试结果。33项广回归包括导航模型、原业务交互和命令未知结果；随后低代码与手机布局完成后执行17项，等值HTTP常量抽取后对最终源码执行8项。中央工作台测试覆盖36入口、每个1440/390/320px、32px按钮、目录页签刷新恢复、跳过导航及503恢复/403拒绝。最终远程CI单独绑定准确提交SHA记录。
+上述33/17/8为不同修改阶段的独立运行记录，属于首批实现（2ac2738），不合计成一次测试结果。首批远程CI随后暴露生产构建中的低代码初始化问题，已另行修复并执行下方生产验证。33项广回归包括导航模型、原业务交互和命令未知结果；随后低代码与手机布局完成后执行17项，等值HTTP常量抽取后对最终源码执行8项。中央工作台测试覆盖36入口、每个1440/390/320px、32px按钮、目录页签刷新恢复、跳过导航及503恢复/403拒绝。最终远程CI单独绑定准确提交SHA记录。
 
 卫生工具未识别项目Prettier，返回`FORMAT_TOOL_NOT_AVAILABLE`；格式PASS依据实际执行Prettier日志。独立静态分析工具未配置；TypeScript构建已通过，不能据此声明全部静态分析覆盖。
 
@@ -38,6 +38,16 @@
 早期测试暴露默认URL下草稿提示遗漏、Portal菜单焦点返回失败及旧中央导航夹具不符正式DTO，均已修复并回归。真实接口检查暴露的四类窄屏问题已逐个复现并修复。失败报告、日志和截图保留在`first-browser-failures/`、`after/`、`fixes/`及`real-readonly-{first,second,third,fourth,fifth}-result.json`，最终PASS不覆盖历史失败。
 
 测试夹具仅存在于`frontend/tests`，中央本人导航按已发布正式DTO提供，验证客户端状态与授权拒绝；不使用夹具宣称真实SSO、PKCE或数据库权限已重新验收。真实只读检查使用本机已有有效演示身份，不灌数据、不发命令，也未操作生产环境。未运行200%浏览器缩放或完整屏幕阅读器检查；不声明全面无障碍合规。
+
+## CI发现的生产构建问题及修复
+
+首批实现`2ac2738`的main CI37164064216和分支CI37164052777都在低代码真实预览断言失败：各54 PASS、21条件SKIP、1 FAIL，构建、真实MySQL及依赖审计已PASS。没有忽略失败或重试冒充修复。
+
+本地生产构建复现快速输入后`pageId`从`quick-page`变为空，预览未发送。开发模式不能稳定复现；新回归直接使用生产构建，首次明确失败，失败截图已实际查看。原因是`afterOpenChange`晚于表单可输入时再次`resetFields`，即使项目关闭动画也不能依赖这个回调初始化。删除打开后重置，使用已有Ant Design [Form.clearOnDestroy](https://ant.design/components/form/)在确认关闭并卸载时清理旧值；新的挂载按当前初始草稿初始化。
+
+修复后的生产构建5项定向回归全部PASS（`ci-fix-production/browser-results.json`），覆盖快速输入、POST预览完整DTO、放弃后切换新版本、再新建默认草稿及原筛选/恢复/键盘行为。真实现有数据库只读预览另外执行1次`POST /admin/ops-pages/preview`并返回200，保留输入并显示2条真实数据，0保存/发布等业务写入（`real-preview-fixed.log`、`real-preview-debug.json`）；与上方60次GET验收分开记录。修复的构建、实际Prettier及卫生PASS，见`build-ci-fix.log`、`format-ci-fix.log`、`hygiene-ci-fix.json`。
+
+最初失败的CI artifact与日志保留在`ci-source-{main,branch}-artifact/`及`ci-source-main-failed.log`；生产明确复现证据在`ci-reproduction-production/`。探索阶段开发模式和人为动画测试也保留，不作为生产问题的证明。原源指纹留`source-fingerprint-before-ci-fix.json`；当前指纹已更新为包含修复后的138文件集合。
 
 ## 运行与交付边界
 

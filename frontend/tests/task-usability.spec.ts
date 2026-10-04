@@ -159,6 +159,86 @@ test("低代码页面使用真实查询条件，窄屏宽表保留名称与操�
   );
 });
 
+test("页面编排快速输入不被清空，预览和重新打开使用各自完整草稿", async ({
+  page,
+}) => {
+  await openMembers(page);
+  const previews: unknown[] = [];
+  await page.route("**/v1/admin/ops-pages/preview", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    const content = route.request().postDataJSON();
+    previews.push(content);
+    await route.fulfill({
+      json: {
+        page: { content, status: "DRAFT", lockVersion: 0 },
+        preview: true,
+        bounded: true,
+        data: [
+          {
+            id: "campaigns",
+            rows: [{ name: "当前租户活动", campaignId: "campaign-task" }],
+          },
+        ],
+      },
+    });
+  });
+  await page.goto("/#pages?store=store-task");
+  await expect(
+    page.getByText("会员营销运营页面", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "创建运营页面", exact: true }).click();
+  await page.getByLabel("页面标识", { exact: true }).fill("quick-page");
+  await page.getByLabel("页面标题", { exact: true }).fill("即时输入的运营页面");
+  await expect(page.getByLabel("页面标识", { exact: true })).toHaveValue(
+    "quick-page",
+  );
+  await expect(page.getByLabel("页面标题", { exact: true })).toHaveValue(
+    "即时输入的运营页面",
+  );
+  await page.getByRole("button", { name: "预览真实数据", exact: true }).click();
+  await expect(
+    page
+      .locator(".readonly-preview")
+      .getByText("当前租户活动", { exact: true }),
+  ).toBeVisible();
+  expect(previews).toEqual([
+    {
+      pageId: "quick-page",
+      title: "即时输入的运营页面",
+      storeId: "store-task",
+      version: 1,
+      sections: [{ id: "campaigns", title: "营销活动", source: "CAMPAIGNS" }],
+      actions: [],
+    },
+  ]);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "取消", exact: true })
+    .click();
+  await page.getByRole("button", { name: "放弃修改", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "创建新版本", exact: true }).click();
+  await expect(page.getByLabel("页面标识", { exact: true })).toHaveValue(
+    "page-task",
+  );
+  await expect(page.getByLabel("页面标题", { exact: true })).toHaveValue(
+    "会员营销运营页面",
+  );
+  await expect(page.getByLabel("版本", { exact: true })).toHaveValue("2");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "取消", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "创建运营页面", exact: true }).click();
+  await expect(page.getByLabel("页面标识", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("页面标题", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("版本", { exact: true })).toHaveValue("1");
+  await expect(page.getByLabel("组件标识", { exact: true })).toHaveValue(
+    "campaigns",
+  );
+});
+
 test("读取503可就地重试且保留未查询输入，权限拒绝不显示重试", async ({
   page,
 }) => {

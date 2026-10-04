@@ -386,10 +386,6 @@ export function OpsPages({ store }: { store: string }) {
         title="页面编排"
         width={640}
         open={editing}
-        afterOpenChange={(visible) => {
-          // Modal 延后挂载内容；须在表单读到当前草稿初始值后重置，避免新建沿用上一版本。
-          if (visible) form.resetFields();
-        }}
         onCancel={closing.requestClose}
         keyboard={!command.busy}
         mask={{ closable: !command.busy }}
@@ -424,8 +420,10 @@ export function OpsPages({ store }: { store: string }) {
         destroyOnHidden
       >
         <ErrorNotice error={command.error} />
+        {/* 关闭确认后卸载时清理旧草稿；打开后再重置会覆盖用户已经开始输入的内容。 */}
         <Form
           form={form}
+          clearOnDestroy
           layout="vertical"
           initialValues={
             draft ?? {

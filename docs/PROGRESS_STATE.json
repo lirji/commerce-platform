@@ -16,8 +16,8 @@
     "stateBackup": ".local/frontend-task-usability/baseline-progress-state.json",
     "trackedBaseline": "57804ef:docs/PROGRESS_STATE.json"
   },
-  "next": "前端实施与本地验收DONE；显式路径提交、正常合入推送main并观察精确CI，然后文档收口；不部署",
-  "sourceFingerprint": "e4c00983e9efd706b2833c69575e706e49329a99d4cb99bc8144b9eecc50cd0d",
+  "next": "提交低代码表单初始化修复，正常合入推送main并重新观察精确CI，成功后文档收口；不部署",
+  "sourceFingerprint": "8ccdea75d9ac584cdd9aefd9ae75f03d86c21a594c8ea1647bf62bbdb6d0726f",
   "validation": {
     "actor": "同一实施者Codex，非独立Validation",
     "local": "PASS",
@@ -33,6 +33,10 @@
       {
         "phase": "final-source",
         "passed": 8
+      },
+      {
+        "phase": "production-ci-fix",
+        "passed": 5
       }
     ],
     "realReadonly": {
@@ -63,12 +67,23 @@
     "codeHygiene": "PASS",
     "formatterDiscovery": "FORMAT_TOOL_NOT_AVAILABLE; actual Prettier PASS",
     "staticAnalysis": "NOT_CONFIGURED",
-    "evidence": "docs/delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md"
+    "evidence": "docs/delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md",
+    "realReadonlyPreview": {
+      "readOnlyPosts": 1,
+      "result": "PASS",
+      "status": 200,
+      "businessWrites": 0
+    }
   },
   "delivery": {
     "sourceCommit": null,
     "remoteMain": "PENDING",
-    "sourceCI": "PENDING",
-    "deployment": "NOT_REQUESTED_NOT_EXECUTED"
+    "sourceCI": "INITIAL_FAILED; product fix validated locally; next exact revision PENDING",
+    "deployment": "NOT_REQUESTED_NOT_EXECUTED",
+    "initialSourceCommit": "2ac27388bdc67658949be4fc897db78904e0f511",
+    "failedRuns": [
+      37164064216,
+      37164052777
+    ]
   }
 }
