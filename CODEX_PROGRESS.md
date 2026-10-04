@@ -16,7 +16,7 @@
 ## 已修改文件
 
 - 原前端实现与对应测试两批产品提交、源交付文档均保留；本轮部署收口只更新README、deploy/README、doc-map、PLAN、IMPLEMENTATION_EVIDENCE、CI_RESULT、DELIVERY_RESULT、PROGRESS_STATE与本检查点，新增DEPLOYMENT_RESULT.md/json。
-- 私密制品、SDK依赖checkout、Maven缓存、实际部署/恢复/失败/浏览器证据仅在忽略的.local/frontend-task-usability/deployment/。原Auth工作区、共享M2和历史3处工作树未修改/清理，没有新建任务工作树。
+- 私密制品、SDK依赖checkout、Maven缓存、实际部署/恢复/失败/浏览器证据仅在忽略的.local/frontend-task-usability/deployment/。原Auth工作区和历史3处工作树未修改/清理，没有新建任务工作树。首轮SDK安装按原脚本写过共享M2，后续完整构建改用私有缓存，不再向共享M2安装。
 
 ## 未完成
 

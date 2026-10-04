@@ -139,7 +139,7 @@
       "recordedAt": "2026-10-04T01:12:02.959596+00:00"
     },
     "dockerRecovery": "PASS: normal restart timed out; authorized force-stop/start exit0; five existing containers stopped at restart timestamp restored",
-    "sdkRepository": "本轮私有Maven仓库，固定SDK实际缓存字节匹配；不改共享M2或Auth工作区",
+    "sdkRepository": "最终完整构建使用本轮私有Maven仓库，固定SDK实际缓存字节匹配；首轮原脚本曾安装共享M2，后续不再向共享M2安装，未改Auth工作区",
     "result": "PASS",
     "image": "commerce-platform:rev-2851fc1",
     "imageId": "sha256:f16e667ab554f064c0680189690c67a321e641228479fbb0aab44c4edda23d92",
