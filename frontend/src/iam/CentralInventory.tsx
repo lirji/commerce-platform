@@ -299,8 +299,8 @@ function Inventory({
           可售、预占与已售分别记录；资金未知期间保留占用。
         </Typography.Paragraph>
         {filters.toolbar}
-        <ErrorNotice error={rows.error} />
-        <ErrorNotice error={actions.error} />
+        <ErrorNotice error={rows.error} onRetry={rows.refresh} />
+        <ErrorNotice error={actions.error} onRetry={actions.refresh} />
         {!rows.error && (
           <Table<Stock>
             rowKey="skuId"

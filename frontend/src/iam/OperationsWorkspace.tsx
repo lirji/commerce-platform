@@ -222,7 +222,7 @@ export function OperationsList({
       }
     >
       {filters.toolbar}
-      <ErrorNotice error={list.error} />
+      <ErrorNotice error={list.error} onRetry={list.refresh} />
       <Table<OperationRow>
         rowKey={(r) => String(r[idField])}
         dataSource={list.data}
@@ -269,7 +269,7 @@ export function OperationsList({
           </Button>
         }
       >
-        <ErrorNotice error={detail.error} />
+        <ErrorNotice error={detail.error} onRetry={detail.refresh} />
         {detailPath && detail.loading ? (
           <Typography.Text>正在核对详情权限…</Typography.Text>
         ) : (
@@ -370,7 +370,7 @@ export function OperationAction({
           核验{label}资格
         </Button>
       </Space>
-      <ErrorNotice error={access.error} />
+      <ErrorNotice error={access.error} onRetry={access.refresh} />
       <Modal
         className="operations-modal"
         open={open}

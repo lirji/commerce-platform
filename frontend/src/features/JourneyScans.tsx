@@ -53,7 +53,7 @@ export function JourneyScans() {
         description="每轮有界处理，生日按 UTC；暂停版本停止新入组，关闭会员旅程偏好会停止后续执行。加购排除在加购后下单且已付款的同门店订单。"
         style={{ marginBottom: 16 }}
       />
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       <ErrorNotice error={command.error} />
       <Table<Scan>
         rowKey={(r) => `${r.journeyId}/${r.journeyVersion}`}

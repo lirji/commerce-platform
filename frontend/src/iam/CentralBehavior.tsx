@@ -288,7 +288,7 @@ function BehaviorDetail({ member }: { member: string }) {
       >
         刷新行为资料
       </Button>
-      <ErrorNotice error={detail.error} />
+      <ErrorNotice error={detail.error} onRetry={detail.refresh} />
       {!detail.error &&
         (value ? (
           <Card title={`${value.member.displayName} · 行为资料`}>
@@ -375,7 +375,7 @@ function BehaviorDetail({ member }: { member: string }) {
         ))}
       <Card title="商品交互记录">
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <ErrorNotice error={rows.error} />
+          <ErrorNotice error={rows.error} onRetry={rows.refresh} />
           {!rows.error && (
             <Table<Event>
               rowKey="sequenceId"
@@ -568,7 +568,9 @@ function BehaviorCommand({
           description="离开页面将丢失本次重试信息。若权限已撤销，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title={titles[action]} loading={access.loading}>
         {canWrite ? (
           <Form

@@ -292,7 +292,7 @@ function Policies() {
       <Typography.Text type="secondary">
         政策只追加版本；未来政策到生效时间才接管周期。
       </Typography.Text>
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Policy>
           rowKey="version"
@@ -396,7 +396,7 @@ function CycleDetail({ member }: { member: string }) {
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       <Button onClick={data.refresh}>刷新会员周期</Button>
-      <ErrorNotice error={data.error} />
+      <ErrorNotice error={data.error} onRetry={data.refresh} />
       {!data.error &&
         (data.data ? (
           <CycleView value={data.data} />
@@ -500,7 +500,7 @@ function BundleList({ version }: { version: number }) {
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       <Button onClick={rows.refresh}>刷新礼包</Button>
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Bundle>
           rowKey="bindingId"
@@ -766,7 +766,9 @@ function CycleCommand({
           description="离开页面将丢失重试信息。若权限已撤销，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title={titles[action]} loading={access.loading}>
         {canWrite ? (
           <Form

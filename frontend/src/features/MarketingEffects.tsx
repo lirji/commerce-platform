@@ -77,6 +77,7 @@ export function MarketingEffects({ store }: { store: string }) {
       />
       <Card style={{ marginBottom: 16 }}>
         <Form
+          className="effects-range-form"
           layout="inline"
           initialValues={{
             from: initialDate(-86400 * 30),
@@ -101,8 +102,8 @@ export function MarketingEffects({ store }: { store: string }) {
           <Button htmlType="submit">查询（最多93天）</Button>
         </Form>
       </Card>
-      <ErrorNotice error={report.error} />
-      <ErrorNotice error={journeys.error} />
+      <ErrorNotice error={report.error} onRetry={report.refresh} />
+      <ErrorNotice error={journeys.error} onRetry={journeys.refresh} />
       <Tabs
         activeKey={tab}
         onChange={setTab}

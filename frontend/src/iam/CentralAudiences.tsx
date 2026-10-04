@@ -65,7 +65,7 @@ function Directory({ revision }: { revision: number }) {
       </Typography.Text>
       <Button onClick={refresh}>刷新人群目录</Button>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<AudienceView>
           rowKey="audienceId"
@@ -291,7 +291,9 @@ function CreateAudience({
           description="切换页签保留本次意图。离开页面会丢失重试信息；权限撤销时请联系管理员核对已有结果。"
         />
       )}
-      {!forbidden(access.error) && <ErrorNotice error={access.error} />}
+      {!forbidden(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title="创建人群快照">
         {access.loading && <Spin description="正在核验创建权限" />}
         {!access.loading && !canWrite && (

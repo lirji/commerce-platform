@@ -90,7 +90,7 @@ export function Dashboard({
           </Button>
         }
       />
-      <ErrorNotice error={data.error} />
+      <ErrorNotice error={data.error} onRetry={data.refresh} />
       <Spin spinning={data.loading}>
         {summary && sums && (
           <>

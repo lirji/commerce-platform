@@ -285,6 +285,7 @@ function ListFilters({
 }) {
   type FormValues = Omit<Values, "enabled"> & { enabled?: string };
   const [form] = Form.useForm<FormValues>();
+  const draft = Form.useWatch<FormValues>([], form);
   const formValues = {
     ...values,
     from: values.from ? localDateTime(values.from) : undefined,
@@ -296,21 +297,57 @@ function ListFilters({
     form.resetFields();
     form.setFieldsValue(formValues);
   }, [raw, form]);
+  const applyValues = (next: Values) => {
+    apply(next);
+    // 相同查询或已在默认条件下点重置，URL不会变化，仍须同步清掉未提交草稿。
+    form.setFieldsValue({
+      q: next.q,
+      status: next.status,
+      from: next.from ? localDateTime(next.from) : undefined,
+      to: next.to ? localDateTime(next.to) : undefined,
+      enabled: next.enabled === undefined ? undefined : String(next.enabled),
+      limit: next.limit ?? 50,
+    });
+  };
   const active = [
-    values.q && `关键词：${values.q}`,
-    values.status && `状态：${statusText(values.status)}`,
-    values.from && `创建起点：${time(values.from)}`,
-    values.to && `创建终点：${time(values.to)}`,
-    values.enabled !== undefined &&
-      `启用状态：${values.enabled ? "已启用" : "已停用"}`,
-  ].filter(Boolean);
+    { key: "q", label: "关键词", text: values.q },
+    {
+      key: "status",
+      label: "状态",
+      text: values.status && statusText(values.status),
+    },
+    { key: "from", label: "创建起点", text: values.from && time(values.from) },
+    { key: "to", label: "创建终点", text: values.to && time(values.to) },
+    {
+      key: "enabled",
+      label: "启用状态",
+      text:
+        values.enabled === undefined
+          ? undefined
+          : values.enabled
+            ? "已启用"
+            : "已停用",
+    },
+  ].filter((item) => item.text);
+  // 摘要始终描述已应用条件，输入草稿不应让用户误以为列表已重新查询。
+  const pending =
+    !!draft &&
+    (["q", "status", "from", "to", "enabled", "limit"] as const).some((key) => {
+      const normalize = (v: unknown) =>
+        key === "q"
+          ? String(v ?? "").trim()
+          : key === "limit"
+            ? (v ?? 50)
+            : (v ?? "");
+      return normalize(draft[key]) !== normalize(formValues[key]);
+    });
   return (
     <div className="query-panel">
       <Form
         form={form}
         layout="inline"
         onFinish={(v) =>
-          apply({
+          applyValues({
             ...v,
             q: v.q?.trim(),
             enabled: v.enabled === undefined ? undefined : v.enabled === "true",
@@ -384,16 +421,38 @@ function ListFilters({
             <Button type="primary" htmlType="submit">
               查询
             </Button>
-            <Button onClick={() => apply({})}>重置筛选</Button>
+            <Button onClick={() => applyValues({})}>重置筛选</Button>
           </Space>
         </Form.Item>
       </Form>
+      <div className="query-scope">关键词查找：{spec.hint}</div>
+      <div className="query-pending" role="status" aria-live="polite">
+        {pending && "筛选已修改，点击查询后生效"}
+      </div>
       <div className="query-summary">
         <Typography.Text type="secondary">
           {active.length ? "已应用" : "全部符合当前范围的记录"}
         </Typography.Text>
-        {active.map((v) => (
-          <Tag key={String(v)}>{v}</Tag>
+        {active.map((item) => (
+          <Tag
+            key={item.key}
+            closable
+            closeIcon={
+              <button
+                type="button"
+                className="filter-clear"
+                aria-label={`清除${item.label}筛选`}
+              >
+                ×
+              </button>
+            }
+            onClose={(event) => {
+              event.preventDefault();
+              applyValues({ ...values, [item.key]: undefined });
+            }}
+          >
+            {item.label}：{item.text}
+          </Tag>
         ))}
       </div>
     </div>

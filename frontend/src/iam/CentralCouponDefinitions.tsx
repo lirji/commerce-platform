@@ -155,7 +155,7 @@ function DefinitionList({ store }: { store: string }) {
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<DefinitionView>
           rowKey={(v) => v.content.definitionId}
@@ -455,7 +455,9 @@ function CreateDefinition({
           description="离开页面将丢失本次重试信息；权限已撤销时，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title="创建券定义" loading={access.loading}>
         {canWrite ? (
           <Form

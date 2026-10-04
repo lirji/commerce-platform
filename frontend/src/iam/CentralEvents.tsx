@@ -20,7 +20,7 @@ function EventHealth() {
         </Button>
       }
     >
-      <ErrorNotice error={health.error} />
+      <ErrorNotice error={health.error} onRetry={health.refresh} />
       {health.data && (
         <Descriptions
           column={{ xs: 1, md: 3 }}
@@ -95,7 +95,7 @@ function EventPump({
         </Button>
         <Button onClick={access.refresh}>核验推进资格</Button>
       </Space>
-      <ErrorNotice error={access.error} />
+      <ErrorNotice error={access.error} onRetry={access.refresh} />
       <Modal
         className="operations-modal"
         open={open}

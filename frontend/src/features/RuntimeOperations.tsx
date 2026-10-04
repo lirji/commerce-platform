@@ -227,8 +227,8 @@ function Recovery() {
         description="查看失败证据，明确恢复范围，逐项跟进处理结果。"
         extra={<Button onClick={refresh}>刷新工作</Button>}
       />
-      <ErrorNotice error={types.error} />
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={types.error} onRetry={types.refresh} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       <Tabs
         activeKey={tab}
         onChange={(next) => {
@@ -467,7 +467,7 @@ function Recovery() {
             label: "恢复审计",
             children: (
               <>
-                <ErrorNotice error={history.error} />
+                <ErrorNotice error={history.error} onRetry={history.refresh} />
                 <ListPanel
                   count={history.data?.length ?? 0}
                   loading={history.loading}
@@ -650,8 +650,11 @@ function Replay() {
         description="先验证消费者安全与事件范围，再创建可追踪的重放任务。"
         extra={<Button onClick={refresh}>刷新任务</Button>}
       />
-      <ErrorNotice error={jobs.error} />
-      <ErrorNotice error={classifications.error} />
+      <ErrorNotice error={jobs.error} onRetry={jobs.refresh} />
+      <ErrorNotice
+        error={classifications.error}
+        onRetry={classifications.refresh}
+      />
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -1043,7 +1046,7 @@ function Replay() {
           ) : undefined
         }
       >
-        <ErrorNotice error={detail.error} />
+        <ErrorNotice error={detail.error} onRetry={detail.refresh} />
         {detail.loading && (
           <Typography.Paragraph>正在读取任务…</Typography.Paragraph>
         )}

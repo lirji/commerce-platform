@@ -1,4 +1,5 @@
 import { useCursorState } from "../shared/routeState";
+import { useListFilters } from "../shared/listFilters";
 import { RecordModal, RowActions } from "../shared/interactions";
 import {
   Alert,
@@ -24,7 +25,7 @@ import {
   ErrorNotice,
   Fields,
   PageHead,
-  Pager,
+  ListPanel,
   Status,
   Detail,
   type Values,
@@ -182,7 +183,7 @@ function PublishedPage({ id }: { id: string }) {
   return (
     <>
       <Button onClick={r.refresh}>刷新页面</Button>
-      <ErrorNotice error={r.error} />
+      <ErrorNotice error={r.error} onRetry={r.refresh} />
       {r.data && <RenderPage render={r.data} refresh={r.refresh} />}
     </>
   );
@@ -193,7 +194,7 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
   );
   return (
     <>
-      <ErrorNotice error={r.error} />
+      <ErrorNotice error={r.error} onRetry={r.refresh} />
       <Table<Governed<PageDefinition>>
         rowKey={(v) => v.content.version}
         dataSource={r.data}
@@ -251,8 +252,11 @@ function PageVersions({ id, onDone }: { id: string; onDone: () => void }) {
 }
 export function OpsPages({ store }: { store: string }) {
   const [after, setAfter] = useCursorState("after", "");
+  const filters = useListFilters("OpsPages", "/admin/ops-pages", () =>
+    setAfter(""),
+  );
   const r = useResource<Governed<PageDefinition>[]>(
-    `/admin/ops-pages?after=${encode(after)}`,
+    `/admin/ops-pages?after=${encode(after)}&${filters.query}`,
   );
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<PageDefinition>();
@@ -286,13 +290,24 @@ export function OpsPages({ store }: { store: string }) {
           </>
         }
       />
-      <ErrorNotice error={r.error} />
-      <Card>
+      <ErrorNotice error={r.error} onRetry={r.refresh} />
+      <ListPanel
+        toolbar={filters.toolbar}
+        pageSize={filters.limit}
+        loading={r.loading}
+        error={r.error}
+        after={after}
+        cursorName="after"
+        count={r.data?.length ?? 0}
+        onHome={() => setAfter("")}
+        onNext={() => setAfter(r.data!.at(-1)!.content.pageId)}
+      >
         <Table<Governed<PageDefinition>>
           rowKey={(row) => row.content.pageId}
           dataSource={r.data}
           pagination={false}
           loading={r.loading}
+          scroll={{ x: 800 }}
           columns={[
             { title: "页面名称", render: (_, row) => row.content.title },
             { title: "版本", render: (_, row) => row.content.version },
@@ -342,16 +357,7 @@ export function OpsPages({ store }: { store: string }) {
             },
           ]}
         />
-        <Pager
-          loading={r.loading}
-          error={r.error}
-          after={after}
-          cursorName={"after"}
-          count={r.data?.length ?? 0}
-          onHome={() => setAfter("")}
-          onNext={() => setAfter(r.data!.at(-1)!.content.pageId)}
-        />
-      </Card>
+      </ListPanel>
       <RecordModal
         title="运营页面"
         width={760}

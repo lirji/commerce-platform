@@ -5,18 +5,32 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
 const RowActionContext = createContext(false);
+// 下拉菜单通过Portal挂载且关闭后卸载，不能把已消失的菜单项当作详情返回位置。
+let lastRowTrigger: WeakRef<HTMLElement> | undefined;
 export const useRowAction = () => useContext(RowActionContext);
 
 /** 行操作仅区分入口的视觉语义；入口和弹层内按钮共用全站尺寸。 */
 export function RowActions({ children }: { children: ReactNode }) {
   return (
     <RowActionContext.Provider value>
-      <div className="row-actions" role="group" aria-label="记录操作">
+      <div
+        className="row-actions"
+        role="group"
+        aria-label="记录操作"
+        onFocusCapture={(event) => {
+          if (
+            event.target instanceof HTMLElement &&
+            event.currentTarget.contains(event.target)
+          )
+            lastRowTrigger = new WeakRef(event.target);
+        }}
+      >
         {children}
       </div>
     </RowActionContext.Provider>
@@ -84,6 +98,18 @@ export function RecordModal({
   expandable?: boolean;
 }) {
   const [expanded, setExpanded] = useState(initialExpanded);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const active = document.activeElement;
+    returnFocus.current =
+      active instanceof HTMLElement &&
+      active !== document.body &&
+      !active.closest(".ant-dropdown, .ant-modal")
+        ? active
+        : (lastRowTrigger?.deref() ?? null);
+    lastRowTrigger = undefined;
+  }, [open]);
   useEffect(() => {
     if (!open) setExpanded(initialExpanded);
   }, [open, initialExpanded]);
@@ -93,6 +119,15 @@ export function RecordModal({
       centered
       open={open}
       onCancel={onCancel}
+      afterClose={() => {
+        // 对象/路由已改变时不聚焦旧节点；嵌套确认仍打开时不把焦点移出对话框。
+        const anotherDialog = Array.from(
+          document.querySelectorAll('[role="dialog"]'),
+        ).some((dialog) => dialog.getClientRects().length > 0);
+        if (!anotherDialog && returnFocus.current?.isConnected)
+          returnFocus.current.focus({ preventScroll: true });
+        props.afterClose?.();
+      }}
       className={[
         "record-modal",
         expanded && "record-modal-expanded",

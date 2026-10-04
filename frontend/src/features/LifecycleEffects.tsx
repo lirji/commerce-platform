@@ -78,7 +78,7 @@ export function LifecycleEffects({ query }: { query: string }) {
             <Card
               extra={<Button onClick={journeys.refresh}>刷新版本比较</Button>}
             >
-              <ErrorNotice error={journeys.error} />
+              <ErrorNotice error={journeys.error} onRetry={journeys.refresh} />
               {basis(journeys.data)}
               <Table<JourneySeries>
                 rowKey="seriesId"
@@ -166,7 +166,10 @@ export function LifecycleEffects({ query }: { query: string }) {
             <Card
               extra={<Button onClick={deliveries.refresh}>刷新批次比较</Button>}
             >
-              <ErrorNotice error={deliveries.error} />
+              <ErrorNotice
+                error={deliveries.error}
+                onRetry={deliveries.refresh}
+              />
               {basis(deliveries.data)}
               <Table<DeliverySeries>
                 rowKey="seriesId"

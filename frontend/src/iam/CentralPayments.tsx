@@ -38,7 +38,7 @@ function PaymentRead() {
           刷新
         </Button>
       </Form>
-      <ErrorNotice error={view.error} />
+      <ErrorNotice error={view.error} onRetry={view.refresh} />
       {view.data && (
         <OperationDetails
           row={view.data}

@@ -127,7 +127,7 @@ export function MemberActions({
         onCancel={() => setHistoryOpen(false)}
         width={760}
       >
-        <ErrorNotice error={history.error} />
+        <ErrorNotice error={history.error} onRetry={history.refresh} />
         <Button onClick={history.refresh}>刷新</Button>
         <Table
           rowKey="version"

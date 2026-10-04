@@ -90,8 +90,8 @@ export function PointOffers({
         description="优惠券受理后即可进入券钱包；权益需等待发放完成后使用。兑换成功不支持退积分，券和权益沿用各自有效期。"
       />
       {filters.toolbar}
-      <ErrorNotice error={offers.error} />
-      <ErrorNotice error={wallet.error} />
+      <ErrorNotice error={offers.error} onRetry={offers.refresh} />
+      <ErrorNotice error={wallet.error} onRetry={wallet.refresh} />
       {!admin && (
         <Card>
           <Statistic
@@ -282,7 +282,7 @@ export function PointOffers({
       </PagerActions>
       {!admin && (
         <Card title="我的兑换回执">
-          <ErrorNotice error={receipts.error} />
+          <ErrorNotice error={receipts.error} onRetry={receipts.refresh} />
           <Table<Receipt>
             rowKey="redemptionId"
             dataSource={receipts.data}

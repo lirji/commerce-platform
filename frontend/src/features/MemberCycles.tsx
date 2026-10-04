@@ -81,7 +81,7 @@ export function MemberCycles({ admin }: { admin: boolean }) {
           style={{ maxWidth: 440 }}
         />
       )}
-      <ErrorNotice error={cycle.error} />
+      <ErrorNotice error={cycle.error} onRetry={cycle.refresh} />
       {cycle.data && (
         <>
           <Row gutter={[16, 16]}>
@@ -251,7 +251,7 @@ export function MemberCycles({ admin }: { admin: boolean }) {
             <p className="muted">
               发布后接管等级考核；成长获取比例仍由成长规则维护。新版本重新锚定周期，历史订单不追溯归入新周期。
             </p>
-            <ErrorNotice error={policies.error} />
+            <ErrorNotice error={policies.error} onRetry={policies.refresh} />
             <Table<Policy>
               rowKey="version"
               dataSource={policies.data}
@@ -365,7 +365,7 @@ export function MemberCycles({ admin }: { admin: boolean }) {
             <p className="muted">
               每策略每等级一个不可变礼包。生效后自动发放，配额不足进入待处理事件；后台可在配额问题解决后重试。
             </p>
-            <ErrorNotice error={bundles.error} />
+            <ErrorNotice error={bundles.error} onRetry={bundles.refresh} />
             <Table<Bundle>
               rowKey="bindingId"
               dataSource={bundles.data}

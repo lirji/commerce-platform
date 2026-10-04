@@ -110,7 +110,7 @@ function DefinitionAction({
           核验{action === "create" ? "创建" : "预览"}资格
         </Button>
       </Space>
-      <ErrorNotice error={access.error} />
+      <ErrorNotice error={access.error} onRetry={access.refresh} />
       <Modal
         className="operations-modal"
         open={open}
@@ -383,7 +383,7 @@ function EmbeddedAction({
   }
   return (
     <>
-      <ErrorNotice error={access.error} />
+      <ErrorNotice error={access.error} onRetry={access.refresh} />
       <Space wrap>
         {page.actions.map((a) => (
           <Button
@@ -593,7 +593,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
         extra={<Button onClick={list.refresh}>刷新列表</Button>}
       >
         {filters.toolbar}
-        <ErrorNotice error={list.error} />
+        <ErrorNotice error={list.error} onRetry={list.refresh} />
         <Table<Governed<PageDefinition>>
           rowKey={(r) => r.content.pageId}
           loading={list.loading}
@@ -648,7 +648,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
           </Form.Item>
           <Button htmlType="submit">读取发布内容</Button>
         </Form>
-        <ErrorNotice error={versions.error} />
+        <ErrorNotice error={versions.error} onRetry={versions.refresh} />
         {versions.data && (
           <Table<Governed<PageDefinition>>
             rowKey={(r) => String(r.content.version)}
@@ -666,7 +666,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
             ]}
           />
         )}
-        <ErrorNotice error={render.error} />
+        <ErrorNotice error={render.error} onRetry={render.refresh} />
         {render.data && (
           <>
             <RenderView value={render.data} />

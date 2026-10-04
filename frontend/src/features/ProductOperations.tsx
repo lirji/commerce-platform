@@ -147,8 +147,8 @@ export function ProductOperations({
         />
       )}
       {productFilters.toolbar}
-      <ErrorNotice error={products.error} />
-      <ErrorNotice error={skus.error} />
+      <ErrorNotice error={products.error} onRetry={products.refresh} />
+      <ErrorNotice error={skus.error} onRetry={skus.refresh} />
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -456,7 +456,7 @@ export function ProductOperations({
             </div>
           </Card>
         )}
-        <ErrorNotice error={history.error} />
+        <ErrorNotice error={history.error} onRetry={history.refresh} />
         <Table<Revision>
           rowKey="revision"
           dataSource={history.data}

@@ -100,7 +100,7 @@ function RuntimeRead() {
           </Button>
         }
       >
-        <ErrorNotice error={types.error} />
+        <ErrorNotice error={types.error} onRetry={types.refresh} />
         <Select
           aria-label="恢复工作类型"
           style={{ width: "100%", maxWidth: 420 }}
@@ -115,7 +115,7 @@ function RuntimeRead() {
             label: `${workTypeLabel(t.workType)} · ${t.actions.map((a) => String(formatField("action", a))).join(" / ")}`,
           }))}
         />
-        <ErrorNotice error={stopped.error} />
+        <ErrorNotice error={stopped.error} onRetry={stopped.refresh} />
         <Table<OperationRow>
           rowKey={(r) => String(r.workId)}
           dataSource={stopped.data}
@@ -161,7 +161,7 @@ function RuntimeRead() {
             下一批停止项
           </Button>
         </div>
-        <ErrorNotice error={history.error} />
+        <ErrorNotice error={history.error} onRetry={history.refresh} />
         <Table<OperationRow>
           rowKey={(r) => String(r.id)}
           dataSource={history.data}
@@ -213,7 +213,10 @@ function RuntimeRead() {
         title="消费者真实重放安全门"
         extra={<Button onClick={classifications.refresh}>刷新分类</Button>}
       >
-        <ErrorNotice error={classifications.error} />
+        <ErrorNotice
+          error={classifications.error}
+          onRetry={classifications.refresh}
+        />
         <Table<OperationRow>
           rowKey={(r) => String(r.consumer)}
           dataSource={classifications.data}

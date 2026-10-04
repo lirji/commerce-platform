@@ -1,6 +1,6 @@
 # 文档地图
 
-历史同步基线：fb7adf6。2026-09-27 Java 包能力细分的当前约定见 `architecture/java-packages.md`，执行证据见 `evidence/capability-package-refactor/PROJECT_REFACTORING_REPORT.md`；上一轮排版证据仍在 `evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md`。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；最新验证入口为 `delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
+历史同步基线：fb7adf6。2026-09-27 Java 包能力细分的当前约定见 `architecture/java-packages.md`，执行证据见 `evidence/capability-package-refactor/PROJECT_REFACTORING_REPORT.md`；上一轮排版证据仍在 `evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md`。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；本轮前端优化的最新验证入口为 [实施与验证证据](delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md)，历史会员链路验收为 `delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。
 
 | 实现所有者 | 权威设计/契约 |
 |---|---|
@@ -67,3 +67,5 @@
 定向发券 CE05-D1 完整DONE，正式Validation及产品Git/精确CI PASS，四独立能力与持久双方向来源沿用[技术契约](https://github.com/lirji/auth-platform/blob/main/docs/design/oa-auth-unification/CONTRACTS_COMMERCE_COUPON_DELIVERIES.md)及[验收记录](https://github.com/lirji/auth-platform/blob/main/docs/implementation/oa-auth/commerce-readiness/CE05_COUPON_DELIVERIES.md)。21实际MySQL专项及520全仓测试通过（5既有条件跳过）；真实Auth跨进程878检查点及终态SQL PASS，Commerce2a75235/CI36997466878、Auth2ad3bad/CI36997489481均SUCCESS；D2页面READY、尚未实施，完整其余CE05—08/Auth选择目标继续。
 
 2026-10-02 CE05-Journey/效果Owner与五个真实中央SSO页面：契约 `design/enterprise-iam-integration/CONTRACTS_JOURNEYS.md`；J1/EF1真实MySQL、固定原来源与SYSTEM政策见 `implementation/enterprise-iam-integration/CE05_JOURNEY_OWNER.md`；J2/EF2真实PKCE/授权/SQL/未知回执与最终视觉证据见 `implementation/enterprise-iam-integration/CE05_JOURNEY_UI.md`。Dashboard共享登记单独见 `SHARED_DASHBOARD_PROVIDER.md`；本地验收与整体应用发布状态分别记录。
+
+2026-10-03 Claude当前个人frontend-design增量优化：真实筛选草稿与单项清除、读取失败恢复、键盘跳过导航/表内滚动/弹层焦点、低代码目录筛选及真实数据窄屏修复见 [计划](delivery/frontend-task-usability/PLAN.md) 与 [实施和验证](delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md)。36真实旧身份入口与36中央客户端入口覆盖1440/390/320px，Git及准确CI单独记录；本轮未更新原8602容器。

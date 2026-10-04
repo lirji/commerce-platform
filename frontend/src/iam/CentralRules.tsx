@@ -148,7 +148,7 @@ function Directory() {
         刷新规则目录
       </Button>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<RuleView>
           rowKey={(r) => r.content.ruleId}
@@ -198,7 +198,7 @@ function Directory() {
           下一批规则
         </Button>
       </div>
-      <ErrorNotice error={fields.error} />
+      <ErrorNotice error={fields.error} onRetry={fields.refresh} />
       {!fields.error && fields.data && (
         <Card title="可信规则字段">
           <Descriptions
@@ -347,7 +347,9 @@ function RuleAction({
           description="离开页面将丢失本次重试信息；权限已撤销时，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title={label} loading={access.loading}>
         {canWrite ? (
           <Form

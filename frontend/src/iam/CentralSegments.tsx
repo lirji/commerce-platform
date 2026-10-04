@@ -270,7 +270,7 @@ function Runs({
           定义版本、调度锁与快照版本分别独立。
         </Typography.Text>
       </Space>
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<SegmentRun>
           rowKey="runId"
@@ -342,7 +342,7 @@ function Runs({
         onCancel={() => setRunId("")}
         footer={<Button onClick={() => setRunId("")}>关闭</Button>}
       >
-        <ErrorNotice error={rows.error} />
+        <ErrorNotice error={rows.error} onRetry={rows.refresh} />
         {!rows.error &&
           (selected ? (
             <RunDetails value={selected} />
@@ -387,7 +387,7 @@ function Directory({
       </Typography.Text>
       <Button onClick={refresh}>刷新定义目录</Button>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<SegmentView>
           rowKey={(row) => row.content.segmentId}
@@ -476,7 +476,7 @@ function Directory({
         onCancel={() => setDetail("")}
         footer={<Button onClick={() => setDetail("")}>关闭</Button>}
       >
-        <ErrorNotice error={rows.error} />
+        <ErrorNotice error={rows.error} onRetry={rows.refresh} />
         {!rows.error && selected ? (
           <Space orientation="vertical" size="large" style={{ width: "100%" }}>
             <DefinitionDetails value={selected} />

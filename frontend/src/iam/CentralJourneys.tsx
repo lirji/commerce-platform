@@ -958,7 +958,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
         }
       >
         {filters.toolbar}
-        <ErrorNotice error={list.error} />
+        <ErrorNotice error={list.error} onRetry={list.refresh} />
         {list.error instanceof ApiError &&
           list.error.status === HTTP.FORBIDDEN && (
             <Alert
@@ -1045,7 +1045,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
               读取实际历史
             </Button>
           </Space>
-          <ErrorNotice error={history.error} />
+          <ErrorNotice error={history.error} onRetry={history.refresh} />
           {history.data && (
             <>
               <Descriptions
@@ -1100,7 +1100,10 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
             </div>
             <Button htmlType="submit">读取执行详情</Button>
           </Form>
-          <ErrorNotice error={executionDetail.error} />
+          <ErrorNotice
+            error={executionDetail.error}
+            onRetry={executionDetail.refresh}
+          />
           {executionDetail.data && <JsonResult value={executionDetail.data} />}
         </Card>
       )}

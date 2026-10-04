@@ -281,7 +281,7 @@ function DirectorySection({
         </Button>
       </Space>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Entry>
           rowKey={merchant ? "merchantId" : "storeId"}
@@ -350,7 +350,9 @@ function DirectorySection({
           description="离开页面将丢失本次重试信息。若权限已撤销，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(action.error) && <ErrorNotice error={action.error} />}
+      {!denied(action.error) && (
+        <ErrorNotice error={action.error} onRetry={action.refresh} />
+      )}
       <Card title={`新建${label}`} loading={action.loading}>
         {canCreate ? (
           <Form

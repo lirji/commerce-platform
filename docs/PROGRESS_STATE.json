@@ -1,141 +1,74 @@
 {
-  "task": "compact-buttons-pagination",
-  "status": "DONE",
-  "branch": "fix/compact-buttons-pagination",
-  "baseline": "37cd17744ca25ecdc40355ccf5c76c712fd31575",
+  "task": "frontend-task-usability",
+  "status": "IN_PROGRESS",
+  "branch": "feat/frontend-task-usability",
+  "baseline": "57804ef",
+  "skill": {
+    "path": "/Users/liruijun/.claude/skills/frontend-design/SKILL.md",
+    "sha256": "c5b3d5c93895e89bdae8a5ec7103f8b10113aa327788683cf591ea057fbaab0b",
+    "execution": "Codex直接读取Claude当前个人版，不冒充Claude原生客户端执行"
+  },
   "slices": {
-    "B1-skill-and-shared-style": "DONE",
-    "B2-pagination-layout": "DONE",
-    "B3-git-ci-docker": "DONE"
+    "F1-shared-query-recovery-keyboard": "DONE",
+    "F2-browser-review-delivery": "IN_PROGRESS"
   },
-  "validation": {
-    "frontendBuild": "PASS",
-    "skillCopiesValidation": "PASS",
-    "browserFinal": "PASS",
-    "browserPassed": 43,
-    "sourceFingerprint": "312f7d639f92cc344b7003eb36edbd4b6f5a21e0c720a3172262f79dd2bdefb5",
-    "prettier": "PASS",
-    "hygiene": "PASS_WITH_FORMATTER_DETECTION_LIMITATION",
-    "packagedFrontendFiles": 61,
-    "ci": "PASS",
-    "backendTests": 554,
-    "backendPassed": 549,
-    "backendSkipped": 5,
-    "ciBrowserPassed": 46,
-    "ciBrowserSkipped": 21,
-    "dockerBrowserPassed": 23,
-    "dockerBrowserSkipped": 1,
-    "realRuntimeReadonly": "PASS"
-  },
-  "evidence": [
-    ".local/compact-buttons-pagination/",
-    "docs/delivery/compact-buttons-pagination/TEST_RESULT.md",
-    "docs/delivery/compact-buttons-pagination/DEPLOYMENT_RESULT.md"
-  ],
   "previousTask": {
-    "task": "frontend-usability",
-    "stateAtRevision": "37cd17744ca25ecdc40355ccf5c76c712fd31575",
-    "stateBackup": ".local/compact-buttons-pagination/baseline-progress-state.json"
+    "stateBackup": ".local/frontend-task-usability/baseline-progress-state.json",
+    "trackedBaseline": "57804ef:docs/PROGRESS_STATE.json"
   },
-  "next": "当前改造与本机部署完成；最终文档Git回执写入私密delivery.json，不重复部署或清理其他工作树",
-  "deployment": {
-    "status": "DONE",
-    "result": "PASS",
-    "sourceRef": "f039e12e2301d7cd08ab5ec1973a374fbecdcac3",
-    "ci": {
-      "gate": "PASS",
-      "sourceRef": "f039e12e2301d7cd08ab5ec1973a374fbecdcac3",
-      "url": "https://github.com/lirji/commerce-platform/actions/runs/37099263074",
-      "requiredJob": "verify",
-      "checks": [
-        {
-          "name": "Build and verify real MySQL semantics",
-          "result": "PASS"
-        },
-        {
-          "name": "Audit frontend dependencies",
-          "result": "PASS"
-        },
-        {
-          "name": "Start packaged application",
-          "result": "PASS"
-        },
-        {
-          "name": "Browser fixtures and Chromium",
-          "result": "PASS"
-        },
-        {
-          "name": "Real browser commerce acceptance",
-          "result": "PASS"
-        }
-      ],
-      "recordedAt": "2026-10-03T05:23:05.596794+00:00"
-    },
-    "ciCounts": {
-      "sourceRef": "f039e12e2301d7cd08ab5ec1973a374fbecdcac3",
-      "suites": 74,
-      "backend": {
-        "tests": 554,
-        "failures": 0,
-        "errors": 0,
-        "skipped": 5
+  "next": "前端实施与本地验收DONE；显式路径提交、正常合入推送main并观察精确CI，然后文档收口；不部署",
+  "sourceFingerprint": "e4c00983e9efd706b2833c69575e706e49329a99d4cb99bc8144b9eecc50cd0d",
+  "validation": {
+    "actor": "同一实施者Codex，非独立Validation",
+    "local": "PASS",
+    "browserRuns": [
+      {
+        "phase": "broad",
+        "passed": 33
       },
-      "browser": {
-        "startTime": "2026-10-03T05:20:02.768Z",
-        "duration": 123853.33,
-        "expected": 46,
-        "skipped": 21,
-        "unexpected": 0,
-        "flaky": 0
+      {
+        "phase": "affected",
+        "passed": 17
+      },
+      {
+        "phase": "final-source",
+        "passed": 8
       }
-    },
-    "runtime": {
-      "result": "PASS",
-      "sourceRef": "f039e12e2301d7cd08ab5ec1973a374fbecdcac3",
-      "ci": "https://github.com/lirji/commerce-platform/actions/runs/37099263074",
-      "image": "commerce-platform:rev-f039e12",
-      "imageId": "sha256:6e3c67b81d8721b612310b05a2b23d17a116c8a4874676aa05799eb827c8869d",
-      "jarSha256": "3b24729f7cdc212bc731a1b4898eff42fb0c5e87463a4f8d68fb57fd6036730d",
-      "health": "healthy",
-      "applicationHealth": "UP",
-      "anonymousApi": 401,
-      "frontendFiles": 61,
-      "actualHttpAssetsMatch": true,
-      "environmentValuesUnchanged": true,
-      "networkUnchanged": true,
-      "portUnchanged": true,
-      "rollbackImage": "commerce-platform:rev-aeed09e",
-      "rollback": "NOT_NEEDED",
-      "completedAt": "2026-10-03T05:23:18.352710+00:00"
-    },
-    "dockerBrowser": {
-      "startTime": "2026-10-03T05:23:55.610Z",
-      "duration": 43750.818,
-      "expected": 23,
-      "skipped": 1,
-      "unexpected": 0,
-      "flaky": 0
-    },
-    "realRuntimeReadonly": {
-      "result": "PASS",
-      "identityStatus": 200,
-      "actualApiGets": 7,
-      "businessWrites": 0,
+    ],
+    "realReadonly": {
+      "routes": 36,
       "widths": [
         1440,
         390,
         320
-      ]
+      ],
+      "apiGets": 60,
+      "businessWrites": 0,
+      "result": "PASS"
     },
-    "ownedPreviews": "STOPPED",
-    "completedAt": "2026-10-03T05:25:45.833968+00:00"
+    "centralClientBoundary": {
+      "routes": 36,
+      "widths": [
+        1440,
+        390,
+        320
+      ],
+      "result": "PASS"
+    },
+    "build": "PASS",
+    "prettier": "PASS",
+    "catalogTests": {
+      "passed": 4
+    },
+    "codeHygiene": "PASS",
+    "formatterDiscovery": "FORMAT_TOOL_NOT_AVAILABLE; actual Prettier PASS",
+    "staticAnalysis": "NOT_CONFIGURED",
+    "evidence": "docs/delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md"
   },
-  "blockers": [],
   "delivery": {
-    "status": "PUSHED_MAIN",
-    "sourceRef": "f039e12e2301d7cd08ab5ec1973a374fbecdcac3",
-    "branch": "fix/compact-buttons-pagination",
-    "ci": "https://github.com/lirji/commerce-platform/actions/runs/37099263074",
-    "finalDocumentation": "Recorded privately after normal publication"
+    "sourceCommit": null,
+    "remoteMain": "PENDING",
+    "sourceCI": "PENDING",
+    "deployment": "NOT_REQUESTED_NOT_EXECUTED"
   }
 }

@@ -94,7 +94,7 @@ export function MemberBehavior({
           style={{ maxWidth: 440 }}
         />
       )}
-      <ErrorNotice error={detail.error} />
+      <ErrorNotice error={detail.error} onRetry={detail.refresh} />
       {value && (
         <>
           <Card
@@ -188,7 +188,7 @@ export function MemberBehavior({
             description="近30天包含UTC今天及前29天。完成订单按原下单时间统计，退款冲减净现金消费；浏览和加购是交互信号。历史订单需要完成投影后才计入。"
           />
           <Card title="商品交互记录">
-            <ErrorNotice error={events.error} />
+            <ErrorNotice error={events.error} onRetry={events.refresh} />
             <Table<Event>
               rowKey="sequenceId"
               dataSource={events.data}

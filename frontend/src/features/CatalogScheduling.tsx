@@ -343,7 +343,7 @@ export function CatalogJobs({ store }: { store: string }) {
         onCancel={() => setSelected(undefined)}
         width={760}
       >
-        <ErrorNotice error={receipts.error} />
+        <ErrorNotice error={receipts.error} onRetry={receipts.refresh} />
         <Button onClick={receipts.refresh}>刷新回执</Button>
         <Table<Receipt>
           rowKey="itemIndex"
@@ -419,7 +419,7 @@ export function ChannelPrices({
         title="未配置、停用或有效期外，自动使用基础售价"
         description="渠道由登录凭据确定；新价格不会重写已生成且仍有效的报价。"
       />
-      <ErrorNotice error={prices.error} />
+      <ErrorNotice error={prices.error} onRetry={prices.refresh} />
       {sku &&
         ["WEB", "MINI_APP"].map((c) => {
           const row = prices.data?.find((p) => p.channel === c);
@@ -506,7 +506,7 @@ export function ChannelPrices({
       {channel && (
         <>
           <Typography.Title level={4}>渠道价历史</Typography.Title>
-          <ErrorNotice error={history.error} />
+          <ErrorNotice error={history.error} onRetry={history.refresh} />
           <Table<Price>
             rowKey="version"
             dataSource={history.data}

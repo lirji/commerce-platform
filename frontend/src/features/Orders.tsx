@@ -137,7 +137,7 @@ export function Orders({
             </Button>
           }
         />
-        <ErrorNotice error={resource.error} />
+        <ErrorNotice error={resource.error} onRetry={resource.refresh} />
         <ListPanel
           toolbar={filters.toolbar}
           pageSize={filters.limit}
@@ -264,7 +264,7 @@ function OrderDetails({
   const value = order.data;
   return (
     <>
-      <ErrorNotice error={order.error} />
+      <ErrorNotice error={order.error} onRetry={order.refresh} />
       <ErrorNotice error={command.error} />
       {order.loading && !value && (
         <div className="record-loading" role="status">
@@ -379,7 +379,7 @@ function OrderDetails({
               title="支付状态"
               extra={<Button onClick={payment.refresh}>刷新支付</Button>}
             >
-              <ErrorNotice error={payment.error} />
+              <ErrorNotice error={payment.error} onRetry={payment.refresh} />
               {payment.loading && !payment.data && (
                 <div className="record-loading" role="status">
                   <Spin />

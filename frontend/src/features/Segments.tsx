@@ -103,7 +103,7 @@ export function Segments() {
         }
       />
       {filters.toolbar}
-      <ErrorNotice error={resource.error} />
+      <ErrorNotice error={resource.error} onRetry={resource.refresh} />
       <ListPanel
         pageSize={filters.limit}
         count={resource.data?.length ?? 0}
@@ -212,7 +212,7 @@ export function Segments() {
           description={`受众标识：${selected?.audienceId ?? ""}`}
           style={{ marginBottom: 16 }}
         />
-        <ErrorNotice error={runs.error} />
+        <ErrorNotice error={runs.error} onRetry={runs.refresh} />
         <Space>
           <Button onClick={runs.refresh}>刷新进度</Button>
           <ActionButton

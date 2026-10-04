@@ -128,9 +128,9 @@ export function CouponDeliveries({ store }: { store: string }) {
         }
       />
       {filters.toolbar}
-      <ErrorNotice error={batches.error} />
-      <ErrorNotice error={coupons.error} />
-      <ErrorNotice error={audiences.error} />
+      <ErrorNotice error={batches.error} onRetry={batches.refresh} />
+      <ErrorNotice error={coupons.error} onRetry={coupons.refresh} />
+      <ErrorNotice error={audiences.error} onRetry={audiences.refresh} />
       <Alert
         type="info"
         title="停止与撤销分别处理"
@@ -273,7 +273,7 @@ export function CouponDeliveries({ store }: { store: string }) {
         onCancel={() => setSelected(undefined)}
         width={760}
       >
-        <ErrorNotice error={recipients.error} />
+        <ErrorNotice error={recipients.error} onRetry={recipients.refresh} />
         {selectedNow && (
           <div className="record-hero">
             <div className="record-hero-main">

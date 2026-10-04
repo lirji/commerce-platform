@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { assertButtonSizes, assertCentered } from "./presentation";
+import { centralNavigationFixture } from "./centralNavigationFixture";
 
 // 只在测试边界模拟正式会员DTO；数据库分页/授权另由真实MySQL用例验证。
 async function members(page: Page) {
@@ -193,6 +194,8 @@ test("中央订单直接展示经营字段，时间筛选发送真实UTC条件",
   });
   await page.route("**/v1/**", (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/v1/operations/navigation")
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
     if (url.pathname === "/v1/admin/orders") requests.push(url);
     return route.fulfill({
       json: url.pathname.endsWith("-access")

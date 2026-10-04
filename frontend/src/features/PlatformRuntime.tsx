@@ -79,7 +79,7 @@ export function PlatformRuntime() {
           </Button>
         }
       />
-      <ErrorNotice error={runtime.error} />
+      <ErrorNotice error={runtime.error} onRetry={runtime.refresh} />
       {runtime.data && health && (
         <>
           <div className="runtime-observed">

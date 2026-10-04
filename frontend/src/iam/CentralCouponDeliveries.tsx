@@ -344,7 +344,7 @@ function Recipients({ batchId }: { batchId: string }) {
         券编号来自实际发放；已保留可能涉及已使用等状态，不推断为可再次撤回。
       </Typography.Paragraph>
       <Button onClick={rows.refresh}>刷新收件人记录</Button>
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <>
           <Table<DeliveryRecipient>
@@ -463,7 +463,7 @@ function Directory({
         />
       )}
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {deliveryIdentifier.test(store) && !rows.error && (
         <>
           <Table<DeliveryView>

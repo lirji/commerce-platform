@@ -26,6 +26,25 @@ type SearchGroup = {
   pages: readonly (readonly [string, string])[];
 };
 
+/** 跳过导航只移动焦点，不改写 hash，以免丢失列表筛选和游标。 */
+export function WorkspaceSkipLink() {
+  return (
+    <a
+      className="workspace-skip-link"
+      href="#workspace-content"
+      onClick={(event) => {
+        const content = document.getElementById("workspace-content");
+        if (!content) return;
+        event.preventDefault();
+        content.focus({ preventScroll: true });
+        content.scrollIntoView({ block: "start" });
+      }}
+    >
+      跳到业务内容
+    </a>
+  );
+}
+
 /** 快捷键只聚焦原有导航搜索；中央仍使用原生跳转和浏览器的离开保护。 */
 export function WorkspaceSearch({
   groups,

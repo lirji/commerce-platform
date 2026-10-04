@@ -111,7 +111,10 @@ export function CatalogStructure({ store }: { store: string }) {
           label: "类目目录",
           children: (
             <Card>
-              <ErrorNotice error={categories.error} />
+              <ErrorNotice
+                error={categories.error}
+                onRetry={categories.refresh}
+              />
               <Space>
                 <CommandModal
                   title="创建类目"
@@ -229,7 +232,10 @@ export function CatalogStructure({ store }: { store: string }) {
           label: "规格模板",
           children: (
             <Card>
-              <ErrorNotice error={templates.error} />
+              <ErrorNotice
+                error={templates.error}
+                onRetry={templates.refresh}
+              />
               <Alert
                 type="info"
                 title="模板按版本固定，先绑定商品再创建规格"
@@ -338,7 +344,7 @@ export function ProductPresentation({
       onCancel={onClose}
       width={760}
     >
-      <ErrorNotice error={profile.error} />
+      <ErrorNotice error={profile.error} onRetry={profile.refresh} />
       {product && profile.data && (
         <>
           <Descriptions
@@ -473,7 +479,7 @@ export function BarcodeEditor({
       onCancel={onClose}
       width={560}
     >
-      <ErrorNotice error={barcode.error} />
+      <ErrorNotice error={barcode.error} onRetry={barcode.refresh} />
       {sku && barcode.data && (
         <>
           <p>当前条码：{barcode.data.barcode ?? "未设置"}</p>

@@ -132,7 +132,7 @@ function Directory() {
         当前组织的权益实例，包含各状态；处理补偿需要独立权限。
       </Typography.Text>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Entitlement>
           rowKey="grantId"
@@ -331,7 +331,9 @@ function ResolveEntitlement({
           description="离开页面将丢失本次重试信息；权限已撤销时，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title="处理权益补偿" loading={access.loading}>
         {canWrite ? (
           <Form

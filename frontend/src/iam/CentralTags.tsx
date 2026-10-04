@@ -213,7 +213,7 @@ function TagDictionary() {
         <Button onClick={rows.refresh}>刷新字典</Button>
       </Space>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Definition>
           rowKey="tagId"
@@ -305,7 +305,7 @@ function Assignments({ member }: { member: string }) {
       <Typography.Text>
         会员编号：{member}；撤销的关联仍保留，便于核对版本和原因。
       </Typography.Text>
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Assignment>
           rowKey="tagId"
@@ -499,7 +499,9 @@ function TagCommand({
           description="离开页面将丢失本次重试信息。若权限已撤销，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title={titles[action]} loading={access.loading}>
         {canWrite ? (
           <Form

@@ -37,6 +37,7 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 ## 文档
 
+- [当前前端优化与验证](docs/delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md)（按Claude当前个人技能实施；源码交付不自动更新8602）
 - [文档地图与契约入口](docs/doc-map.md)
 - [后端架构与数据所有权](docs/design/unified-commerce/BACKEND_ARCHITECTURE.md)
 - [Java 包组织约定](docs/architecture/java-packages.md)

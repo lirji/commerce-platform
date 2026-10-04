@@ -638,7 +638,7 @@ export function AdminData({
           </>
         }
       />
-      <ErrorNotice error={resource.error} />
+      <ErrorNotice error={resource.error} onRetry={resource.refresh} />
       <ListPanel
         toolbar={filters.toolbar}
         pageSize={filters.limit}

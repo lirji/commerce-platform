@@ -2,7 +2,11 @@ import { RecordModal } from "../shared/interactions";
 import { Avatar, Button, Grid, Layout, Menu, Space, Typography } from "antd";
 import { useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../shared/Icon";
-import { WorkspaceBrand, WorkspaceSearch } from "../shared/WorkspaceChrome";
+import {
+  WorkspaceBrand,
+  WorkspaceSearch,
+  WorkspaceSkipLink,
+} from "../shared/WorkspaceChrome";
 import type { MenuProps } from "antd";
 import type { NavigationItem, NavigationModel } from "./businessNavigation";
 
@@ -56,6 +60,7 @@ export function CentralShell({
   );
   return (
     <Layout className="app admin-app central-app">
+      <WorkspaceSkipLink />
       {!compact && (
         <Layout.Sider width={236} theme="light" className="sidebar">
           <WorkspaceBrand />
@@ -101,7 +106,13 @@ export function CentralShell({
             </span>
           </Space>
         </Layout.Header>
-        <Layout.Content className="workspace">
+        <Layout.Content
+          className="workspace"
+          id="workspace-content"
+          role="main"
+          tabIndex={-1}
+          aria-label="业务内容"
+        >
           <div className="organization-context">
             <span>当前组织</span>
             <Typography.Text type="secondary" copyable={{ text: tenant }}>

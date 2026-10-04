@@ -25,7 +25,11 @@ import {
 import { hasUnconfirmedCommand } from "../shared/useIntent";
 import { ErrorNotice } from "../shared/ui";
 import { Icon, type IconName } from "../shared/Icon";
-import { WorkspaceBrand, WorkspaceSearch } from "../shared/WorkspaceChrome";
+import {
+  WorkspaceBrand,
+  WorkspaceSearch,
+  WorkspaceSkipLink,
+} from "../shared/WorkspaceChrome";
 import { memberTheme } from "../theme";
 // 按业务页面加载，登录和总览不下载所有经营表单。
 const Orders = lazy(() =>
@@ -558,6 +562,7 @@ export function App() {
     );
   const shell = (
     <Layout className={admin ? "app admin-app" : "app member-app"}>
+      <WorkspaceSkipLink />
       {admin && !compact && (
         <Layout.Sider width={236} theme="light" className="sidebar">
           <WorkspaceBrand />
@@ -706,15 +711,24 @@ export function App() {
             onClick={({ key }) => navigate(key)}
           />
         )}
-        <Layout.Content className="workspace">
+        <Layout.Content
+          className="workspace"
+          id="workspace-content"
+          role="main"
+          tabIndex={-1}
+          aria-label="业务内容"
+        >
           {!storageAvailable && (
             <Alert
               type="info"
               title="浏览器未允许会话存储，当前登录仍可使用，刷新后需要重新登录"
             />
           )}
-          <ErrorNotice error={stores.error} />
-          <ErrorNotice error={capabilities.error} />
+          <ErrorNotice error={stores.error} onRetry={stores.refresh} />
+          <ErrorNotice
+            error={capabilities.error}
+            onRetry={capabilities.refresh}
+          />
           <div key={actor.tenantId + actor.actorId + page + store}>
             <Suspense
               fallback={

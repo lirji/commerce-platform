@@ -128,7 +128,7 @@ function PolicyList() {
         政策按版本保留，生效时间使用本机时区显示；发布不会自动重算已有会员。
       </Typography.Text>
       <Button onClick={rows.refresh}>刷新政策</Button>
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Policy>
           rowKey="version"
@@ -236,11 +236,11 @@ function WalletDetails({ member }: { member: string }) {
   );
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
-      <ErrorNotice error={wallet.error} />
+      <ErrorNotice error={wallet.error} onRetry={wallet.refresh} />
       <Card title="成长钱包" loading={wallet.loading}>
         {wallet.data && !wallet.error && <WalletValue value={wallet.data} />}
       </Card>
-      <ErrorNotice error={ledger.error} />
+      <ErrorNotice error={ledger.error} onRetry={ledger.refresh} />
       {wallet.data && !wallet.error && !ledger.error && (
         <Table<Entry>
           rowKey="sequenceId"
@@ -475,7 +475,9 @@ function GrowthCommand({
           description="离开页面将丢失本次重试信息。若权限已撤销，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title={titles[action]} loading={access.loading}>
         {canWrite ? (
           <Form

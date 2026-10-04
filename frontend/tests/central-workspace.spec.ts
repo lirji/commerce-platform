@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { centralRoutes, compiledMenus } from "../src/iam/navigation";
+import { centralRoutes } from "../src/iam/navigation";
+import { centralNavigationFixture } from "./centralNavigationFixture";
 import { mkdirSync } from "node:fs";
 import { assertButtonSizes, assertCentered } from "./presentation";
 
@@ -40,30 +41,7 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
     // 此项明确是公开DTO界面夹具；新增导航需提供正式本人契约，不回退全菜单。
     const json =
       path === "/v1/operations/navigation"
-        ? {
-            schemaVersion: "1",
-            requestId: tenant,
-            context: {
-              principalId: tenant,
-              membershipId: tenant,
-              membershipGeneration: 1,
-              membershipVersion: 1,
-              principalVersion: 1,
-              tenantId: tenant,
-              applicationId: "commerce",
-              environment: "test",
-              actorType: "HUMAN",
-              callerServiceId: "ui-fixture",
-              traceId: tenant,
-            },
-            manifestVersion: 1,
-            contentHash: "a".repeat(64),
-            presentationHash: "b".repeat(64),
-            observedAt: new Date().toISOString(),
-            state: "AVAILABLE",
-            menus: compiledMenus.map(({ any_of: _binding, ...menu }) => menu),
-            capabilityHints: ["commerce.product.read"],
-          }
+        ? centralNavigationFixture(tenant)
         : path.includes("/access") || path.endsWith("-access")
           ? { allowed: false, receive: false, update: false }
           : path === "/v1/operations/scoped/product"
@@ -108,6 +86,11 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
   await expect(
     page.getByRole("tab", { name: "门店目录", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
+  const currentUrl = page.url();
+  await page.getByRole("link", { name: "跳到业务内容", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("main", { name: "业务内容" })).toBeFocused();
+  expect(page.url()).toBe(currentUrl);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "打开经营导航", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -124,6 +107,26 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
       () => document.documentElement.scrollWidth > innerWidth + 1,
     ),
   ).toBe(false);
+  let unavailable = true;
+  await page.route("**/v1/admin/stores?**", (route) =>
+    route.fulfill(
+      unavailable
+        ? { status: 503, json: { message: "门店目录暂不可用" } }
+        : { json: [] },
+    ),
+  );
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "重试加载", exact: true }),
+  ).toBeVisible();
+  unavailable = false;
+  await page.getByRole("button", { name: "重试加载", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "重试加载", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("tab", { name: "门店目录", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
   await page.route("**/v1/admin/stores?**", (route) =>
     route.fulfill({ status: 403, json: {} }),
   );

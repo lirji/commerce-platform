@@ -73,7 +73,7 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
         }
       />
       {filters.toolbar}
-      <ErrorNotice error={resource.error} />
+      <ErrorNotice error={resource.error} onRetry={resource.refresh} />
       <ListPanel
         pageSize={filters.limit}
         count={resource.data?.length ?? 0}

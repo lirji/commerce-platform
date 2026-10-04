@@ -1,3 +1,48 @@
+# Codex Progress
+
+## 任务目标
+
+按Claude当前个人版frontend-design优化本项目已有前端；保留32px常用按钮、居中弹层、真实权限与分页，验证后正常提交合入远程main。
+
+## 已完成
+
+- 核对当前最新个人SKILL，指纹见docs/PROGRESS_STATE.json；从57804ef建立原目录任务分支feat/frontend-task-usability，初始工作区clean。
+- 共享筛选草稿提示、单条件清除、同URL重置；47文件125处读取重试；宽表键盘滚动、三类壳层跳过导航、Portal档案返回原行焦点。
+- 低代码目录接入既有关键词/状态/limit真实查询；修复真实数据下动态人群、营销日期表单、低代码表及会员成长的320px溢出。
+- 本地分轮33、17、最终8项回归全部PASS；最终8项含中央36入口三宽度。当前源码build、实际Prettier、4目录工具测试、卫生和diff检查PASS。
+- 真实现有API只读验收36入口×1440/390/320px，60次GET均200、0业务写入；20张真实截图页面族索引和关键错误/详情/成长长图已实际查看。
+- 实施及失败闭环证据见docs/delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md；完整私密证据留.local/frontend-task-usability/。
+
+## 已修改文件
+
+- frontend/src/shared/{listFilters,ui,WorkspaceChrome,interactions}.tsx、http.ts、style.css、App、CentralShell、OpsPages及读取错误消费者；最终显式清单以本任务diff为准。
+- frontend/tests/task-usability.spec.ts、centralNavigationFixture.ts、central-workspace.spec.ts、frontend-usability.spec.ts。
+- docs/PROGRESS_STATE.json、docs/delivery/frontend-task-usability/、README.md、docs/doc-map.md及本检查点；原历史完整保留。
+
+## 未完成
+
+- 正常Git源码交付及精确CI；CI完成后文档收口并核对最后远程main。
+
+## 当前问题
+
+- 无本地产品或必要验证阻断；统一卫生工具未发现formatter，实际Prettier已PASS。未运行全面屏幕阅读器、200%缩放或本轮真实中央PKCE。
+- 旧专项凭据401，现有demo身份200，用于真实只读验收；凭据不输出、不提交。不修改Auth仓库或原8602部署。
+- 本轮两个自有预览18601/18602尚运行，交付收尾只停止自身进程；其他工作树、.local证据与现有服务保留。
+
+## 下一步建议
+
+1. 显式路径提交源码及必要测试文档，正常合入推送main，绑定准确headSha观察CI。
+2. CI成功后完成交付文档与进度DONE，正常提交合入推送main；最后文档SHA/CI回执留私密delivery.json，避免自引用无限提交。
+3. 停止本轮两个自有预览。未授权Docker/生产部署，不重新构建或更新运行实例。
+
+## 恢复 Prompt
+
+读取本节、docs/PROGRESS_STATE.json与docs/delivery/frontend-task-usability/，从Git/CI未完成项继续，不重复本地验收，不重做历史任务，不部署或清理其他工作树。
+
+---
+
+## 历史任务记录
+
 # Codex Progress — 电商导航过滤（MG08，DONE）
 
 ## 任务目标

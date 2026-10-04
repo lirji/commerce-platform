@@ -222,7 +222,7 @@ function MemberList() {
         <Button onClick={() => rows.refresh()}>刷新会员</Button>
       </Space>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Member>
           rowKey="memberId"
@@ -306,7 +306,7 @@ function MemberHistory({ member }: { member: Member }) {
         按变更版本排序，时间使用本机时区显示
       </Typography.Text>
       <Button onClick={() => rows.refresh()}>刷新变更记录</Button>
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<History>
           rowKey="version"
@@ -508,7 +508,9 @@ function MemberCommand({
           description="离开页面将丢失本次重试信息。若权限已撤销，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title={titles[action]} loading={access.loading}>
         {canWrite ? (
           <Form

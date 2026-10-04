@@ -136,7 +136,7 @@ export function Shop({
           购物袋 · {count}
         </Button>
       </div>
-      <ErrorNotice error={products.error} />
+      <ErrorNotice error={products.error} onRetry={products.refresh} />
       <ErrorNotice error={signalError} />
       <Modal
         className="product-modal"
@@ -146,7 +146,7 @@ export function Shop({
         width={720}
         footer={<Button onClick={() => setInfo(undefined)}>返回店铺</Button>}
       >
-        <ErrorNotice error={details.error} />
+        <ErrorNotice error={details.error} onRetry={details.refresh} />
         {details.loading && !details.data && (
           <div className="page-loading">
             <Spin description="正在加载商品详情" />
@@ -235,7 +235,7 @@ export function Shop({
         <Blank text="请先选择店铺" />
       ) : (
         <>
-          <ErrorNotice error={categories.error} />
+          <ErrorNotice error={categories.error} onRetry={categories.refresh} />
           {categories.loading && !categories.data ? (
             <Skeleton.Button
               active
@@ -479,8 +479,11 @@ export function Shop({
                   style={{ width: "100%" }}
                 />
               </Form.Item>
-              <ErrorNotice error={pointWallet.error} />
-              <ErrorNotice error={coupons.error} />
+              <ErrorNotice
+                error={pointWallet.error}
+                onRetry={pointWallet.refresh}
+              />
+              <ErrorNotice error={coupons.error} onRetry={coupons.refresh} />
             </Form>
             <Button
               type="primary"

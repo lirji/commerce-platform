@@ -168,7 +168,7 @@ function Directory({
       </Typography.Text>
       <Button onClick={rows.refresh}>刷新活动目录</Button>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<CampaignView>
           rowKey={(row) => row.content.campaignId}
@@ -1046,7 +1046,7 @@ function Budgets() {
       </Typography.Text>
       <Button onClick={rows.refresh}>刷新预算余额</Button>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table
           rowKey="budgetId"

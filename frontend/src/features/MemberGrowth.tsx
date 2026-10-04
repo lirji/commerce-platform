@@ -100,9 +100,9 @@ export function MemberGrowth({
         title={admin ? "会员成长经营" : "我的成长"}
         description="成长来自完成订单的净消费，成功退款按原规则冲回。成长不是可提现余额。"
       />
-      <ErrorNotice error={wallet.error} />
-      <ErrorNotice error={ledger.error} />
-      <ErrorNotice error={policies.error} />
+      <ErrorNotice error={wallet.error} onRetry={wallet.refresh} />
+      <ErrorNotice error={ledger.error} onRetry={ledger.refresh} />
+      <ErrorNotice error={policies.error} onRetry={policies.refresh} />
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -249,7 +249,10 @@ export function MemberGrowth({
                     {admin && (
                       <>
                         <h3>会员标签</h3>
-                        <ErrorNotice error={assignments.error} />
+                        <ErrorNotice
+                          error={assignments.error}
+                          onRetry={assignments.refresh}
+                        />
                         <CommandModal
                           title="设置标签"
                           path={`/admin/member-tags/${encode(member)}/assign`}

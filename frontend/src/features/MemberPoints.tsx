@@ -101,7 +101,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
           }}
         />
       )}
-      <ErrorNotice error={wallet.error} />
+      <ErrorNotice error={wallet.error} onRetry={wallet.refresh} />
       {wallet.data && (
         <>
           <Row gutter={[16, 16]}>
@@ -178,7 +178,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
             <p className="muted">
               奖励来自完成订单的现金净消费。退款沿用原获取规则扣回，过期未用积分不重复扣回；积分不支持提现。
             </p>
-            <ErrorNotice error={ledger.error} />
+            <ErrorNotice error={ledger.error} onRetry={ledger.refresh} />
             <Table<Entry>
               rowKey="sequenceId"
               dataSource={ledger.data}
@@ -326,7 +326,7 @@ export function MemberPoints({ admin }: { admin: boolean }) {
           <p className="muted">
             获取率按下单时的规则确定。有效期从奖励入账时起计算，退款不延长；未配置规则不会自动赠分。
           </p>
-          <ErrorNotice error={policies.error} />
+          <ErrorNotice error={policies.error} onRetry={policies.refresh} />
           <Table<Policy>
             rowKey="version"
             dataSource={policies.data}

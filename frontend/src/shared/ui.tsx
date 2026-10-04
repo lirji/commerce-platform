@@ -25,8 +25,9 @@ export {
   useDirtyClose,
   useRowAction,
 } from "./interactions";
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ApiError, useCommand } from "./api";
+import { HTTP } from "./http";
 export const time = (v: unknown) => {
   if (v == null || v === "") return "未提供";
   const date = new Date(String(v));
@@ -145,18 +146,39 @@ export function Status({ value }: { value?: string }) {
     </Tag>
   );
 }
-export function ErrorNotice({ error }: { error?: Error }) {
+export function ErrorNotice({
+  error,
+  onRetry,
+}: {
+  error?: Error;
+  onRetry?: () => void;
+}) {
   if (!error) return null;
   const detail =
     error instanceof ApiError
-      ? `${error.status === 409 ? "状态或幂等冲突，请刷新核对后重试。" : error.status === 403 ? "当前身份没有此操作权限。" : error.status === 401 ? "访问凭据无效或已过期，请退出后重新登录。" : ""}${error.traceId ? ` 追踪编号：${error.traceId}` : ""}`
-      : "网络响应未知。若刚提交过操作，请保留输入重试或刷新核对。";
+      ? `${error.status === HTTP.CONFLICT ? "状态或幂等冲突，请刷新核对后重试。" : error.status === HTTP.FORBIDDEN ? "当前身份没有此操作权限。" : error.status === HTTP.UNAUTHORIZED ? "访问凭据无效或已过期，请退出后重新登录。" : onRetry ? "未能读取最新数据，请重试加载。当前筛选和输入会保留。" : ""}${error.traceId ? ` 追踪编号：${error.traceId}` : ""}`
+      : onRetry
+        ? "未能读取最新数据，请重试加载。当前筛选和输入会保留。"
+        : "网络响应未知。若刚提交过操作，请保留输入重试或刷新核对。";
+  // 重试入口只绑定调用方提供的读取；身份失效和权限拒绝不能靠反复请求恢复。
+  const canRetry =
+    onRetry &&
+    !(
+      error instanceof ApiError &&
+      [HTTP.UNAUTHORIZED, HTTP.FORBIDDEN].some(
+        (status) => status === error.status,
+      )
+    );
   return (
     <Alert
       type="error"
       showIcon
       title={error.message}
       description={detail}
+      className="error-notice"
+      action={
+        canRetry ? <Button onClick={onRetry}>重试加载</Button> : undefined
+      }
       style={{ marginBottom: 16 }}
     />
   );
@@ -773,11 +795,82 @@ export function ListPanel({
   homeLabel?: string;
   nextLabel?: string;
 }) {
+  const table = useRef<HTMLDivElement>(null);
+  const scrollTarget = useRef<HTMLElement | null>(null);
+  const [overflowing, setOverflowing] = useState(false);
+  const hintId = useId();
+  useEffect(() => {
+    const element = table.current;
+    if (!element) return;
+    // Ant Table 的横向滚动可能在自身内部；观察真实宽度，短表无需额外 Tab 停靠点。
+    const measure = () => {
+      const candidates = [
+        element,
+        ...element.querySelectorAll<HTMLElement>(
+          ".ant-table-content, .ant-table-body",
+        ),
+      ];
+      scrollTarget.current =
+        candidates.find(
+          (node) =>
+            node.clientWidth > 0 && node.scrollWidth > node.clientWidth + 1,
+        ) ?? null;
+      setOverflowing(!!scrollTarget.current);
+    };
+    const resize = new ResizeObserver(measure);
+    resize.observe(element);
+    const mutation = new MutationObserver(measure);
+    mutation.observe(element, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    measure();
+    return () => {
+      resize.disconnect();
+      mutation.disconnect();
+    };
+  }, [children]);
   return (
     <Card className="list-panel">
       {toolbar && <div className="list-toolbar">{toolbar}</div>}
-      <div className="list-table">{children}</div>
-      <TableReadHint />
+      <div
+        ref={table}
+        className="list-table"
+        role={overflowing ? "region" : undefined}
+        aria-label={overflowing ? "列表完整字段" : undefined}
+        aria-describedby={overflowing ? hintId : undefined}
+        tabIndex={overflowing ? 0 : undefined}
+        onKeyDown={(event) => {
+          // 只处理表格容器本身，不能截获行操作或输入控件的方向键。
+          if (
+            event.target !== event.currentTarget ||
+            !scrollTarget.current ||
+            event.altKey ||
+            event.ctrlKey ||
+            event.metaKey ||
+            event.shiftKey
+          )
+            return;
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          scrollTarget.current.scrollBy({
+            left: event.key === "ArrowRight" ? 120 : -120,
+            behavior: "instant",
+          });
+        }}
+      >
+        {children}
+      </div>
+      {overflowing && (
+        <Typography.Text
+          id={hintId}
+          type="secondary"
+          className="table-overflow-hint"
+        >
+          左右滑动查看完整字段和操作；键盘聚焦表格后可用左右方向键。
+        </Typography.Text>
+      )}
       {onHome && onNext && count != null && (
         <Pager
           after={after}

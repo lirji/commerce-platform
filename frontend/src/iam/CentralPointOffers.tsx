@@ -161,7 +161,7 @@ function OfferList({ store }: { store: string }) {
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       {filters.toolbar}
-      <ErrorNotice error={rows.error} />
+      <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<OfferView>
           rowKey={(v) => v.content.offerId}
@@ -421,7 +421,9 @@ function OfferCommand({
           description="离开页面将丢失本次重试信息。若权限已撤销，请联系管理员核对已有结果。"
         />
       )}
-      {!denied(access.error) && <ErrorNotice error={access.error} />}
+      {!denied(access.error) && (
+        <ErrorNotice error={access.error} onRetry={access.refresh} />
+      )}
       <Card title={titles[action]} loading={access.loading}>
         {canWrite ? (
           <Form

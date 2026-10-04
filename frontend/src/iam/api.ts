@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
-export const HTTP = {
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  CONFLICT: 409,
-  UNAVAILABLE: 503,
-} as const;
+import { HTTP } from "../shared/http";
+export { HTTP } from "../shared/http";
 export class CentralError extends Error {
   constructor(
     public status: number,
