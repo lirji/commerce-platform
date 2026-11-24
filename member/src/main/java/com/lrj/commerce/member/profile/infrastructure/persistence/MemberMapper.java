@@ -34,9 +34,9 @@ public interface MemberMapper {
 
 	MemberApi.View byActor(@Param("tenant") String tenant, @Param("actor") String actor);
 
-	/** 一次读完整结果和数据库观测时间，避免翻页过程中混入不同版本。 */
+	/** 在调用方固定的读取事务内按主键取一批，并为无匹配结果保留数据库观测时间。 */
 	List<MarketingRow> marketingProfiles(@Param("tenant") String tenant, @Param("status") String status,
-			@Param("limit") int limit);
+			@Param("after") String after, @Param("limit") int limit);
 
 	record MarketingRow(String memberId, String memberLevel, java.time.LocalDateTime observedAt) {
 	}

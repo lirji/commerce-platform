@@ -8,6 +8,11 @@ import com.lrj.commerce.runtime.api.access.EmployeeAccess;
 import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.time.ZoneOffset;
 import java.util.concurrent.Semaphore;
@@ -19,7 +24,10 @@ import com.lrj.commerce.runtime.api.validation.Inputs;
 public class MemberService implements MemberApi {
 
 	private static final int MARKETING_SNAPSHOT_LIMIT = 10_000;
+	private static final int MARKETING_SNAPSHOT_BATCH = 1_000;
+	private static final int MARKETING_SNAPSHOT_TIMEOUT_SECONDS = 3;
 	private final Semaphore marketingReads = new Semaphore(2);
+	private final TransactionTemplate marketingReadTransaction;
 
 	/** 封闭变更动作对应独立能力，未知字符串不能退化为资料修改。 */
 	private enum ChangeKind {
@@ -41,11 +49,18 @@ public class MemberService implements MemberApi {
 
 	private final com.lrj.commerce.runtime.event.Outbox outbox;
 
-	public MemberService(MemberMapper mapper, Commands commands, com.lrj.commerce.runtime.event.Outbox outbox, EmployeeAccess access) {
+	public MemberService(MemberMapper mapper, Commands commands, com.lrj.commerce.runtime.event.Outbox outbox,
+			EmployeeAccess access, PlatformTransactionManager transactionManager) {
 		this.access = access;
 		this.mapper = mapper;
 		this.commands = commands;
 		this.outbox = outbox;
+		// 各批使用同一 InnoDB 一致性读视图，且不继承调用方可能已有的读已提交事务。
+		this.marketingReadTransaction = new TransactionTemplate(transactionManager);
+		this.marketingReadTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+		this.marketingReadTransaction.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
+		this.marketingReadTransaction.setReadOnly(true);
+		this.marketingReadTransaction.setTimeout(MARKETING_SNAPSHOT_TIMEOUT_SECONDS);
 	}
 
 	/** 会员属于租户而非单一门店，总览明确此口径。 */
@@ -179,16 +194,37 @@ public class MemberService implements MemberApi {
 			throw new DomainException(DomainException.Code.UNAVAILABLE, "会员画像读取繁忙");
 		}
 		try {
-			var rows = mapper.marketingProfiles(trustedTenant, Status.ACTIVE.code(), MARKETING_SNAPSHOT_LIMIT + 1);
-			if (rows.size() > MARKETING_SNAPSHOT_LIMIT) {
-				throw new DomainException(DomainException.Code.CONFLICT, "在籍会员数量超过同步画像快照上限");
-			}
-			return new MarketingSnapshot(rows.getFirst().observedAt().toInstant(ZoneOffset.UTC),
-					rows.stream().filter(row -> row.memberId() != null)
-						.map(row -> new MarketingProfile(row.memberId(), row.memberLevel())).toList());
+			return marketingReadTransaction.execute(ignored -> readMarketingSnapshot(trustedTenant));
 		}
 		finally {
 			marketingReads.release();
+		}
+	}
+
+	/** 按商城会员主键继续读取。达到上限时多查一行，以区别刚好读完和仍有剩余。 */
+	private MarketingSnapshot readMarketingSnapshot(String trustedTenant) {
+		List<MarketingProfile> profiles = new ArrayList<>();
+		String after = null;
+		Instant observedAt = null;
+		while (true) {
+			int limit = Math.min(MARKETING_SNAPSHOT_BATCH, MARKETING_SNAPSHOT_LIMIT + 1 - profiles.size());
+			var rows = mapper.marketingProfiles(trustedTenant, Status.ACTIVE.code(), after, limit);
+			if (observedAt == null) {
+				observedAt = rows.getFirst().observedAt().toInstant(ZoneOffset.UTC);
+			}
+			if (rows.getFirst().memberId() == null) {
+				return new MarketingSnapshot(observedAt, List.copyOf(profiles));
+			}
+			if (profiles.size() + rows.size() > MARKETING_SNAPSHOT_LIMIT) {
+				throw new DomainException(DomainException.Code.CONFLICT, "在籍会员数量超过同步画像快照上限");
+			}
+			for (var row : rows) {
+				profiles.add(new MarketingProfile(row.memberId(), row.memberLevel()));
+			}
+			if (rows.size() < limit) {
+				return new MarketingSnapshot(observedAt, List.copyOf(profiles));
+			}
+			after = rows.getLast().memberId();
 		}
 	}
 

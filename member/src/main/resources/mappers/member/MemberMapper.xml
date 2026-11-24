@@ -18,6 +18,7 @@
     LEFT JOIN (
       SELECT member_id, member_level FROM member_record
       WHERE tenant_id = #{tenant} AND status = #{status}
+      <if test="after != null">AND member_id &gt; #{after}</if>
       ORDER BY member_id LIMIT #{limit}
     ) AS members ON TRUE
     ORDER BY members.member_id
