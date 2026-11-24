@@ -73,7 +73,7 @@ class MarketingMemberProfileSnapshotTest {
 		insertActive(SOURCE, 1_002);
 		jdbc.update(INSERT, SOURCE, "m-10003", "m-10003", "FROZEN");
 		jdbc.update(INSERT, SOURCE, "m-10004", "m-10004", "CLOSED");
-		jdbc.update(INSERT, "profile-other", "foreign", "foreign", "ACTIVE");
+		jdbc.update(INSERT, SOURCE + "-other", "foreign", "foreign", "ACTIVE");
 		var writer = new TransactionTemplate(manager);
 		writer.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 		var firstCall = new AtomicBoolean(true);
