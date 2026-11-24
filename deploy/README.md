@@ -6,7 +6,7 @@
 
 ## 连接与私密配置
 
-营销画像使用独立的机器凭据读取一个固定商城租户。启用时按 `deploy/env.example` 配置 `COMMERCE_MARKETING_MEMBER_PROFILE_*`，在外部环境通过 HTTPS 访问 `GET /internal/v1/member-profiles/snapshot`。请求的 `X-Marketing-Tenant` 必须与配置的调用方一致。接口一次读取全部在籍会员，最多 10,000 人，响应包含观测时间、会员业务 ID 和等级。超过上限返回 409。
+营销画像使用独立的机器凭据读取一个固定商城租户。启用时按 `deploy/env.example` 配置 `COMMERCE_MARKETING_MEMBER_PROFILE_*`，在外部环境通过 HTTPS 访问 `GET /internal/v1/member-profiles/snapshot`。请求的 `X-Marketing-Tenant` 必须与配置的调用方一致。默认读取全部在籍会员，最多 10,000 人，响应包含观测时间、会员业务 ID 和等级。超过上限返回 409。带 `view=level-summary` 时，同一授权返回 `asOf` 和由 `memberLevel`、`memberCount` 组成的 `levels`。汇总最多包含 1,000 个实际等级，超过种类上限或超时即拒绝整次查询。两种读取共用每实例两次并发的预算。
 
 | 用途 | 地址/标识 | 权限边界 |
 |---|---|---|

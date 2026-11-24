@@ -38,7 +38,14 @@ public interface MemberMapper {
 	List<MarketingRow> marketingProfiles(@Param("tenant") String tenant, @Param("status") String status,
 			@Param("after") String after, @Param("limit") int limit);
 
+	/** 汇总等级只访问当前授权租户，不查询会员标识。 */
+	List<MarketingLevelRow> marketingLevels(@Param("tenant") String tenant, @Param("status") String status,
+			@Param("limit") int limit);
+
 	record MarketingRow(String memberId, String memberLevel, java.time.LocalDateTime observedAt) {
+	}
+
+	record MarketingLevelRow(String memberLevel, long memberCount, java.time.LocalDateTime observedAt) {
 	}
 
 }

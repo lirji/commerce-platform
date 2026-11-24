@@ -111,6 +111,19 @@ class MarketingMemberProfileSnapshotTest {
 		assertEquals(1_002, latest.profiles().size());
 		assertEquals(new MemberApi.MarketingProfile("m-01001", "GOLD"), latest.profiles().get(1_000));
 		assertEquals("m-01003", latest.profiles().getLast().memberId());
+		String summaryQuery = "?view=level-summary";
+		assertEquals(403, request("profile-other", summaryQuery).statusCode());
+		var summaryResponse = request("profile-test", summaryQuery);
+		assertEquals(200, summaryResponse.statusCode());
+		assertEquals("no-store", summaryResponse.headers().firstValue("cache-control").orElseThrow());
+		var summary = JsonMapper.builder().build().readTree(summaryResponse.body());
+		assertNotNull(Instant.parse(summary.path("asOf").asString()));
+		assertFalse(summary.has("profiles"));
+		assertEquals(2, summary.path("levels").size());
+		assertEquals(1_001L, summary.at("/levels/0/memberCount").asLong());
+		assertEquals("BASIC", summary.at("/levels/0/memberLevel").asString());
+		assertEquals(1L, summary.at("/levels/1/memberCount").asLong());
+		assertEquals(2, summary.path("levels").get(0).size());
 	}
 
 	/** 恰好到达批次末尾时继续探测空页。总体超出上限时拒绝整份结果。 */
@@ -128,6 +141,16 @@ class MarketingMemberProfileSnapshotTest {
 		jdbc.update(INSERT, tenant, "m-10001", "m-10001", "ACTIVE");
 		assertEquals(DomainException.Code.CONFLICT,
 				assertThrows(DomainException.class, () -> members.marketingSnapshot(tenant)).code());
+		// MySQL 的 VARCHAR 排序规则可能忽略尾部空格，预估仍与营销的逐字匹配一致。
+		jdbc.update("UPDATE member_record SET member_level='basic' WHERE tenant_id=? AND member_id='m-10000'", tenant);
+		jdbc.update("UPDATE member_record SET member_level='BASIC ' WHERE tenant_id=? AND member_id='m-10001'", tenant);
+		jdbc.update(INSERT, tenant, "m-10002", "m-10002", "FROZEN");
+		var summary = members.marketingLevelSummary(tenant);
+		assertEquals(List.of(new MemberApi.MarketingLevelCount("BASIC", 9_999),
+				new MemberApi.MarketingLevelCount("BASIC ", 1), new MemberApi.MarketingLevelCount("basic", 1)), summary.levels());
+		var emptySummary = members.marketingLevelSummary("profile-empty");
+		assertTrue(emptySummary.levels().isEmpty());
+		assertNotNull(emptySummary.asOf());
 	}
 
 	private void insertActive(String tenant, int size) {
@@ -140,7 +163,11 @@ class MarketingMemberProfileSnapshotTest {
 	}
 
 	private HttpResponse<String> request(String marketingTenant) throws Exception {
-		var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + MarketingProfileSecurity.PATH))
+		return request(marketingTenant, "");
+	}
+
+	private HttpResponse<String> request(String marketingTenant, String query) throws Exception {
+		var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + MarketingProfileSecurity.PATH + query))
 				.header("X-Marketing-Tenant", marketingTenant).header("Authorization", "Bearer " + TOKEN)
 				.timeout(Duration.ofSeconds(8)).GET().build();
 		return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());

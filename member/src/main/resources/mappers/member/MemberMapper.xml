@@ -23,4 +23,17 @@
     ) AS members ON TRUE
     ORDER BY members.member_id
   </select>
+  <!-- 二进制分组与营销字符串精确匹配一致，等级大小写和尾部空格均有区分。 -->
+  <select id="marketingLevels" resultType="com.lrj.commerce.member.profile.infrastructure.persistence.MemberMapper$MarketingLevelRow" timeout="3">
+    SELECT levels.member_level, COALESCE(levels.member_count, 0) AS member_count, observed.observed_at
+    FROM (SELECT UTC_TIMESTAMP(3) AS observed_at) AS observed
+    LEFT JOIN (
+      SELECT MIN(member_level) AS member_level, COUNT(*) AS member_count
+      FROM member_record
+      WHERE tenant_id = #{tenant} AND status = #{status}
+      GROUP BY CAST(member_level AS BINARY)
+      ORDER BY CAST(member_level AS BINARY)
+      LIMIT #{limit}
+    ) AS levels ON TRUE
+  </select>
 </mapper>

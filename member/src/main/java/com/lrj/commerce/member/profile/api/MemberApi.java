@@ -61,11 +61,19 @@ public interface MemberApi {
 
 	/** 专供已授权的营销机器读取当前在籍会员，响应只包含圈选需要的字段。 */
 	MarketingSnapshot marketingSnapshot(String trustedTenant);
+	/** 在同一商城租户内按实际等级汇总在籍人数，供无需会员标识的预估。 */
+	MarketingLevelSummary marketingLevelSummary(String trustedTenant);
 
 	record MarketingSnapshot(Instant asOf, List<MarketingProfile> profiles) {
 	}
 
 	record MarketingProfile(String memberId, String memberLevel) {
+	}
+
+	record MarketingLevelSummary(Instant asOf, List<MarketingLevelCount> levels) {
+	}
+
+	record MarketingLevelCount(String memberLevel, long memberCount) {
 	}
 
 }

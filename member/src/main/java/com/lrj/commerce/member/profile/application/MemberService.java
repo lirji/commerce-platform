@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.time.ZoneOffset;
 import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 
@@ -25,7 +26,8 @@ public class MemberService implements MemberApi {
 
 	private static final int MARKETING_SNAPSHOT_LIMIT = 10_000;
 	private static final int MARKETING_SNAPSHOT_BATCH = 1_000;
-	private static final int MARKETING_SNAPSHOT_TIMEOUT_SECONDS = 3;
+	private static final int MARKETING_LEVEL_LIMIT = 1_000;
+	private static final int MARKETING_READ_TIMEOUT_SECONDS = 3;
 	private final Semaphore marketingReads = new Semaphore(2);
 	private final TransactionTemplate marketingReadTransaction;
 
@@ -60,7 +62,7 @@ public class MemberService implements MemberApi {
 		this.marketingReadTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 		this.marketingReadTransaction.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
 		this.marketingReadTransaction.setReadOnly(true);
-		this.marketingReadTransaction.setTimeout(MARKETING_SNAPSHOT_TIMEOUT_SECONDS);
+		this.marketingReadTransaction.setTimeout(MARKETING_READ_TIMEOUT_SECONDS);
 	}
 
 	/** 会员属于租户而非单一门店，总览明确此口径。 */
@@ -189,12 +191,32 @@ public class MemberService implements MemberApi {
 	/** 超出读取预算时拒绝整个请求，避免把截断名单写成完整快照。 */
 	@Override
 	public MarketingSnapshot marketingSnapshot(String trustedTenant) {
+		return readForMarketing(trustedTenant, () -> readMarketingSnapshot(trustedTenant));
+	}
+
+	/** 预估复用快照的限流和观测时间，只传输各等级人数。 */
+	@Override
+	public MarketingLevelSummary marketingLevelSummary(String trustedTenant) {
+		return readForMarketing(trustedTenant, () -> {
+			var rows = mapper.marketingLevels(trustedTenant, Status.ACTIVE.code(), MARKETING_LEVEL_LIMIT + 1);
+			if (rows.size() > MARKETING_LEVEL_LIMIT) {
+				throw new DomainException(DomainException.Code.UNAVAILABLE, "商城会员等级种类超过汇总上限");
+			}
+			Instant observedAt = rows.getFirst().observedAt().toInstant(ZoneOffset.UTC);
+			var levels = rows.stream().filter(row -> row.memberLevel() != null)
+					.map(row -> new MarketingLevelCount(row.memberLevel(), row.memberCount())).toList();
+			return new MarketingLevelSummary(observedAt, levels);
+		});
+	}
+
+	/** 画像读取共用连接预算和只读事务，避免两种入口叠加消耗数据库资源。 */
+	private <T> T readForMarketing(String trustedTenant, Supplier<T> read) {
 		Identifiers.require(trustedTenant);
 		if (!marketingReads.tryAcquire()) {
 			throw new DomainException(DomainException.Code.UNAVAILABLE, "会员画像读取繁忙");
 		}
 		try {
-			return marketingReadTransaction.execute(ignored -> readMarketingSnapshot(trustedTenant));
+			return marketingReadTransaction.execute(ignored -> read.get());
 		}
 		finally {
 			marketingReads.release();
