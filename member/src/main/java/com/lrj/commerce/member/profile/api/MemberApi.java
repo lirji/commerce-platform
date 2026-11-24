@@ -2,6 +2,7 @@ package com.lrj.commerce.member.profile.api;
 
 import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import java.time.Instant;
 import java.util.List;
 
 /** Member边界只暴露不可变业务投影，表由本模块独占。 */
@@ -57,5 +58,14 @@ public interface MemberApi {
 
 	/** 根据认证主体获取本人会员，客户端不能指定其他会员。 */
 	View current(Actor actor);
+
+	/** 专供已授权的营销机器读取当前在籍会员，响应只包含圈选需要的字段。 */
+	MarketingSnapshot marketingSnapshot(String trustedTenant);
+
+	record MarketingSnapshot(Instant asOf, List<MarketingProfile> profiles) {
+	}
+
+	record MarketingProfile(String memberId, String memberLevel) {
+	}
 
 }

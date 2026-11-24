@@ -16,6 +16,11 @@ commerce:
     extended-trace-enabled: ${COMMERCE_MARKETING_EXTENDED_TRACE_ENABLED:false}
     # 隔离容量测试的固定阶段耗时，默认关闭；日志不写业务标识。
     profiling-enabled: ${COMMERCE_MARKETING_PROFILING_ENABLED:false}
+    member-profile:
+      enabled: ${COMMERCE_MARKETING_MEMBER_PROFILE_ENABLED:false}
+      marketing-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_MARKETING_TENANT:}
+      commerce-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_COMMERCE_TENANT:}
+      bearer-token: ${COMMERCE_MARKETING_MEMBER_PROFILE_BEARER_TOKEN:}
   sandbox-enabled: ${COMMERCE_SANDBOX_ENABLED:false}
   workers-enabled: ${COMMERCE_WORKERS_ENABLED:false}
   # 后台车道共享调度线程数（1..6）；每线程同时最多占用一个数据库连接，需给请求线程保留连接池余量。

@@ -9,12 +9,17 @@ import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.time.ZoneOffset;
+import java.util.concurrent.Semaphore;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 
 /** Member用例负责权限与状态，SQL仅在本域Mapper。 */
 @Service
 public class MemberService implements MemberApi {
+
+	private static final int MARKETING_SNAPSHOT_LIMIT = 10_000;
+	private final Semaphore marketingReads = new Semaphore(2);
 
 	/** 封闭变更动作对应独立能力，未知字符串不能退化为资料修改。 */
 	private enum ChangeKind {
@@ -164,6 +169,27 @@ public class MemberService implements MemberApi {
 	/** 会员身份取自数据库绑定，不相信请求中的memberId。 */
 	public View current(Actor actor) {
 		return Inputs.found(mapper.byActor(actor.tenantId(), actor.actorId()));
+	}
+
+	/** 超出读取预算时拒绝整个请求，避免把截断名单写成完整快照。 */
+	@Override
+	public MarketingSnapshot marketingSnapshot(String trustedTenant) {
+		Identifiers.require(trustedTenant);
+		if (!marketingReads.tryAcquire()) {
+			throw new DomainException(DomainException.Code.UNAVAILABLE, "会员画像读取繁忙");
+		}
+		try {
+			var rows = mapper.marketingProfiles(trustedTenant, Status.ACTIVE.code(), MARKETING_SNAPSHOT_LIMIT + 1);
+			if (rows.size() > MARKETING_SNAPSHOT_LIMIT) {
+				throw new DomainException(DomainException.Code.CONFLICT, "在籍会员数量超过同步画像快照上限");
+			}
+			return new MarketingSnapshot(rows.getFirst().observedAt().toInstant(ZoneOffset.UTC),
+					rows.stream().filter(row -> row.memberId() != null)
+						.map(row -> new MarketingProfile(row.memberId(), row.memberLevel())).toList());
+		}
+		finally {
+			marketingReads.release();
+		}
 	}
 
 }

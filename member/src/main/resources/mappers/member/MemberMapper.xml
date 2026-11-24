@@ -12,4 +12,14 @@
     <if test="filter.status != null">AND status=#{filter.status}</if> ORDER BY member_id LIMIT #{limit}</select>
   <select id="byActor" resultType="com.lrj.commerce.member.profile.api.MemberApi$View">SELECT member_id,actor_id,display_name,member_level,status,version FROM member_record WHERE tenant_id=#{tenant} AND actor_id=#{actor}</select>
   <select id="stats" resultType="com.lrj.commerce.member.profile.api.MemberApi$Stats">SELECT COUNT(*) total,COALESCE(SUM(status='ACTIVE'),0) active,COALESCE(SUM(status='FROZEN'),0) frozen,COALESCE(SUM(status='CLOSED'),0) closed FROM member_record WHERE tenant_id=#{tenant}</select>
+  <select id="marketingProfiles" resultType="com.lrj.commerce.member.profile.infrastructure.persistence.MemberMapper$MarketingRow" timeout="3">
+    SELECT members.member_id, members.member_level, observed.observed_at
+    FROM (SELECT UTC_TIMESTAMP(3) AS observed_at) AS observed
+    LEFT JOIN (
+      SELECT member_id, member_level FROM member_record
+      WHERE tenant_id = #{tenant} AND status = #{status}
+      ORDER BY member_id LIMIT #{limit}
+    ) AS members ON TRUE
+    ORDER BY members.member_id
+  </select>
 </mapper>
