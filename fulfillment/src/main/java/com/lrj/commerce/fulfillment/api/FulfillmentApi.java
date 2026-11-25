@@ -10,6 +10,14 @@ public interface FulfillmentApi {
 	record View(String orderId, String status, String trackingNo, String provider, boolean blocked, long version) {
 	}
 
+	/** 运营详情沿用本域读权限，归属从原订单获取。 */
+	record Detail(String orderId, String status, String trackingNo, String provider, boolean blocked,
+			long version, String storeId) {
+	}
+
+	/** 以原编号读取当前事实，写岗位资格独立。 */
+	Detail adminDetail(Actor actor, String id);
+
 	record Ship(String trackingNo) {
 	}
 

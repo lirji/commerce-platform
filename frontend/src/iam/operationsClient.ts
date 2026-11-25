@@ -159,6 +159,12 @@ export function operationsClient(
     );
     let get = false,
       post = false;
+    const tradeDetail =
+      (family === "fulfillments" ||
+        family === "aftersales" ||
+        family === "refunds") &&
+      query.size === 0 &&
+      match(`/admin/${family}/${target}`);
     const bounded =
       query.size === 2 &&
       query.has("after") &&
@@ -181,6 +187,7 @@ export function operationsClient(
     if (["fulfillments", "aftersales", "refunds", "events"].includes(family)) {
       get =
         (base === `/admin/${family}` && bounded) ||
+        tradeDetail ||
         (family === "events" && path === "/admin/events/health");
       post =
         query.size === 0 &&
@@ -283,6 +290,19 @@ export function operationsClient(
         value.every(
           family === "ops-pages" ? page : family === "runtime" ? record : row,
         );
+    }
+    if (method === "GET" && tradeDetail) {
+      const objectId = base.split("/")[3];
+      valid =
+        record(value) &&
+        id(value.storeId) &&
+        (family === "fulfillments"
+          ? fulfillment(value, objectId)
+          : typeof value.createdAt === "string" &&
+            Number.isFinite(Date.parse(value.createdAt)) &&
+            (family === "aftersales"
+              ? aftersale(value, objectId)
+              : refund(value, objectId)));
     }
     if (method === "POST") {
       const body = record(options.body) ? options.body : {};

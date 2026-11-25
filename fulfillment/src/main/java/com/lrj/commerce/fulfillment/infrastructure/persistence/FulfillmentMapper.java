@@ -1,6 +1,7 @@
 package com.lrj.commerce.fulfillment.infrastructure.persistence;
 
 import com.lrj.commerce.fulfillment.api.FulfillmentApi.View;
+import com.lrj.commerce.fulfillment.api.FulfillmentApi.Detail;
 import org.apache.ibatis.annotations.*;
 import java.util.List;
 
@@ -35,5 +36,9 @@ public interface FulfillmentMapper {
 			@Param("after") String after, @Param("limit") int limit) {
 		return scopedList(tenant, scope, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
 	}
+
+	/** 精确原编号与列表使用相同的可信租户、订单归属和员工范围。 */
+	Detail scopedDetail(@Param("tenant") String tenant,
+			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope, @Param("id") String id);
 
 }

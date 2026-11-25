@@ -2,7 +2,7 @@ import { useListFilters } from "../shared/listFilters";
 import { TradeLinks, useWorkspaceHref } from "../shared/workspaceLinks";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
-import { Button, Space, Table, Typography } from "antd";
+import { Button, Space, Spin, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";
@@ -424,7 +424,18 @@ export function AdminData({
   const filters = useListFilters(`AdminData.${kind}`, spec.path, () =>
     setAfter(""),
   );
-  const [detail, setDetail] = useState<Row>();
+  const [selected, setDetail] = useState<Row>();
+  const isTrade = ["fulfillments", "aftersales", "refunds"].includes(kind);
+  const tradeDetail = useResource<Row>(
+    isTrade && selected
+      ? `${spec.path}/${encode(string(selected[spec.id]))}`
+      : null,
+  );
+  const detail = isTrade
+    ? tradeDetail.data?.[spec.id] === selected?.[spec.id]
+      ? tradeDetail.data
+      : undefined
+    : selected;
   const query =
     spec.path +
     `?after=${encode(after)}&${filters.query}` +
@@ -710,10 +721,24 @@ export function AdminData({
       <RecordModal
         className="record-modal"
         title={detail ? detailTitle : "业务记录详情"}
-        open={!!detail}
+        open={!!selected}
         onCancel={() => setDetail(undefined)}
         width={560}
       >
+        {isTrade && (
+          <ErrorNotice
+            error={
+              tradeDetail.error ??
+              (tradeDetail.data && !detail
+                ? new Error("返回记录与所选编号不一致")
+                : undefined)
+            }
+            onRetry={tradeDetail.refresh}
+          />
+        )}
+        {isTrade && selected && !tradeDetail.data && !tradeDetail.error && (
+          <Spin description="正在读取当前业务记录" />
+        )}
         {detail && (
           <>
             <RecordHero
@@ -744,7 +769,7 @@ export function AdminData({
                   value: cell(key, detail[key]),
                 }))}
             />
-            {["fulfillments", "aftersales", "refunds"].includes(kind) && (
+            {isTrade && (
               <TradeLinks orderId={detail.orderId} pages={["orders"]} />
             )}
             {kind === "stores" && typeof detail.storeId === "string" && (

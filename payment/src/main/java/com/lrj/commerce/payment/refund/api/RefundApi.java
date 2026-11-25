@@ -11,6 +11,14 @@ public interface RefundApi {
 			String status, long version) {
 	}
 
+	/** 运营详情沿用本域读权限，归属从原订单获取。 */
+	record Detail(String refundId, String caseId, String orderId, String amount, String currency,
+			String provider, String status, long version, String storeId, java.time.Instant createdAt) {
+	}
+
+	/** 以原编号读取当前事实，写岗位资格独立。 */
+	Detail adminDetail(Actor actor, String id);
+
 	View request(String tenant, String caseId, String orderId, String amount);
 
 	View internalRead(String tenant, String refundId);

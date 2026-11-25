@@ -48,6 +48,15 @@ public class FulfillmentService implements FulfillmentApi, EventHandler {
 		return list(actor, after, limit, ListFilter.none());
 	}
 
+	/** 返回前复核门店许可，越权记录与缺失记录使用同一结果。 */
+	public Detail adminDetail(Actor actor, String id) {
+		Identifiers.require(id);
+		var permit = access.scope(actor, FULFILLMENT_READ);
+		var row = mapper.scopedDetail(actor.tenantId(), permit.filter(), id);
+		EmployeeAccess.requireSame(permit, access.scope(actor, FULFILLMENT_READ));
+		return Inputs.found(row);
+	}
+
 	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
 	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
 		filter.requireNoEnabled();

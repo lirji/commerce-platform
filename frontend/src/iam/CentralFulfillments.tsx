@@ -44,6 +44,7 @@ export default function CentralFulfillments(props: OperationsProps) {
           </Card>
           <OperationsList
             path="/admin/fulfillments"
+            detailPath={(id) => `/admin/fulfillments/${id}`}
             idField="orderId"
             columns={[
               ["orderId", "订单"],
@@ -54,6 +55,7 @@ export default function CentralFulfillments(props: OperationsProps) {
             ]}
             fields={[
               ["orderId", "订单编号"],
+              ["storeId", "实际门店编号"],
               ["status", "履约状态"],
               ["trackingNo", "运单编号"],
               ["provider", "仓配渠道"],

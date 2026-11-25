@@ -220,14 +220,14 @@ public class CentralEmployeeConfiguration {
     /** 新能力按真实封闭路由登记，静态hint不授予目标事实或持久任务来源。 */
     private static EmployeeAccess.Capability extensionCapability(HttpServletRequest r) {
         String path=r.getServletPath(), verb=r.getMethod();
-        if ("GET".equals(verb) && "/v1/admin/fulfillments".equals(path)) return EmployeeAccess.Capability.FULFILLMENT_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/fulfillments(/[A-Za-z0-9_.:-]{1,64})?")) return EmployeeAccess.Capability.FULFILLMENT_READ;
         if ("POST".equals(verb) && path.matches("/v1/admin/fulfillments/[A-Za-z0-9_.:-]{1,64}/ship")) return EmployeeAccess.Capability.FULFILLMENT_SHIP;
         if ("POST".equals(verb) && path.matches("/v1/admin/fulfillments/[A-Za-z0-9_.:-]{1,64}/deliver")) return EmployeeAccess.Capability.FULFILLMENT_DELIVER;
-        if ("GET".equals(verb) && "/v1/admin/aftersales".equals(path)) return EmployeeAccess.Capability.AFTERSALE_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/aftersales(/[A-Za-z0-9_.:-]{1,64})?")) return EmployeeAccess.Capability.AFTERSALE_READ;
         if ("POST".equals(verb) && path.matches("/v1/admin/aftersales/[A-Za-z0-9_.:-]{1,64}/approve")) return EmployeeAccess.Capability.AFTERSALE_APPROVE;
         if ("POST".equals(verb) && path.matches("/v1/admin/aftersales/[A-Za-z0-9_.:-]{1,64}/reject")) return EmployeeAccess.Capability.AFTERSALE_REJECT;
         if ("POST".equals(verb) && path.matches("/v1/admin/aftersales/[A-Za-z0-9_.:-]{1,64}/receive-return")) return EmployeeAccess.Capability.AFTERSALE_RECEIVE_RETURN;
-        if ("GET".equals(verb) && "/v1/admin/refunds".equals(path)) return EmployeeAccess.Capability.REFUND_READ;
+        if ("GET".equals(verb) && path.matches("/v1/admin/refunds(/[A-Za-z0-9_.:-]{1,64})?")) return EmployeeAccess.Capability.REFUND_READ;
         if ("POST".equals(verb) && path.matches("/v1/admin/refunds/[A-Za-z0-9_.:-]{1,64}/reconcile")) return EmployeeAccess.Capability.REFUND_RECONCILE;
         if ("GET".equals(verb) && "/v1/admin/marketing-executions".equals(path)) return EmployeeAccess.Capability.MARKETING_EXECUTION_READ;
         if ("GET".equals(verb) && path.matches("/v1/admin/marketing-executions/[A-Za-z0-9_.:-]{1,64}/[A-Za-z0-9_.:-]{1,64}")) return EmployeeAccess.Capability.MARKETING_EXECUTION_READ;

@@ -48,6 +48,7 @@ export default function CentralAftersales(props: OperationsProps) {
           </Card>
           <OperationsList
             path="/admin/aftersales"
+            detailPath={(id) => `/admin/aftersales/${id}`}
             idField="caseId"
             columns={[
               ["caseId", "申请"],
@@ -60,6 +61,8 @@ export default function CentralAftersales(props: OperationsProps) {
             ]}
             fields={[
               ["caseId", "售后编号"],
+              ["storeId", "实际门店编号"],
+              ["createdAt", "申请时间"],
               ["orderId", "订单编号"],
               ["memberId", "会员编号"],
               ["status", "售后状态"],

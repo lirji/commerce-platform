@@ -43,6 +43,12 @@ public class AftersaleController {
 		return fulfillment.list(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, orderId, blocked));
 	}
 
+	/** 用原订单主键重新读取履约状态，避免用列表快照执行判断。 */
+	@GetMapping("/admin/fulfillments/{id}")
+	public FulfillmentApi.Detail fulfillmentDetail(@AuthenticationPrincipal Actor actor, @PathVariable String id) {
+		return fulfillment.adminDetail(actor, id);
+	}
+
 	/** 隔离WMS发货事实。 */
 	@PostMapping("/admin/fulfillments/{id}/ship")
 	public Object ship(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
@@ -91,6 +97,12 @@ public class AftersaleController {
 		return cases.adminList(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, orderId, null));
 	}
 
+	/** 按售后申请号读取实际商品及金额，沿用原售后读取范围。 */
+	@GetMapping("/admin/aftersales/{id}")
+	public AftersaleApi.Detail aftersaleDetail(@AuthenticationPrincipal Actor actor, @PathVariable String id) {
+		return cases.adminDetail(actor, id);
+	}
+
 	/** 批准申请，已发货必须等待退货。 */
 	@PostMapping("/admin/aftersales/{id}/approve")
 	public Object approve(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
@@ -121,6 +133,12 @@ public class AftersaleController {
 			@RequestParam(required = false) String storeId,
 			@RequestParam(required = false) String orderId) {
 		return refunds.list(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, orderId, null));
+	}
+
+	/** 按退款号读取原承诺，查询不会接触渠道或推动退款状态。 */
+	@GetMapping("/admin/refunds/{id}")
+	public RefundApi.Detail refundDetail(@AuthenticationPrincipal Actor actor, @PathVariable String id) {
+		return refunds.adminDetail(actor, id);
 	}
 
 	/** 核对可信退款渠道。 */

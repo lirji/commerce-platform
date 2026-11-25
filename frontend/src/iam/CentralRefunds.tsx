@@ -30,6 +30,7 @@ export default function CentralRefunds(props: OperationsProps) {
           </Card>
           <OperationsList
             path="/admin/refunds"
+            detailPath={(id) => `/admin/refunds/${id}`}
             idField="refundId"
             columns={[
               ["refundId", "退款"],
@@ -42,6 +43,8 @@ export default function CentralRefunds(props: OperationsProps) {
             ]}
             fields={[
               ["refundId", "退款编号"],
+              ["storeId", "实际门店编号"],
+              ["createdAt", "退款请求时间"],
               ["caseId", "售后编号"],
               ["orderId", "订单编号"],
               ["amount", "退款金额"],

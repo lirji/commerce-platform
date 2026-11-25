@@ -158,6 +158,40 @@ class CentralOrderOperationsMySqlTest {
         assertTrue(http("GET", "/v1/admin/fulfillments?blocked=true&limit=1", "valid", true, null, null).body().contains("2-target"));
     }
 
+    @Test void tradeDetailsReadCurrentOwnerFactsWithoutRevealingOtherStores() throws Exception {
+        order("own", "S1", "PAID");
+        order("outside", "S2", "PAID");
+        fulfillment("own", true);
+        fulfillment("outside", false);
+        aftersale("case-own", "own", true);
+        aftersale("case-outside", "outside", true);
+        jdbc.update("UPDATE aftersales_case SET items_json=JSON_ARRAY(JSON_OBJECT('skuId','SKU1','quantity',2,'refundAmount','0.00','points',0)),version=3 WHERE tenant_id=? AND case_id='case-own'", tenant);
+        jdbc.update("INSERT INTO payment_refund(tenant_id,refund_id,case_id,order_id,amount,currency,provider,status,version) VALUES(?,'refund-own','case-own','own',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED',4),(?, 'refund-outside','case-outside','outside',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED',1)", tenant, tenant);
+
+        var scoped = Map.of("fulfillments", List.of("own", "outside"), "aftersales", List.of("case-own", "case-outside"), "refunds", List.of("refund-own", "refund-outside"));
+        for (var entry : scoped.entrySet()) {
+            var path = "/v1/admin/" + entry.getKey() + "/";
+            var result = http("GET", path + entry.getValue().getFirst(), "valid", true, null, null);
+            assertEquals(200, result.statusCode(), entry.getKey());
+            var record = JsonCodec.read(result.body(), Map.class);
+            assertEquals("own", record.get("orderId"));
+            assertEquals("S1", record.get("storeId"));
+            assertNotNull(record.get("version"));
+            assertFalse(record.containsKey("evidenceJson"));
+            if (!entry.getKey().equals("fulfillments")) assertNotNull(record.get("createdAt"));
+            if (entry.getKey().equals("aftersales")) {
+                assertEquals(3, record.get("version"));
+                assertEquals(2, ((Map<?, ?>) ((List<?>) record.get("items")).getFirst()).get("quantity"));
+                assertFalse(record.containsKey("reason"));
+            }
+            assertEquals(404, http("GET", path + entry.getValue().getLast(), "valid", true, null, null).statusCode());
+            assertEquals(404, http("GET", path + "missing", "valid", true, null, null).statusCode());
+            assertEquals(401, http("GET", path + entry.getValue().getFirst(), "invalid", true, null, null).statusCode());
+        }
+        only(AFTERSALE_APPROVE);
+        assertEquals(403, http("GET", "/v1/admin/aftersales/case-own", "valid", true, null, null).statusCode());
+    }
+
     @Test void fulfillmentIndependentCapabilitiesPreserveOriginalKeyAndOrderLifecycle() {
         order("ship","S1","PAID");only(FULFILLMENT_SHIP);String key=id();var input=new FulfillmentApi.Ship("TRACK-1");
         assertEquals("SHIPPED",fulfillment.ship(actor(FULFILLMENT_SHIP),key,"ship",input).status());

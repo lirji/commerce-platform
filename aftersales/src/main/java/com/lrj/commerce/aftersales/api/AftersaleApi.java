@@ -27,6 +27,14 @@ public interface AftersaleApi {
 			String refundAmount, String refundId, long version, List<Line> items) {
 	}
 
+	/** 运营详情沿用本域读权限，归属从原订单获取。 */
+	record Detail(@com.fasterxml.jackson.annotation.JsonUnwrapped View application, String storeId,
+			java.time.Instant createdAt) {
+	}
+
+	/** 以原编号读取当前事实，写岗位资格独立。 */
+	Detail adminDetail(Actor actor, String id);
+
 	record Completion(String caseId, String orderId, String refundId, boolean fullReturn) {
 	}
 
