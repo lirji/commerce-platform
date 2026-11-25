@@ -578,7 +578,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
     () => setAfter(""),
   );
   const list = useResource<Governed<PageDefinition>[]>(
-      `/admin/ops-pages?after=${after}&limit=50`,
+      `/admin/ops-pages?after=${encodeURIComponent(after)}&${filters.query}`,
     ),
     versions = useResource<Governed<PageDefinition>[]>(
       target ? `/admin/ops-pages/${target}/versions` : null,
@@ -634,7 +634,11 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
             首批
           </Button>
           <Button
-            disabled={list.data?.length !== filters.limit || list.loading}
+            disabled={
+              list.data?.length !== filters.limit ||
+              list.loading ||
+              !!list.error
+            }
             onClick={() => setAfter(list.data?.at(-1)?.content.pageId ?? "")}
           >
             下一批

@@ -272,12 +272,18 @@ export function operationsClient(
       );
     const value: unknown = await response.json();
     let valid = hint ? record(value) && value.allowed === true : true;
-    if (!hint && Array.isArray(value))
+    if (!hint && Array.isArray(value)) {
+      // 路由校验使用归一化后的上限，响应仍须匹配本次请求实际选择的分页大小。
+      const limit =
+        bounded && method === "GET"
+          ? Number(new URLSearchParams(path.split("?")[1]).get("limit"))
+          : 50;
       valid =
-        value.length <= 50 &&
+        value.length <= limit &&
         value.every(
           family === "ops-pages" ? page : family === "runtime" ? record : row,
         );
+    }
     if (method === "POST") {
       const body = record(options.body) ? options.body : {};
       const parts = base.split("/");

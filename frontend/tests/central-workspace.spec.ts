@@ -1,20 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { centralRoutes } from "../src/iam/navigation";
 import { centralNavigationFixture } from "./centralNavigationFixture";
 import { mkdirSync } from "node:fs";
 import { assertButtonSizes, assertCentered } from "./presentation";
 
-// 独立SSO预览只验证壳层与公开DTO，不以夹具证明中央授权或OIDC交换成功。
-test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，窄屏不溢出", async ({
-  page,
-}) => {
-  test.setTimeout(180000);
-  const base = process.env.COMMERCE_CENTRAL_UI_URL;
-  test.skip(!base, "需显式启用独立SSO预览；默认CI不伪装中央登录");
-  const tenant = "11111111-1111-4111-8111-111111111111";
-  const errors: string[] = [];
-  const forbiddenReads: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+async function restoreCentralFixture(page: Page) {
   await page.addInitScript(
     ({ authority, client }) => {
       sessionStorage.setItem(
@@ -34,6 +24,20 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
       client: process.env.COMMERCE_CENTRAL_CLIENT ?? "commerce-ui-contract",
     },
   );
+}
+
+// 独立SSO预览只验证壳层与公开DTO，不以夹具证明中央授权或OIDC交换成功。
+test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，窄屏不溢出", async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需显式启用独立SSO预览；默认CI不伪装中央登录");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const errors: string[] = [];
+  const forbiddenReads: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await restoreCentralFixture(page);
   await page.route("**/v1/**", (route) => {
     const path = new URL(route.request().url()).pathname;
     if (["/v1/me", "/v1/stores", "/v1/runtime-capabilities"].includes(path))
@@ -141,4 +145,93 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
   });
   expect(errors).toEqual([]);
   expect(forbiddenReads).toEqual([]);
+});
+
+test("中央组织入口按本人菜单落地，运营页面按真实查询分页", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需启用独立中央 UI 预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const queries: URLSearchParams[] = [];
+  const ids = Array.from(
+    { length: 105 },
+    (_, index) => `page-${String(index + 1).padStart(3, "0")}`,
+  );
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    expect(route.request().method()).toBe("GET");
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/operations/navigation") {
+      const fixture = centralNavigationFixture(tenant);
+      return route.fulfill({
+        json: {
+          ...fixture,
+          menus: fixture.menus.filter(({ code }) =>
+            ["group.platform", "menu.operations.ops-pages"].includes(code),
+          ),
+        },
+      });
+    }
+    if (url.pathname !== "/v1/admin/ops-pages")
+      return route.fulfill({ json: { allowed: false } });
+    const params = url.searchParams;
+    queries.push(params);
+    const limit = Number(params.get("limit"));
+    const after = params.get("after") ?? "";
+    const data = ids
+      .filter((id) => id > after)
+      .slice(0, limit)
+      .map((pageId) => ({
+        content: {
+          pageId,
+          version: 1,
+          storeId: "store-ui",
+          title: `运营页面 ${pageId}`,
+          sections: [],
+          actions: [],
+        },
+        status: "DRAFT",
+        lockVersion: 1,
+      }));
+    return route.fulfill({ json: data });
+  });
+  await page.goto(`${base}/operations?tenant_id=${tenant}`);
+  await expect(page).toHaveURL(/\/operations\/ops-pages\?tenant_id=/);
+  await page.getByLabel("关键词", { exact: true }).fill("运营页面");
+  await page.getByLabel("状态", { exact: true }).click();
+  await page
+    .locator(".ant-select-item-option-content")
+    .getByText("草稿", { exact: true })
+    .click();
+  await page.getByLabel("每页", { exact: true }).click();
+  await page
+    .locator(".ant-select-item-option-content")
+    .getByText("100条", { exact: true })
+    .click();
+  await page.getByRole("button", { name: "查询", exact: true }).click();
+  await expect(
+    page.getByText("运营页面 page-100", { exact: true }),
+  ).toBeVisible();
+  expect(Object.fromEntries(queries.at(-1) ?? [])).toEqual({
+    after: "",
+    q: "运营页面",
+    status: "DRAFT",
+    limit: "100",
+  });
+  await page.getByRole("button", { name: "下一批", exact: true }).click();
+  await expect(
+    page.getByText("运营页面 page-101", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByText("运营页面 page-101", { exact: true }),
+  ).toBeVisible();
+  expect(queries.at(-1)?.get("after")).toBe("page-100");
+  await page.getByRole("button", { name: "重置筛选", exact: true }).click();
+  await expect(
+    page.getByText("运营页面 page-001", { exact: true }),
+  ).toBeVisible();
+  expect(Object.fromEntries(queries.at(-1) ?? [])).toEqual({
+    after: "",
+    limit: "50",
+  });
 });
