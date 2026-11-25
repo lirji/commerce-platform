@@ -21,6 +21,15 @@ commerce:
       marketing-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_MARKETING_TENANT:}
       commerce-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_COMMERCE_TENANT:}
       bearer-token: ${COMMERCE_MARKETING_MEMBER_PROFILE_BEARER_TOKEN:}
+  checkout-pilot:
+    enabled: ${COMMERCE_CHECKOUT_PILOT_ENABLED:false}
+    scope-version: ${COMMERCE_CHECKOUT_PILOT_SCOPE_VERSION:}
+    trade-tenant: ${COMMERCE_CHECKOUT_PILOT_TRADE_TENANT:}
+    commerce-tenant: ${COMMERCE_CHECKOUT_PILOT_COMMERCE_TENANT:}
+    merchant-id: ${COMMERCE_CHECKOUT_PILOT_MERCHANT_ID:}
+    store-id: ${COMMERCE_CHECKOUT_PILOT_STORE_ID:}
+    sku-id: ${COMMERCE_CHECKOUT_PILOT_SKU_ID:}
+    bearer-token: ${COMMERCE_CHECKOUT_PILOT_BEARER_TOKEN:}
   sandbox-enabled: ${COMMERCE_SANDBOX_ENABLED:false}
   workers-enabled: ${COMMERCE_WORKERS_ENABLED:false}
   # 后台车道共享调度线程数（1..6）；每线程同时最多占用一个数据库连接，需给请求线程保留连接池余量。
