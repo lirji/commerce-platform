@@ -478,6 +478,9 @@ export function App() {
     sandboxEnabled: false,
     workersEnabled: false,
   };
+  const sandboxBadge = !platform && caps.sandboxEnabled && admin && (
+    <span className="environment-badge">本地沙箱</span>
+  );
   const menu = platform
     ? [
         {
@@ -666,31 +669,25 @@ export function App() {
               <span>日常好物</span>
             </div>
           )}
-          {!platform &&
-            (page !== "orders" || (caps.sandboxEnabled && admin)) && (
-              <Space className="store-context">
-                {page !== "orders" && (
-                  <>
-                    {admin && <span className="context-label">店铺</span>}
-                    <Select
-                      aria-label="当前店铺"
-                      value={store || undefined}
-                      placeholder={admin ? "选择店铺" : "切换店铺"}
-                      style={{ width: compact ? 170 : admin ? 210 : 200 }}
-                      options={stores.data?.map((s) => ({
-                        value: s.storeId,
-                        label: s.name,
-                      }))}
-                      onChange={(v) => navigate(page, v)}
-                      loading={stores.loading}
-                    />
-                  </>
-                )}
-                {caps.sandboxEnabled && admin && (
-                  <span className="environment-badge">本地沙箱</span>
-                )}
-              </Space>
-            )}
+          {!platform && page !== "orders" && (
+            <Space className="store-context">
+              {admin && <span className="context-label">店铺</span>}
+              <Select
+                aria-label="当前店铺"
+                value={store || undefined}
+                placeholder={admin ? "选择店铺" : "切换店铺"}
+                style={{ width: compact ? 170 : admin ? 210 : 200 }}
+                options={stores.data?.map((s) => ({
+                  value: s.storeId,
+                  label: s.name,
+                }))}
+                onChange={(v) => navigate(page, v)}
+                loading={stores.loading}
+              />
+              {sandboxBadge}
+            </Space>
+          )}
+          {page === "orders" && sandboxBadge}
           {platform && (
             <span className="context-label">平台运维 · 只读聚合</span>
           )}
