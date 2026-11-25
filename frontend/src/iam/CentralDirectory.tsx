@@ -13,7 +13,7 @@ import {
   Tabs,
   Typography,
 } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ApiError,
   RequestContext,
@@ -37,6 +37,7 @@ const PAGE_SIZE = 50;
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const denied = (error?: Error) =>
   error instanceof ApiError && error.status === HTTP.FORBIDDEN;
+const directoryQuery = (kind: Kind) => `DirectorySection.${kind}`;
 
 /** 白名单客户端隔离中央凭据；列表、提示和创建都由服务端独立核验。 */
 function directoryClient(
@@ -95,6 +96,24 @@ export function CentralDirectory({
     "workspaceTab",
     Kind.MERCHANT,
   );
+  useLayoutEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const previousKey = "DirectorySection.query";
+    const previous = params.get(previousKey);
+    if (previous === null) return;
+    // 旧链接的共享条件只恢复到链接打开的目录，另一个目录从自身条件开始。
+    const kind =
+      params.get("workspaceTab") === Kind.STORE ? Kind.STORE : Kind.MERCHANT;
+    const key = `${directoryQuery(kind)}.query`;
+    if (!params.has(key)) params.set(key, previous);
+    params.delete(previousKey);
+    history.replaceState(
+      history.state,
+      "",
+      `${location.pathname}?${params}${location.hash}`,
+    );
+    dispatchEvent(new Event("popstate"));
+  }, []);
   const [expired, setExpired] = useState(false);
   const dirty = useRef(new Set<Kind>());
   const { modal } = App.useApp();
@@ -179,11 +198,8 @@ function DirectorySection({
 }) {
   const merchant = kind === Kind.MERCHANT,
     label = merchant ? "商家" : "门店";
-  const [after, setAfter] = useCursorState(
-    `DirectorySection.${kind}.after`,
-    "",
-  );
-  const filters = useListFilters("DirectorySection", `/admin/${kind}`, () =>
+  const [after, setAfter] = useCursorState(`${directoryQuery(kind)}.after`, "");
+  const filters = useListFilters(directoryQuery(kind), `/admin/${kind}`, () =>
     setAfter(""),
   );
   const rows = useResource<Entry[]>(

@@ -235,3 +235,49 @@ test("中央组织入口按本人菜单落地，运营页面按真实查询分�
     limit: "50",
   });
 });
+
+test("中央商家与门店目录分别恢复查询，旧书签只恢复到原目录", async ({
+  page,
+}) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需启用独立中央 UI 预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const keyword = new Map<string, string | null>();
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    expect(route.request().method()).toBe("GET");
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/operations/navigation")
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (["/v1/admin/merchants", "/v1/admin/stores"].includes(url.pathname)) {
+      keyword.set(url.pathname, url.searchParams.get("q"));
+      return route.fulfill({ json: [] });
+    }
+    return route.fulfill({ json: { allowed: false } });
+  });
+  const params = new URLSearchParams({
+    tenant_id: tenant,
+    workspaceTab: "stores",
+  });
+  params.set("DirectorySection.query", JSON.stringify({ q: "旧门店" }));
+  await page.goto(`${base}/operations/directory?${params}`);
+  const panel = page.getByRole("tabpanel");
+  const input = panel.getByLabel("关键词", { exact: true });
+  await expect(input).toHaveValue("旧门店");
+  await expect.poll(() => keyword.get("/v1/admin/stores")).toBe("旧门店");
+  expect(new URL(page.url()).searchParams.has("DirectorySection.query")).toBe(
+    false,
+  );
+  await page.getByRole("tab", { name: "商家目录", exact: true }).click();
+  await expect(input).toHaveValue("");
+  await input.fill("新商家");
+  await panel.getByRole("button", { name: "查询", exact: true }).click();
+  await expect.poll(() => keyword.get("/v1/admin/merchants")).toBe("新商家");
+  await page.getByRole("tab", { name: "门店目录", exact: true }).click();
+  await page.reload();
+  await expect(input).toHaveValue("旧门店");
+  await panel.getByRole("button", { name: "重置筛选", exact: true }).click();
+  await expect.poll(() => keyword.get("/v1/admin/stores")).toBe(null);
+  await page.getByRole("tab", { name: "商家目录", exact: true }).click();
+  await expect(input).toHaveValue("新商家");
+});
