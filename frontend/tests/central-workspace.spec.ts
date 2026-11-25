@@ -26,6 +26,371 @@ async function restoreCentralFixture(page: Page) {
   );
 }
 
+test("售后详情读取当前原单，显示实际门店和商品行", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const past = {
+    caseId: "CASE-1",
+    orderId: "ORDER-1",
+    memberId: "MEMBER-1",
+    status: "REQUESTED",
+    returnRequired: true,
+    refundAmount: "8.00",
+    version: 1,
+    items: [],
+  };
+  const current = {
+    ...past,
+    storeId: "STORE-1",
+    createdAt: "2026-10-01T00:00:00Z",
+    status: "WAIT_RETURN",
+    version: 2,
+    items: [{ skuId: "SKU-REAL", quantity: 2, refundAmount: "8.00" }],
+  };
+  let deny = false;
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname === "/v1/operations/navigation")
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (pathname === "/v1/admin/aftersales")
+      return route.fulfill({ json: [past] });
+    if (pathname === "/v1/admin/aftersales/CASE-1")
+      return deny
+        ? route.fulfill({ status: 403, json: {} })
+        : route.fulfill({ json: current });
+    return route.fulfill({ status: 403, json: {} });
+  });
+  await page.goto(`${base}/operations/aftersales?tenant_id=${tenant}`);
+  const detail = page.getByRole("dialog", { name: "业务详情" });
+  await page.getByRole("button", { name: "查看详情", exact: true }).click();
+  await expect(detail.getByText("待退货入库", { exact: true })).toBeVisible();
+  await expect(detail.getByText("STORE-1", { exact: true })).toBeVisible();
+  await expect(detail.getByRole("cell", { name: "SKU-REAL" })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    detail.getByRole("columnheader", { name: "退款金额" }),
+  ).toBeVisible();
+  await expect(detail.getByRole("columnheader", { name: "单价" })).toHaveCount(
+    0,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/current-aftersale-390.png`,
+    fullPage: false,
+    animations: "disabled",
+  });
+  await detail.getByRole("button", { name: "返回列表" }).click();
+  deny = true;
+  await page.getByRole("button", { name: "查看详情", exact: true }).click();
+  await expect(detail.getByText(/没有.*权限/).first()).toBeVisible();
+  await expect(detail.getByText("SKU-REAL", { exact: true })).toHaveCount(0);
+});
+
+test("停止任务按原类型和编号查恢复审计并重置游标", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const audit = {
+    id: 3,
+    workType: "order.expiry",
+    workId: "ORDER-STOP",
+    action: "RETRY",
+    result: "APPLIED",
+    reason: "原失败已核对",
+    createdAt: "2026-10-01T00:00:00Z",
+  };
+  const calls: URL[] = [];
+  const writes: string[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    calls.push(url);
+    if (route.request().method() !== "GET") writes.push(url.pathname);
+    if (url.pathname === "/v1/operations/navigation")
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (url.pathname.endsWith("/work-types"))
+      return route.fulfill({
+        json: [{ workType: "order.expiry", actions: ["RETRY"] }],
+      });
+    if (url.pathname.endsWith("/stopped"))
+      return route.fulfill({
+        json: [
+          {
+            workId: audit.workId,
+            workType: audit.workType,
+            state: "FAILED",
+            attempts: 1,
+          },
+        ],
+      });
+    if (url.pathname.endsWith("/recoveries"))
+      return route.fulfill({
+        json: url.searchParams.get("workId") === audit.workId ? [audit] : [],
+      });
+    return route.fulfill({
+      json: url.pathname.endsWith("-access") ? { allowed: false } : [],
+    });
+  });
+  await page.goto(
+    `${base}/operations/runtime?tenant_id=${tenant}&CentralRuntime.historyAfter=41`,
+  );
+  await page.getByRole("combobox", { name: "恢复工作类型" }).click();
+  await page.getByText(/订单到期关闭.*重试/).click();
+  await page
+    .getByRole("button", { name: "查看原工作审计", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "恢复审计", exact: true }),
+  ).toBeFocused();
+  await expect(page.getByText("原失败已核对", { exact: true })).toBeVisible();
+  const target = calls
+    .filter((url) => url.pathname.endsWith("/recoveries"))
+    .at(-1)!;
+  expect(Object.fromEntries(target.searchParams)).toEqual({
+    after: "0",
+    limit: "50",
+    workType: "order.expiry",
+    workId: "ORDER-STOP",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/original-work-audit-390.png`,
+    animations: "disabled",
+  });
+  await page.reload();
+  await expect(page.getByText("原失败已核对", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "清除原工作筛选" }).click();
+  await expect(page.getByText("原失败已核对", { exact: true })).toHaveCount(0);
+  calls.length = 0;
+  await page.goto(
+    `${base}/operations/runtime?tenant_id=${tenant}&CentralRuntime.work=invalid`,
+  );
+  await expect(
+    page.getByText("工作类型或编号无效", { exact: true }),
+  ).toBeVisible();
+  expect(calls.some((url) => url.pathname.endsWith("/recoveries"))).toBe(false);
+  expect(writes).toEqual([]);
+});
+
+test("交易列和状态存档按浏览器范围恢复且保留当前精确归属", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const otherTenant = "22222222-2222-4222-8222-222222222222";
+  const calls: URL[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    calls.push(url);
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({
+        json: centralNavigationFixture(
+          route.request().headers()["x-tenant-id"],
+        ),
+      });
+    return route.fulfill({
+      json: url.pathname.endsWith("-access") ? { allowed: false } : [],
+    });
+  });
+  const open = (id: string, filter: object, after = "") => {
+    const query = new URLSearchParams({
+      tenant_id: id,
+      "OperationsList./admin/fulfillments.query": JSON.stringify(filter),
+      "OperationsWorkspace.after": after,
+    });
+    return page.goto(`${base}/operations/fulfillments?${query}`);
+  };
+  await open(tenant, {
+    status: "READY",
+    blocked: true,
+    storeId: "STORE-A",
+    orderId: "ORDER-A",
+    limit: 25,
+  });
+  await page.getByRole("button", { name: "保存状态筛选" }).click();
+  await page.getByRole("button", { name: "表格列" }).click();
+  await page.getByRole("checkbox", { name: "仓配渠道", exact: true }).uncheck();
+  await expect(
+    page.getByRole("columnheader", { name: "仓配渠道", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("columnheader", { name: "订单", exact: true }),
+  ).toBeVisible();
+  await open(tenant, { storeId: "STORE-B", orderId: "ORDER-B" }, "OLD-CURSOR");
+  await page.getByRole("button", { name: "应用已保存筛选" }).click();
+  await expect
+    .poll(() =>
+      Object.fromEntries(
+        calls.filter((url) => url.pathname === "/v1/admin/fulfillments").at(-1)!
+          .searchParams,
+      ),
+    )
+    .toEqual({
+      after: "",
+      limit: "25",
+      status: "READY",
+      blocked: "true",
+      storeId: "STORE-B",
+      orderId: "ORDER-B",
+    });
+  await expect(
+    page.getByRole("columnheader", { name: "仓配渠道", exact: true }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(() =>
+      Object.values(localStorage).some((value) =>
+        /STORE-A|ORDER-A|STORE-B|ORDER-B/.test(value),
+      ),
+    ),
+  ).toBe(false);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/trade-preferences-390.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+  await open(otherTenant, {});
+  await expect(
+    page.getByRole("button", { name: "保存状态筛选" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "应用已保存筛选" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("columnheader", { name: "仓配渠道", exact: true }),
+  ).toBeVisible();
+});
+
+test("会员档案用实际会员编号打开独立授权行为读取", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const member = {
+    memberId: "MEMBER-ORIGINAL",
+    actorId: "fixture-customer",
+    displayName: "演示会员",
+    status: "ACTIVE",
+    memberLevel: "BASIC",
+    version: 2,
+  };
+  const calls: { method: string; path: string }[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    calls.push({ path, method: route.request().method() });
+    if (path.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (path === "/v1/admin/members") return route.fulfill({ json: [member] });
+    if (path === "/v1/admin/member-behavior/MEMBER-ORIGINAL")
+      return route.fulfill({ status: 403, json: {} });
+    return route.fulfill({
+      json: path.endsWith("-access") ? { allowed: false } : [],
+    });
+  });
+  await page.goto(
+    `${base}/operations/members?tenant_id=${tenant}&environment=test`,
+  );
+  await page.getByRole("button", { name: "查看变更记录", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/member-behavior-link-390.png`,
+    animations: "disabled",
+  });
+  await page.getByRole("link", { name: "查看会员行为", exact: true }).click();
+  await expect(page.getByLabel("查询会员编号", { exact: true })).toHaveValue(
+    member.memberId,
+  );
+  await expect(page.getByText(/没有.*权限/).first()).toBeVisible();
+  await expect
+    .poll(() =>
+      calls.some(
+        (call) =>
+          call.path === "/v1/admin/member-behavior/MEMBER-ORIGINAL/events",
+      ),
+    )
+    .toBe(true);
+  expect(calls.every((call) => call.method === "GET")).toBe(true);
+  expect(new URL(page.url()).searchParams.get("environment")).toBe("test");
+});
+
+test("营销执行用精确订单筛选并按原活动读取权益与事件事实", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const row = {
+    orderId: "ORDER-EXACT",
+    campaignId: "ACTIVE-1",
+    campaignVersion: 2,
+    storeId: "STORE-A",
+    memberId: "MEMBER-1",
+    discountAmount: "8.00",
+    status: "GRANT_REQUESTED",
+    lockVersion: 1,
+  };
+  const calls: URL[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    calls.push(url);
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (url.pathname === "/v1/admin/marketing-executions")
+      return route.fulfill({
+        json: url.searchParams.get("orderId") === row.orderId ? [row] : [],
+      });
+    if (url.pathname === "/v1/admin/marketing-executions/ORDER-EXACT/ACTIVE-1")
+      return route.fulfill({
+        json: {
+          ...row,
+          status: "GRANT_FAILED",
+          grantStatus: "RESERVED",
+          eventId: "EV-1",
+          eventStatus: "ISOLATED",
+          failureClass: "TRANSIENT",
+          evaluatedAt: "2026-10-01T00:00:00Z",
+          updatedAt: "2026-10-01T00:01:00Z",
+        },
+      });
+    return route.fulfill({
+      json: url.pathname.endsWith("-access") ? { allowed: false } : [],
+    });
+  });
+  await page.goto(
+    `${base}/operations/marketing-executions?tenant_id=${tenant}`,
+  );
+  await page.getByLabel("精确订单编号", { exact: true }).fill(row.orderId);
+  await page.getByRole("button", { name: "查询", exact: true }).click();
+  await page.getByRole("button", { name: row.orderId, exact: true }).click();
+  const fact = page
+    .locator(".ant-card")
+    .filter({ has: page.getByText("读取指定订单活动参与", { exact: true }) });
+  await expect(fact.getByText("权益实际状态", { exact: true })).toBeVisible();
+  await expect(fact.getByText("权益发放失败", { exact: true })).toBeVisible();
+  await expect(fact.getByText("EV-1", { exact: true })).toBeVisible();
+  await expect(fact.getByRole("link", { name: "查看原订单" })).toBeVisible();
+  expect(
+    calls.some(
+      (url) =>
+        url.pathname === "/v1/admin/marketing-executions" &&
+        url.searchParams.get("orderId") === row.orderId &&
+        url.searchParams.get("after") === "",
+    ),
+  ).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fact.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/marketing-execution-390.png`,
+    animations: "disabled",
+  });
+});
+
 test("原订单下钻只打开当前导航允许的精确读取", async ({ page }) => {
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需独立中央预览");

@@ -2,6 +2,8 @@ import { RecordFields } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { Pager, Status } from "../shared/ui";
 import { useCursorState } from "../shared/routeState";
+import { TradeLinks } from "../shared/workspaceLinks";
+import { OperationDetails } from "./OperationsWorkspace";
 import {
   Alert,
   App,
@@ -116,10 +118,27 @@ type Execution = {
   status: string;
   discountAmount: string;
   grantStatus: string | null;
+  eventId: string | null;
   eventStatus: string | null;
   failureClass: string | null;
+  evaluatedAt: string;
+  updatedAt: string;
   lockVersion: number;
 };
+const executionFields: readonly [string, string][] = [
+  ["orderId", "原订单编号"],
+  ["storeId", "门店编号"],
+  ["campaignId", "活动编号"],
+  ["campaignVersion", "固定活动版本"],
+  ["discountAmount", "成交优惠"],
+  ["status", "参与状态"],
+  ["grantStatus", "权益实际状态"],
+  ["eventId", "原事件编号"],
+  ["eventStatus", "事件实际状态"],
+  ["failureClass", "失败分类"],
+  ["evaluatedAt", "资格判定时间"],
+  ["updatedAt", "参与记录更新时间"],
+];
 type Row = Record<string, unknown>;
 const titles: Record<Area, string> = {
   definitions: "旅程定义",
@@ -252,6 +271,12 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
       ? `/admin/marketing-executions/${executionTarget.order}/${executionTarget.campaign}`
       : null,
   );
+  const execution =
+    executionDetail.data &&
+    executionDetail.data.orderId === executionTarget?.order &&
+    executionDetail.data.campaignId === executionTarget?.campaign
+      ? executionDetail.data
+      : undefined;
   const query = range
     ? `storeId=${encodeURIComponent(range.store)}&from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}&after=${encodeURIComponent(after)}&limit=50`
     : "";
@@ -269,7 +294,9 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
         ? "/admin/journey-instances"
         : area === "scans"
           ? "/admin/journey-scans"
-          : "",
+          : area === "executions"
+            ? "/admin/marketing-executions"
+            : "",
     () => setAfter(""),
   );
   const listPath =
@@ -649,12 +676,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                   render: (value: string) => <Status value={value} />,
                 },
                 { title: "成交优惠", dataIndex: "discountAmount" },
-                {
-                  title: "权益真实状态",
-                  dataIndex: "grantStatus",
-                  render: (value: string) => <Status value={value} />,
-                },
-                { title: "失败分类", dataIndex: "failureClass" },
+                { title: "门店", dataIndex: "storeId" },
               ]
             : effectFields[series].map(([key, title, format]) => ({
                 title,
@@ -1154,10 +1176,20 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
             <Button htmlType="submit">读取执行详情</Button>
           </Form>
           <ErrorNotice
-            error={executionDetail.error}
+            error={
+              executionDetail.error ??
+              (executionDetail.data && !execution
+                ? new Error("返回结果与当前订单及活动不一致")
+                : undefined)
+            }
             onRetry={executionDetail.refresh}
           />
-          {executionDetail.data && <JsonResult value={executionDetail.data} />}
+          {execution && (
+            <Space orientation="vertical" style={{ width: "100%" }}>
+              <TradeLinks orderId={execution.orderId} pages={["orders"]} />
+              <OperationDetails row={execution} fields={executionFields} />
+            </Space>
+          )}
         </Card>
       )}
       <Modal

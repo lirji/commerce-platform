@@ -4,6 +4,7 @@ import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
 import com.lrj.commerce.campaign.asset.api.MarketingAssets;
 import com.lrj.commerce.marketing.api.DecisionModels;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import java.time.Instant;
 import java.util.List;
 
@@ -32,6 +33,11 @@ public interface CampaignExecutionApi {
 
 	View find(Actor actor, String orderId, String campaignId);
 
-	List<View> list(Actor actor, String afterOrder, int limit);
+	default List<View> list(Actor actor, String afterOrder, int limit) {
+		return list(actor, afterOrder, limit, ListFilter.none());
+	}
+
+	/** 原订单号精确匹配，关键词只在原租户业务号内查询。 */
+	List<View> list(Actor actor, String afterOrder, int limit, ListFilter filter);
 
 }

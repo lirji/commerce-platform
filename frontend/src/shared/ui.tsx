@@ -89,6 +89,11 @@ const labels: Record<string, string> = {
   USED: "已使用",
   EXPIRED: "已过期",
   RESERVED: "已预留",
+  APPLIED: "已应用",
+  GRANT_REQUESTED: "已请求发放",
+  GRANTED: "已发放",
+  GRANT_FAILED: "权益发放失败",
+  RELEASED: "已释放",
   CONSUMED: "已核销",
   REVOKED: "已冲正",
   COMPENSATION_REQUIRED: "待补偿",
@@ -110,13 +115,20 @@ export function Status({ value }: { value?: string }) {
     "COMPLETED",
     "SUCCEEDED",
     "AVAILABLE",
+    "GRANTED",
     "APPROVED",
     "PUBLISHED",
     "ACTIVE",
     "DELIVERED",
   ].includes(v)
     ? "ok"
-    : ["ISOLATED", "COMPENSATION_REQUIRED", "REJECTED", "TIMED_OUT"].includes(v)
+    : [
+          "ISOLATED",
+          "COMPENSATION_REQUIRED",
+          "REJECTED",
+          "TIMED_OUT",
+          "GRANT_FAILED",
+        ].includes(v)
       ? "error"
       : ["UNKNOWN", "CLOSING", "WAIT_RETURN", "EXPIRED"].includes(v)
         ? "warn"
@@ -127,6 +139,7 @@ export function Status({ value }: { value?: string }) {
               "PAYMENT_IN_PROGRESS",
               "HELD",
               "RESERVED",
+              "GRANT_REQUESTED",
               "REQUESTED",
               "PENDING",
             ].includes(v)
@@ -415,6 +428,7 @@ const timeKeys = new Set([
   "deadline",
   "dueAt",
   "effectiveFrom",
+  "evaluatedAt",
   "expiresAt",
   "generatedAt",
   "startedAt",

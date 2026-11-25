@@ -1908,6 +1908,13 @@ class PersistedCommerceTest {
 		assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM marketing_execution WHERE tenant_id=?", Integer.class,
 				tenant));
 		assertEquals(1, call("GET", "/v1/admin/marketing-executions", admin, null, null).body().size());
+		var orderId = order.path("orderId").asString();
+		var exact = "/v1/admin/marketing-executions?orderId=" + orderId;
+		assertEquals(orderId, call("GET", exact + "&q=benefit&limit=1", admin, null, null).body().get(0).path("orderId").asString());
+		assertEquals(0, call("GET", "/v1/admin/marketing-executions?orderId=" + orderId.substring(0, 8), admin, null, null).body().size());
+		assertEquals(0, call("GET", exact + "&after=" + orderId, admin, null, null).body().size());
+		assertEquals(0, call("GET", exact, foreignAdmin, null, null).body().size());
+		assertEquals(403, call("GET", exact, member, null, null).status());
 		payOrder(order);
 		assertEquals("GRANT_REQUESTED", execution(order, "benefit-campaign").path("status").asString());
 		pump();

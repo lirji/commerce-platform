@@ -134,6 +134,10 @@ const specs: Record<string, FilterSpec> = {
       "TIMED_OUT",
     ],
   },
+  "/admin/marketing-executions": {
+    hint: "订单编号或活动编号",
+    exact: ["orderId"],
+  },
   "/admin/journey-scans": {
     hint: "旅程编号",
     states: ["RUNNING", "IDLE", "ISOLATED"],

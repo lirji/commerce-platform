@@ -2,6 +2,7 @@ package com.lrj.commerce.app.http.marketing.execution;
 
 import com.lrj.commerce.campaign.execution.api.CampaignExecutionApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,8 +23,9 @@ public class CampaignExecutionController {
 
 	@GetMapping
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit) {
-		return executions.list(actor, after, limit);
+			@RequestParam(defaultValue = "50") int limit, @RequestParam(required = false) String orderId,
+			@RequestParam(required = false) String q) {
+		return executions.list(actor, after, limit, ListFilter.trade(q, null, null, null, null, orderId, null));
 	}
 
 	@GetMapping("/{orderId}/{campaignId}")

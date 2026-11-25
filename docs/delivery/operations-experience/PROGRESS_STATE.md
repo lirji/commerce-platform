@@ -13,12 +13,19 @@
 | S7 商品与营销 | VERIFIED | `d8e5f08`，41 项实库与调度测试通过，商品和营销界面已构建 |
 | S8 跨域追踪 | VERIFIED | `0069e73`，交易、目录、会员、预算、快照及恢复按原编号或版本进入目标域。独立读取和撤权边界通过本地回归 |
 | S9 异常工作区与治理 | LOCAL_VERIFIED | 四类门店待办已在 Docker 验证空队列和同范围明细。隔离库 10 万订单验证满批与分页。正式岗位、渠道、容量与治理仍有下列验收条件 |
+| S10 交易实时详情 | VERIFIED | 10 项实库测试及浏览器当前版本、撤权验证通过 |
+| S11 原任务恢复审计 | VERIFIED | 浏览器验证工作类型、编号、游标重置和键盘焦点 |
+| S12 交易列表偏好 | VERIFIED | 浏览器验证可选列、组织隔离及保留原精确条件 |
+| S13 会员行为下钻 | VERIFIED | 会员档案按实际编号发起行为 GET，403 遵守独立权限 |
+| S14 营销执行定位 | VERIFIED | 实库验证原订单号、跨租户和会员拒绝，浏览器以订单及活动键读取权威详情 |
 
 既有本机 Docker 预览 `127.0.0.1:8602` 已更新到应用提交 `c1f94c4`。容器为 `commerce-platform-profile-app-1`，Flyway V73 已应用，现有营销画像汇总 GET 返回 200。沿用原 Compose 环境、网络及地址密钥配置，仅切换应用镜像，保留旧镜像。部署和容量证据在 `.local/operations-experience-queues/deployment/`。
 
 首批已通过 78 套件的 Maven 校验（562 项中 557 通过、5 条按既有条件跳过）、打包浏览器回归（24 通过）及只读实际数据探测。Git 交付基于这些变更和证据，精确提交与 CI 回执放入本地证据目录。验证细节见 [验证记录](TEST_RESULT.md)。
 
 续批证据在 `.local/operations-experience-queues/`。全量 Maven 与浏览器回归通过，精确提交的 Git 和 CI 回执保存在该目录。验证细节见 [续批结果](TEST_RESULT.md#续批验证)。
+
+用户已授权继续执行审计改进计划。当前基线 `472c3d7`，分支 `feat/operations-experience-followups`，本地证据 `.local/operations-experience-followups/`。S10–S14 的验证见 [后续改进](TEST_RESULT.md#后续改进验证)。按异常分类筛选营销执行取决于事件权威来源的有界聚合契约。名单脱敏与配置复制仍依赖原治理规则。
 
 ## 正式验收条件
 

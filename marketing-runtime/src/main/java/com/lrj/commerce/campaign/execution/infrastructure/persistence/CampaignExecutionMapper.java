@@ -22,7 +22,9 @@ public interface CampaignExecutionMapper {
 
 	List<Row> byOrder(@Param("tenant") String tenant, @Param("order") String order);
 
-	List<Row> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
+	/** 主键查询与允许的字面关键词在游标前共同限制本租户读取。 */
+	List<Row> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit,
+			@Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
 
 	int paid(@Param("tenant") String tenant, @Param("order") String order, @Param("campaign") String campaign);
 

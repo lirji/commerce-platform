@@ -13,6 +13,7 @@ import com.lrj.commerce.kernel.Money;
 import com.lrj.commerce.marketing.api.DecisionModels;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.access.EmployeeAccess;
 import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.MARKETING_EXECUTION_READ;
 import com.lrj.commerce.runtime.api.validation.Inputs;
@@ -159,10 +160,10 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 
 	/** 列表只查询本租户审计表，避免逐行加载权益和事件导致N+1。 */
 	@Override
-	public List<View> list(Actor actor, String afterOrder, int limit) {
+	public List<View> list(Actor actor, String afterOrder, int limit, ListFilter filter) {
 		var permit=access.scope(actor,MARKETING_EXECUTION_READ);
 		Inputs.page(afterOrder, limit);
-		var result=executions.list(actor.tenantId(), afterOrder, limit)
+		var result=executions.list(actor.tenantId(), afterOrder, limit, filter)
 			.stream()
 			.map(row -> view(row, actor.tenantId(), false))
 			.toList();
