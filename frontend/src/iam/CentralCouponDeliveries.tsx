@@ -37,6 +37,7 @@ import {
   isDeliveryControl,
   type DeliveryAction,
   type DeliveryCreate,
+  type DeliveryPreview,
   type DeliveryView,
   type DeliveryRecipient,
   type DeliveryControl,
@@ -617,6 +618,8 @@ function Operation({
     { modal } = App.useApp();
   const [open, setOpen] = useState(false),
     [inputError, setInputError] = useState<Error>();
+  const [preflight, setPreflight] = useState<DeliveryPreview>();
+  const [checking, setChecking] = useState(false);
   const edited = useRef(false);
   const command = useDeliveryCommand(client, (value) => {
     edited.current = value;
@@ -646,7 +649,7 @@ function Operation({
     access.refresh();
   };
   async function close() {
-    if (command.busy) return;
+    if (command.busy || checking) return;
     if (command.frozen) {
       if (
         await modal.confirm({
@@ -674,27 +677,58 @@ function Operation({
     edited.current = false;
     dirty(action, false);
     setInputError(undefined);
+    setPreflight(undefined);
     setOpen(false);
   }
+  function createInput(value: Fields) {
+    const body = {
+      batchId: value.batchId,
+      storeId: value.storeId,
+      name: value.name?.trim(),
+      definitionId: value.definitionId,
+      definitionVersion: value.definitionVersion,
+      audience: value.audience,
+      deadline: new Date(value.deadline ?? "").toISOString(),
+      minIntervalHours: value.minIntervalHours,
+    };
+    if (!isDeliveryCreate(body))
+      throw new Error("请填写有效的固定来源与发放条件");
+    return body;
+  }
+  async function checkSources() {
+    if (!allowed || checking || command.busy || command.frozen) return;
+    let values: Fields;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+    setChecking(true);
+    setPreflight(undefined);
+    setInputError(undefined);
+    try {
+      const result = await client<DeliveryPreview>(
+        "/admin/coupon-deliveries/preview",
+        {
+          method: "POST",
+          body: createInput(values),
+        },
+      );
+      setPreflight(result);
+    } catch (failure) {
+      setInputError(failure as Error);
+    } finally {
+      setChecking(false);
+    }
+  }
   async function submit(value: Fields) {
-    if (!allowed || command.busy) return;
+    if (!allowed || command.busy || checking) return;
     setInputError(undefined);
     let path: string, body: unknown;
     try {
       if (action === "create") {
         path = "/admin/coupon-deliveries";
-        body = {
-          batchId: value.batchId,
-          storeId: value.storeId,
-          name: value.name?.trim(),
-          definitionId: value.definitionId,
-          definitionVersion: value.definitionVersion,
-          audience: value.audience,
-          deadline: new Date(value.deadline ?? "").toISOString(),
-          minIntervalHours: value.minIntervalHours,
-        };
-        if (!isDeliveryCreate(body))
-          throw new Error("请填写有效的固定来源与发放条件");
+        body = createInput(value);
       } else {
         if (
           !deliveryIdentifier.test(value.batchId ?? "") ||
@@ -719,6 +753,7 @@ function Operation({
     if (await command.run(path, body, action)) {
       setOpen(false);
       form.resetFields();
+      setPreflight(undefined);
       changed();
       access.refresh();
     }
@@ -777,10 +812,20 @@ function Operation({
             <Button disabled={command.busy || access.loading} onClick={recheck}>
               重新核验权限
             </Button>
+            {action === "create" && allowed && !command.frozen && (
+              <Button
+                loading={checking}
+                disabled={command.busy}
+                onClick={() => void checkSources()}
+              >
+                预检固定来源
+              </Button>
+            )}
             {allowed && (
               <Button
                 type="primary"
                 loading={command.busy}
+                disabled={checking}
                 onClick={() =>
                   void (command.frozen
                     ? submit(form.getFieldsValue(true))
@@ -795,6 +840,14 @@ function Operation({
       >
         <ErrorNotice error={inputError ?? command.error} />
         <Unknown frozen={command.frozen} />
+        {preflight && (
+          <Alert
+            type="success"
+            showIcon
+            title="固定来源预检通过"
+            description={`门店 ${preflight.storeId}，券定义 ${preflight.definitionId} 第 ${preflight.definitionVersion} 版，人群 ${preflight.audience.id} 第 ${preflight.audience.version} 版。实际发放以提交和执行回执为准。`}
+          />
+        )}
         <OriginalInput value={command.original} />
         {!qualified && (
           <Qualification action={action} access={access} recheck={recheck} />
@@ -804,7 +857,7 @@ function Operation({
           name={`delivery-${action}`}
           hidden={command.frozen}
           layout="vertical"
-          disabled={command.busy || command.frozen || !allowed}
+          disabled={command.busy || checking || command.frozen || !allowed}
           initialValues={{
             definitionVersion: 1,
             audience: { version: 1 },
@@ -814,6 +867,7 @@ function Operation({
             control: "CANCEL",
           }}
           onValuesChange={(value) => {
+            setPreflight(undefined);
             edited.current = true;
             dirty(action, true);
             if (

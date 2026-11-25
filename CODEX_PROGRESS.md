@@ -14,6 +14,7 @@
 
 - 当前权威计划为 `docs/design/operations-experience/IMPLEMENTATION_SLICES.md`，状态见 `docs/delivery/operations-experience/PROGRESS_STATE.md`。原仓库 `fix/operations-experience-foundation` 基于 `a5f1b37`，入场时已有上方审计文档与检查点，保留并按任务路径交付。
 - 用户已授权开始执行。S1–S5 实现和本地验证通过，下一片 S6 先核实际门店查询契约。继续遵循业务建模、契约、安全与验证、发布章节。隔离证据目录 `.local/operations-experience-delivery/`。
+- 用户已要求连续完成余下切片。当前任务分支 `feat/operations-experience-queues`，基线 `46a294c`。恢复以权威计划和状态为准，本轮证据在 `.local/operations-experience-queues/`。
 <!-- operations-experience-delivery:end -->
 
 <!-- lc02-store-pilot:start -->

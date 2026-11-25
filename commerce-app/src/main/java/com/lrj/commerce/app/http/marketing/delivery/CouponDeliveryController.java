@@ -24,6 +24,12 @@ public class CouponDeliveryController {
 		return deliveries.create(actor, key, input);
 	}
 
+	/** 预检固定资产与截止，不创建批次，不占用发放额度。 */
+	@PostMapping("/preview")
+	public Object preview(@AuthenticationPrincipal Actor actor, @RequestBody CouponDeliveryApi.Create input) {
+		return deliveries.preview(actor, input);
+	}
+
 	/** 批次游标分页。 */
 	@GetMapping
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,

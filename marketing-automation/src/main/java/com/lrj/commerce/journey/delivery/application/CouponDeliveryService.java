@@ -72,13 +72,7 @@ public class CouponDeliveryService implements CouponDeliveryApi {
 	/** 固定版本与截止时间，创建后不追随更新的人群。 */
 	public View create(Actor actor, String key, Create input) {
 		var permit = access.scope(actor, COUPON_DELIVERY_CREATE);
-		Inputs.require(
-				input != null && input.definitionVersion() > 0 && input.deadline() != null && input.audience() != null,
-				"发券批次参数无效");
-		Identifiers.require(input.batchId());
-		Identifiers.require(input.definitionId());
-		Inputs.text(input.name(), 128);
-		Inputs.require(input.minIntervalHours() >= 1 && input.minIntervalHours() <= 720, "会员发券间隔应为1至720小时");
+		checkCreateInput(input);
 		var prior = mapper.find(actor.tenantId(), input.batchId());
 		var originalGate = prior == null ? (Runnable) () -> {} : sourceGate(actor.tenantId(), prior, Direction.ISSUE);
 		var source = executionSource(actor, permit, key);
@@ -89,19 +83,44 @@ public class CouponDeliveryService implements CouponDeliveryApi {
 			// 首次查询后并发创建的回执必须显式原键重试，再在事务外核对实际原来源。
 			if (prior == null) throw conflict("批次来源已变化，请使用原键重试");
 		}, () -> {
-			Inputs.require(input.deadline().isAfter(now()) && !input.deadline().isAfter(now().plus(Duration.ofDays(7))),
-					"截止时间需在未来7天内");
-			stores.requireActive(actor, input.storeId());
-			audiences.requireFresh(actor.tenantId(), input.audience(), now());
-			audiences.requireFresh(actor.tenantId(), input.audience(), input.deadline().minusMillis(1));
-			coupons.validateExchange(actor.tenantId(), input.storeId(), input.definitionId(), input.definitionVersion(),
-					now(), input.deadline());
+			checkSources(actor, input, now());
 			mapper.insert(actor.tenantId(), input, JsonCodec.write(input), now(), JsonCodec.write(source));
 			access.lock(permit);
 			checkSourceExpiry(source);
 			access.auditVersion(actor, permit, "coupon.delivery.create", key, input.batchId(), 1);
 			return view(mapper.find(actor.tenantId(), input.batchId()));
 		});
+	}
+
+	/** 预检与提交共享同一来源规则，完成后复核原资格，避免返回撤权后数据。 */
+	public Preview preview(Actor actor, Create input) {
+		var permit = access.scope(actor, COUPON_DELIVERY_CREATE);
+		checkCreateInput(input);
+		var checkedAt = now();
+		checkSources(actor, input, checkedAt);
+		EmployeeAccess.requireSame(permit, access.scope(actor, COUPON_DELIVERY_CREATE));
+		return new Preview(input.storeId(), input.definitionId(), input.definitionVersion(), input.audience(),
+				input.deadline(), checkedAt);
+	}
+
+	private static void checkCreateInput(Create input) {
+		Inputs.require(
+				input != null && input.definitionVersion() > 0 && input.deadline() != null && input.audience() != null,
+				"发券批次参数无效");
+		Identifiers.require(input.batchId());
+		Identifiers.require(input.definitionId());
+		Inputs.text(input.name(), 128);
+		Inputs.require(input.minIntervalHours() >= 1 && input.minIntervalHours() <= 720, "会员发券间隔应为1至720小时");
+	}
+
+	private void checkSources(Actor actor, Create input, Instant at) {
+		Inputs.require(input.deadline().isAfter(at) && !input.deadline().isAfter(at.plus(Duration.ofDays(7))),
+				"截止时间需在未来7天内");
+		stores.requireActive(actor, input.storeId());
+		audiences.requireFresh(actor.tenantId(), input.audience(), at);
+		audiences.requireFresh(actor.tenantId(), input.audience(), input.deadline().minusMillis(1));
+		coupons.validateExchange(actor.tenantId(), input.storeId(), input.definitionId(), input.definitionVersion(),
+				at, input.deadline());
 	}
 
 	/** 管理列表稳定批次游标。 */

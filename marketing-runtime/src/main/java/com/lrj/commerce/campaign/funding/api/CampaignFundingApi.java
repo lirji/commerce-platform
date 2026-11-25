@@ -3,6 +3,7 @@ package com.lrj.commerce.campaign.funding.api;
 import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.marketing.api.DecisionModels.Selection;
+import java.math.BigDecimal;
 import java.util.List;
 
 /** 活动预算权威与成交资方快照，不能由缓存或报价资格代替额度预占。 */
@@ -14,6 +15,13 @@ public interface CampaignFundingApi {
 	}
 
 	record Budget(String budgetId, String campaignId, long version, String cap, String held, String spent) {
+
+		/** 同一预算行精确计算可用金额；无上限时不存在可用余额数值。 */
+		@com.fasterxml.jackson.annotation.JsonProperty("available")
+		public String available() {
+			return cap == null ? null : new BigDecimal(cap).subtract(new BigDecimal(held))
+				.subtract(new BigDecimal(spent)).toPlainString();
+		}
 	}
 
 	Commitment commitment(Actor actor, Selection campaign, String discount);

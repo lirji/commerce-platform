@@ -23,6 +23,14 @@ public interface CouponDeliveryApi {
 	record Control(long expectedVersion, String action, String reason) {
 	}
 
+	/** 只读校验回执包含调用者已输入的固定来源，不包含会员资料或执行许可。 */
+	record Preview(String storeId, String definitionId, long definitionVersion, MarketingAssets.Ref audience,
+			Instant deadline, Instant checkedAt) {
+	}
+
+	/** 复用创建资格和来源校验，无发券、占用或命令回执。 */
+	Preview preview(Actor actor, Create input);
+
 	/** 创建固定来源版本批次。 */
 	View create(Actor actor, String key, Create input);
 

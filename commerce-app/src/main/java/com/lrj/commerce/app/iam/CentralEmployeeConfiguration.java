@@ -125,6 +125,7 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DELIVERY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.COUPON_DELIVERY_CREATE;
         }
+        if ("POST".equals(r.getMethod()) && "/v1/admin/coupon-deliveries/preview".equals(path)) return EmployeeAccess.Capability.COUPON_DELIVERY_CREATE;
         if ("POST".equals(r.getMethod()) && "/v1/admin/coupon-deliveries/pump".equals(path)) return EmployeeAccess.Capability.COUPON_DELIVERY_PUMP;
         if ("GET".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/coupon-deliveries/[A-Za-z0-9_.:-]{1,64}/recipients")) return EmployeeAccess.Capability.COUPON_DELIVERY_READ;
         if ("POST".equals(r.getMethod()) && r.getServletPath().matches("/v1/admin/coupon-deliveries/[A-Za-z0-9_.:-]{1,64}/control")) return EmployeeAccess.Capability.COUPON_DELIVERY_CONTROL;

@@ -26,12 +26,71 @@ import {
   useResource,
   type request,
 } from "../shared/api";
-import { PageHead, ErrorNotice } from "../shared/ui";
+import { PageHead, ErrorNotice, money, time } from "../shared/ui";
 import type { Governed, Journey, JourneyInstance } from "../shared/contracts";
 import { JourneyMap } from "../features/JourneyMap";
 import { journeyClient, journeyId, journeyActions } from "./journeyClient";
 import { useJourneyCommand } from "./journeyCommand";
 import { HTTP, type Context } from "./api";
+
+type EffectSeries = "campaigns" | "journeys" | "deliveries" | "counts";
+const cashFields = [
+  ["received", "实收", "money"],
+  ["refunded", "成功退款", "money"],
+  ["netReceipts", "净收", "money"],
+] as const;
+const fundingFields = [
+  ["discountGranted", "已发优惠", "money"],
+  ["platformFunding", "平台承担", "money"],
+  ["merchantFunding", "商家承担", "money"],
+  ["updatedAt", "最后核对", "time"],
+] as const;
+const effectFields: Record<
+  EffectSeries,
+  readonly (readonly [string, string, ("money" | "time")?])[]
+> = {
+  campaigns: [
+    ["campaignId", "活动编号"],
+    ["campaignVersion", "内容版本"],
+    ["orders", "下单数"],
+    ["paidOrders", "已付订单"],
+    ...cashFields,
+    ...fundingFields,
+  ],
+  journeys: [
+    ["journeyId", "旅程编号"],
+    ["journeyVersion", "固定版本"],
+    ["observationDays", "观察天数"],
+    ["enrolledMembers", "入组会员"],
+    ["matureMembers", "观察期已满会员"],
+    ["notified", "通知次数"],
+    ["benefitsGranted", "已发权益"],
+    ["couponsGranted", "已发券"],
+    ["paidMembers", "已付款会员"],
+    ["paidOrders", "已付订单"],
+    ...cashFields,
+    ...fundingFields,
+  ],
+  deliveries: [
+    ["batchId", "发券批次"],
+    ["issued", "已发"],
+    ["skipped", "已跳过"],
+    ["revoked", "已撤回"],
+    ["kept", "撤回时保留"],
+    ["paidOrders", "用券已付订单"],
+    ...cashFields,
+    ["couponDiscount", "批次券优惠", "money"],
+    ["updatedAt", "最后核对", "time"],
+  ],
+  counts: [
+    ["journeyId", "旅程编号"],
+    ["enrolled", "入组"],
+    ["completed", "完成"],
+    ["notified", "通知"],
+    ["entrySuppressed", "入组频控拦截"],
+    ["notificationSuppressed", "通知频控拦截"],
+  ],
+};
 
 type Props = { context: Context; onLogout: () => Promise<void> };
 type Area = "definitions" | "instances" | "scans" | "effects" | "executions";
@@ -183,7 +242,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
       from: string;
       to: string;
     }>(),
-    [series, setSeries] = useState("campaigns");
+    [series, setSeries] = useState<EffectSeries>("campaigns");
   const [executionTarget, setExecutionTarget] = useState<{
     order: string;
     campaign: string;
@@ -223,7 +282,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           : area === "executions"
             ? `/admin/marketing-executions?after=${encodeURIComponent(after)}&${filters.query}`
             : range
-              ? `${paths[series as keyof typeof paths]}?${query}`
+              ? `${paths[series]}?${query}`
               : null;
   const list = useResource<unknown>(listPath);
   const refresh = () => {
@@ -597,23 +656,17 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                 },
                 { title: "失败分类", dataIndex: "failureClass" },
               ]
-            : Object.keys(rows[0] ?? {}).map((key) => ({
-                title:
-                  (
-                    {
-                      journeyId: "旅程",
-                      journeyVersion: "固定版本",
-                      batchId: "发券批次",
-                      netReceipts: "净收款",
-                      received: "已收款",
-                      refunded: "成功退款",
-                      coverage: "覆盖",
-                    } as Record<string, string>
-                  )[key] ?? key,
+            : effectFields[series].map(([key, title, format]) => ({
+                title,
                 dataIndex: key,
-                render: (value: unknown) => (
-                  <span>{value == null ? "—" : String(value)}</span>
-                ),
+                render: (value: unknown) =>
+                  value == null
+                    ? "—"
+                    : format === "money"
+                      ? money(String(value))
+                      : format === "time"
+                        ? time(String(value))
+                        : String(value),
               }));
   const field = (
     name: string,
@@ -925,7 +978,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
             activeKey={series}
             onChange={(value) => {
               setAfter("");
-              setSeries(value);
+              setSeries(value as EffectSeries);
             }}
             items={[
               { key: "campaigns", label: "活动成交" },

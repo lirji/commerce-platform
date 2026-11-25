@@ -218,6 +218,18 @@ function Inventory({
     `/operations/inventory/actions?storeId=${encodeURIComponent(store)}`,
   );
   const [form] = Form.useForm<Receipt>();
+  const sku = Form.useWatch("skuId", form);
+  const quantity = Form.useWatch("quantity", form);
+  const selectedStock = rows.data?.find(
+    (row) => row.storeId === store && row.skuId === sku,
+  );
+  const estimate =
+    selectedStock &&
+    typeof quantity === "number" &&
+    quantity > 0 &&
+    Number.isSafeInteger(quantity)
+      ? selectedStock.available + quantity
+      : undefined;
   const { message } = App.useApp();
   const intent = useRef<{ key: string; body: Receipt } | null>(null);
   const running = useRef(false);
@@ -234,7 +246,6 @@ function Inventory({
     actions.data?.receive &&
     !actions.error &&
     !actions.loading &&
-    !rows.error &&
     !writeDenied;
   async function receive(value: Receipt) {
     if (running.current || !canReceive) return;
@@ -251,7 +262,7 @@ function Inventory({
         },
       };
     try {
-      await client<Stock>("/admin/inventory/receipts", {
+      const receipt = await client<Stock>("/admin/inventory/receipts", {
         method: "POST",
         ...intent.current,
       });
@@ -259,7 +270,9 @@ function Inventory({
       setFrozen(false);
       markDirty(false);
       form.resetFields();
-      message.success("库存已增加");
+      message.success(
+        `SKU ${receipt.skuId} 入库成功，实际可售 ${receipt.available}，版本 ${receipt.version}`,
+      );
       refresh();
     } catch (failure) {
       setError(failure as Error);
@@ -360,6 +373,16 @@ function Inventory({
                 title="入库结果尚未确认，请保留原输入重试"
               />
             )}
+            <Alert
+              type="info"
+              showIcon
+              title={`入库门店 ${store}`}
+              description={
+                selectedStock && !rows.loading && !rows.error
+                  ? `当前可售 ${selectedStock.available}，版本 ${selectedStock.version}。${Number.isSafeInteger(estimate) ? `按本次增量估算 ${estimate}，结果以服务端回执为准。` : ""}`
+                  : "本页尚未读取此 SKU 的库存。核对门店、SKU 和入库增量后提交。"
+              }
+            />
             <Form.Item
               name="skuId"
               label="SKU标识"

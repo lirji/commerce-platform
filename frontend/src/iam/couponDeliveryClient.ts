@@ -20,6 +20,10 @@ export type DeliveryCreate = {
   deadline: string;
   minIntervalHours: number;
 };
+export type DeliveryPreview = Pick<
+  DeliveryCreate,
+  "storeId" | "definitionId" | "definitionVersion" | "audience" | "deadline"
+> & { checkedAt: string };
 export const deliveryStatuses = [
   "RUNNING",
   "COMPLETED",
@@ -202,19 +206,20 @@ export function couponDeliveryClient(
     );
     const pump = path === `${base}/pump`;
     const create = path === base;
+    const preview = path === `${base}/preview`;
     if (!(
       (method === "GET" &&
         options.body === undefined &&
         (directory || recipients || hint)) ||
-      (method === "POST" && (create || control || pump))
+      (method === "POST" && (create || control || pump || preview))
     ))
       throw new ApiError(HTTP.FORBIDDEN, "此发券入口不支持该操作");
-    if (method === "POST" && !pump && !options.key)
+    if (method === "POST" && !pump && !preview && !options.key)
       throw new Error("创建或控制须保留原幂等键");
 
     if (
       method === "POST" &&
-      ((create && !isDeliveryCreate(options.body)) ||
+      (((create || preview) && !isDeliveryCreate(options.body)) ||
         (control && !isDeliveryControl(options.body)) ||
         (pump && options.body !== undefined))
     )
@@ -237,7 +242,9 @@ export function couponDeliveryClient(
         ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)])
         : AbortSignal.timeout(15000),
     }).catch(() => {
-      throw new Error("服务连接中断，操作结果尚未确认");
+      throw new Error(
+        preview ? "发券预检未完成，请重试" : "服务连接中断，操作结果尚未确认",
+      );
     });
     if (response.status === HTTP.UNAUTHORIZED) expired();
     if (!response.ok)
@@ -246,6 +253,24 @@ export function couponDeliveryClient(
         new CentralError(response.status).message,
       );
     const result: unknown = await response.json();
+    if (preview) {
+      const input = options.body;
+      if (
+        !isDeliveryCreate(input) ||
+        !record(result) ||
+        result.storeId !== input.storeId ||
+        result.definitionId !== input.definitionId ||
+        result.definitionVersion !== input.definitionVersion ||
+        !instant(result.deadline) ||
+        Date.parse(String(result.deadline)) !== Date.parse(input.deadline) ||
+        !record(result.audience) ||
+        result.audience.id !== input.audience.id ||
+        result.audience.version !== input.audience.version ||
+        !instant(result.checkedAt)
+      )
+        throw new Error("服务未返回匹配本次输入的预检结果");
+      return result as T;
+    }
     const valid =
       method === "POST"
         ? pump

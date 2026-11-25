@@ -44,6 +44,7 @@ export type CampaignBudget = {
   cap: string | null;
   held: string;
   spent: string;
+  available?: string | null;
 };
 export type CampaignPreview = {
   memberId: string;

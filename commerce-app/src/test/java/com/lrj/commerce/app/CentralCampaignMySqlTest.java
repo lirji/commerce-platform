@@ -1,5 +1,6 @@
 package com.lrj.commerce.app;
 
+import com.lrj.commerce.campaign.funding.api.CampaignFundingApi;
 import com.lrj.authz.protocol.*;
 import com.lrj.authz.sdk.*;
 import com.lrj.commerce.app.iam.CentralEmployeeService;
@@ -121,6 +122,14 @@ class CentralCampaignMySqlTest {
     private String status(String name,long version) { return jdbc.queryForObject("SELECT status FROM marketing_campaign WHERE tenant_id=? AND campaign_id=? AND version=?",String.class,tenant,name,version); }
     private int receipts(String key) { return jdbc.queryForObject("SELECT count(*) FROM platform_command WHERE tenant_id=? AND command_key=?",Integer.class,tenant,key); }
     /** 九个实际HTTP入口逐一只给自己的权限，其余八个入口均拒绝，不靠页面隐藏证明独立性。 */
+    /** 预算展示以原记录十进制为准，空上限不显示成零。 */
+    @Test void availableBudgetProjectionPreservesCentsAndUnlimited() {
+        var cap = new CampaignFundingApi.Budget("cap", "campaign", 1, "10.00", "0.10", "0.20");
+        var unlimited = new CampaignFundingApi.Budget("unlimited", "campaign", 2, null, "0.00", "0.00");
+        assertEquals("9.70", JsonCodec.read(JsonCodec.write(cap), Map.class).get("available"));
+        assertNull(JsonCodec.read(JsonCodec.write(unlimited), Map.class).get("available"));
+    }
+
     @Test void allNineCapabilitiesRemainIndependentAtHttpBoundary() throws Exception {
         rule();create("A",7,true);
         assertEquals(200,http("POST","/v1/admin/skus",adminToken,false,Map.of("skuId","SKU","storeId","S1","title","商品","unitPrice","25.00")).statusCode());

@@ -1053,7 +1053,7 @@ function Budgets() {
           loading={rows.loading}
           dataSource={rows.data ?? []}
           pagination={false}
-          scroll={{ x: 920 }}
+          scroll={{ x: 1040 }}
           columns={[
             { title: "预算编号", dataIndex: "budgetId", width: 300 },
             { title: "活动", dataIndex: "campaignId", width: 220 },
@@ -1066,6 +1066,13 @@ function Budgets() {
             },
             { title: "已预占（元）", dataIndex: "held", width: 100 },
             { title: "已支出（元）", dataIndex: "spent", width: 100 },
+            {
+              title: "可用额度（元）",
+              dataIndex: "available",
+              width: 128,
+              render: (value, row) =>
+                row.cap == null ? "未设上限" : (value ?? "—"),
+            },
           ]}
         />
       )}

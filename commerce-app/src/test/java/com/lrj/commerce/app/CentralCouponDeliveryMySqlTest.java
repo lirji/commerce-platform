@@ -157,6 +157,29 @@ class CentralCouponDeliveryMySqlTest {
         assertEquals(401,http("POST","/v1/admin/coupon-deliveries/B/unknown","valid",true,null).statusCode());
         assertEquals(401,http("POST","/v1/admin/skus","valid",true,Map.of()).statusCode());
     }
+    /** 预检只用创建能力，并且在任一来源失效时拒绝，无数据或额度副作用。 */
+    @Test void previewValidatesActualSourcesWithoutCreatingOrSpending() throws Exception {
+        String path = "/v1/admin/coupon-deliveries/preview";
+        var input = input("check");
+        allowed.clear();
+        allowed.add(COUPON_DELIVERY_CREATE.code());
+        var result = http("POST", path, "valid", true, input);
+        assertEquals(200, result.statusCode());
+        var resultView = JsonCodec.read(result.body(), CouponDeliveryApi.Preview.class);
+        assertEquals(input.definitionId(), resultView.definitionId());
+        assertEquals(input.audience(), resultView.audience());
+        assertEquals(input.deadline(), resultView.deadline());
+        var invalid = new CouponDeliveryApi.Create(input.batchId(),input.storeId(),input.name(),
+                input.definitionId(),input.definitionVersion(),input.audience(), Instant.now().minusSeconds(1),24);
+        assertEquals(400, http("POST", path, "valid", true, invalid).statusCode());
+        allowed.clear();
+        allowed.add(COUPON_DELIVERY_READ.code());
+        assertEquals(403, http("POST", path, "valid", true, input).statusCode());
+        assertEquals(401, http("POST", path, null, false, input).statusCode());
+        for (String table : List.of("automation_coupon_batch","automation_coupon_recipient","automation_coupon_frequency","benefit_coupon","employee_command_identity"))
+            assertEquals(0, count(table), table);
+    }
+
     /** 公共CAS从0变化，权限及身份审计始终绑定批次实际内容版本1，不伪造门店或券定义事实。 */
     @Test void immutableContentAndOriginalKeyRemainIndependentFromProgressCas() {
         String key=id();var input=input("B");var first=deliveries.create(actor(COUPON_DELIVERY_CREATE),key,input);

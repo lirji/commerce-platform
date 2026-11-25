@@ -284,6 +284,7 @@ export const specs: Record<string, Spec> = {
       ["cap", "预算上限"],
       ["held", "已预占"],
       ["spent", "已消耗"],
+      ["available", "可用额度"],
     ],
   },
   fulfillments: {

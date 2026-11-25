@@ -135,28 +135,28 @@ export function BatchCatalogAction({
       <Alert
         type="info"
         showIcon
-        title={`已固定 ${rows.length} 个规格的预期版本`}
-        description="执行时有版本冲突的项目会跳过并记录回执。上下架操作不使用下方目标价格。"
+        title={`门店 ${store} · 已选 ${rows.length} 个规格`}
+        description="对照当前价格、状态、预期版本与目标价格。执行时版本冲突会跳过并记录；上下架操作仅改变状态。"
       />
       <Table
         rowKey="skuId"
         dataSource={rows}
         pagination={false}
         size="small"
-        scroll={{ y: 260 }}
+        scroll={{ x: 820, y: 260 }}
         columns={[
           {
-            title: "规格 / 预期版本",
-            render: (_, r) => (
-              <>
-                {r.title}
-                <br />
-                <Typography.Text type="secondary">
-                  {r.skuId} · v{r.revision}
-                </Typography.Text>
-              </>
-            ),
+            title: "规格名称",
+            dataIndex: "title",
           },
+          { title: "SKU 编号", dataIndex: "skuId" },
+          { title: "预期版本", dataIndex: "revision" },
+          {
+            title: "当前状态",
+            dataIndex: "status",
+            render: (value: string) => <Status value={value} />,
+          },
+          { title: "当前价格（元）", dataIndex: "unitPrice", render: money },
           {
             title: "目标价格（元）",
             render: (_, r) => (
