@@ -144,11 +144,18 @@ class AuthorizationCoverageTest {
 	/** 深链接仅开放静态壳，不能把同名业务API或POST作为匿名入口。 */
 	@Test
 	void centralPagesServeOnlyStaticGetShell() throws Exception {
-		for (String path : List.of("/operations/coupon-definitions", "/operations/point-offers", "/operations/member-points", "/operations/member-cycles", "/operations/member-cycle-benefits", "/operations/member-behavior", "/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")) {
+		for (String path : List.of("/operations", "/operations/coupon-definitions", "/operations/point-offers", "/operations/member-points", "/operations/member-cycles", "/operations/member-cycle-benefits", "/operations/member-behavior", "/operations/member-tags", "/operations/member-growth", "/operations/members", "/operations/directory", "/operations/inventory", "/operations/catalog", "/operations/products", "/collaboration/products", "/iam/callback")) {
 			var response = http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).GET().build(), HttpResponse.BodyHandlers.ofString());
 			assertEquals(200, response.statusCode());
 			assertTrue(response.body().contains("id=\"root\""));
 			assertNotEquals(200, status("POST", path, "invalid-token"));
+		}
+		var organization = URI.create("http://127.0.0.1:" + port + "/operations");
+		var anonymousPost = HttpRequest.newBuilder(organization).POST(HttpRequest.BodyPublishers.noBody()).build();
+		assertEquals(401, http.send(anonymousPost, HttpResponse.BodyHandlers.discarding()).statusCode());
+		for (String path : List.of("/operations/unregistered", "/v1/operations/navigation")) {
+			var anonymous = HttpRequest.newBuilder(organization.resolve(path)).GET().build();
+			assertEquals(401, http.send(anonymous, HttpResponse.BodyHandlers.discarding()).statusCode(), path);
 		}
 		assertEquals(401, status("GET", "/v1/operations/products", "invalid-token"));
 	}
