@@ -1,5 +1,5 @@
 import { Button, Form, Input, Select, Space, Tag, Typography } from "antd";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouteState } from "./routeState";
 import { statusText, localDateTime, time } from "./ui";
 
@@ -227,7 +227,12 @@ function decode(raw: string, spec?: FilterSpec): Values {
 }
 
 /** 条件明确绑定到 Owner 接口，不对当前页数据做假筛选。 */
-export function useListFilters(name: string, path: string, reset: () => void) {
+export function useListFilters(
+  name: string,
+  path: string,
+  reset: () => void,
+  compact = false,
+) {
   const spec = specs[path];
   const [raw, setRaw] = useRouteState(`${name}.query`, "");
   const values = decode(raw, spec);
@@ -268,7 +273,13 @@ export function useListFilters(name: string, path: string, reset: () => void) {
     limit,
     query: query.toString(),
     toolbar: spec ? (
-      <ListFilters spec={spec} values={values} raw={raw} apply={apply} />
+      <ListFilters
+        spec={spec}
+        values={values}
+        raw={raw}
+        apply={apply}
+        compact={compact}
+      />
     ) : null,
   };
 }
@@ -277,14 +288,18 @@ function ListFilters({
   values,
   raw,
   apply,
+  compact,
 }: {
   spec: FilterSpec;
   values: Values;
   raw: string;
   apply: (v: Values) => void;
+  compact: boolean;
 }) {
   type FormValues = Omit<Values, "enabled"> & { enabled?: string };
   const [form] = Form.useForm<FormValues>();
+  const [advanced, setAdvanced] = useState(false);
+  const hideSecondary = compact && !advanced;
   const draft = Form.useWatch<FormValues>([], form);
   const formValues = {
     ...values,
@@ -353,6 +368,7 @@ function ListFilters({
             enabled: v.enabled === undefined ? undefined : v.enabled === "true",
           })
         }
+        onFinishFailed={() => hideSecondary && setAdvanced(true)}
         initialValues={formValues}
         className="query-form"
       >
@@ -385,13 +401,19 @@ function ListFilters({
         )}
         {spec.time && (
           <>
-            <Form.Item name="from" label="创建起点" className="query-wide">
+            <Form.Item
+              name="from"
+              label="创建起点"
+              className="query-wide"
+              hidden={hideSecondary}
+            >
               <Input type="datetime-local" />
             </Form.Item>
             <Form.Item
               name="to"
               label="创建终点"
               className="query-wide"
+              hidden={hideSecondary}
               dependencies={["from"]}
               rules={[
                 ({ getFieldValue }) => ({
@@ -408,7 +430,7 @@ function ListFilters({
             </Form.Item>
           </>
         )}
-        <Form.Item name="limit" label="每页">
+        <Form.Item name="limit" label="每页" hidden={hideSecondary}>
           <Select
             options={[10, 25, 50, 100].map((value) => ({
               value,
@@ -422,6 +444,14 @@ function ListFilters({
               查询
             </Button>
             <Button onClick={() => applyValues({})}>重置筛选</Button>
+            {compact && (
+              <Button
+                aria-expanded={advanced}
+                onClick={() => setAdvanced(!advanced)}
+              >
+                {advanced ? "收起高级筛选" : "高级筛选"}
+              </Button>
+            )}
           </Space>
         </Form.Item>
       </Form>

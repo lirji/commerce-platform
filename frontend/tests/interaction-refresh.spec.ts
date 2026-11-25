@@ -402,3 +402,51 @@ test("会员商城、分类、商品详情与购物袋共用按钮尺寸，三�
     await page.getByRole("button", { name: "返回列表", exact: true }).click();
   }
 });
+
+test("窄屏订单先显示实际范围，折叠后保留已应用日期和分页", async ({ page }) => {
+  await openCampaign(page);
+  const reads: URLSearchParams[] = [];
+  await page.route("**/v1/admin/orders?**", (route) => {
+    reads.push(new URL(route.request().url()).searchParams);
+    return route.fulfill({ json: [orderFixture(1)] });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    location.hash = "orders?store=store-ui";
+  });
+  await expect(
+    page.getByText("查看当前权限范围内各店铺的订单，可用店铺编号定位。"),
+  ).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "当前店铺" })).toHaveCount(0);
+  const advanced = page.getByRole("button", { name: "高级筛选", exact: true });
+  const from = page.getByLabel("创建起点", { exact: true });
+  await expect(advanced).toHaveAttribute("aria-expanded", "false");
+  await expect(from).toBeHidden();
+  await expect(
+    page.getByRole("columnheader", { name: "店铺编号" }),
+  ).toBeVisible();
+  await advanced.click();
+  await from.fill("2026-01-02T08:00");
+  await page.getByRole("button", { name: "查询", exact: true }).click();
+  await expect.poll(() => reads.at(-1)?.has("from")).toBe(true);
+  const applied = reads.at(-1)?.get("from");
+  expect(reads.at(-1)?.has("storeId")).toBe(false);
+  await page.getByRole("button", { name: "收起高级筛选", exact: true }).click();
+  await expect(from).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "清除创建起点筛选", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "清除创建起点筛选", exact: true }),
+  ).toBeVisible();
+  expect(reads.at(-1)?.get("from")).toBe(applied);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - innerWidth,
+    ),
+  ).toBeLessThanOrEqual(1);
+  await page.getByRole("button", { name: "重置筛选", exact: true }).click();
+  await expect.poll(() => reads.at(-1)?.has("from")).toBe(false);
+});

@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Descriptions,
+  Grid,
   Spin,
   InputNumber,
   Space,
@@ -47,6 +48,7 @@ export function Orders({
   admin: boolean;
   capabilities: Capabilities;
 }) {
+  const compact = Grid.useBreakpoint().md === false;
   const [after, setAfter] = useCursorState("after", "");
   const [selected, setSelected] = useState<string>();
   const [workspaceId, setWorkspaceId] = useState(workspaceOrder);
@@ -98,6 +100,7 @@ export function Orders({
     "Orders",
     admin ? "/admin/orders" : "/orders",
     () => setAfter(""),
+    compact,
   );
   const resource = useResource<Order[]>(
     (admin ? "/admin/orders" : "/orders") +
@@ -128,8 +131,8 @@ export function Orders({
           title={admin ? "订单工作台" : "我的订单"}
           description={
             admin
-              ? "查看真实交易状态，跟进支付与履约。"
-              : "报价在下单时锁定，支付结果以渠道核对为准。"
+              ? "查看当前权限范围内各店铺的订单，可用店铺编号定位。"
+              : "查看本人在各店铺的订单。支付结果以渠道核对为准。"
           }
           extra={
             <Button onClick={resource.refresh}>
@@ -178,7 +181,7 @@ export function Orders({
                   </Button>
                 ),
               },
-              { title: "店铺", dataIndex: "storeId" },
+              { title: "店铺编号", dataIndex: "storeId" },
               { title: "应付金额", dataIndex: "payable", render: money },
               {
                 title: "订单状态",
