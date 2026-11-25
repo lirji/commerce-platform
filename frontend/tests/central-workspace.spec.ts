@@ -527,6 +527,73 @@ test("优惠券优先显示发行方式并读取同门店原版本详情", async
   await expect(detail.getByText("25%", { exact: true })).toHaveCount(0);
 });
 
+test("人群目录按固定版本读取过期摘要并在撤权后清除详情", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const snapshot = {
+    audienceId: "AUDIENCE-9",
+    version: 9,
+    name: "历史购买人群",
+    source: "门店会员导入",
+    watermark: "2020-03-01T00:00:00Z",
+    validUntil: "2020-03-01T01:00:00Z",
+    memberCount: 12,
+  };
+  let deny = false;
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (url.pathname === "/v1/admin/audiences")
+      return route.fulfill({
+        json: [
+          snapshot,
+          {
+            ...snapshot,
+            audienceId: "AUDIENCE-INVALID",
+            name: "时间待核对",
+            validUntil: "invalid",
+          },
+        ],
+      });
+    if (url.pathname === "/v1/admin/audiences/snapshot")
+      return deny
+        ? route.fulfill({ status: 403, json: {} })
+        : route.fulfill({ json: snapshot });
+    return route.fulfill({ status: 403, json: {} });
+  });
+  await page.goto(`${base}/operations/audiences?tenant_id=${tenant}`);
+  await expect(page.getByText("已过期", { exact: true })).toBeVisible();
+  await expect(page.getByText("时间窗口未知", { exact: true })).toBeVisible();
+  const detail = page.getByRole("dialog", { name: "人群快照详情" });
+  const open = page.getByRole("button", { name: "查看历史购买人群快照" });
+  const reading = page.waitForRequest((request) =>
+    request.url().includes("/v1/admin/audiences/snapshot"),
+  );
+  await open.click();
+  const request = await reading;
+  expect(request.method()).toBe("GET");
+  expect(Object.fromEntries(new URL(request.url()).searchParams)).toEqual({
+    audienceId: "AUDIENCE-9",
+    version: "9",
+  });
+  await expect(detail.getByText("已过期", { exact: true })).toBeVisible();
+  await expect(detail.getByText("12", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/audience-revision-390.png`,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(detail).not.toBeVisible();
+  deny = true;
+  await open.click();
+  await expect(detail.getByText("当前身份没有此操作权限。")).toBeVisible();
+  await expect(detail.getByText("12", { exact: true })).toHaveCount(0);
+});
+
 test("原订单下钻只打开当前导航允许的精确读取", async ({ page }) => {
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需独立中央预览");

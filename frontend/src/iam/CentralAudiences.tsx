@@ -25,9 +25,9 @@ import {
 } from "../shared/api";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import { ErrorNotice, PageHead } from "../shared/ui";
+import { RecordModal } from "../shared/interactions";
 import { HTTP, type Context } from "./api";
 import {
-  AUDIENCE_PAGE_SIZE,
   audienceClient,
   audienceIdentifier,
   type Audience,
@@ -40,12 +40,28 @@ const membersOf = (text?: string) =>
     .split(/\r?\n/)
     .map((id) => id.trim())
     .filter(Boolean);
-const time = (value: string) => new Date(value).toLocaleString();
+const time = (value: string) => {
+  const instant = new Date(value);
+  return Number.isFinite(instant.getTime()) ? instant.toLocaleString() : "—";
+};
 const forbidden = (error?: Error) =>
   error instanceof ApiError && error.status === HTTP.FORBIDDEN;
 
+function SnapshotWindow({ value }: { value: AudienceView }) {
+  const start = Date.parse(value.watermark),
+    end = Date.parse(value.validUntil);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start)
+    return <Tag>时间窗口未知</Tag>;
+  const now = Date.now();
+  if (end <= now) return <Tag color="orange">已过期</Tag>;
+  if (start > now) return <Tag>尚未到数据时点</Tag>;
+  return <Tag color="green">窗口内</Tag>;
+}
+
 function Directory({ revision }: { revision: number }) {
   const [after, setAfter] = useCursorState("AudienceDirectory.after", "");
+  const [selected, setSelected] =
+    useState<Pick<AudienceView, "audienceId" | "version">>();
   const filters = useListFilters(
     "AudienceDirectory.after",
     "/admin/audiences",
@@ -72,19 +88,31 @@ function Directory({ revision }: { revision: number }) {
           loading={rows.loading}
           dataSource={rows.data ?? []}
           pagination={false}
-          scroll={{ x: 1100 }}
+          scroll={{ x: 1010 }}
           columns={[
             {
               title: "人群",
-              width: 240,
+              width: 186,
               render: (_, row) => (
                 <Space orientation="vertical" size={0}>
-                  <Typography.Text strong>{row.name}</Typography.Text>
+                  <Button
+                    type="link"
+                    aria-label={`查看${row.name}快照`}
+                    style={{ paddingInline: 0 }}
+                    onClick={() => setSelected(row)}
+                  >
+                    {row.name}
+                  </Button>
                   <Typography.Text type="secondary">
                     {row.audienceId}
                   </Typography.Text>
                 </Space>
               ),
+            },
+            {
+              title: "时间窗口",
+              width: 136,
+              render: (_, row) => <SnapshotWindow value={row} />,
             },
             { title: "版本", dataIndex: "version", width: 90 },
             { title: "成员数", dataIndex: "memberCount", width: 100 },
@@ -100,20 +128,6 @@ function Directory({ revision }: { revision: number }) {
               dataIndex: "validUntil",
               render: time,
               width: 190,
-            },
-            {
-              title: "时间窗口",
-              width: 120,
-              render: (_, row) => {
-                const now = Date.now();
-                return new Date(row.watermark).getTime() > now ? (
-                  <Tag>尚未到数据时点</Tag>
-                ) : new Date(row.validUntil).getTime() <= now ? (
-                  <Tag>已过期</Tag>
-                ) : (
-                  <Tag color="green">窗口内</Tag>
-                );
-              },
             },
           ]}
         />
@@ -143,13 +157,24 @@ function Directory({ revision }: { revision: number }) {
           下一页
         </Button>
       </div>
+      <RecordModal
+        title="人群快照详情"
+        open={!!selected}
+        onCancel={() => setSelected(undefined)}
+        destroyOnHidden
+      >
+        {selected && (
+          <AudienceRevision
+            id={selected.audienceId}
+            version={String(selected.version)}
+          />
+        )}
+      </RecordModal>
     </Space>
   );
 }
 
-function FrozenAudience() {
-  const [id] = useRouteState("audienceId", "");
-  const [version] = useRouteState("version", "");
+function AudienceRevision({ id, version }: { id: string; version: string }) {
   const valid =
     audienceIdentifier.test(id) && /^[1-9][0-9]{0,15}$/.test(version);
   const item = useResource<AudienceView>(
@@ -157,13 +182,14 @@ function FrozenAudience() {
       ? `/admin/audiences/snapshot?${new URLSearchParams({ audienceId: id, version })}`
       : null,
   );
-  if (!id && !version) return null;
   return (
-    <Card title="原人群快照">
+    <Space orientation="vertical" style={{ width: "100%" }}>
       {!valid && <Alert type="warning" title="人群快照编号或版本无效" />}
       <ErrorNotice error={item.error} onRetry={item.refresh} />
       {item.loading && <Spin />}
-      {item.data?.audienceId === id &&
+      {!item.error &&
+        !item.loading &&
+        item.data?.audienceId === id &&
         String(item.data.version) === version && (
           <Descriptions
             column={1}
@@ -171,6 +197,11 @@ function FrozenAudience() {
               { key: "id", label: "人群编号", children: id },
               { key: "version", label: "固定版本", children: version },
               { key: "name", label: "名称", children: item.data.name },
+              {
+                key: "window",
+                label: "时间窗口",
+                children: <SnapshotWindow value={item.data} />,
+              },
               { key: "source", label: "来源", children: item.data.source },
               {
                 key: "count",
@@ -190,6 +221,17 @@ function FrozenAudience() {
             ]}
           />
         )}
+    </Space>
+  );
+}
+
+function FrozenAudience() {
+  const [id] = useRouteState("audienceId", "");
+  const [version] = useRouteState("version", "");
+  if (!id && !version) return null;
+  return (
+    <Card title="原人群快照">
+      <AudienceRevision id={id} version={version} />
     </Card>
   );
 }
