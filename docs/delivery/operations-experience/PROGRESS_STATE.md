@@ -18,6 +18,11 @@
 | S12 交易列表偏好 | VERIFIED | 浏览器验证可选列、组织隔离及保留原精确条件 |
 | S13 会员行为下钻 | VERIFIED | 会员档案按实际编号发起行为 GET，403 遵守独立权限 |
 | S14 营销执行定位 | VERIFIED | 实库验证原订单号、跨租户和会员拒绝，浏览器以订单及活动键读取权威详情 |
+| S15 营销执行异常筛选 | VERIFIED | 实库核对最新版权益事件、无事件和券执行，持久参与与实际事件状态各自展示 |
+| S16 投递事件定位 | VERIFIED | 隔离库已应用 V74，核对相近编号和同编号跨租户，浏览器核对受权订单下钻 |
+| S17 优惠券目录 | VERIFIED | 390px 首列可打开原版本，重新打开时读取当前额度信息并核验权限 |
+| S18 人群快照时间窗口 | VERIFIED | 目录与固定版本显示数据时点、有效期和窗口，撤权后关闭摘要读取 |
+| S19 动态人群输出定位 | VERIFIED | 已完成的运行按原输出编号和版本进入人群快照，未完成或缺菜单时不提供入口 |
 
 既有本机 Docker 预览 `127.0.0.1:8602` 已更新到应用提交 `c1f94c4`。容器为 `commerce-platform-profile-app-1`，Flyway V73 已应用，现有营销画像汇总 GET 返回 200。沿用原 Compose 环境、网络及地址密钥配置，仅切换应用镜像，保留旧镜像。部署和容量证据在 `.local/operations-experience-queues/deployment/`。
 
@@ -25,7 +30,7 @@
 
 续批证据在 `.local/operations-experience-queues/`。全量 Maven 与浏览器回归通过，精确提交的 Git 和 CI 回执保存在该目录。验证细节见 [续批结果](TEST_RESULT.md#续批验证)。
 
-用户已授权继续执行审计改进计划。当前基线 `472c3d7`，分支 `feat/operations-experience-followups`，本地证据 `.local/operations-experience-followups/`。S10–S14 的验证见 [后续改进](TEST_RESULT.md#后续改进验证)。按异常分类筛选营销执行取决于事件权威来源的有界聚合契约。名单脱敏与配置复制仍依赖原治理规则。
+用户已授权继续执行审计改进计划。S10–S14 从 `472c3d7` 推进，在主分支 `c75ae7a` 通过精确 CI。S15–S19 在 `feat/operations-evidence-followup` 上从该提交继续。验证见 [运营证据与营销资产](TEST_RESULT.md#运营证据与营销资产验证)。名单脱敏与配置复制仍依赖原治理规则。
 
 ## 正式验收条件
 

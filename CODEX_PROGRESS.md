@@ -17,6 +17,7 @@
 - 续批证据在 `.local/operations-experience-queues/`。S6–S8 与 S9 本地范围已实现并验证。Git、CI 回执从续批证据恢复。正式渠道和业务治理条件按权威进度核对。
 - 用户已授权本机 Docker 部署并在验收后继续项目。现有 `127.0.0.1:8602` 已运行 `c1f94c4`，健康、64 个前端文件和 Flyway V73 已核验。已继续完成 S9 四类队列的实机只读验证和隔离容量验证。恢复入口为权威进度和 `.local/operations-experience-queues/deployment/DEPLOYMENT_RESULT.json`。
 - 用户已授权继续全部改进计划。当前任务分支 `feat/operations-experience-followups` 从 `472c3d7` 开始，推进 S10–S14。恢复入口为权威进度、续验记录及 `.local/operations-experience-followups/` 中的验证与 Git 回执。
+- S10–S14 已在 `c75ae7a` 合入主分支，精确 CI 已通过。本轮从该提交在 `feat/operations-evidence-followup` 实现并验证 S15–S19。证据在 `.local/operations-evidence-followup/`，Git 精确提交与 CI 回执在同目录核对。正式验收条件见权威进度。
 <!-- operations-experience-delivery:end -->
 
 <!-- lc02-store-pilot:start -->
