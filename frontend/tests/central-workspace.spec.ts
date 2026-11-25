@@ -455,6 +455,78 @@ test("事件按精确业务编号查询，仅已知订单事件链接原订单",
   await expect(detail.getByRole("link", { name: "查看原订单" })).toHaveCount(0);
 });
 
+test("优惠券优先显示发行方式并读取同门店原版本详情", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const content = {
+    definitionId: "COUPON-1",
+    version: 7,
+    storeId: "STORE-1",
+    name: "演示定向券",
+    minimumSpend: "30.00",
+    discountAmount: "5.00",
+    validFrom: "2026-10-01T00:00:00Z",
+    validTo: "2027-10-01T00:00:00Z",
+    quota: 10,
+    stackable: true,
+    platformFundingBps: 2500,
+    issuanceMode: "SOURCE_ONLY",
+    validityDays: 5,
+  };
+  let revision: URL | undefined;
+  let deny = false;
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (url.pathname === "/v1/admin/coupon-definitions")
+      return route.fulfill({ json: [{ content, issued: 3 }] });
+    if (url.pathname === "/v1/admin/coupon-definitions/revision") {
+      revision = url;
+      return deny
+        ? route.fulfill({ status: 403, json: {} })
+        : route.fulfill({ json: { content, issued: 4 } });
+    }
+    return route.fulfill({ status: 403, json: {} });
+  });
+  await page.goto(`${base}/operations/coupon-definitions?tenant_id=${tenant}`);
+  await page.getByLabel("查询门店编号", { exact: true }).fill(content.storeId);
+  await page.getByRole("button", { name: "查询券定义", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const openDetail = page.getByRole("button", {
+    name: `查看${content.name}详情`,
+    exact: true,
+  });
+  await openDetail.scrollIntoViewIfNeeded();
+  await expect(
+    page.getByRole("cell", { name: "受控发放", exact: true }),
+  ).toBeInViewport({ ratio: 0.8 });
+  await expect(
+    page.getByRole("columnheader", { name: "平台出资比例" }),
+  ).toHaveCount(0);
+  await openDetail.click();
+  const detail = page.getByRole("dialog", { name: "券定义详情" });
+  await expect(detail.getByText("25%", { exact: true })).toBeVisible();
+  await expect(detail.getByText("4", { exact: true })).toBeVisible();
+  expect(Object.fromEntries(revision!.searchParams)).toEqual({
+    storeId: content.storeId,
+    definitionId: content.definitionId,
+    version: "7",
+  });
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/coupon-issuance-390.png`,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(detail).not.toBeVisible();
+  deny = true;
+  await openDetail.click();
+  await expect(detail.getByText("当前身份没有此操作权限。")).toBeVisible();
+  await expect(detail.getByText("25%", { exact: true })).toHaveCount(0);
+});
+
 test("原订单下钻只打开当前导航允许的精确读取", async ({ page }) => {
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需独立中央预览");

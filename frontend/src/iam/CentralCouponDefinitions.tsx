@@ -25,7 +25,13 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import {
+  ErrorNotice,
+  PageHead,
+  money as formatMoney,
+  time,
+} from "../shared/ui";
+import { RecordModal } from "../shared/interactions";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Issuance = { PUBLIC: "PUBLIC", SOURCE_ONLY: "SOURCE_ONLY" } as const;
@@ -152,10 +158,23 @@ function Directory() {
   );
 }
 
-function FrozenDefinition() {
-  const [storeId] = useRouteState("storeId", "");
-  const [definitionId] = useRouteState("definitionId", "");
-  const [version] = useRouteState("version", "");
+function issuanceLabel(value: Definition["issuanceMode"]) {
+  return value === Issuance.PUBLIC
+    ? "公开领取"
+    : value === Issuance.SOURCE_ONLY
+      ? "受控发放"
+      : "未确认";
+}
+
+function DefinitionRevision({
+  storeId,
+  definitionId,
+  version,
+}: {
+  storeId: string;
+  definitionId: string;
+  version: string;
+}) {
   const valid =
     identifier.test(storeId) &&
     identifier.test(definitionId) &&
@@ -165,43 +184,105 @@ function FrozenDefinition() {
       ? `/admin/coupon-definitions/revision?${new URLSearchParams({ storeId, definitionId, version })}`
       : null,
   );
-  if (!definitionId && !version) return null;
   const value = item.data?.content;
+  const matches =
+    value?.definitionId === definitionId &&
+    value.storeId === storeId &&
+    String(value.version) === version;
   return (
-    <Card title="原优惠券定义">
+    <>
       {!valid && (
         <Alert type="warning" title="优惠券定义编号、版本或门店无效" />
       )}
-      <ErrorNotice error={item.error} onRetry={item.refresh} />
-      {item.loading && <Spin />}
-      {value?.definitionId === definitionId &&
-        value.storeId === storeId &&
-        String(value.version) === version && (
-          <Descriptions
-            column={1}
-            items={[
-              { key: "name", label: "名称", children: value.name },
-              { key: "id", label: "券定义编号", children: definitionId },
-              { key: "version", label: "固定版本", children: version },
-              { key: "store", label: "门店", children: storeId },
-              {
-                key: "discount",
-                label: "优惠金额（元）",
-                children: value.discountAmount,
-              },
-              { key: "quota", label: "发行额度", children: value.quota },
-              {
-                key: "issued",
-                label: "定义累计已发行",
-                children: item.data?.issued,
-              },
-            ]}
-          />
-        )}
+      <ErrorNotice
+        error={
+          item.error ??
+          (value && !matches
+            ? new Error("返回数据与当前券定义不一致")
+            : undefined)
+        }
+        onRetry={item.refresh}
+      />
+      {item.loading && <Spin description="正在核对券定义" />}
+      {matches && value && (
+        <Descriptions
+          column={1}
+          items={[
+            { key: "name", label: "名称", children: value.name },
+            { key: "id", label: "券定义编号", children: definitionId },
+            { key: "version", label: "固定版本", children: version },
+            { key: "store", label: "门店", children: storeId },
+            {
+              key: "issuance",
+              label: "发行方式",
+              children: issuanceLabel(value.issuanceMode),
+            },
+            {
+              key: "dates",
+              label: "定义有效期",
+              children: `${time(value.validFrom)} 至 ${time(value.validTo)}`,
+            },
+            {
+              key: "validity",
+              label: "领券后有效期",
+              children:
+                value.validityDays == null
+                  ? "按固定时间"
+                  : `${value.validityDays} 天`,
+            },
+            {
+              key: "minimum",
+              label: "最低消费",
+              children: formatMoney(value.minimumSpend),
+            },
+            {
+              key: "discount",
+              label: "优惠金额",
+              children: formatMoney(value.discountAmount),
+            },
+            { key: "quota", label: "发行额度", children: value.quota },
+            {
+              key: "issued",
+              label: "定义累计已发行",
+              children: item.data?.issued,
+            },
+            {
+              key: "stackable",
+              label: "允许叠加",
+              children: value.stackable ? "是" : "否",
+            },
+            {
+              key: "funding",
+              label: "平台出资比例",
+              children:
+                value.platformFundingBps == null
+                  ? "未提供"
+                  : `${value.platformFundingBps / 100}%`,
+            },
+          ]}
+        />
+      )}
+    </>
+  );
+}
+
+function FrozenDefinition() {
+  const [storeId] = useRouteState("storeId", "");
+  const [definitionId] = useRouteState("definitionId", "");
+  const [version] = useRouteState("version", "");
+  if (!definitionId && !version) return null;
+  return (
+    <Card title="原优惠券定义">
+      <DefinitionRevision
+        storeId={storeId}
+        definitionId={definitionId}
+        version={version}
+      />
     </Card>
   );
 }
 function DefinitionList({ store }: { store: string }) {
+  const [selected, setSelected] = useState<Definition>();
   const [after, setAfter] = useCursorState("DefinitionList.after", "", store);
   const filters = useListFilters(
     "DefinitionList.after",
@@ -221,53 +302,54 @@ function DefinitionList({ store }: { store: string }) {
           dataSource={rows.data ?? []}
           loading={rows.loading}
           pagination={false}
-          scroll={{ x: 2000 }}
+          scroll={{ x: 930 }}
           columns={[
-            { title: "券定义编号", dataIndex: ["content", "definitionId"] },
-            { title: "版本", dataIndex: ["content", "version"] },
-            { title: "名称", dataIndex: ["content", "name"] },
-            { title: "门店", dataIndex: ["content", "storeId"] },
-            { title: "最低消费（元）", dataIndex: ["content", "minimumSpend"] },
             {
-              title: "优惠金额（元）",
-              dataIndex: ["content", "discountAmount"],
-            },
-            { title: "发行额度", dataIndex: ["content", "quota"] },
-            { title: "已发数量", dataIndex: "issued" },
-            {
-              title: "允许叠加",
-              dataIndex: ["content", "stackable"],
-              render: (v) => (v ? "是" : "否"),
-            },
-            {
-              title: "平台出资比例",
-              dataIndex: ["content", "platformFundingBps"],
-              render: (v) => `${(v ?? 0) / 100}%`,
+              title: "名称",
+              dataIndex: ["content", "name"],
+              width: 160,
+              render: (name: string, row) => (
+                <Button
+                  type="link"
+                  style={{ paddingInline: 0, maxWidth: "100%" }}
+                  aria-label={`查看${name}详情`}
+                  onClick={() => setSelected(row.content)}
+                >
+                  <Typography.Text ellipsis style={{ color: "inherit" }}>
+                    {name}
+                  </Typography.Text>
+                </Button>
+              ),
             },
             {
               title: "发行方式",
               dataIndex: ["content", "issuanceMode"],
-              render: (v) =>
-                v === Issuance.PUBLIC
-                  ? "公开领取"
-                  : v === Issuance.SOURCE_ONLY
-                    ? "受控发放"
-                    : v,
+              width: 106,
+              render: issuanceLabel,
             },
             {
-              title: "领取后有效天数",
-              dataIndex: ["content", "validityDays"],
-              render: (v) => (v ? `${v}天` : "固定时间"),
+              title: "券定义编号",
+              dataIndex: ["content", "definitionId"],
+              width: 155,
+            },
+            { title: "版本", dataIndex: ["content", "version"], width: 86 },
+            {
+              title: "发行额度",
+              dataIndex: ["content", "quota"],
+              width: 84,
+              align: "right",
             },
             {
-              title: "开始时间",
-              dataIndex: ["content", "validFrom"],
-              render: (v) => new Date(v).toLocaleString(),
+              title: "累计已发行",
+              dataIndex: "issued",
+              width: 90,
+              align: "right",
             },
             {
-              title: "截止时间",
+              title: "定义截止时间",
               dataIndex: ["content", "validTo"],
-              render: (v) => new Date(v).toLocaleString(),
+              width: 175,
+              render: time,
             },
           ]}
         />
@@ -297,6 +379,20 @@ function DefinitionList({ store }: { store: string }) {
           下一批定义
         </Button>
       </div>
+      <RecordModal
+        title="券定义详情"
+        open={!!selected}
+        onCancel={() => setSelected(undefined)}
+        destroyOnHidden
+      >
+        {selected && (
+          <DefinitionRevision
+            storeId={store}
+            definitionId={selected.definitionId}
+            version={String(selected.version)}
+          />
+        )}
+      </RecordModal>
     </Space>
   );
 }
