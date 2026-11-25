@@ -15,10 +15,12 @@
 - 当前权威计划为 `docs/design/operations-experience/IMPLEMENTATION_SLICES.md`，状态见 `docs/delivery/operations-experience/PROGRESS_STATE.md`。原仓库 `fix/operations-experience-foundation` 基于 `a5f1b37`，入场时已有上方审计文档与检查点，保留并按任务路径交付。
 - 用户已授权连续执行。S1–S5 已合入 `main` 的 `46a294c`。续批任务分支 `feat/operations-experience-queues` 从该提交开始。恢复时以权威状态与 `TEST_RESULT.md` 为准，继续遵循业务建模、契约、安全与验证、持久化、容量与发布章节。
 - 续批证据在 `.local/operations-experience-queues/`。S6–S8 与 S9 本地范围已实现并验证。Git、CI 回执从续批证据恢复。正式渠道和业务治理条件按权威进度核对。
-- 用户已授权本机 Docker 部署并在验收后继续项目。现有 `127.0.0.1:8602` 已运行 `c1f94c4`，健康、64 个前端文件和 Flyway V73 已核验。已继续完成 S9 四类队列的实机只读验证和隔离容量验证。恢复入口为权威进度和 `.local/operations-experience-queues/deployment/DEPLOYMENT_RESULT.json`。
+- 用户授权本机 Docker 部署并在验收后继续项目。首批预览 `c1f94c4` 核验 64 个前端文件和 Flyway V73，之后完成 S9 四类队列的实机只读验证和隔离容量验证。首批证据见 `.local/operations-experience-queues/deployment/DEPLOYMENT_RESULT.json`。
 - 用户已授权继续全部改进计划。当前任务分支 `feat/operations-experience-followups` 从 `472c3d7` 开始，推进 S10–S14。恢复入口为权威进度、续验记录及 `.local/operations-experience-followups/` 中的验证与 Git 回执。
 - S10–S14 已在 `c75ae7a` 合入主分支，精确 CI 已通过。本轮从该提交在 `feat/operations-evidence-followup` 实现并验证 S15–S19。证据在 `.local/operations-evidence-followup/`，Git 精确提交与 CI 回执在同目录核对。正式验收条件见权威进度。
 - S15–S19 已推送 `3340d6b` 到远程 `main`，分支 CI `45626210520`，主线 CI `45626242767`。S20 在原目录分支 `feat/journey-instance-history` 完成实库契约与中央工作台回归，证据和 Git 精确回执在 `.local/journey-instance-history/`。
+- 用户已授权部署远程 `main` 的 `da04c1e`。本机 Docker 8602 已切换到该提交，精确主线 CI `45627562887`、V74、65 个页面资源、鉴权及健康检查均通过。首次切换因原 Compose 版本标签回退，修正标签后重试通过。当前状态见权威进度与 `.local/journey-instance-history/deployment/DEPLOYMENT_RESULT.json`。
+- 续验核对了当前镜像、原旅程实例固定历史和审计 R09，结果见 `.local/journey-instance-history/deployment/continuation-readonly.json`。文档收尾复用 `feat/journey-instance-history`，基线 `da04c1e`，仅更新本节及运营体验进度、验证记录。Git 与 CI 回执见部署证据目录的 `documentation-delivery.json`。下一步按权威进度进入 S9 正式验收，先核对试点岗位与门店范围。
 <!-- operations-experience-delivery:end -->
 
 <!-- lc02-store-pilot:start -->
