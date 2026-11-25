@@ -21,6 +21,7 @@
 - S15–S19 已推送 `3340d6b` 到远程 `main`，分支 CI `45626210520`，主线 CI `45626242767`。S20 在原目录分支 `feat/journey-instance-history` 完成实库契约与中央工作台回归，证据和 Git 精确回执在 `.local/journey-instance-history/`。
 - 用户已授权部署远程 `main` 的 `da04c1e`。本机 Docker 8602 已切换到该提交，精确主线 CI `45627562887`、V74、65 个页面资源、鉴权及健康检查均通过。首次切换因原 Compose 版本标签回退，修正标签后重试通过。当前状态见权威进度与 `.local/journey-instance-history/deployment/DEPLOYMENT_RESULT.json`。
 - 续验核对了当前镜像、原旅程实例固定历史和审计 R09，结果见 `.local/journey-instance-history/deployment/continuation-readonly.json`。文档收尾复用 `feat/journey-instance-history`，基线 `da04c1e`，仅更新本节及运营体验进度、验证记录。Git 与 CI 回执见部署证据目录的 `documentation-delivery.json`。下一步按权威进度进入 S9 正式验收，先核对试点岗位与门店范围。
+- 用户已授权开始 S9 验收，并从项目自行规划缺项。原仓库任务分支 `feat/operations-s9-acceptance` 基于 `043aafe`，入场工作树干净。已完成隔离 PKCE 双店范围、撤读授写、10 万订单容量复验与全量 Maven 验证。方案、结果与正式签收条件见权威进度；本地证据及文档 Git 回执在 `.local/operations-s9-acceptance/`。真实渠道、岗位签收、阈值与导出留存仍有待试点确认。
 <!-- operations-experience-delivery:end -->
 
 <!-- lc02-store-pilot:start -->
