@@ -159,4 +159,47 @@ class StoreAccessTest {
 					.status());
 	}
 
+	/** 首店核验会分页读取同一商家的两家店，再按单店目录确认 SKU，防止目录查询串店。 */
+	@Test
+	void pilotDirectoryKeepsPublishedSkuInsideItsStoreAndTenant() throws Exception {
+		seed();
+		post("/v1/admin/stores", admin, "control-store",
+				Map.of("storeId", "store2", "merchantId", "merchant1", "name", "对照门店"));
+		post("/v1/admin/skus", admin, "control-sku",
+				Map.of("skuId", "sku2", "storeId", "store2", "title", "对照商品", "unitPrice", "26.00"));
+
+		var merchants = call("GET", "/v1/admin/merchants?limit=1", admin, null, null);
+		assertEquals(200, merchants.status());
+		assertEquals("merchant1", merchants.body().get(0).path("merchantId").asString());
+		assertEquals("ACTIVE", merchants.body().get(0).path("status").asString());
+
+		var firstPage = call("GET", "/v1/admin/stores?limit=1", admin, null, null);
+		var secondPage = call("GET", "/v1/admin/stores?limit=1&after=store1", admin, null, null);
+		assertEquals(200, firstPage.status());
+		assertEquals(200, secondPage.status());
+		assertEquals(1, firstPage.body().size());
+		assertEquals(1, secondPage.body().size());
+		assertEquals("store1", firstPage.body().get(0).path("storeId").asString());
+		assertEquals("store2", secondPage.body().get(0).path("storeId").asString());
+		for (var store : List.of(firstPage.body().get(0), secondPage.body().get(0))) {
+			assertEquals("merchant1", store.path("merchantId").asString());
+			assertEquals("ACTIVE", store.path("status").asString());
+			assertTrue(store.path("version").isIntegralNumber());
+		}
+
+		var pilotCatalog = call("GET", "/v1/catalog?storeId=store1&limit=1", admin, null, null);
+		var controlCatalog = call("GET", "/v1/catalog?storeId=store2&limit=1", admin, null, null);
+		assertEquals(200, pilotCatalog.status());
+		assertEquals(200, controlCatalog.status());
+		assertEquals(1, pilotCatalog.body().size());
+		assertEquals(1, controlCatalog.body().size());
+		assertEquals("sku1", pilotCatalog.body().get(0).path("skuId").asString());
+		assertEquals("store1", pilotCatalog.body().get(0).path("storeId").asString());
+		assertTrue(pilotCatalog.body().get(0).path("revision").isIntegralNumber());
+		assertEquals("sku2", controlCatalog.body().get(0).path("skuId").asString());
+		assertEquals("store2", controlCatalog.body().get(0).path("storeId").asString());
+		assertEquals(404, call("GET", "/v1/catalog?storeId=store1", other, null, null).status());
+		assertEquals(401, call("GET", "/v1/admin/stores", null, null, null).status());
+	}
+
 }

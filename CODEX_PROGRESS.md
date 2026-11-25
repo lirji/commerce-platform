@@ -1,5 +1,12 @@
 # Codex Progress
 
+<!-- lc02-store-pilot:start -->
+## LC-02 商业试点门店范围
+
+- 用户已授权实施。工作目录为原商城仓库，任务分支 `feat/lc02-store-pilot`，基线 `5c70c83`。权威方案与实施切片见 `docs/design/lc02-store-pilot/`。
+- S1 本机目录、双店 MySQL 与商城应用回归通过，S2 完成源码及历史证据核对。权威结果见 `docs/delivery/lc02-store-pilot/TEST_RESULT.md`，本机及远端检查记录位于 `.local/lc02-store-pilot/`。恢复时按 S2 核对正式范围和实际下单来源，营销 LC-02 的签收状态以营销仓为准。
+<!-- lc02-store-pilot:end -->
+
 ## 任务目标
 
 按Claude当前最新个人frontend-design优化已有全站前端，并按用户后续明确授权部署既有本机Docker8602；正常任务分支提交、合入推送main，保留原数据库、密钥和回退镜像。
