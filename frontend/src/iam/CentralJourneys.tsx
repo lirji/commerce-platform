@@ -3,6 +3,7 @@ import { useListFilters } from "../shared/listFilters";
 import { Pager, Status } from "../shared/ui";
 import { useCursorState } from "../shared/routeState";
 import { TradeLinks } from "../shared/workspaceLinks";
+import { RecordModal } from "../shared/interactions";
 import { OperationDetails } from "./OperationsWorkspace";
 import {
   Alert,
@@ -16,6 +17,7 @@ import {
   Modal,
   Select,
   Space,
+  Spin,
   Table,
   Tabs,
   Tag,
@@ -140,6 +142,32 @@ const executionFields: readonly [string, string][] = [
   ["updatedAt", "参与记录更新时间"],
 ];
 type Row = Record<string, unknown>;
+type HistoryStep = {
+  transitionVersion: number;
+  ordinal: number;
+  nodeId: string;
+  kind: string;
+  status: string;
+  startedAt: string;
+  completedAt: string | null;
+  outcome: string | null;
+};
+const historyCoverage: Record<string, string> = {
+  COMPLETE: "完整记录",
+  LEGACY_PARTIAL: "历史记录部分覆盖",
+};
+const historyOutcomes: Record<string, string> = {
+  BENEFIT_ACCEPTED: "权益请求已受理",
+  COUPON_GRANTED: "优惠券已发放",
+  NOTIFIED: "站内触达已写入",
+  NOTIFY_SUPPRESSED: "站内触达已抑制",
+  WAIT_SCHEDULED: "已安排等待",
+  DECIDED: "分支已判定",
+  RULE_UNKNOWN: "规则结果未知",
+  FINISHED: "旅程已结束",
+  NODE_DEFERRED: "已延后重试",
+  NODE_FAILED: "节点执行失败",
+};
 const titles: Record<Area, string> = {
   definitions: "旅程定义",
   instances: "旅程实例",
@@ -250,12 +278,22 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
     instance: JourneyInstance;
     definition: Journey;
     traceCoverage: string;
-    steps: Row[];
+    steps: HistoryStep[];
   }>(
     historyTarget
       ? `/admin/journey-instances/${historyTarget}/history?afterVersion=${historyAfter}&limit=50`
       : null,
   );
+  const actualHistory =
+    history.data?.instance?.instanceId === historyTarget
+      ? history.data
+      : undefined;
+  const readHistory = (id: string) => {
+    if (!journeyId.test(id)) return;
+    setHistoryId(id);
+    setHistoryAfter(-1);
+    setHistoryTarget(id);
+  };
   const [range, setRange] = useState<{
       store: string;
       from: string;
@@ -562,18 +600,17 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
             {
               title: "实例",
               dataIndex: "instanceId",
-              render: (id: string) => (
-                <Button
-                  type="link"
-                  onClick={() => {
-                    setHistoryId(id);
-                    setHistoryTarget(id);
-                    setHistoryAfter(-1);
-                  }}
-                >
-                  {id}
-                </Button>
-              ),
+              render: (id: unknown) =>
+                typeof id === "string" &&
+                journeyId.test(id) && (
+                  <Button
+                    type="link"
+                    aria-label={`查看实例 ${id} 的历史`}
+                    onClick={() => readHistory(id)}
+                  >
+                    {id}
+                  </Button>
+                ),
             },
             {
               title: "旅程 / 固定内容版本",
@@ -1126,52 +1163,112 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
             />
             <Button
               disabled={!journeyId.test(historyId)}
-              onClick={() => {
-                setHistoryTarget(historyId);
-                setHistoryAfter(-1);
-                history.refresh();
-              }}
+              onClick={() => readHistory(historyId)}
             >
               读取实际历史
             </Button>
           </Space>
-          <ErrorNotice error={history.error} onRetry={history.refresh} />
-          {history.data && (
-            <>
+        </Card>
+      )}
+      {area === "instances" && (
+        <RecordModal
+          title="旅程实例历史"
+          open={!!historyTarget}
+          onCancel={() => setHistoryTarget("")}
+          width={780}
+          destroyOnHidden
+        >
+          <ErrorNotice
+            error={
+              history.error ??
+              (history.data && !actualHistory
+                ? new Error("返回结果与当前实例不一致")
+                : undefined)
+            }
+            onRetry={history.refresh}
+          />
+          {history.loading && <Spin description="正在读取实例历史" />}
+          {actualHistory && (
+            <Space orientation="vertical" style={{ width: "100%" }}>
               <Descriptions
                 column={1}
                 items={[
                   {
+                    key: "instance",
+                    label: "实例编号",
+                    children: actualHistory.instance.instanceId,
+                  },
+                  {
                     key: "version",
                     label: "固定内容版本",
-                    children: history.data.definition.version,
+                    children: actualHistory.definition.version,
                   },
                   {
                     key: "coverage",
                     label: "历史覆盖",
-                    children: history.data.traceCoverage,
+                    children:
+                      historyCoverage[actualHistory.traceCoverage] ??
+                      "覆盖范围未知",
                   },
                 ]}
               />
-              <JourneyMap journey={history.data.definition} />
-              <JsonResult value={history.data} />
+              <Table<HistoryStep>
+                rowKey="transitionVersion"
+                size="small"
+                pagination={false}
+                scroll={{ x: 660 }}
+                dataSource={actualHistory.steps}
+                locale={{ emptyText: "本批没有已记录的步骤" }}
+                columns={[
+                  { title: "节点", dataIndex: "nodeId", width: 120 },
+                  {
+                    title: "步骤状态",
+                    dataIndex: "status",
+                    width: 106,
+                    render: (value: string) => <Status value={value} />,
+                  },
+                  {
+                    title: "结果",
+                    dataIndex: "outcome",
+                    render: (value: string | null) =>
+                      value ? (historyOutcomes[value] ?? value) : "未提供",
+                  },
+                  {
+                    title: "开始时间",
+                    dataIndex: "startedAt",
+                    width: 165,
+                    render: time,
+                  },
+                  {
+                    title: "步骤版本",
+                    dataIndex: "transitionVersion",
+                    width: 85,
+                  },
+                ]}
+              />
               <Pager
                 after={historyAfter}
                 initial={-1}
                 cursorName="CentralJourneys.historyAfter"
-                count={history.data.steps.length}
+                count={actualHistory.steps.length}
                 loading={history.loading}
                 error={history.error}
                 onHome={() => setHistoryAfter(-1)}
                 onNext={() =>
-                  setHistoryAfter(
-                    Number(history.data!.steps.at(-1)!.transitionVersion),
-                  )
+                  setHistoryAfter(actualHistory.steps.at(-1)!.transitionVersion)
                 }
               />
-            </>
+              <details>
+                <summary>固定版本流程图</summary>
+                <JourneyMap journey={actualHistory.definition} />
+              </details>
+              <details>
+                <summary>历史原始记录</summary>
+                <JsonResult value={actualHistory} />
+              </details>
+            </Space>
           )}
-        </Card>
+        </RecordModal>
       )}
       {area === "executions" && (
         <Card title="读取指定订单活动参与">

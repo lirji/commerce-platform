@@ -70,3 +70,9 @@
 证据位于 `.local/operations-evidence-followup/`。`full-maven-rerun.log` 的反应堆验证 568 项，563 项通过，5 项按既有条件跳过。首次全量回归发现测试事件编号与前序夹具重复，改为每次生成后通过。最终候选完成 `final-package.log` 的打包，`final-targeted-rerun.log` 中 33 项隔离实库回归通过，含优惠券标识冲突及无权益事件条件。隔离库的 V74 和查询计划记录见 `query-plan.log`，正式工作负载下的容量仍待验证。
 
 `browser-final.log` 中 35 项中央打包回归通过，`browser-client.log` 中 2 项客户端源码回归通过。`browser-legacy.log` 中 10 项默认 UI 回归通过，1 项按既有环境条件跳过。重新打开详情的测试发现弹层保留了上一次读取，关闭时释放详情实例后通过。390px 截图存于 `browser-final/`。中央会话与 DTO 使用边界夹具，正式企业登录及业务治理仍见 [进度](PROGRESS_STATE.md#正式验收条件)。
+
+## 旅程实例历史验证
+
+S20 从实例行或手工实例编号打开固定版本的历史。浏览器核对读取原实例、两种覆盖范围、持久步骤结果、末条游标、换实例回到首批及打开时的 403。首次测试在翻页后发现典型的焦点丢失，根因为查询参数变化使退出回调和读取客户端重建。稳定回调后，关闭时恢复触发入口，同一组织的查询不会因地址变化而发生额外重载。
+
+证据位于 `.local/journey-instance-history/`。既有旅程契约的 10 项 MySQL 测试、36 项中央打包浏览器回归均通过。默认 UI 和中央 UI 构建通过。窄屏截图见 `browser-final/journey-history-390.png`。独立写入能力与正式企业身份验收条件沿用 [进度](PROGRESS_STATE.md#正式验收条件)。

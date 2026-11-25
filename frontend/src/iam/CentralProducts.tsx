@@ -17,6 +17,7 @@ import {
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -219,6 +220,13 @@ export function CentralProducts() {
   const [address, setAddress] = useState(
     () => location.pathname + location.search,
   );
+  // 筛选和游标会更新地址，保持退出回调稳定，避免同身份查询重启并卸载原触发位置。
+  const onLogout = useCallback(async () => {
+    setUser(null);
+    await clearSession().catch(() =>
+      setError(new Error("本地登录状态清理失败，请重新登录")),
+    );
+  }, []);
   useEffect(() => {
     let active = true;
     session()
@@ -234,12 +242,7 @@ export function CentralProducts() {
           setUser(null);
         }
       });
-    const expired = () => {
-      setUser(null);
-      void clearSession().catch(() =>
-        setError(new Error("本地登录状态清理失败，请重新登录")),
-      );
-    };
+    const expired = () => void onLogout();
     const loaded = (value: User) => setUser(value);
     const unloaded = () => setUser(null);
     const changed = () => setAddress(location.pathname + location.search);
@@ -256,7 +259,7 @@ export function CentralProducts() {
       removeEventListener(sessionInvalidatedEvent, expired);
       removeEventListener("popstate", changed);
     };
-  }, []);
+  }, [onLogout]);
   if (!enabled)
     return <Alert type="warning" title="商城统一身份入口尚未启用" />;
   if (user === undefined) return <Spin tip="正在恢复登录" fullscreen />;
@@ -296,12 +299,7 @@ export function CentralProducts() {
       tenant={tenant}
       environment={environment}
       path={url.pathname}
-      onLogout={async () => {
-        setUser(null);
-        await clearSession().catch(() =>
-          setError(new Error("本地登录状态清理失败，请重新登录")),
-        );
-      }}
+      onLogout={onLogout}
     />
   );
 }

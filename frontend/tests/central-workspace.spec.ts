@@ -594,6 +594,135 @@ test("人群目录按固定版本读取过期摘要并在撤权后清除详情",
   await expect(detail.getByText("12", { exact: true })).toHaveCount(0);
 });
 
+test("旅程实例从原行打开固定历史，切实例回首批并遵守读取权限", async ({
+  page,
+}) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const rows = ["INSTANCE-OLD", "INSTANCE-OTHER"].map((instanceId) => ({
+    instanceId,
+    journeyId: "JOURNEY-7",
+    journeyVersion: 7,
+    memberId: "M-7",
+    status: "COMPLETED",
+    currentNode: "end",
+    steps: 50,
+    version: 55,
+  }));
+  const reads: { instanceId: string; cursor: string | null; method: string }[] =
+    [];
+  let deny = false;
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const request = route.request(),
+      url = new URL(request.url());
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (url.pathname === "/v1/admin/journey-instances")
+      return route.fulfill({ json: rows });
+    const row = rows.find(
+      ({ instanceId }) =>
+        url.pathname === `/v1/admin/journey-instances/${instanceId}/history`,
+    );
+    if (!row) return route.fulfill({ status: 403, json: {} });
+    const cursor = url.searchParams.get("afterVersion");
+    reads.push({
+      instanceId: row.instanceId,
+      cursor,
+      method: request.method(),
+    });
+    if (deny) return route.fulfill({ status: 403, json: {} });
+    return route.fulfill({
+      json: {
+        instance: row,
+        definition: {
+          journeyId: row.journeyId,
+          version: 7,
+          name: "历史固定旅程",
+          startNode: "end",
+          nodes: [{ id: "end", kind: "END" }],
+        },
+        traceCoverage: row === rows[0] ? "LEGACY_PARTIAL" : "COMPLETE",
+        steps:
+          cursor === "-1"
+            ? Array.from({ length: 50 }, (_, index) => ({
+                transitionVersion: index + 1,
+                ordinal: Math.min(index + 1, 32),
+                nodeId: `节点-${index + 1}`,
+                kind: index === 0 ? "GRANT" : "END",
+                status: "COMPLETED",
+                startedAt: "2026-05-01T00:00:00Z",
+                outcome: index === 0 ? "BENEFIT_ACCEPTED" : "FINISHED",
+              }))
+            : [],
+      },
+    });
+  });
+  await page.goto(`${base}/operations/journey-instances?tenant_id=${tenant}`);
+  const openFirst = page.getByRole("button", {
+    name: "查看实例 INSTANCE-OLD 的历史",
+  });
+  const dialog = page.getByRole("dialog", { name: "旅程实例历史" });
+  await openFirst.click();
+  await expect(
+    dialog.getByText("历史记录部分覆盖", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("cell", { name: "节点-1", exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText("权益请求已受理", { exact: true }),
+  ).toBeVisible();
+  expect(reads.at(-1)).toEqual({
+    instanceId: "INSTANCE-OLD",
+    cursor: "-1",
+    method: "GET",
+  });
+  await dialog.getByRole("button", { name: "下一页", exact: true }).click();
+  await expect(
+    dialog.getByText("本批没有已记录的步骤", { exact: true }),
+  ).toBeVisible();
+  expect(reads.at(-1)).toEqual({
+    instanceId: "INSTANCE-OLD",
+    cursor: "50",
+    method: "GET",
+  });
+  await page.keyboard.press("Escape");
+  await expect(openFirst).toBeFocused();
+  await page
+    .getByRole("button", { name: "查看实例 INSTANCE-OTHER 的历史" })
+    .click();
+  await expect(dialog.getByText("完整记录", { exact: true })).toBeVisible();
+  expect(reads.at(-1)).toEqual({
+    instanceId: "INSTANCE-OTHER",
+    cursor: "-1",
+    method: "GET",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/journey-history-390.png`,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  deny = true;
+  await page.getByLabel("历史实例编号").fill("INSTANCE-OTHER");
+  await page.getByRole("button", { name: "读取实际历史" }).click();
+  await expect(dialog.getByText("当前身份没有此操作权限。")).toBeVisible();
+  await expect(dialog.getByText("完整记录", { exact: true })).toHaveCount(0);
+  expect(reads.at(-1)).toEqual({
+    instanceId: "INSTANCE-OTHER",
+    cursor: "-1",
+    method: "GET",
+  });
+});
+
 test("原订单下钻只打开当前导航允许的精确读取", async ({ page }) => {
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需独立中央预览");
