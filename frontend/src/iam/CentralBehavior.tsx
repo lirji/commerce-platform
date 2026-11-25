@@ -227,8 +227,10 @@ export function CentralBehavior({
 }
 
 function BehaviorSearch() {
-  const [member, setMember] = useState<string>(),
-    [revision, setRevision] = useState(0);
+  const [query, setMember] = useRouteState("memberId", "");
+  const member = identifier.test(query) ? query : "";
+  const [, resetEvents] = useCursorState("BehaviorDetail.after", 0);
+  const [revision, setRevision] = useState(0);
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       <Typography.Text type="secondary">
@@ -237,8 +239,10 @@ function BehaviorSearch() {
       <Form
         name="behavior-search"
         layout="vertical"
+        initialValues={{ memberId: member }}
         style={{ width: "100%", maxWidth: 700 }}
         onFinish={(v) => {
+          if (v.memberId !== member) resetEvents(0);
           setMember(v.memberId);
           setRevision((n) => n + 1);
         }}

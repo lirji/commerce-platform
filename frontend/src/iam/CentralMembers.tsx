@@ -296,6 +296,7 @@ function MemberHistory({ member }: { member: Member }) {
   const query = { workspaceTab: "wallet", memberId: member.memberId };
   const growth = href("member-growth", query);
   const points = href("member-points", query);
+  const behavior = href("member-behavior", { memberId: member.memberId });
   const [after, setAfter] = useCursorState(
     "MemberHistory.after",
     0,
@@ -307,10 +308,11 @@ function MemberHistory({ member }: { member: Member }) {
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       <Typography.Text>会员编号：{member.memberId}</Typography.Text>
-      {(growth || points) && (
+      {(growth || points || behavior) && (
         <Space wrap>
           {growth && <a href={growth}>查看会员成长</a>}
           {points && <a href={points}>查看会员积分</a>}
+          {behavior && <a href={behavior}>查看会员行为</a>}
         </Space>
       )}
       <Typography.Text type="secondary">
