@@ -33,6 +33,9 @@
 | 商城报价读取 | PASS | `CheckoutPilotQuoteMySqlTest` 通过真实 HTTP 和独立 MySQL 验证旧报价所含的门店、人民币分值和商品修订，以及错凭据、错租户、重复授权头、对照店、非活动商品和冻结门店。商城应用 479 项通过，5 项按环境跳过 |
 | 交易引用唯一 | PASS | `CheckoutPilotQuoteTest` 通过隔离 MySQL 与契约 HTTP 对端验证实际 V034、同一报价并发重放、主体冲突、交易租户隔离及依赖异常 |
 | 两个打包进程联跑 | PASS | 商城和交易候选应用用独立 MySQL、真实签名 JWT 和本机 JWKS 联跑。参与店报价返回单价 5900 分，交易写入一条引用并返回稳定回执。对照店在商城返回 404、在交易返回 409。错误机器返回 403 |
-| 冻结优惠和支付准入 | 待实施 | 接入带版本的营销签名、交易优惠落价、一次性关联原生订单及支付前资金预留。报价准备回执仅证明来源与引用 |
+| 签价与冻结应付 | PASS | 商城 `62757a7`、营销 `9c5d773`、交易 `6049254`。打包商城返回单件 5900 分，营销打包的定价与签名代码计算两件原价 11800、优惠 1000，交易打包应用验签并持久化应付 10800。相同签名重放及交易进程重启后回执一致，异签返回 409。一件低于门槛时定价引擎未匹配优惠 |
+| 原生订单和支付准入 | 待实施 | 需要买家身份与商品规格的权威配对、一次性关联原生订单及支付前资金预留 |
 
 两侧候选应用和隔离数据库均已回收。商城仓 `.local/lc02-store-pilot/checkout-pair-result.json` 保留联跑结果，`checkout-verify.log` 保留商城回归。交易侧验证日志位于对应任务工作树的 `.local/lc02-store-pilot/quote-reference-verify.log`。[报价来源契约](../../design/lc02-store-pilot/CHECKOUT_CONTRACTS.md)记录配置、权限和后续接线。
+
+冻结联跑结果见 `~/.local/share/marketing-delivery/lowcode-commercialization/lc02-checkout-signing/checkout-freeze-result.json`。本次独立 MySQL、签发器及应用进程均已回收。正式订单及财务签收沿用原清单。

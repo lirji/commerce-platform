@@ -4,7 +4,7 @@
 ## LC-02 商业试点门店范围
 
 - 用户已授权实施。工作目录为原商城仓库，任务分支 `feat/lc02-store-pilot`，基线 `5c70c83`。权威方案与实施切片见 `docs/design/lc02-store-pilot/`。
-- S1 本机目录、双店 MySQL 与商城应用回归通过，S2 完成路径核对。S3 已实现商城报价来源和交易唯一引用，通过真实签名与打包双应用联跑。结果见 `docs/delivery/lc02-store-pilot/TEST_RESULT.md`，日志及远端检查在 `.local/lc02-store-pilot/`。交易任务工作树为 `~/.local/share/git-worktrees/transaction-center/lc02-store-pilot`。恢复从签名、冻结应付、原生订单关联和支付前预留继续。正式范围的签收状态以营销仓为准。
+- S1 本机目录、双店 MySQL 与商城应用回归通过，S2 完成路径核对。S3 已验证商城报价来源、唯一交易引用、营销签价与应付冻结。当前证据入口为 `docs/delivery/lc02-store-pilot/TEST_RESULT.md`，实施顺序见原切片。交易任务工作树为 `~/.local/share/git-worktrees/transaction-center/lc02-store-pilot`。从买家与规格身份核对、原生订单关联和支付前预留继续。正式签收的权威进度位于营销仓 `docs/delivery/lowcode-commercialization/PROGRESS.md`。
 <!-- lc02-store-pilot:end -->
 
 ## 任务目标

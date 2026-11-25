@@ -1,6 +1,6 @@
 # LC-02 试点报价来源契约
 
-S3 分两段交付。第一段由商城验证已有报价，交易中心持久化报价引用。第二段消费该引用并锁定优惠金额、关联原生订单及接入资金预留。操作范围见[试点方案](PILOT_OPERATIONS.md)。
+S3 依次交付商城报价证据、唯一交易引用、营销签价与应付冻结、原生订单关联以及支付前资金预留。操作范围见[试点方案](PILOT_OPERATIONS.md)。
 
 ## 商城报价证据
 
@@ -17,7 +17,13 @@ S3 分两段交付。第一段由商城验证已有报价，交易中心持久�
 
 `POST /internal/v1/checkout-pilot/quote-references` 接收 `commerceQuoteId` 和当前结算的 `ownerRef`。交易验证 JWT 的既有签发方、接收方和时间，并检查 `trade.checkout-pilot.prepare`、固定交易租户和已配对的机器主体。首次请求在本地写事务外读取商城，逐项验证门店和商品证据，再持久化与该商城报价唯一对应的 `tradeQuoteRef`。网络超时相同请求可重试。
 
-成功返回 `tradeQuoteRef`、`commerceQuoteId`、`scopeVersion`、`storeId` 及 `expiresAt`。同一商城报价、范围和主体在有效期内获得同一回执。主体不同或过期返回 409，商城依赖不可用返回可重试的 503。交易接入正常报价前须复核最新范围和快照，与原生订单建立一次性关联，再通过后续资金预留门禁。
+成功返回 `tradeQuoteRef`、`commerceQuoteId`、`scopeVersion`、`storeId`、`sourceDigest` 及 `expiresAt`。同一商城报价、范围和主体在有效期内获得同一回执。主体不同或过期返回 409，商城依赖不可用返回可重试的 503。
+
+## 营销签价与交易冻结
+
+通路依次调用营销 `POST /api/v1/decisions/checkout-pilot:evaluate` 和交易 `POST /internal/v1/checkout-pilot/quote-references/{reference}:freeze`。营销需要认证机器、`decision:evaluate` 和 `decision:checkout-pilot`。将 `tradeQuoteRef` 同时用作请求编号和签名参与编号，命令键为 `checkout:` 加该引用。商城主体引用填入 `subjectToken`，`checkout` 携带原交易引用、摘要、交易租户、范围版本、参与 SKU、出资方及有效期。购物篮中的行键等于商城 SKU。低于门槛时返回标准金额，响应省略 `checkoutQuoteToken`。
+
+交易在固定机器授权及 `trade.checkout-pilot.freeze` 作用域下，验签并重新向商城核对报价来源、商品与门店版本。首份有效签价持久化后可按原签名重试。同一个引用提交不同签名会返回 409。创建原生订单及其支付许可仍需后续关联和预留。较详细的交易配置、协议和回执字段见[交易报价契约](https://github.com/lirji/transaction-center/blob/6049254c38392d013a21a8f7590c5535b1d93582/docs/CHECKOUT_PILOT.md)。
 
 ## 受控配置
 
