@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { encode, request, useResource } from "../shared/api";
 import { useIntent } from "../shared/useIntent";
 import { useRouteState, useCursorState } from "../shared/routeState";
+import { TradeLinks } from "../shared/workspaceLinks";
 import {
   ErrorNotice,
   ListPanel,
@@ -517,7 +518,12 @@ function Recovery() {
                 key: "id",
                 label: "工作标识",
                 children: (
-                  <Typography.Text copyable>{detail.workId}</Typography.Text>
+                  <Space orientation="vertical" size={0}>
+                    <Typography.Text copyable>{detail.workId}</Typography.Text>
+                    {detail.workType === "order.expiry" && (
+                      <TradeLinks orderId={detail.workId} pages={["orders"]} />
+                    )}
+                  </Space>
                 ),
               },
               {

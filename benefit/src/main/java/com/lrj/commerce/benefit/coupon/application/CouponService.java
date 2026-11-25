@@ -126,6 +126,17 @@ public class CouponService implements CouponApi {
 		return result;
 	}
 
+	/** 复用原定义读门禁，并按最初来源编号、版本和门店约束结果。 */
+	public DefinitionView definitionRevision(Actor actor, String store, String id, long version) {
+		var permit = access.scope(actor, COUPON_DEFINITION_READ);
+		Identifiers.require(id);
+		Inputs.require(version > 0, "券版本无效");
+		stores.requireActive(actor, store);
+		var row = mapper.definitionFind(actor.tenantId(), id, version);
+		EmployeeAccess.requireSame(permit, access.scope(actor, COUPON_DEFINITION_READ));
+		return definition(Inputs.found(row != null && row.storeId().equals(store) ? row : null));
+	}
+
 	/** 锁定义序列化配额，当前读检查是否已领，重试不能多占额度。 */
 	public Coupon claim(Actor actor, String key, String id, long version) {
 		Identifiers.require(id);

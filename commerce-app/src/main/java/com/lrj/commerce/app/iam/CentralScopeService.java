@@ -192,7 +192,7 @@ public final class CentralScopeService {
             ||!job.binding().equals(a.binding())||!job.resourceType().equals(type)||!job.expiresAt().isAfter(Instant.now()))throw denied();return job;
     }
     private static void version(Job job,long expected,State state){if(expected<1||job.version()!=expected||!state.code().equals(job.state()))throw conflict("导出检查点或状态已变化");}
-    private static JobView view(Job j){return new JobView(j.id(),j.resourceType(),j.state(),j.rowCount(),j.version(),j.expiresAt().toString());}
+    private static JobView view(Job j){return new JobView(j.id(),j.resourceType(),j.state(),j.rowCount(),j.version(),j.expiresAt().toString(),j.search());}
     private static void validateQuery(int limit,String search){if(limit<1||limit>100||search==null||search.length()>100||search.chars().anyMatch(Character::isISOControl))throw new IllegalArgumentException("查询参数无效");}
     private static String uuid(String value){try{if(value==null||!UUID.fromString(value).toString().equals(value))throw denied();return value;}catch(IllegalArgumentException e){throw denied();}}
     private static void resourceId(String value){if(value==null||!value.matches("[A-Za-z0-9_:/.-]{1,100}"))throw new IllegalArgumentException("资源标识无效");}

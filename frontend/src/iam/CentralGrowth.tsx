@@ -184,7 +184,8 @@ function PolicyList() {
 }
 
 function WalletSearch() {
-  const [member, setMember] = useState<string>();
+  const [query, setMember] = useRouteState("memberId", "");
+  const member = identifier.test(query) ? query : "";
   const [revision, setRevision] = useState(0);
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
@@ -194,6 +195,7 @@ function WalletSearch() {
       <Form
         name="growth-search"
         layout="vertical"
+        initialValues={{ memberId: member }}
         onFinish={(v) => {
           setMember(v.memberId);
           setRevision((n) => n + 1);

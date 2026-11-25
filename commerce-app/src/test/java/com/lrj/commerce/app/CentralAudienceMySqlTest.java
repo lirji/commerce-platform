@@ -115,6 +115,13 @@ class CentralAudienceMySqlTest {
         assertEquals(3,jdbc.queryForObject("SELECT count(*) FROM employee_command_identity WHERE tenant_id=? AND capability='commerce.audience.create' AND resource_type='audience' AND resource_id IN ('A','B') AND store_id IS NULL",Integer.class,tenant));
         var response=http("GET","/v1/admin/audiences","valid",true,null);
         assertEquals(200,response.statusCode());assertFalse(response.body().contains("memberIds"));assertFalse(response.body().contains("imported-not-a-member"));
+        var snapshotPath="/v1/admin/audiences/snapshot?audienceId=A&version=1";
+        var snapshot=http("GET",snapshotPath,"valid",true,null);
+        assertEquals(200,snapshot.statusCode());assertTrue(snapshot.body().contains("\"version\":1"));
+        assertFalse(snapshot.body().contains("imported-not-a-member"));
+        assertEquals(404,http("GET",snapshotPath.replace("=1","=9"),"valid",true,null).statusCode());
+        allowed.remove(AUDIENCE_READ.code());assertEquals(403,http("GET",snapshotPath,"valid",true,null).statusCode());
+        allowed.add(AUDIENCE_READ.code());
         assertThrows(org.springframework.dao.DuplicateKeyException.class,()->assets.createAudience(actor(AUDIENCE_CREATE),id(),value));
         assertEquals(409,http("POST","/v1/admin/audiences","valid",true,value).statusCode());
         allowed.remove(AUDIENCE_CREATE.code());forbidden(()->assets.createAudience(actor(AUDIENCE_READ),id(),input("C",1,List.of())));

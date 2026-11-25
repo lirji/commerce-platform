@@ -78,6 +78,15 @@ public class MarketingAssetService implements MarketingAssets {
 		return result;
 	}
 
+	/** 来源下钻保留历史摘要，不读取成员列表或替换为最新版本。 */
+	public AudienceView audienceSnapshot(Actor actor, Ref ref) {
+		var permit = access.scope(actor, AUDIENCE_READ);
+		validate(ref);
+		var result = mapper.audienceFind(actor.tenantId(), ref.id(), ref.version());
+		EmployeeAccess.requireSame(permit, access.scope(actor, AUDIENCE_READ));
+		return Inputs.found(result);
+	}
+
 	/** 一次批量读取所有固定版本，缺失版本拒绝而非默认命中。 */
 	public List<Source> sources(String tenant, String member, List<Ref> refs, Instant now) {
 		if (refs.isEmpty())

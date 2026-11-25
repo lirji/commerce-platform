@@ -1,4 +1,5 @@
 import { useListFilters } from "../shared/listFilters";
+import { useWorkspaceHref } from "../shared/workspaceLinks";
 import {
   Alert,
   App,
@@ -207,6 +208,16 @@ function OriginalInput({ value }: { value?: { path: string; body: unknown } }) {
   );
 }
 function BatchDetails({ value }: { value: DeliveryView }) {
+  const href = useWorkspaceHref();
+  const coupon = href("coupon-definitions", {
+    storeId: value.content.storeId,
+    definitionId: value.content.definitionId,
+    version: String(value.content.definitionVersion),
+  });
+  const audience = href("audiences", {
+    audienceId: value.content.audience.id,
+    version: String(value.content.audience.version),
+  });
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       <Descriptions
@@ -219,12 +230,22 @@ function BatchDetails({ value }: { value: DeliveryView }) {
           {
             key: "definition",
             label: "固定券定义 / 版本",
-            children: `${value.content.definitionId} / ${value.content.definitionVersion}`,
+            children: (
+              <Space wrap>
+                {`${value.content.definitionId} / ${value.content.definitionVersion}`}
+                {coupon && <a href={coupon}>查看原券定义</a>}
+              </Space>
+            ),
           },
           {
             key: "audience",
             label: "固定人群 / 快照版本",
-            children: `${value.content.audience.id} / ${value.content.audience.version}`,
+            children: (
+              <Space wrap>
+                {`${value.content.audience.id} / ${value.content.audience.version}`}
+                {audience && <a href={audience}>查看原人群快照</a>}
+              </Space>
+            ),
           },
           {
             key: "deadline",
@@ -620,6 +641,7 @@ function Operation({
     [inputError, setInputError] = useState<Error>();
   const [preflight, setPreflight] = useState<DeliveryPreview>();
   const [checking, setChecking] = useState(false);
+  const checkingRef = useRef(false);
   const edited = useRef(false);
   const command = useDeliveryCommand(client, (value) => {
     edited.current = value;
@@ -649,7 +671,7 @@ function Operation({
     access.refresh();
   };
   async function close() {
-    if (command.busy || checking) return;
+    if (command.busy || checkingRef.current) return;
     if (command.frozen) {
       if (
         await modal.confirm({
@@ -696,17 +718,15 @@ function Operation({
     return body;
   }
   async function checkSources() {
-    if (!allowed || checking || command.busy || command.frozen) return;
-    let values: Fields;
-    try {
-      values = await form.validateFields();
-    } catch {
+    if (!allowed || checkingRef.current || command.busy || command.frozen)
       return;
-    }
+    checkingRef.current = true;
     setChecking(true);
     setPreflight(undefined);
     setInputError(undefined);
     try {
+      const values = await form.validateFields().catch(() => undefined);
+      if (!values) return;
       const result = await client<DeliveryPreview>(
         "/admin/coupon-deliveries/preview",
         {
@@ -718,11 +738,12 @@ function Operation({
     } catch (failure) {
       setInputError(failure as Error);
     } finally {
+      checkingRef.current = false;
       setChecking(false);
     }
   }
   async function submit(value: Fields) {
-    if (!allowed || command.busy || checking) return;
+    if (!allowed || command.busy || checkingRef.current) return;
     setInputError(undefined);
     let path: string, body: unknown;
     try {

@@ -1,4 +1,5 @@
 import { useListFilters } from "../shared/listFilters";
+import { TradeLinks } from "../shared/workspaceLinks";
 import { useCursorState } from "../shared/routeState";
 import {
   Button,
@@ -306,6 +307,13 @@ function OrderDetails({
               { label: "会员", value: value.memberId },
               { label: "创建时间", value: time(value.createdAt) },
             ]}
+          />
+          <TradeLinks
+            orderId={value.orderId}
+            member={!admin}
+            pages={
+              admin ? ["fulfillments", "aftersales", "refunds"] : ["aftersales"]
+            }
           />
           <Descriptions
             column={2}

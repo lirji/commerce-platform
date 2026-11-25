@@ -108,6 +108,12 @@ class CentralCouponDefinitionMySqlTest {
         forbidden(()->coupons.definitions(reader,"S1","",50));allowed.add(COUPON_DEFINITION_READ.code());
         var latest=create("A",2,"SOURCE_ONLY");var second=create("B",1,"PUBLIC");
         assertEquals(List.of(latest),coupons.definitions(actor(COUPON_DEFINITION_READ),"S1","",1));
+        var revisionPath="/v1/admin/coupon-definitions/revision?storeId=S1&definitionId=A&version=1";
+        var revision=http("GET",revisionPath,"valid",true,null);
+        assertEquals(200,revision.statusCode());assertTrue(revision.body().contains("\"version\":1"));
+        assertEquals(404,http("GET",revisionPath.replace("storeId=S1","storeId=S2"),"valid",true,null).statusCode());
+        allowed.remove(COUPON_DEFINITION_READ.code());assertEquals(403,http("GET",revisionPath,"valid",true,null).statusCode());
+        allowed.add(COUPON_DEFINITION_READ.code());
         assertEquals(List.of(second),coupons.definitions(actor(COUPON_DEFINITION_READ),"S1","A",1));
         assertTrue(coupons.definitions(actor(COUPON_DEFINITION_READ),"S1","B",1).isEmpty());assertTrue(coupons.definitions(actor(COUPON_DEFINITION_READ),"S2","",10).isEmpty());
         assertEquals(List.of(second),coupons.definitions(customer(),"S1","",50));

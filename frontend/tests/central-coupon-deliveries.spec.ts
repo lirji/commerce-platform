@@ -1,5 +1,10 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import {
+  businessApi,
+  centralNavigationFixture,
+  navigationApi,
+} from "./centralNavigationFixture";
 
 // 精确CouponDeliveryApi契约夹具只验证界面/客户端，不替代真实Auth岗位、原来源或MySQL效果。
 const tenant = "11111111-1111-4111-8111-111111111111";
@@ -86,6 +91,9 @@ async function screenshot(page: Page, name: string) {
 }
 test.beforeEach(async ({ page }) => {
   test.skip(!process.env.COMMERCE_CENTRAL_UI_URL, "需显式独立SSO预览");
+  await page.route(navigationApi, (route) =>
+    route.fulfill({ json: centralNavigationFixture(tenant) }),
+  );
   await page.addInitScript(() => {
     const key = "oidc.user:http://127.0.0.1:18090:commerce-ui-contract";
     if (!sessionStorage.getItem(key))
@@ -105,9 +113,17 @@ test.beforeEach(async ({ page }) => {
 test("创建不依赖读取，脏输入与原键未知意图在页签间保留", async ({ page }) => {
   const attempts: { key?: string; body: string | null; path: string }[] = [],
     paths: string[] = [];
-  await page.route("**/v1/**", async (route) => {
+  const previewKeys: (string | undefined)[] = [];
+  await page.route(businessApi, async (route) => {
     const path = new URL(route.request().url()).pathname;
     paths.push(path);
+    if (path === "/v1/admin/coupon-deliveries/preview") {
+      previewKeys.push(route.request().headers()["idempotency-key"]);
+      const input = route.request().postDataJSON();
+      return route.fulfill({
+        json: { ...input, checkedAt: new Date().toISOString() },
+      });
+    }
     if (
       path === "/v1/admin/coupon-deliveries" &&
       route.request().method() === "POST"
@@ -150,6 +166,14 @@ test("创建不依赖读取，脏输入与原键未知意图在页签间保留",
     .getByLabel("固定人群编号", { exact: true })
     .fill(content.audience.id);
   await dialog.getByLabel("人群快照版本", { exact: true }).fill("3");
+  await dialog
+    .getByRole("button", { name: "预检固定来源", exact: true })
+    .click();
+  await expect(
+    dialog.getByText("固定来源预检通过", { exact: true }),
+  ).toBeVisible();
+  expect(previewKeys).toEqual([undefined]);
+  expect(attempts).toEqual([]);
   await screenshot(page, "create-1440");
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
@@ -217,7 +241,7 @@ test("控制独立输入CAS，确定409可修正；未知后的403保留原请�
   page,
 }) => {
   const attempts: { key?: string; body: string | null }[] = [];
-  await page.route("**/v1/**", async (route) => {
+  await page.route(businessApi, async (route) => {
     if (new URL(route.request().url()).pathname.endsWith("/control")) {
       attempts.push({
         key: route.request().headers()["idempotency-key"],
@@ -285,7 +309,7 @@ test("真实DTO固定来源与进度分开，收件人有界翻页、长编号�
   page,
 }) => {
   const paths: string[] = [];
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     const url = new URL(route.request().url());
     paths.push(url.pathname + url.search);
     if (url.pathname === "/v1/admin/coupon-deliveries")
@@ -326,6 +350,12 @@ test("真实DTO固定来源与进度分开，收件人有界翻页、长编号�
   await expect(
     dialog.getByText("固定人群 / 快照版本", { exact: true }),
   ).toBeVisible();
+  const source = await dialog
+    .getByRole("link", { name: "查看原人群快照" })
+    .getAttribute("href");
+  const sourceQuery = new URL(source!, page.url()).searchParams;
+  expect(sourceQuery.get("audienceId")).toBe(content.audience.id);
+  expect(sourceQuery.get("version")).toBe(String(content.audience.version));
   await expect(dialog.getByText("发放检查点", { exact: true })).toBeVisible();
   await screenshot(page, "detail-1440");
   for (const width of [390, 320]) {
@@ -379,7 +409,7 @@ test("pump未知必须核对后显式新调用，不自动重发、不伪装幂�
   page,
 }) => {
   const attempts: Record<string, string>[] = [];
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     if (
       new URL(route.request().url()).pathname ===
       "/v1/admin/coupon-deliveries/pump"
@@ -442,7 +472,7 @@ test("pump未知必须核对后显式新调用，不自动重发、不伪装幂�
 test("客户端有限路径和输入、损坏或错来源回执拒绝确认、401卸载", async ({
   page,
 }) => {
-  await page.route("**/v1/**", (route) => hint(route, "create"));
+  await page.route(businessApi, (route) => hint(route, "create"));
   await enter(page);
   const result = await page.evaluate(
     async ({ content, view, tenant }) => {
@@ -575,7 +605,7 @@ test("503关闭资格且不降级身份，401清空实际显示的批次与弹�
   let unavailable = true,
     expired = false;
   const posts: string[] = [];
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     const path = new URL(route.request().url()).pathname;
     if (route.request().method() === "POST") posts.push(path);
     if (expired) return route.fulfill({ status: 401, json: {} });
@@ -629,7 +659,7 @@ test("提交中不能关闭或重复发送，确定成功后再恢复离开", as
   const released = new Promise<void>((resolve) => {
     finish = resolve;
   });
-  await page.route("**/v1/**", async (route) => {
+  await page.route(businessApi, async (route) => {
     if (new URL(route.request().url()).pathname.endsWith("/control")) {
       posts++;
       await released;
@@ -666,7 +696,7 @@ test("提交中不能关闭或重复发送，确定成功后再恢复离开", as
 test("具备多个岗位时，关闭后再打开不同表单的标签与目标保持独立", async ({
   page,
 }) => {
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     if (new URL(route.request().url()).pathname.includes("-access"))
       return route.fulfill({ json: { allowed: true } });
     return route.fulfill({ status: 403, json: {} });

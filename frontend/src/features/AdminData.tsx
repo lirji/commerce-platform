@@ -1,7 +1,8 @@
 import { useListFilters } from "../shared/listFilters";
+import { TradeLinks, useWorkspaceHref } from "../shared/workspaceLinks";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
-import { Button, Table, Typography } from "antd";
+import { Button, Space, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";
@@ -418,6 +419,7 @@ export function AdminData({
   onStoresChanged: () => void;
 }) {
   const spec = specs[kind];
+  const href = useWorkspaceHref();
   const [after, setAfter] = useCursorState("after", "");
   const filters = useListFilters(`AdminData.${kind}`, spec.path, () =>
     setAfter(""),
@@ -742,6 +744,35 @@ export function AdminData({
                   value: cell(key, detail[key]),
                 }))}
             />
+            {["fulfillments", "aftersales", "refunds"].includes(kind) && (
+              <TradeLinks orderId={detail.orderId} pages={["orders"]} />
+            )}
+            {kind === "stores" && typeof detail.storeId === "string" && (
+              <Space wrap>
+                <a href={href("skus", { store: detail.storeId })}>
+                  查看门店商品
+                </a>
+                <a href={href("inventory", { store: detail.storeId })}>
+                  查看门店库存
+                </a>
+              </Space>
+            )}
+            {kind === "merchants" && typeof detail.merchantId === "string" && (
+              <a
+                href={href("stores", {
+                  "AdminData.stores.query": JSON.stringify({
+                    merchantId: detail.merchantId,
+                  }),
+                })}
+              >
+                查看下属门店
+              </a>
+            )}
+            {kind === "members" && typeof detail.memberId === "string" && (
+              <a href={href("growth", { member: detail.memberId })}>
+                查看会员成长
+              </a>
+            )}
             <Detail value={detail} />
           </>
         )}

@@ -13,6 +13,7 @@ import {
   InputNumber,
   Radio,
   Space,
+  Spin,
   Table,
   Tabs,
   Typography,
@@ -71,9 +72,17 @@ function couponClient(context: Context, expired: () => void): typeof request {
         (query.get("after") === "" ||
           identifier.test(query.get("after") ?? ""));
     }
+    const revision = new URL(guardedPath, "https://closed.invalid");
+    const fixed =
+      revision.pathname === "/admin/coupon-definitions/revision" &&
+      revision.searchParams.size === 3 &&
+      identifier.test(revision.searchParams.get("storeId") ?? "") &&
+      identifier.test(revision.searchParams.get("definitionId") ?? "") &&
+      /^[1-9][0-9]{0,15}$/.test(revision.searchParams.get("version") ?? "");
     if (!(
       (method === "GET" &&
         (directory ||
+          fixed ||
           path === "/operations/coupon-definitions/create-access")) ||
       (method === "POST" && path === "/admin/coupon-definitions")
     ))
@@ -140,6 +149,56 @@ function Directory() {
       </Form>
       {store && <DefinitionList key={`${store}:${revision}`} store={store} />}
     </Space>
+  );
+}
+
+function FrozenDefinition() {
+  const [storeId] = useRouteState("storeId", "");
+  const [definitionId] = useRouteState("definitionId", "");
+  const [version] = useRouteState("version", "");
+  const valid =
+    identifier.test(storeId) &&
+    identifier.test(definitionId) &&
+    /^[1-9][0-9]{0,15}$/.test(version);
+  const item = useResource<DefinitionView>(
+    valid
+      ? `/admin/coupon-definitions/revision?${new URLSearchParams({ storeId, definitionId, version })}`
+      : null,
+  );
+  if (!definitionId && !version) return null;
+  const value = item.data?.content;
+  return (
+    <Card title="原优惠券定义">
+      {!valid && (
+        <Alert type="warning" title="优惠券定义编号、版本或门店无效" />
+      )}
+      <ErrorNotice error={item.error} onRetry={item.refresh} />
+      {item.loading && <Spin />}
+      {value?.definitionId === definitionId &&
+        value.storeId === storeId &&
+        String(value.version) === version && (
+          <Descriptions
+            column={1}
+            items={[
+              { key: "name", label: "名称", children: value.name },
+              { key: "id", label: "券定义编号", children: definitionId },
+              { key: "version", label: "固定版本", children: version },
+              { key: "store", label: "门店", children: storeId },
+              {
+                key: "discount",
+                label: "优惠金额（元）",
+                children: value.discountAmount,
+              },
+              { key: "quota", label: "发行额度", children: value.quota },
+              {
+                key: "issued",
+                label: "定义累计已发行",
+                children: item.data?.issued,
+              },
+            ]}
+          />
+        )}
+    </Card>
   );
 }
 function DefinitionList({ store }: { store: string }) {
@@ -639,7 +698,12 @@ export function CentralCouponDefinitions({
                   {
                     key: "directory",
                     label: "券定义目录",
-                    children: <Directory />,
+                    children: (
+                      <Space orientation="vertical" style={{ width: "100%" }}>
+                        <FrozenDefinition />
+                        <Directory />
+                      </Space>
+                    ),
                   },
                   {
                     key: "create",

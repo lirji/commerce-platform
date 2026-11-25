@@ -1,6 +1,7 @@
 import { formatField, workTypeLabel } from "../shared/ui";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
+import { TradeLinks } from "../shared/workspaceLinks";
 import {
   Alert,
   Button,
@@ -131,7 +132,15 @@ function RuntimeRead() {
           ].map(([dataIndex, title]) => ({
             dataIndex,
             title,
-            render: (v) => formatField(dataIndex, v),
+            render: (v) =>
+              dataIndex === "workId" && workType === "order.expiry" ? (
+                <Space orientation="vertical" size={0}>
+                  {formatField(dataIndex, v)}
+                  <TradeLinks orderId={v} pages={["orders"]} />
+                </Space>
+              ) : (
+                formatField(dataIndex, v)
+              ),
           }))}
         />
         <div className="pager-navigation">
@@ -178,7 +187,15 @@ function RuntimeRead() {
           ].map(([dataIndex, title]) => ({
             dataIndex,
             title,
-            render: (v) => formatField(dataIndex, v),
+            render: (v, row: OperationRow) =>
+              dataIndex === "workId" && row.workType === "order.expiry" ? (
+                <Space orientation="vertical" size={0}>
+                  {formatField(dataIndex, v)}
+                  <TradeLinks orderId={v} pages={["orders"]} />
+                </Space>
+              ) : (
+                formatField(dataIndex, v)
+              ),
           }))}
         />
         <div className="pager-navigation">

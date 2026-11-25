@@ -1,4 +1,5 @@
 import { useListFilters } from "../shared/listFilters";
+import { useWorkspaceHref } from "../shared/workspaceLinks";
 import { CursorBack } from "../shared/pagination";
 import {
   Alert,
@@ -67,6 +68,22 @@ const forbidden = (error?: Error) =>
   error instanceof ApiError && error.status === HTTP.FORBIDDEN;
 
 function Result({ value }: { value: CampaignView }) {
+  const href = useWorkspaceHref();
+  const audience = value.content.policy?.audience;
+  const coupon = value.content.policy?.terms?.coupon;
+  const audienceUrl =
+    audience &&
+    href("audiences", {
+      audienceId: audience.id,
+      version: String(audience.version),
+    });
+  const couponUrl =
+    coupon &&
+    href("coupon-definitions", {
+      storeId: value.content.storeId,
+      definitionId: coupon.definitionId,
+      version: String(coupon.version),
+    });
   return (
     <Alert
       type="success"
@@ -88,6 +105,24 @@ function Result({ value }: { value: CampaignView }) {
             },
             { key: "status", label: "实际状态", children: value.status },
             { key: "lock", label: "状态锁版本", children: value.lockVersion },
+            ...(audienceUrl
+              ? [
+                  {
+                    key: "audience",
+                    label: "固定人群版本",
+                    children: <a href={audienceUrl}>查看原人群快照</a>,
+                  },
+                ]
+              : []),
+            ...(couponUrl
+              ? [
+                  {
+                    key: "coupon",
+                    label: "固定券版本",
+                    children: <a href={couponUrl}>查看原券定义</a>,
+                  },
+                ]
+              : []),
           ]}
         />
       }
@@ -149,6 +184,7 @@ function Directory({
   revision: number;
   select: (value: CampaignView) => void;
 }) {
+  const href = useWorkspaceHref();
   const [after, setAfter] = useCursorState("CampaignDirectory.after", "");
   const filters = useListFilters(
     "CampaignDirectory.after",
@@ -175,7 +211,7 @@ function Directory({
           loading={rows.loading}
           dataSource={rows.data ?? []}
           pagination={false}
-          scroll={{ x: 1180 }}
+          scroll={{ x: 1280 }}
           columns={[
             {
               title: "活动",
@@ -218,12 +254,22 @@ function Directory({
             },
             {
               title: "版本操作",
-              width: 110,
-              render: (_, row) => (
-                <Button type="link" onClick={() => select(row)}>
-                  选择此版本
-                </Button>
-              ),
+              width: 180,
+              render: (_, row) => {
+                const url = href("campaign-budgets", {
+                  "CampaignBudgets.after.query": JSON.stringify({
+                    campaignId: row.content.campaignId,
+                  }),
+                });
+                return (
+                  <Space wrap>
+                    <Button type="link" onClick={() => select(row)}>
+                      选择此版本
+                    </Button>
+                    {url && <a href={url}>查看活动预算</a>}
+                  </Space>
+                );
+              },
             },
           ]}
         />

@@ -45,6 +45,9 @@ public interface MarketingAssets {
 	/** 只读条件保持当前业务授权边界。 */
 	List<AudienceView> audiences(Actor actor, String after, int limit, ListFilter filter);
 
+	/** 读取历史固定快照的摘要，成员名单仍由原有内部流程读取。 */
+	AudienceView audienceSnapshot(Actor actor, Ref ref);
+
 	List<Source> sources(String tenant, String member, List<Ref> refs, Instant now);
 
 	/** 已发布固定人群的有界成员游标，不能读取未完成刷新结果。 */

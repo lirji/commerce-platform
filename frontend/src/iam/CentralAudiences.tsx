@@ -147,6 +147,53 @@ function Directory({ revision }: { revision: number }) {
   );
 }
 
+function FrozenAudience() {
+  const [id] = useRouteState("audienceId", "");
+  const [version] = useRouteState("version", "");
+  const valid =
+    audienceIdentifier.test(id) && /^[1-9][0-9]{0,15}$/.test(version);
+  const item = useResource<AudienceView>(
+    valid
+      ? `/admin/audiences/snapshot?${new URLSearchParams({ audienceId: id, version })}`
+      : null,
+  );
+  if (!id && !version) return null;
+  return (
+    <Card title="原人群快照">
+      {!valid && <Alert type="warning" title="人群快照编号或版本无效" />}
+      <ErrorNotice error={item.error} onRetry={item.refresh} />
+      {item.loading && <Spin />}
+      {item.data?.audienceId === id &&
+        String(item.data.version) === version && (
+          <Descriptions
+            column={1}
+            items={[
+              { key: "id", label: "人群编号", children: id },
+              { key: "version", label: "固定版本", children: version },
+              { key: "name", label: "名称", children: item.data.name },
+              { key: "source", label: "来源", children: item.data.source },
+              {
+                key: "count",
+                label: "成员数",
+                children: item.data.memberCount,
+              },
+              {
+                key: "watermark",
+                label: "数据时点",
+                children: time(item.data.watermark),
+              },
+              {
+                key: "until",
+                label: "有效截止",
+                children: time(item.data.validUntil),
+              },
+            ]}
+          />
+        )}
+    </Card>
+  );
+}
+
 function CreateAudience({
   client,
   markDirty,
@@ -526,7 +573,12 @@ export function CentralAudiences({
                 {
                   key: "directory",
                   label: "人群目录",
-                  children: <Directory revision={revision} />,
+                  children: (
+                    <Space orientation="vertical" style={{ width: "100%" }}>
+                      <FrozenAudience />
+                      <Directory revision={revision} />
+                    </Space>
+                  ),
                 },
                 {
                   key: "create",

@@ -40,9 +40,17 @@ export function audienceClient(
         (query.get("after") === "" ||
           audienceIdentifier.test(query.get("after") ?? ""));
     }
+    const snapshot = new URL(guardedPath, "https://closed.invalid");
+    const fixed =
+      snapshot.pathname === "/admin/audiences/snapshot" &&
+      snapshot.searchParams.size === 2 &&
+      audienceIdentifier.test(snapshot.searchParams.get("audienceId") ?? "") &&
+      /^[1-9][0-9]{0,15}$/.test(snapshot.searchParams.get("version") ?? "");
     if (!(
       (method === "GET" &&
-        (directory || path === "/operations/audiences/create-access")) ||
+        (directory ||
+          fixed ||
+          path === "/operations/audiences/create-access")) ||
       (method === "POST" && path === "/admin/audiences")
     ))
       throw new ApiError(HTTP.FORBIDDEN, "此入口不支持该操作");

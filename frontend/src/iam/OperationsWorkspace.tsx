@@ -1,6 +1,7 @@
 import { Pager, Status, formatField, TableReadHint } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
+import { TradeLinks } from "../shared/workspaceLinks";
 import {
   Alert,
   App,
@@ -34,6 +35,12 @@ export type OperationsProps = {
   onLogout: () => Promise<void>;
 };
 export type OperationRow = Record<string, unknown>;
+const tradeRelated = {
+  "/admin/orders": ["payments", "fulfillments", "aftersales", "refunds"],
+  "/admin/fulfillments": ["orders", "aftersales"],
+  "/admin/aftersales": ["orders", "fulfillments", "refunds"],
+  "/admin/refunds": ["orders", "payments", "aftersales"],
+} as const;
 export type Field = {
   name: string;
   label: string;
@@ -181,6 +188,8 @@ export function OperationsList({
     detail = useResource<OperationRow>(
       detailId && detailPath ? detailPath(detailId) : null,
     );
+  const related = tradeRelated[path as keyof typeof tradeRelated];
+  const record = detailPath ? detail.data : selected;
   const table: ColumnsType<OperationRow> = columns.map(([key, title]) => ({
     key,
     title,
@@ -274,8 +283,14 @@ export function OperationsList({
           <Typography.Text>正在核对详情权限…</Typography.Text>
         ) : (
           selected &&
-          (!detailPath || detail.data) && (
-            <OperationDetails row={detail.data ?? selected} fields={fields} />
+          record &&
+          record[idField] === selected[idField] && (
+            <Space orientation="vertical" style={{ width: "100%" }}>
+              {related && (
+                <TradeLinks orderId={record.orderId} pages={related} />
+              )}
+              <OperationDetails row={record} fields={fields} />
+            </Space>
           )
         )}
       </Modal>

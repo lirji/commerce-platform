@@ -1,4 +1,12 @@
-import { Alert, App, Button, Descriptions, Space, Spin } from "antd";
+import {
+  Alert,
+  App,
+  Button,
+  Descriptions,
+  Space,
+  Spin,
+  Typography,
+} from "antd";
 import { useRef, useState } from "react";
 import { central, CentralError, useCentral, type Context } from "./api";
 const State = {
@@ -13,6 +21,7 @@ type Job = {
   rowCount: number;
   version: number;
   expiresAt: string;
+  search?: string;
 };
 /** URL任务只定位，后台每次重新检查本人、代际、范围与固定授权期限。 */
 export function ProductExport({
@@ -21,6 +30,7 @@ export function ProductExport({
   jobId,
   revision,
   onJob,
+  onPending,
   refresh,
 }: {
   context: Context;
@@ -28,6 +38,7 @@ export function ProductExport({
   jobId: string | null;
   revision: number;
   onJob: (id: string | null) => void;
+  onPending: (pending: boolean) => void;
   refresh: () => void;
 }) {
   const access = useCentral<{ export: boolean }>(
@@ -50,6 +61,7 @@ export function ProductExport({
   async function command(path: string) {
     if (running.current) return;
     running.current = true;
+    onPending(true);
     setBusy(true);
     setError(undefined);
     if (!intent.current) intent.current = { path, key: crypto.randomUUID() };
@@ -61,6 +73,7 @@ export function ProductExport({
         intent.current.key,
       );
       intent.current = undefined;
+      onPending(false);
       setUnknown(false);
       onJob(result.id);
       refresh();
@@ -73,6 +86,7 @@ export function ProductExport({
       setError(e as Error);
       if (e instanceof CentralError && e.status < 500) {
         intent.current = undefined;
+        onPending(false);
         setUnknown(false);
         refresh();
       } else setUnknown(true);
@@ -158,7 +172,21 @@ export function ProductExport({
                 column={1}
                 bordered
                 items={[
-                  { key: "id", label: "导出任务", children: job.data.id },
+                  {
+                    key: "id",
+                    label: "导出任务",
+                    children: (
+                      <Typography.Text copyable>{job.data.id}</Typography.Text>
+                    ),
+                  },
+                  {
+                    key: "search",
+                    label: "提交时检索条件",
+                    children:
+                      job.data.search === ""
+                        ? "全部授权商品"
+                        : (job.data.search ?? "暂未返回"),
+                  },
                   {
                     key: "state",
                     label: "执行状态",

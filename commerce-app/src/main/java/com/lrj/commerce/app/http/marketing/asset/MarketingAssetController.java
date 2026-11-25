@@ -49,6 +49,13 @@ public class MarketingAssetController {
 		return assets.audiences(actor, after, limit, new ListFilter(q, status, from, to));
 	}
 
+	/** 读取发券或活动使用的固定快照摘要。 */
+	@GetMapping("/audiences/snapshot")
+	public Object audienceSnapshot(@AuthenticationPrincipal Actor actor, @RequestParam String audienceId,
+			@RequestParam long version) {
+		return assets.audienceSnapshot(actor, new MarketingAssets.Ref(audienceId, version));
+	}
+
 	/** 规则字段按服务器目录校验。 */
 	@PostMapping("/rules")
 	public Object rule(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
@@ -91,8 +98,9 @@ public class MarketingAssetController {
 	public Object budgets(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return funding.budgets(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String campaignId) {
+		return funding.budgets(actor, after, limit, ListFilter.related(q, status, from, to, null, campaignId));
 	}
 
 }

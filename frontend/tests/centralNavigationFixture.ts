@@ -1,5 +1,8 @@
 import { compiledMenus } from "../src/iam/navigation";
 
+export const navigationApi = "**/v1/operations/navigation*";
+export const businessApi = /\/v1\/(?!operations\/navigation(?:\?|$))/;
+
 /** 仅供公开DTO浏览器边界，显式提供本人导航；不证明真实SSO或后台权限。 */
 export function centralNavigationFixture(tenant: string) {
   return {

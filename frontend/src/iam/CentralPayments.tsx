@@ -1,7 +1,8 @@
 import { Button, Card, Form, Input, Space } from "antd";
-import { useState } from "react";
 import { useResource } from "../shared/api";
+import { useRouteState } from "../shared/routeState";
 import { ErrorNotice } from "../shared/ui";
+import { TradeLinks } from "../shared/workspaceLinks";
 import {
   OperationsWorkspace,
   OperationAction,
@@ -11,13 +12,18 @@ import {
 } from "./OperationsWorkspace";
 import { identifier } from "./operationsClient";
 function PaymentRead() {
-  const [order, setOrder] = useState("");
+  const [query, setOrder] = useRouteState("orderId", "");
+  const order = identifier.test(query) ? query : "";
   const view = useResource<OperationRow>(
     order ? `/admin/orders/${order}/payment` : null,
   );
   return (
     <Card title="按原订单读取支付">
-      <Form layout="inline" onFinish={(v) => setOrder(v.orderId)}>
+      <Form
+        layout="inline"
+        initialValues={{ orderId: order }}
+        onFinish={(v) => setOrder(v.orderId)}
+      >
         <Form.Item
           name="orderId"
           label="订单编号"
@@ -40,18 +46,24 @@ function PaymentRead() {
       </Form>
       <ErrorNotice error={view.error} onRetry={view.refresh} />
       {view.data && (
-        <OperationDetails
-          row={view.data}
-          fields={[
-            ["paymentId", "支付编号"],
-            ["orderId", "订单编号"],
-            ["amount", "支付金额"],
-            ["currency", "币种"],
-            ["provider", "原渠道"],
-            ["status", "渠道状态"],
-            ["version", "数据版本"],
-          ]}
-        />
+        <Space orientation="vertical" style={{ width: "100%" }}>
+          <TradeLinks
+            orderId={view.data.orderId}
+            pages={["orders", "refunds"]}
+          />
+          <OperationDetails
+            row={view.data}
+            fields={[
+              ["paymentId", "支付编号"],
+              ["orderId", "订单编号"],
+              ["amount", "支付金额"],
+              ["currency", "币种"],
+              ["provider", "原渠道"],
+              ["status", "渠道状态"],
+              ["version", "数据版本"],
+            ]}
+          />
+        </Space>
       )}
     </Card>
   );

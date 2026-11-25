@@ -56,6 +56,9 @@ public interface CouponApi {
 	/** 只读条件保持当前业务授权边界。 */
 	List<DefinitionView> definitions(Actor actor, String store, String after, int limit, ListFilter filter);
 
+	/** 运营按实际门店与不可变版本核对发券来源，沿用定义读权限。 */
+	DefinitionView definitionRevision(Actor actor, String store, String id, long version);
+
 	/** 受控兑换的定义必须禁止公开领取。 */
 	void validateExchange(String tenant, String store, String definition, long version, Instant from, Instant to);
 

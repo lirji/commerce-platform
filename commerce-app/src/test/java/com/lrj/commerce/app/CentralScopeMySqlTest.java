@@ -85,7 +85,11 @@ class CentralScopeMySqlTest {
         assertThrows(DomainException.class,()->restarted.download(identity,"product",job.id()));
     }
     @Test void changedAuthorizationBlocksQueuedRunningAndCompletedWork(){
-        var queued=service.submit(identity,"store","",id());denied.set(true);
+        var filtered=service.submit(identity,"store","S001",id());
+        assertEquals("S001",service.job(identity,"store",filtered.id()).search());
+        var queued=service.submit(identity,"store","",id());
+        denied.set(true);
+        assertThrows(AccessDeniedException.class,()->service.job(identity,"store",filtered.id()));
         assertThrows(AccessDeniedException.class,()->service.start(identity,"store",queued.id(),queued.version(),id()));denied.set(false);
         var running=service.start(identity,"store",queued.id(),queued.version(),id());epoch.incrementAndGet();
         assertThrows(AccessDeniedException.class,()->service.advance(identity,"store",queued.id(),running.version(),id()));epoch.decrementAndGet();

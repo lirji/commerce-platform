@@ -81,8 +81,9 @@ public class CommerceController {
 	public Object stores(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return stores.list(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String merchantId) {
+		return stores.list(actor, after, limit, ListFilter.related(q, status, from, to, merchantId, null));
 	}
 
 	@PostMapping("/admin/skus")

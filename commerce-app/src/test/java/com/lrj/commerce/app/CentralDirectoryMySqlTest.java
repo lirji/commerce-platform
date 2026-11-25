@@ -92,6 +92,10 @@ class CentralDirectoryMySqlTest {
         forbidden(()->stores.create(actor(EmployeeAccess.Capability.STORE_CREATE),id(),new StoreApi.Create("N","M1","new")));
         forbidden(()->merchants.list(admin,"",10));forbidden(()->stores.list(admin,"",10));
         assertEquals(200,http("GET","/v1/admin/merchants?limit=1","valid",true,null).statusCode());
+        var exact=http("GET","/v1/admin/stores?merchantId=M1&limit=1","valid",true,null);
+        assertEquals(200,exact.statusCode());assertTrue(exact.body().contains("\"storeId\":\"S1\""));
+        assertEquals("[]",http("GET","/v1/admin/stores?merchantId=M0","valid",true,null).body());
+        assertEquals("[]",http("GET","/v1/admin/stores?merchantId=M","valid",true,null).body());
         assertEquals(403,http("GET","/v1/admin/stores",adminToken,false,null).statusCode());
         assertEquals(401,http("GET","/v1/admin/merchants","invalid",true,null).statusCode());
         assertEquals(403,http("POST","/v1/admin/merchants","valid",true,new MerchantApi.Create("N","new")).statusCode());

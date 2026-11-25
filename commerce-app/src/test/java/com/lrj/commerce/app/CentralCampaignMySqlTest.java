@@ -336,6 +336,20 @@ class CentralCampaignMySqlTest {
         assertEquals(401,http("GET","/operations/unregistered",null,false,null).statusCode());
         assertEquals(0,count("employee_command_identity"));
     }
+    @Test void exactCampaignBudgetLookupKeepsAllVersionsAndIndependentReadPermission() throws Exception {
+        for (String name : List.of("A", "AB")) {
+            create(name, 7, false);
+            campaigns.publish(actor(CAMPAIGN_PUBLISH), id(), name, 7, 0);
+        }
+        allowed.clear();allowed.add(BUDGET_READ.code());
+        var result = http("GET", "/v1/admin/campaign-budgets?campaignId=A", "valid", true, null);
+        assertEquals(200, result.statusCode());
+        assertTrue(result.body().contains("\"campaignId\":\"A\""));
+        assertFalse(result.body().contains("\"campaignId\":\"AB\""));
+        allowed.clear();allowed.add(CAMPAIGN_READ.code());
+        assertEquals(403, http("GET", "/v1/admin/campaign-budgets?campaignId=A", "valid", true, null).statusCode());
+    }
+
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).timeout(Duration.ofSeconds(15));
         if(token!=null)request.header("Authorization","Bearer "+token);

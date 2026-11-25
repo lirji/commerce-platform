@@ -1,5 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import {
+  businessApi,
+  centralNavigationFixture,
+  navigationApi,
+} from "./centralNavigationFixture";
 
 // 公开DTO夹具验证界面与意图恢复；真正PKCE/授权/预算效果由跨进程演练独立证明。
 const tenant = "11111111-1111-4111-8111-111111111111";
@@ -75,6 +80,9 @@ async function fillDraft(page: Page) {
 }
 test.beforeEach(async ({ page }) => {
   test.skip(!process.env.COMMERCE_CENTRAL_UI_URL, "需显式独立SSO预览");
+  await page.route(navigationApi, (route) =>
+    route.fulfill({ json: centralNavigationFixture(tenant) }),
+  );
   await loginFixture(page);
 });
 
@@ -85,11 +93,11 @@ test("活动创建独立于读取，长表单与关闭保护，丢响应后保�
     requests: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("request", (request) => {
-    if (request.url().includes("/v1/"))
+    if (businessApi.test(request.url()))
       requests.push(new URL(request.url()).pathname);
   });
   const attempts: { key?: string; body: string | null }[] = [];
-  await page.route("**/v1/**", async (route) => {
+  await page.route(businessApi, async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/v1/operations/campaigns/create-access")
       return route.fulfill({ json: { allowed: true } });
@@ -214,7 +222,7 @@ test("活动创建独立于读取，长表单与关闭保护，丢响应后保�
 test("预算独立入口只读取预算，401卸载敏感视图", async ({ page }) => {
   const paths: string[] = [];
   let invalid = false;
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     const path = new URL(route.request().url()).pathname;
     paths.push(path);
     return invalid
@@ -261,7 +269,7 @@ test("独立审批操作使用内容版本和服务端锁版本，预览展示�
   page,
 }) => {
   const writes: { path: string; body: unknown }[] = [];
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     const request = route.request(),
       path = new URL(request.url()).pathname;
     if (path.endsWith("-access"))

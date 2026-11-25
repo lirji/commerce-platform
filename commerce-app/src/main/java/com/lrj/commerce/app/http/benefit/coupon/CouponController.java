@@ -33,6 +33,13 @@ public class CouponController {
 		return coupons.definitions(actor, storeId, after, limit, new ListFilter(q, status, from, to));
 	}
 
+	/** 运营核对最初批次关联的历史版本，读取资格独立核验。 */
+	@GetMapping("/admin/coupon-definitions/revision")
+	public Object definitionRevision(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,
+			@RequestParam String definitionId, @RequestParam long version) {
+		return coupons.definitionRevision(actor, storeId, definitionId, version);
+	}
+
 	/** 同会员同券版本最多领取一次。 */
 	@PostMapping("/coupons/{id}/{version}/claim")
 	public Object claim(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,

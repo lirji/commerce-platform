@@ -3,9 +3,24 @@ import { useEffect, useState } from "react";
 import { useRouteState } from "./routeState";
 import { statusText, localDateTime, time } from "./ui";
 
-const exactIds = ["storeId", "orderId"] as const;
+const tradeIds = ["storeId", "orderId"] as const;
+const exactIds = [...tradeIds, "merchantId", "campaignId"] as const;
 const identifier = /^[A-Za-z0-9_.:-]{1,64}$/;
-const exactLabels = { storeId: "店铺编号", orderId: "精确订单编号" };
+const storeScopedLists = new Set([
+  "/admin/coupon-definitions",
+  "/coupon-definitions",
+  "/admin/coupon-deliveries",
+  "/admin/entitlement-definitions",
+  "/admin/point-offers",
+  "/point-offers",
+  "/admin/inventory",
+]);
+const exactLabels = {
+  storeId: "店铺编号",
+  orderId: "精确订单编号",
+  merchantId: "商家编号",
+  campaignId: "活动编号",
+};
 
 type FilterSpec = {
   hint: string;
@@ -24,6 +39,7 @@ const specs: Record<string, FilterSpec> = {
   "/admin/stores": {
     hint: "门店编号、商家编号或名称",
     states: ["ACTIVE", "FROZEN"],
+    exact: ["merchantId"],
   },
   "/admin/skus": { hint: "规格编号、商品编号或名称" },
   "/catalog": { hint: "规格编号、商品编号或名称" },
@@ -33,7 +49,7 @@ const specs: Record<string, FilterSpec> = {
     states: ["ACTIVE", "FROZEN"],
   },
   "/admin/orders": {
-    exact: exactIds,
+    exact: tradeIds,
     hint: "订单、会员、门店或商家编号",
     states: [
       "PENDING_PAYMENT",
@@ -61,13 +77,13 @@ const specs: Record<string, FilterSpec> = {
     time: true,
   },
   "/admin/fulfillments": {
-    exact: exactIds,
+    exact: tradeIds,
     blocked: true,
     hint: "订单编号、运单或仓配渠道",
     states: ["READY", "SHIPPED", "DELIVERED", "CANCELLED"],
   },
   "/admin/aftersales": {
-    exact: exactIds,
+    exact: tradeIds,
     hint: "售后、订单、会员或退款编号",
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
   },
@@ -77,7 +93,7 @@ const specs: Record<string, FilterSpec> = {
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
   },
   "/admin/refunds": {
-    exact: exactIds,
+    exact: tradeIds,
     hint: "退款、售后、订单编号或渠道",
     states: ["UNKNOWN", "SUCCEEDED"],
   },
@@ -191,21 +207,19 @@ const specs: Record<string, FilterSpec> = {
   "/admin/inventory": { hint: "商品规格编号" },
 
   "/admin/member-tags": { hint: "标签编号或名称" },
-  "/admin/campaign-budgets": { hint: "预算或活动编号" },
+  "/admin/campaign-budgets": { hint: "预算或活动编号", exact: ["campaignId"] },
   "/admin/store-grants": { hint: "授权、人员或资源编号", enabled: true },
   "/admin/events": {
     hint: "事件编号、类型或业务编号",
     states: ["PENDING", "DELIVERED", "ISOLATED", "SKIPPED"],
   },
 };
-type Values = {
+type Values = Partial<Record<(typeof exactIds)[number], string>> & {
   q?: string;
   status?: string;
   from?: string;
   to?: string;
   enabled?: boolean;
-  storeId?: string;
-  orderId?: string;
   blocked?: boolean;
   limit?: number;
 };
@@ -220,18 +234,12 @@ function decode(raw: string, spec?: FilterSpec): Values {
       code = readText(r.status);
     return {
       q: q?.slice(0, 64),
-      storeId:
-        spec?.exact?.includes("storeId") &&
-        typeof r.storeId === "string" &&
-        identifier.test(r.storeId)
-          ? r.storeId
-          : undefined,
-      orderId:
-        spec?.exact?.includes("orderId") &&
-        typeof r.orderId === "string" &&
-        identifier.test(r.orderId)
-          ? r.orderId
-          : undefined,
+      ...Object.fromEntries(
+        (spec?.exact ?? []).flatMap((key) => {
+          const value = readText(r[key]);
+          return value && identifier.test(value) ? [[key, value]] : [];
+        }),
+      ),
       blocked:
         spec?.blocked && typeof r.blocked === "boolean" ? r.blocked : undefined,
       status: code && spec?.states?.includes(code) ? code : undefined,
@@ -307,8 +315,7 @@ export function useListFilters(
       values.from ||
       values.to ||
       values.enabled !== undefined ||
-      values.storeId ||
-      values.orderId ||
+      exactIds.some((key) => values[key]) ||
       values.blocked !== undefined
     ),
     limit,
@@ -363,8 +370,7 @@ function ListFilters({
     form.setFieldsValue({
       q: next.q,
       status: next.status,
-      storeId: next.storeId,
-      orderId: next.orderId,
+      ...Object.fromEntries(exactIds.map((key) => [key, next[key]])),
       blocked: next.blocked === undefined ? undefined : String(next.blocked),
       from: next.from ? localDateTime(next.from) : undefined,
       to: next.to ? localDateTime(next.to) : undefined,
@@ -374,8 +380,11 @@ function ListFilters({
   };
   const active = [
     { key: "q", label: "关键词", text: values.q },
-    { key: "storeId", label: "店铺编号", text: values.storeId },
-    { key: "orderId", label: "订单编号", text: values.orderId },
+    ...exactIds.map((key) => ({
+      key,
+      label: exactLabels[key],
+      text: values[key],
+    })),
     {
       key: "blocked",
       label: "售后阻拦",
@@ -436,8 +445,6 @@ function ListFilters({
           applyValues({
             ...v,
             q: v.q?.trim(),
-            storeId: v.storeId?.trim(),
-            orderId: v.orderId?.trim(),
             blocked: v.blocked === undefined ? undefined : v.blocked === "true",
             enabled: v.enabled === undefined ? undefined : v.enabled === "true",
           })
@@ -485,7 +492,9 @@ function ListFilters({
               allowClear
               maxLength={64}
               placeholder={
-                key === "storeId" ? "按完整店铺编号查询" : "按完整订单编号查询"
+                key === "orderId"
+                  ? "按完整订单编号查询"
+                  : `按完整${exactLabels[key]}查询`
               }
             />
           </Form.Item>
@@ -608,17 +617,22 @@ export function listGuardPath(path: string): string {
     "enabled",
     ...exactIds,
     "blocked",
-  ]) {
+  ] as const) {
     if (!q.has(key)) continue;
     const value = q.get(key) ?? "";
+    if (key === "storeId" && storeScopedLists.has(url.pathname)) {
+      if (q.getAll(key).length !== 1 || !identifier.test(value))
+        return "/unsupported-list-query";
+      continue;
+    }
     if (
       q.getAll(key).length !== 1 ||
       (key === "enabled" &&
         (!spec.enabled || !["true", "false"].includes(value))) ||
       (key === "blocked" &&
         (!spec.blocked || !["true", "false"].includes(value))) ||
-      ((key === "storeId" || key === "orderId") &&
-        (!spec.exact?.includes(key) || !identifier.test(value))) ||
+      (exactIds.some((id) => key === id) &&
+        (!spec.exact?.some((id) => key === id) || !identifier.test(value))) ||
       (key === "q" && value.length > 64) ||
       (key === "status" && !spec.states?.includes(value)) ||
       (["from", "to"].includes(key) &&

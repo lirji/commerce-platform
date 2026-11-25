@@ -1,5 +1,10 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import {
+  businessApi,
+  centralNavigationFixture,
+  navigationApi,
+} from "./centralNavigationFixture";
 
 // 公开SegmentApi DTO只用于界面/原意图测试；真实Auth、SQL与最终JAR另由跨进程验证。
 const tenant = "11111111-1111-4111-8111-111111111111";
@@ -93,6 +98,9 @@ async function openOperation(page: Page, action: string) {
 }
 test.beforeEach(async ({ page }) => {
   test.skip(!process.env.COMMERCE_CENTRAL_UI_URL, "需显式独立SSO预览");
+  await page.route(navigationApi, (route) =>
+    route.fulfill({ json: centralNavigationFixture(tenant) }),
+  );
   await page.addInitScript(() =>
     sessionStorage.setItem(
       "oidc.user:http://127.0.0.1:18090:commerce-ui-contract",
@@ -114,7 +122,7 @@ test("创建独立于读取，手机表单、关闭保护和丢响应原意图�
     attempts: { key?: string; body: string | null }[] = [],
     paths: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.route("**/v1/**", async (route) => {
+  await page.route(businessApi, async (route) => {
     const path = new URL(route.request().url()).pathname;
     paths.push(path);
     if (path === "/v1/admin/segments" && route.request().method() === "POST") {
@@ -202,7 +210,7 @@ test("创建独立于读取，手机表单、关闭保护和丢响应原意图�
 
 test("仅调度权限直接输入真实目标，409后允许修正锁版本", async ({ page }) => {
   const attempts: { key?: string; body: string | null }[] = [];
-  await page.route("**/v1/**", async (route) => {
+  await page.route(businessApi, async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/v1/admin/segments/SEG%3A7/schedule") {
       attempts.push({
@@ -249,7 +257,7 @@ test("仅调度权限直接输入真实目标，409后允许修正锁版本", as
 });
 
 test("读取真实DTO分开三个版本，运行详情键盘与焦点返回", async ({ page }) => {
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/v1/admin/segments") return route.fulfill({ json: [view] });
     if (path === "/v1/admin/segments/SEG%3A7/runs")
@@ -301,7 +309,7 @@ test("pump未知不会自动重发或伪装幂等，显式确认才允许下一�
   page,
 }) => {
   const attempts: Record<string, string>[] = [];
-  await page.route("**/v1/**", async (route) => {
+  await page.route(businessApi, async (route) => {
     if (new URL(route.request().url()).pathname === "/v1/admin/segments/pump") {
       attempts.push(route.request().headers());
       if (attempts.length === 1) return route.abort("failed");
@@ -370,7 +378,7 @@ test("刷新受理不等于完成，实际原来源拒绝时保留未知控制�
   let control = 0,
     expired = false;
   const attempts: { path: string; key?: string; body: string | null }[] = [];
-  await page.route("**/v1/**", async (route) => {
+  await page.route(businessApi, async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (expired) return route.fulfill({ status: 401, json: {} });
     if (path.endsWith("refresh-access") || path.endsWith("control-access"))
@@ -431,7 +439,7 @@ test("刷新受理不等于完成，实际原来源拒绝时保留未知控制�
 test("严格入口拒绝方法/路径/游标越界，损坏或错目标回执不确认成功", async ({
   page,
 }) => {
-  await page.route("**/v1/**", (route) => onlyHint(route, "create"));
+  await page.route(businessApi, (route) => onlyHint(route, "create"));
   await enter(page);
   const result = await page.evaluate(
     async ({ view, run, tenant }) => {
@@ -553,7 +561,7 @@ test("严格入口拒绝方法/路径/游标越界，损坏或错目标回执不
 test("资格503关闭写入，重新核验恢复且不回退旧ADMIN", async ({ page }) => {
   let unavailable = true;
   const posts: string[] = [];
-  await page.route("**/v1/**", (route) => {
+  await page.route(businessApi, (route) => {
     if (route.request().method() === "POST") posts.push(route.request().url());
     if (
       new URL(route.request().url()).pathname ===

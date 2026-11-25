@@ -8,5 +8,6 @@
   <update id="finishBudget">UPDATE marketing_budget SET held=held-#{hold.discount},spent=spent+<choose><when test="confirmed">#{hold.discount}</when><otherwise>0</otherwise></choose> WHERE tenant_id=#{tenant} AND campaign_id=#{hold.campaignId} AND version=#{hold.version} AND held&gt;=#{hold.discount}</update>
   <update id="finishHold">UPDATE marketing_budget_hold SET status=#{status} WHERE tenant_id=#{tenant} AND order_id=#{order} AND status='HELD'</update>
   <select id="list" resultType="com.lrj.commerce.campaign.funding.api.CampaignFundingApi$Budget">SELECT budget_id,campaign_id,version,CAST(cap AS CHAR) cap,CAST(held AS CHAR) held,CAST(spent AS CHAR) spent FROM marketing_budget WHERE tenant_id=#{tenant} AND budget_id&gt;#{after}
+    <if test="filter.campaignId != null">AND campaign_id=#{filter.campaignId}</if>
     <if test="filter.q != null">AND (LOCATE(#{filter.q},budget_id)&gt;0 OR LOCATE(#{filter.q},campaign_id)&gt;0)</if> ORDER BY budget_id LIMIT #{limit}</select>
 </mapper>

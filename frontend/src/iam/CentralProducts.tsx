@@ -445,11 +445,12 @@ function Products({
   const [revision, setRevision] = useState(0);
   const [cursor, setCursor] = useCursorState("cursor", "");
   const dirty = useRef(false);
+  const exportPending = useRef(false);
   const { modal } = App.useApp();
   const guard = (action: () => void) => {
-    if (!dirty.current) return action();
+    if (!dirty.current && !exportPending.current) return action();
     modal.confirm({
-      title: "放弃未保存的商品修改？",
+      title: "放弃尚未确认的商品作业？",
       content: "结果未知的命令应先原样重试确认；离开后将丢失本次表单。",
       okText: "放弃修改",
       cancelText: "继续编辑",
@@ -461,7 +462,7 @@ function Products({
   };
   useEffect(() => {
     const protect = (event: BeforeUnloadEvent) => {
-      if (dirty.current) {
+      if (dirty.current || exportPending.current) {
         event.preventDefault();
         event.returnValue = "";
       }
@@ -602,6 +603,9 @@ function Products({
           jobId={params.get("export")}
           revision={revision}
           onJob={(id) => navigate({ export: id })}
+          onPending={(pending) => {
+            exportPending.current = pending;
+          }}
           refresh={() => setRevision((v) => v + 1)}
         />
       </Card>

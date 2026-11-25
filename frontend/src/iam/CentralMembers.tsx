@@ -2,6 +2,7 @@ import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { RecordModal } from "../shared/interactions";
 import { useRouteState, useCursorState } from "../shared/routeState";
+import { useWorkspaceHref } from "../shared/workspaceLinks";
 import {
   Alert,
   App,
@@ -291,6 +292,10 @@ function MemberList() {
 }
 
 function MemberHistory({ member }: { member: Member }) {
+  const href = useWorkspaceHref();
+  const query = { workspaceTab: "wallet", memberId: member.memberId };
+  const growth = href("member-growth", query);
+  const points = href("member-points", query);
   const [after, setAfter] = useCursorState(
     "MemberHistory.after",
     0,
@@ -302,6 +307,12 @@ function MemberHistory({ member }: { member: Member }) {
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       <Typography.Text>会员编号：{member.memberId}</Typography.Text>
+      {(growth || points) && (
+        <Space wrap>
+          {growth && <a href={growth}>查看会员成长</a>}
+          {points && <a href={points}>查看会员积分</a>}
+        </Space>
+      )}
       <Typography.Text type="secondary">
         按变更版本排序，时间使用本机时区显示
       </Typography.Text>

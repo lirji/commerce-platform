@@ -1,4 +1,5 @@
 import { useListFilters } from "../shared/listFilters";
+import { useWorkspaceHref } from "../shared/workspaceLinks";
 import { CursorBack } from "../shared/pagination";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import {
@@ -198,6 +199,11 @@ function DirectorySection({
 }) {
   const merchant = kind === Kind.MERCHANT,
     label = merchant ? "商家" : "门店";
+  const href = useWorkspaceHref();
+  const storePages = [
+    ["catalog", "商品"],
+    ["inventory", "库存"],
+  ] as const;
   const [after, setAfter] = useCursorState(`${directoryQuery(kind)}.after`, "");
   const filters = useListFilters(directoryQuery(kind), `/admin/${kind}`, () =>
     setAfter(""),
@@ -320,6 +326,45 @@ function DirectorySection({
               render: (value: string) => (value === "ACTIVE" ? "可用" : value),
             },
             { title: "版本", dataIndex: "version" },
+            ...(merchant && href("directory")
+              ? [
+                  {
+                    title: "关联门店",
+                    render: (_: unknown, row: Entry) => (
+                      <a
+                        href={href("directory", {
+                          workspaceTab: "stores",
+                          [`${directoryQuery(Kind.STORE)}.query`]:
+                            JSON.stringify({ merchantId: row.merchantId }),
+                        })}
+                      >
+                        查看下属门店
+                      </a>
+                    ),
+                  },
+                ]
+              : []),
+            ...(!merchant && storePages.some(([page]) => href(page))
+              ? [
+                  {
+                    title: "关联作业",
+                    render: (_: unknown, row: Entry) => (
+                      <Space wrap>
+                        {storePages.map(([page, title]) => {
+                          const url =
+                            row.storeId &&
+                            href(page, { store_id: row.storeId });
+                          return (
+                            url && (
+                              <a key={page} href={url}>{`查看门店${title}`}</a>
+                            )
+                          );
+                        })}
+                      </Space>
+                    ),
+                  },
+                ]
+              : []),
           ]}
         />
       )}

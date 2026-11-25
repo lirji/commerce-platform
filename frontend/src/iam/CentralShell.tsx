@@ -9,6 +9,7 @@ import {
 } from "../shared/WorkspaceChrome";
 import type { MenuProps } from "antd";
 import type { NavigationItem, NavigationModel } from "./businessNavigation";
+import { CentralLinkScope } from "../shared/workspaceLinks";
 
 /** 壳层仅承载导航和视觉，原页面继续负责独立权限、凭据及未保存/未知结果保护。 */
 export function CentralShell({
@@ -119,7 +120,9 @@ export function CentralShell({
               <span title={tenant}>{tenant}</span>
             </Typography.Text>
           </div>
-          {children}
+          <CentralLinkScope.Provider value={{ tenant, routes: model.routes }}>
+            {children}
+          </CentralLinkScope.Provider>
         </Layout.Content>
         <Layout.Footer className="footer">
           统一电商业务平台<span>企业经营 · 按授权范围操作</span>
