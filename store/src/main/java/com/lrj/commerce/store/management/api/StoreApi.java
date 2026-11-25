@@ -25,6 +25,13 @@ public interface StoreApi {
 	/** 中央许可提交时由Owner锁定真实门店版本，避免判权后归属变化。 */
 	void lockCurrent(Actor actor, View expected);
 
+	/** 历史订单读取专用标签，只接收订单 Owner 已授权的本页门店。 */
+	record Label(String storeId, String name) {
+	}
+
+	/** 批量补足门店展示，不额外授予目录查询能力。 */
+	List<Label> orderLabels(Actor actor, List<String> storeIds);
+
 	/** 有界游标分页。 */
 	List<View> list(Actor actor, String after, int limit);
 

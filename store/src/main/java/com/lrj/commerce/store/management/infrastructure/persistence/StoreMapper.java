@@ -16,6 +16,9 @@ public interface StoreMapper {
 
 	List<StoreApi.View> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit);
 
+	/** 订单 Owner 提供本页已授权门店，历史冻结门店同样返回名称。 */
+	List<StoreApi.Label> orderLabels(@Param("tenant") String tenant, @Param("ids") List<String> ids);
+
 	/** 范围谓词与租户在分页前生效。 */
 	List<StoreApi.View> listScoped(@Param("tenant") String tenant,
 			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,

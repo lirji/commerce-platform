@@ -125,6 +125,39 @@ class CentralOrderOperationsMySqlTest {
         assertEquals(403,http("GET","/v1/admin/orders",adminToken,false,null,null).statusCode());
         assertEquals(401,http("GET","/v1/admin/orders","invalid",true,null,null).statusCode());
     }
+    /** 精确条件在授权与分页之间求交集，关联查询不会把部分匹配的近似订单当成原单。 */
+    @Test void exactTradeFiltersApplyBeforePaginationWithoutExpandingScope() throws Exception {
+        order("0-forbidden", "S2", "PAID");
+        order("1-target-copy", "S1", "PAID");
+        order("2-target", "S1", "PAID");
+        fulfillment("1-target-copy", false);
+        fulfillment("2-target", true);
+        aftersale("1-case", "1-target-copy", true);
+        aftersale("2-case", "2-target", true);
+        jdbc.update("INSERT INTO payment_refund(tenant_id,refund_id,case_id,order_id,amount,currency,provider,status) VALUES(?,'1-refund','r1','1-target-copy',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED'),(?,'2-refund','r2','2-target',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED')",tenant,tenant);
+
+        assertEquals("[]", http("GET", "/v1/admin/orders?storeId=S2", "valid", true, null, null).body());
+        assertEquals("[]", http("GET", "/v1/admin/orders?storeId=S", "valid", true, null, null).body());
+        var next = http("GET", "/v1/admin/orders?storeId=S1&after=1-target-copy&limit=1", "valid", true, null, null);
+        assertEquals(200, next.statusCode());
+        var listed = (Map<?, ?>) JsonCodec.read(next.body(), List.class).getFirst();
+        assertEquals("2-target", listed.get("orderId"));
+        assertEquals("S1", listed.get("storeName"));
+        assertEquals(400, http("GET", "/v1/admin/orders?storeId=bad%20id", "valid", true, null, null).statusCode());
+        assertEquals("0-forbidden", ((Map<?, ?>) JsonCodec.read(http("GET", "/v1/orders?storeId=S2", customerToken, false, null, null).body(), List.class).getFirst()).get("orderId"));
+
+        for (String source : List.of("aftersales", "refunds", "fulfillments")) {
+            var response = http("GET", "/v1/admin/" + source + "?orderId=2-target&storeId=S1&limit=1", "valid", true, null, null);
+            assertEquals(200, response.statusCode(), source);
+            var rows = JsonCodec.read(response.body(), List.class);
+            assertEquals(1, rows.size(), source);
+            assertEquals("2-target", ((Map<?, ?>) rows.getFirst()).get("orderId"), source);
+        }
+        assertEquals("[]", http("GET", "/v1/admin/fulfillments?orderId=2-target&blocked=false", "valid", true, null, null).body());
+        assertEquals("[]", http("GET", "/v1/admin/fulfillments?orderId=target&blocked=true", "valid", true, null, null).body());
+        assertTrue(http("GET", "/v1/admin/fulfillments?blocked=true&limit=1", "valid", true, null, null).body().contains("2-target"));
+    }
+
     @Test void fulfillmentIndependentCapabilitiesPreserveOriginalKeyAndOrderLifecycle() {
         order("ship","S1","PAID");only(FULFILLMENT_SHIP);String key=id();var input=new FulfillmentApi.Ship("TRACK-1");
         assertEquals("SHIPPED",fulfillment.ship(actor(FULFILLMENT_SHIP),key,"ship",input).status());

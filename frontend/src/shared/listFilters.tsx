@@ -3,11 +3,17 @@ import { useEffect, useState } from "react";
 import { useRouteState } from "./routeState";
 import { statusText, localDateTime, time } from "./ui";
 
+const exactIds = ["storeId", "orderId"] as const;
+const identifier = /^[A-Za-z0-9_.:-]{1,64}$/;
+const exactLabels = { storeId: "店铺编号", orderId: "精确订单编号" };
+
 type FilterSpec = {
   hint: string;
   states?: string[];
   time?: boolean;
   enabled?: boolean;
+  exact?: readonly (typeof exactIds)[number][];
+  blocked?: boolean;
 };
 const specs: Record<string, FilterSpec> = {
   "/admin/members": {
@@ -27,6 +33,7 @@ const specs: Record<string, FilterSpec> = {
     states: ["ACTIVE", "FROZEN"],
   },
   "/admin/orders": {
+    exact: exactIds,
     hint: "订单、会员、门店或商家编号",
     states: [
       "PENDING_PAYMENT",
@@ -40,6 +47,7 @@ const specs: Record<string, FilterSpec> = {
     time: true,
   },
   "/orders": {
+    exact: ["storeId"],
     hint: "订单或门店编号",
     states: [
       "PENDING_PAYMENT",
@@ -53,18 +61,23 @@ const specs: Record<string, FilterSpec> = {
     time: true,
   },
   "/admin/fulfillments": {
+    exact: exactIds,
+    blocked: true,
     hint: "订单编号、运单或仓配渠道",
     states: ["READY", "SHIPPED", "DELIVERED", "CANCELLED"],
   },
   "/admin/aftersales": {
+    exact: exactIds,
     hint: "售后、订单、会员或退款编号",
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
   },
   "/aftersales": {
+    exact: ["orderId"],
     hint: "售后、订单或会员编号",
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
   },
   "/admin/refunds": {
+    exact: exactIds,
     hint: "退款、售后、订单编号或渠道",
     states: ["UNKNOWN", "SUCCEEDED"],
   },
@@ -191,6 +204,9 @@ type Values = {
   from?: string;
   to?: string;
   enabled?: boolean;
+  storeId?: string;
+  orderId?: string;
+  blocked?: boolean;
   limit?: number;
 };
 const readText = (value: unknown) =>
@@ -204,6 +220,20 @@ function decode(raw: string, spec?: FilterSpec): Values {
       code = readText(r.status);
     return {
       q: q?.slice(0, 64),
+      storeId:
+        spec?.exact?.includes("storeId") &&
+        typeof r.storeId === "string" &&
+        identifier.test(r.storeId)
+          ? r.storeId
+          : undefined,
+      orderId:
+        spec?.exact?.includes("orderId") &&
+        typeof r.orderId === "string" &&
+        identifier.test(r.orderId)
+          ? r.orderId
+          : undefined,
+      blocked:
+        spec?.blocked && typeof r.blocked === "boolean" ? r.blocked : undefined,
       status: code && spec?.states?.includes(code) ? code : undefined,
       from:
         spec?.time &&
@@ -239,7 +269,15 @@ export function useListFilters(
   const limit = values.limit ?? 50;
   const query = new URLSearchParams({ limit: String(limit) });
   if (spec)
-    for (const key of ["q", "status", "from", "to", "enabled"] as const) {
+    for (const key of [
+      "q",
+      "status",
+      "from",
+      "to",
+      "enabled",
+      ...exactIds,
+      "blocked",
+    ] as const) {
       const value = values[key];
       if (value !== undefined && value !== "")
         query.set(
@@ -268,7 +306,10 @@ export function useListFilters(
       values.status ||
       values.from ||
       values.to ||
-      values.enabled !== undefined
+      values.enabled !== undefined ||
+      values.storeId ||
+      values.orderId ||
+      values.blocked !== undefined
     ),
     limit,
     query: query.toString(),
@@ -296,7 +337,10 @@ function ListFilters({
   apply: (v: Values) => void;
   compact: boolean;
 }) {
-  type FormValues = Omit<Values, "enabled"> & { enabled?: string };
+  type FormValues = Omit<Values, "enabled" | "blocked"> & {
+    enabled?: string;
+    blocked?: string;
+  };
   const [form] = Form.useForm<FormValues>();
   const [advanced, setAdvanced] = useState(false);
   const hideSecondary = compact && !advanced;
@@ -306,6 +350,7 @@ function ListFilters({
     from: values.from ? localDateTime(values.from) : undefined,
     to: values.to ? localDateTime(values.to) : undefined,
     enabled: values.enabled === undefined ? undefined : String(values.enabled),
+    blocked: values.blocked === undefined ? undefined : String(values.blocked),
     limit: values.limit ?? 50,
   };
   useEffect(() => {
@@ -318,6 +363,9 @@ function ListFilters({
     form.setFieldsValue({
       q: next.q,
       status: next.status,
+      storeId: next.storeId,
+      orderId: next.orderId,
+      blocked: next.blocked === undefined ? undefined : String(next.blocked),
       from: next.from ? localDateTime(next.from) : undefined,
       to: next.to ? localDateTime(next.to) : undefined,
       enabled: next.enabled === undefined ? undefined : String(next.enabled),
@@ -326,6 +374,18 @@ function ListFilters({
   };
   const active = [
     { key: "q", label: "关键词", text: values.q },
+    { key: "storeId", label: "店铺编号", text: values.storeId },
+    { key: "orderId", label: "订单编号", text: values.orderId },
+    {
+      key: "blocked",
+      label: "售后阻拦",
+      text:
+        values.blocked === undefined
+          ? undefined
+          : values.blocked
+            ? "已阻拦"
+            : "未阻拦",
+    },
     {
       key: "status",
       label: "状态",
@@ -347,7 +407,18 @@ function ListFilters({
   // 摘要始终描述已应用条件，输入草稿不应让用户误以为列表已重新查询。
   const pending =
     !!draft &&
-    (["q", "status", "from", "to", "enabled", "limit"] as const).some((key) => {
+    (
+      [
+        "q",
+        "status",
+        "from",
+        "to",
+        "enabled",
+        "limit",
+        ...exactIds,
+        "blocked",
+      ] as const
+    ).some((key) => {
       const normalize = (v: unknown) =>
         key === "q"
           ? String(v ?? "").trim()
@@ -365,6 +436,9 @@ function ListFilters({
           applyValues({
             ...v,
             q: v.q?.trim(),
+            storeId: v.storeId?.trim(),
+            orderId: v.orderId?.trim(),
+            blocked: v.blocked === undefined ? undefined : v.blocked === "true",
             enabled: v.enabled === undefined ? undefined : v.enabled === "true",
           })
         }
@@ -395,6 +469,35 @@ function ListFilters({
               options={[
                 { value: "true", label: "已启用" },
                 { value: "false", label: "已停用" },
+              ]}
+            />
+          </Form.Item>
+        )}
+        {spec.exact?.map((key) => (
+          <Form.Item
+            key={key}
+            name={key}
+            label={exactLabels[key]}
+            hidden={hideSecondary}
+            rules={[{ pattern: identifier, message: "请输入有效的业务编号" }]}
+          >
+            <Input
+              allowClear
+              maxLength={64}
+              placeholder={
+                key === "storeId" ? "按完整店铺编号查询" : "按完整订单编号查询"
+              }
+            />
+          </Form.Item>
+        ))}
+        {spec.blocked && (
+          <Form.Item name="blocked" label="售后阻拦">
+            <Select
+              allowClear
+              placeholder="全部"
+              options={[
+                { value: "true", label: "已阻拦" },
+                { value: "false", label: "未阻拦" },
               ]}
             />
           </Form.Item>
@@ -497,13 +600,25 @@ export function listGuardPath(path: string): string {
   const spec = specs[url.pathname];
   if (!spec) return path;
   const q = url.searchParams;
-  for (const key of ["q", "status", "from", "to", "enabled"]) {
+  for (const key of [
+    "q",
+    "status",
+    "from",
+    "to",
+    "enabled",
+    ...exactIds,
+    "blocked",
+  ]) {
     if (!q.has(key)) continue;
     const value = q.get(key) ?? "";
     if (
       q.getAll(key).length !== 1 ||
       (key === "enabled" &&
         (!spec.enabled || !["true", "false"].includes(value))) ||
+      (key === "blocked" &&
+        (!spec.blocked || !["true", "false"].includes(value))) ||
+      ((key === "storeId" || key === "orderId") &&
+        (!spec.exact?.includes(key) || !identifier.test(value))) ||
       (key === "q" && value.length > 64) ||
       (key === "status" && !spec.states?.includes(value)) ||
       (["from", "to"].includes(key) &&

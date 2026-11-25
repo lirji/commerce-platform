@@ -36,8 +36,11 @@ public class AftersaleController {
 	public Object fulfillments(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return fulfillment.list(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String storeId,
+			@RequestParam(required = false) String orderId,
+			@RequestParam(required = false) Boolean blocked) {
+		return fulfillment.list(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, orderId, blocked));
 	}
 
 	/** 隔离WMS发货事实。 */
@@ -72,8 +75,9 @@ public class AftersaleController {
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return cases.list(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String orderId) {
+		return cases.list(actor, after, limit, ListFilter.trade(q, status, from, to, null, orderId, null));
 	}
 
 	/** 管理员审核列表。 */
@@ -81,8 +85,10 @@ public class AftersaleController {
 	public Object admin(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return cases.adminList(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String storeId,
+			@RequestParam(required = false) String orderId) {
+		return cases.adminList(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, orderId, null));
 	}
 
 	/** 批准申请，已发货必须等待退货。 */
@@ -111,8 +117,10 @@ public class AftersaleController {
 	public Object refunds(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return refunds.list(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String storeId,
+			@RequestParam(required = false) String orderId) {
+		return refunds.list(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, orderId, null));
 	}
 
 	/** 核对可信退款渠道。 */

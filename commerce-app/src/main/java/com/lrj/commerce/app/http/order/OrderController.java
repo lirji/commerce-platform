@@ -39,8 +39,9 @@ public class OrderController {
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return orders.list(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String storeId) {
+		return orders.memberListItems(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, null, null));
 	}
 
 	/** 取消命令由状态机决定是否允许释放预占。 */

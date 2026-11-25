@@ -24,6 +24,16 @@ public interface OrderApi {
 		}
 	}
 
+	/** HTTP 队列在原有商业快照上附加可空门店标签，保持原字段和事件载荷兼容。 */
+	record ListItem(@com.fasterxml.jackson.annotation.JsonUnwrapped View order, String storeName) {
+	}
+
+	/** 本人订单只投影实际归属的门店名称。 */
+	List<ListItem> memberListItems(Actor actor, String after, int limit, ListFilter filter);
+
+	/** 按独立订单读权限返回队列与已授权门店名称。 */
+	List<ListItem> adminListItems(Actor actor, String after, int limit, ListFilter filter);
+
 	/** 报价消费、库存、订单及事件必须原子提交。 */
 	View create(Actor actor, String key, Create input);
 

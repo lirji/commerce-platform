@@ -194,6 +194,18 @@ public class OrderService implements OrderApi {
 			.toList();
 	}
 
+	/** 本人队列只给原订单实际归属补充门店名称。 */
+	public List<ListItem> memberListItems(Actor actor, String after, int limit, ListFilter filter) {
+		return labelOrders(actor, list(actor, after, limit, filter));
+	}
+
+	private List<ListItem> labelOrders(Actor actor, List<View> rows) {
+		var ids = rows.stream().map(View::storeId).distinct().toList();
+		var labels = stores.orderLabels(actor, ids).stream().collect(java.util.stream.Collectors
+			.toMap(StoreApi.Label::storeId, StoreApi.Label::name));
+		return rows.stream().map(order -> new ListItem(order, labels.get(order.storeId()))).toList();
+	}
+
 	/** 未开始支付可以直接释放；重复取消从持久化状态回放，不重复发事件。 */
 	public View cancel(Actor actor, String key, String id) {
 		Identifiers.require(id);
@@ -470,10 +482,21 @@ public class OrderService implements OrderApi {
 
 	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
 	public List<View> adminList(Actor actor, String after, int limit, ListFilter filter) {
+		return adminQueue(actor, after, limit, filter, java.util.function.Function.identity());
+	}
+
+	/** 名称查询也在授权复核前完成，撤权时整个列表和附加标签一起丢弃。 */
+	public List<ListItem> adminListItems(Actor actor, String after, int limit, ListFilter filter) {
+		return adminQueue(actor, after, limit, filter, rows -> labelOrders(actor, rows));
+	}
+
+	private <T> T adminQueue(Actor actor, String after, int limit, ListFilter filter,
+			java.util.function.Function<List<View>, T> projection) {
 		filter.requireNoEnabled();
 		Inputs.page(after, limit);
 		var before = access.scope(actor, ORDER_READ);
-		var result = mapper.scopedList(actor.tenantId(), before.filter(), after, limit, filter).stream().map(this::view).toList();
+		var rows = mapper.scopedList(actor.tenantId(), before.filter(), after, limit, filter).stream().map(this::view).toList();
+		var result = projection.apply(rows);
 		EmployeeAccess.requireSame(before, access.scope(actor, ORDER_READ));
 		return result;
 	}

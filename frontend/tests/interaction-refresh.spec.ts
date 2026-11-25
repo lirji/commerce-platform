@@ -408,7 +408,9 @@ test("窄屏订单先显示实际范围，折叠后保留已应用日期和分�
   const reads: URLSearchParams[] = [];
   await page.route("**/v1/admin/orders?**", (route) => {
     reads.push(new URL(route.request().url()).searchParams);
-    return route.fulfill({ json: [orderFixture(1)] });
+    return route.fulfill({
+      json: [{ ...orderFixture(1), storeName: "验收门店名称" }],
+    });
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => {
@@ -427,10 +429,12 @@ test("窄屏订单先显示实际范围，折叠后保留已应用日期和分�
   ).toBeVisible();
   await advanced.click();
   await from.fill("2026-01-02T08:00");
+  await page.getByLabel("店铺编号", { exact: true }).fill("store-ui");
   await page.getByRole("button", { name: "查询", exact: true }).click();
   await expect.poll(() => reads.at(-1)?.has("from")).toBe(true);
   const applied = reads.at(-1)?.get("from");
-  expect(reads.at(-1)?.has("storeId")).toBe(false);
+  expect(reads.at(-1)?.get("storeId")).toBe("store-ui");
+  await expect(page.getByText("验收门店名称", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "收起高级筛选", exact: true }).click();
   await expect(from).toBeHidden();
   await expect(

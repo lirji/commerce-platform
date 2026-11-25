@@ -53,8 +53,10 @@ public class ConsoleController {
 	public Object orders(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
 			@RequestParam(defaultValue = "50") int limit,
 			@RequestParam(required = false) String q, @RequestParam(required = false) String status,
-			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to) {
-		return orders.adminList(actor, after, limit, new ListFilter(q, status, from, to));
+			@RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+			@RequestParam(required = false) String storeId,
+			@RequestParam(required = false) String orderId) {
+		return orders.adminListItems(actor, after, limit, ListFilter.trade(q, status, from, to, storeId, orderId, null));
 	}
 
 	/** 详情不包含收货地址。 */

@@ -170,7 +170,7 @@ export function Orders({
                 />
               ),
             }}
-            scroll={{ x: 720 }}
+            scroll={{ x: admin ? 1030 : 720 }}
             columns={[
               {
                 title: "订单编号",
@@ -182,12 +182,28 @@ export function Orders({
                 ),
               },
               { title: "店铺编号", dataIndex: "storeId" },
+              {
+                title: "店铺名称",
+                dataIndex: "storeName",
+                render: (name: string | undefined) => name ?? "—",
+              },
               { title: "应付金额", dataIndex: "payable", render: money },
               {
                 title: "订单状态",
                 dataIndex: "status",
                 render: (v: string) => <Status value={v} />,
               },
+              ...(admin
+                ? [
+                    {
+                      title: "支付方式",
+                      dataIndex: "paymentKind",
+                      render: (value: string) =>
+                        formatField("paymentKind", value),
+                    },
+                    { title: "支付截止", dataIndex: "expiresAt", render: time },
+                  ]
+                : []),
               { title: "创建时间", dataIndex: "createdAt", render: time },
               {
                 title: "操作",

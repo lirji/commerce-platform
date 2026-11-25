@@ -71,6 +71,13 @@ public class StoreService implements StoreApi {
 			throw new DomainException(DomainException.Code.CONFLICT, "门店事实已变化，请重新判权");
 	}
 
+	/** 仅为已授权订单补名称，使用订单租户与有界且去重的 ID 查询。 */
+	public List<StoreApi.Label> orderLabels(Actor actor, List<String> storeIds) {
+		Inputs.require(storeIds.size() <= 100, "订单门店批次最多100项");
+		storeIds.forEach(Identifiers::require);
+		return storeIds.isEmpty() ? List.of() : mapper.orderLabels(actor.tenantId(), storeIds);
+	}
+
 	/** 查询同时校验管理权限和分页上限。 */
 	public List<View> list(Actor actor, String after, int limit) {
 		return list(actor, after, limit, ListFilter.none());
