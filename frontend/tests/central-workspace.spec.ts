@@ -367,6 +367,8 @@ test("营销执行用精确订单筛选并按原活动读取权益与事件事�
     `${base}/operations/marketing-executions?tenant_id=${tenant}`,
   );
   await page.getByLabel("精确订单编号", { exact: true }).fill(row.orderId);
+  await page.getByRole("combobox", { name: "最新事件失败分类" }).click();
+  await page.getByText("暂时故障", { exact: true }).click();
   await page.getByRole("button", { name: "查询", exact: true }).click();
   await page.getByRole("button", { name: row.orderId, exact: true }).click();
   const fact = page
@@ -381,6 +383,7 @@ test("营销执行用精确订单筛选并按原活动读取权益与事件事�
       (url) =>
         url.pathname === "/v1/admin/marketing-executions" &&
         url.searchParams.get("orderId") === row.orderId &&
+        url.searchParams.get("failureClass") === "TRANSIENT" &&
         url.searchParams.get("after") === "",
     ),
   ).toBe(true);
@@ -389,6 +392,67 @@ test("营销执行用精确订单筛选并按原活动读取权益与事件事�
     path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/marketing-execution-390.png`,
     animations: "disabled",
   });
+});
+
+test("事件按精确业务编号查询，仅已知订单事件链接原订单", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const aggregateId = "ORDER-ORIGINAL";
+  const events = [
+    {
+      eventId: "EV-ORDER",
+      aggregateId,
+      eventType: "order.paid.v1",
+      status: "PENDING",
+      attempts: 0,
+    },
+    {
+      eventId: "EV-OTHER",
+      aggregateId,
+      eventType: "member.cart.abandoned.v1",
+      status: "PENDING",
+      attempts: 0,
+    },
+  ];
+  let requested: URL | undefined;
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (url.pathname === "/v1/admin/events") {
+      requested = url;
+      return route.fulfill({
+        json: url.searchParams.get("aggregateId") === aggregateId ? events : [],
+      });
+    }
+    return route.fulfill({ status: 403, json: {} });
+  });
+  await page.goto(`${base}/operations/events?tenant_id=${tenant}`);
+  await page.getByLabel("精确业务编号", { exact: true }).fill(aggregateId);
+  await page.getByRole("button", { name: "查询", exact: true }).click();
+  const row = (id: string) =>
+    page
+      .getByRole("row")
+      .filter({ has: page.getByRole("cell", { name: id, exact: true }) });
+  await row("EV-ORDER").getByRole("button", { name: "查看详情" }).click();
+  const detail = page.getByRole("dialog", { name: "业务详情" });
+  const link = detail.getByRole("link", { name: "查看原订单" });
+  const target = new URL((await link.getAttribute("href"))!, page.url());
+  expect(
+    JSON.parse(target.searchParams.get("OperationsList./admin/orders.query")!),
+  ).toEqual({ orderId: aggregateId });
+  expect(requested?.searchParams.get("aggregateId")).toBe(aggregateId);
+  expect(requested?.searchParams.get("after")).toBe("");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/event-link-390.png`,
+    animations: "disabled",
+  });
+  await detail.getByRole("button", { name: "返回列表" }).click();
+  await row("EV-OTHER").getByRole("button", { name: "查看详情" }).click();
+  await expect(detail.getByRole("link", { name: "查看原订单" })).toHaveCount(0);
 });
 
 test("原订单下钻只打开当前导航允许的精确读取", async ({ page }) => {

@@ -1,5 +1,9 @@
 import { useListFilters } from "../shared/listFilters";
-import { TradeLinks, useWorkspaceHref } from "../shared/workspaceLinks";
+import {
+  OrderEventLink,
+  TradeLinks,
+  useWorkspaceHref,
+} from "../shared/workspaceLinks";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { Button, Space, Spin, Table, Typography } from "antd";
@@ -771,6 +775,12 @@ export function AdminData({
             />
             {isTrade && (
               <TradeLinks orderId={detail.orderId} pages={["orders"]} />
+            )}
+            {kind === "events" && (
+              <OrderEventLink
+                eventType={detail.eventType}
+                aggregateId={detail.aggregateId}
+              />
             )}
             {kind === "stores" && typeof detail.storeId === "string" && (
               <Space wrap>

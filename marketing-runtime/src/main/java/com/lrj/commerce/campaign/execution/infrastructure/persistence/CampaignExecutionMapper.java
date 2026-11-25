@@ -13,7 +13,7 @@ public interface CampaignExecutionMapper {
 			String storeId, String ruleId, Long ruleVersion, String audienceId, Long audienceVersion,
 			String benefitId, Long benefitVersion, String grantId, String discountAmount, String reasonCode,
 			String status, Instant evaluatedAt, Instant createdAt, Instant updatedAt, long lockVersion,
-			String benefitType) {
+			String benefitType, String eventId, String eventStatus, String failureClass) {
 	}
 
 	void insert(@Param("tenant") String tenant, @Param("row") Row row);
@@ -24,7 +24,8 @@ public interface CampaignExecutionMapper {
 
 	/** 主键查询与允许的字面关键词在游标前共同限制本租户读取。 */
 	List<Row> list(@Param("tenant") String tenant, @Param("after") String after, @Param("limit") int limit,
-			@Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+			@Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter,
+			@Param("eventType") String eventType, @Param("failureClass") String failureClass);
 
 	int paid(@Param("tenant") String tenant, @Param("order") String order, @Param("campaign") String campaign);
 

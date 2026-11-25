@@ -174,6 +174,7 @@ export default function CentralEvents(props: OperationsProps) {
             columns={[
               ["eventId", "事件"],
               ["eventType", "类型"],
+              ["aggregateId", "业务编号"],
               ["status", "状态"],
               ["attempts", "失败次数"],
             ]}

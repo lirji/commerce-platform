@@ -1745,6 +1745,11 @@ class PersistedCommerceTest {
 		assertEquals("COUPON", before.path("benefitType").asString());
 		assertEquals("RESERVED", before.path("status").asString());
 		assertEquals("HELD", before.path("grantStatus").asString());
+		// 优惠券与内部权益的标识空间独立，遇到同编号事件也不能关联到券执行。
+		jdbc.update("INSERT INTO platform_event(event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,status,failure_class) "
+				+ "VALUES(?,?,'benefit.grant.requested.v1',?,1,'{}','ISOLATED','BUSINESS_REJECTED')",
+				UUID.randomUUID().toString(), tenant, before.path("grantId").asString());
+		assertEquals(0, call("GET", "/v1/admin/marketing-executions?failureClass=BUSINESS_REJECTED", admin, null, null).body().size());
 		assertEquals(1, jdbc.queryForObject("SELECT reserved FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
 		assertEquals(0, jdbc.queryForObject("SELECT issued FROM benefit_coupon_definition WHERE tenant_id=? AND definition_id='campaign-coupon'", Integer.class, tenant));
 		var secondQuote = post("/v1/quotes", member, "coupon-q2", basket(1));
@@ -2018,6 +2023,9 @@ class PersistedCommerceTest {
 	@Test
 	void marketingExecutionShowsIsolatedGrantAndUsesExistingRecovery() throws Exception {
 		var order = entitlementOrder();
+		String exactFailure = "/v1/admin/marketing-executions?orderId=" + order.path("orderId").asString()
+				+ "&limit=1&failureClass=BUSINESS_REJECTED";
+		assertEquals(0, call("GET", exactFailure, admin, null, null).body().size());
 		payOrder(order);
 		var pending = execution(order, "benefit-campaign");
 		String eventId = pending.path("eventId").asString();
@@ -2026,6 +2034,16 @@ class PersistedCommerceTest {
 				+ "last_error='test-injected' WHERE event_id=? AND tenant_id=?", eventId, tenant);
 		assertEquals("GRANT_FAILED", execution(order, "benefit-campaign").path("status").asString());
 		assertEquals("REQUESTED", execution(order, "benefit-campaign").path("grantStatus").asString());
+		var failure = call("GET", exactFailure, admin, null, null);
+		assertEquals(200, failure.status());
+		assertEquals(1, failure.body().size());
+		assertEquals(eventId, failure.body().get(0).path("eventId").asString());
+		assertEquals("ISOLATED", failure.body().get(0).path("eventStatus").asString());
+		assertEquals("GRANT_REQUESTED", failure.body().get(0).path("status").asString());
+		assertEquals(0, call("GET", exactFailure.replace("BUSINESS_REJECTED", "PERMANENT"), admin, null, null).body().size());
+		assertEquals(400, call("GET", exactFailure.replace("BUSINESS_REJECTED", "invalid"), admin, null, null).status());
+		String foreign = token("another-" + UUID.randomUUID(), "admin", "ADMIN");
+		assertEquals(0, call("GET", exactFailure, foreign, null, null).body().size());
 		var recovered = post("/v1/admin/runtime/recoveries", admin, "grant-retry",
 				Map.of("workType", "event", "action", "RETRY", "workIds", List.of(eventId),
 						"expectedFailureClass", "BUSINESS_REJECTED", "reason", "验证营销发放恢复"));
@@ -2035,6 +2053,34 @@ class PersistedCommerceTest {
 		assertEquals("GRANTED", execution(order, "benefit-campaign").path("status").asString());
 		assertEquals(1, jdbc.queryForObject(
 				"SELECT COUNT(*) FROM benefit_ledger WHERE tenant_id=? AND action='GRANT'", Integer.class, tenant));
+		// 出现更新版本后，旧事件的失败分类不能再次命中。
+		jdbc.update("UPDATE platform_event SET failure_class='BUSINESS_REJECTED' WHERE tenant_id=? AND event_id=?", tenant, eventId);
+		jdbc.update("INSERT INTO platform_event(event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,status) "
+				+ "SELECT ?,tenant_id,event_type,aggregate_id,aggregate_version+1,'{}','DELIVERED' FROM platform_event WHERE tenant_id=? AND event_id=?",
+				UUID.randomUUID().toString(), tenant, eventId);
+		assertEquals(0, call("GET", exactFailure, admin, null, null).body().size());
+	}
+
+	@Test
+	void exactEventAggregateFilterDoesNotMixPrefixesOrTenants() throws Exception {
+		var order = entitlementOrder();
+		String original = order.path("orderId").asString();
+		String near = original + "-copy";
+		String foreignTenant = "foreign-" + UUID.randomUUID();
+		String nearEventId = "0-near-" + UUID.randomUUID();
+		String foreignEventId = "0-foreign-" + UUID.randomUUID();
+		String insert = "INSERT INTO platform_event(event_id,tenant_id,event_type,aggregate_id,aggregate_version,payload_json,status) VALUES(?,?, 'order.created.v1', ?,0,'{}','PENDING')";
+		jdbc.update(insert, nearEventId, tenant, near);
+		jdbc.update(insert, foreignEventId, foreignTenant, original);
+		var exact = "/v1/admin/events?aggregateId=" + original;
+		var response = call("GET", exact + "&limit=1", admin, null, null);
+		assertEquals(200, response.status());
+		assertEquals(1, response.body().size());
+		assertEquals(original, response.body().get(0).path("aggregateId").asString());
+		assertNotEquals(foreignEventId, response.body().get(0).path("eventId").asString());
+		assertEquals(nearEventId, call("GET", "/v1/admin/events?aggregateId=" + near + "&limit=1", admin, null, null).body().get(0).path("eventId").asString());
+		assertEquals(0, call("GET", "/v1/admin/events?aggregateId=" + original.substring(0, 8), admin, null, null).body().size());
+		assertEquals(403, call("GET", exact, member, null, null).status());
 	}
 
 	@Test

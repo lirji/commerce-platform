@@ -1,7 +1,7 @@
 import { Pager, Status, formatField, TableReadHint } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
-import { TradeLinks } from "../shared/workspaceLinks";
+import { OrderEventLink, TradeLinks } from "../shared/workspaceLinks";
 import {
   Alert,
   App,
@@ -358,6 +358,12 @@ export function OperationsList({
             <Space orientation="vertical" style={{ width: "100%" }}>
               {related && (
                 <TradeLinks orderId={record.orderId} pages={related} />
+              )}
+              {path === "/admin/events" && (
+                <OrderEventLink
+                  eventType={record.eventType}
+                  aggregateId={record.aggregateId}
+                />
               )}
               <OperationDetails row={record} fields={fields} />
             </Space>

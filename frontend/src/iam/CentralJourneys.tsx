@@ -1,4 +1,4 @@
-import { RecordFields } from "../shared/ui";
+import { RecordFields, formatField } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { Pager, Status } from "../shared/ui";
 import { useCursorState } from "../shared/routeState";
@@ -677,6 +677,21 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                 },
                 { title: "成交优惠", dataIndex: "discountAmount" },
                 { title: "门店", dataIndex: "storeId" },
+                ...(filters.failureClass
+                  ? [
+                      {
+                        title: "最新事件状态",
+                        dataIndex: "eventStatus",
+                        render: (value: string) => <Status value={value} />,
+                      },
+                      {
+                        title: "失败分类",
+                        dataIndex: "failureClass",
+                        render: (value: unknown) =>
+                          formatField("failureClass", value),
+                      },
+                    ]
+                  : []),
               ]
             : effectFields[series].map(([key, title, format]) => ({
                 title,

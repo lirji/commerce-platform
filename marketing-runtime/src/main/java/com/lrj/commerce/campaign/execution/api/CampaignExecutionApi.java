@@ -5,6 +5,7 @@ import com.lrj.commerce.campaign.asset.api.MarketingAssets;
 import com.lrj.commerce.marketing.api.DecisionModels;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.ListFilter;
+import com.lrj.commerce.runtime.work.FailureClass;
 import java.time.Instant;
 import java.util.List;
 
@@ -38,6 +39,11 @@ public interface CampaignExecutionApi {
 	}
 
 	/** 原订单号精确匹配，关键词只在原租户业务号内查询。 */
-	List<View> list(Actor actor, String afterOrder, int limit, ListFilter filter);
+	default List<View> list(Actor actor, String afterOrder, int limit, ListFilter filter) {
+		return list(actor, afterOrder, limit, filter, null);
+	}
+
+	/** 按本租户最新权益请求的事件分类筛选，保留参与状态的原语义。 */
+	List<View> list(Actor actor, String afterOrder, int limit, ListFilter filter, FailureClass failureClass);
 
 }

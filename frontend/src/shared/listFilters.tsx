@@ -1,10 +1,25 @@
 import { Button, Form, Input, Select, Space, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useRouteState } from "./routeState";
-import { statusText, localDateTime, time } from "./ui";
+import { formatField, statusText, localDateTime, time } from "./ui";
 
 const tradeIds = ["storeId", "orderId"] as const;
-const exactIds = [...tradeIds, "merchantId", "campaignId"] as const;
+const exactIds = [
+  ...tradeIds,
+  "merchantId",
+  "campaignId",
+  "aggregateId",
+] as const;
+const eventFailureClasses = [
+  "TRANSIENT",
+  "CONCURRENCY_RETRYABLE",
+  "DEPENDENCY_UNAVAILABLE",
+  "BUSINESS_REJECTED",
+  "DATA_CORRUPTION",
+  "CONFIGURATION_ERROR",
+  "PERMANENT",
+  "UNKNOWN",
+];
 const identifier = /^[A-Za-z0-9_.:-]{1,64}$/;
 const storeScopedLists = new Set([
   "/admin/coupon-definitions",
@@ -20,10 +35,12 @@ const exactLabels = {
   orderId: "精确订单编号",
   merchantId: "商家编号",
   campaignId: "活动编号",
+  aggregateId: "精确业务编号",
 };
 
 type FilterSpec = {
   hint: string;
+  failureClass?: boolean;
   states?: string[];
   time?: boolean;
   enabled?: boolean;
@@ -137,6 +154,7 @@ const specs: Record<string, FilterSpec> = {
   "/admin/marketing-executions": {
     hint: "订单编号或活动编号",
     exact: ["orderId"],
+    failureClass: true,
   },
   "/admin/journey-scans": {
     hint: "旅程编号",
@@ -215,10 +233,12 @@ const specs: Record<string, FilterSpec> = {
   "/admin/store-grants": { hint: "授权、人员或资源编号", enabled: true },
   "/admin/events": {
     hint: "事件编号、类型或业务编号",
+    exact: ["aggregateId"],
     states: ["PENDING", "DELIVERED", "ISOLATED", "SKIPPED"],
   },
 };
 type Values = Partial<Record<(typeof exactIds)[number], string>> & {
+  failureClass?: string;
   q?: string;
   status?: string;
   from?: string;
@@ -245,6 +265,12 @@ function decode(raw: string, spec?: FilterSpec): Values {
           return value && identifier.test(value) ? [[key, value]] : [];
         }),
       ),
+      failureClass:
+        spec?.failureClass &&
+        typeof r.failureClass === "string" &&
+        eventFailureClasses.includes(r.failureClass)
+          ? r.failureClass
+          : undefined,
       blocked:
         spec?.blocked && typeof r.blocked === "boolean" ? r.blocked : undefined,
       status: code && spec?.states?.includes(code) ? code : undefined,
@@ -290,6 +316,7 @@ export function useListFilters(
       "enabled",
       ...exactIds,
       "blocked",
+      "failureClass",
     ] as const) {
       const value = values[key];
       if (value !== undefined && value !== "")
@@ -314,6 +341,7 @@ export function useListFilters(
     );
   };
   return {
+    failureClass: values.failureClass,
     preset: {
       status: values.status,
       blocked: values.blocked,
@@ -338,7 +366,8 @@ export function useListFilters(
       values.to ||
       values.enabled !== undefined ||
       exactIds.some((key) => values[key]) ||
-      values.blocked !== undefined
+      values.blocked !== undefined ||
+      values.failureClass
     ),
     limit,
     query: query.toString(),
@@ -392,6 +421,7 @@ function ListFilters({
     form.setFieldsValue({
       q: next.q,
       status: next.status,
+      failureClass: next.failureClass,
       ...Object.fromEntries(exactIds.map((key) => [key, next[key]])),
       blocked: next.blocked === undefined ? undefined : String(next.blocked),
       from: next.from ? localDateTime(next.from) : undefined,
@@ -402,6 +432,12 @@ function ListFilters({
   };
   const active = [
     { key: "q", label: "关键词", text: values.q },
+    {
+      key: "failureClass",
+      label: "最新事件失败分类",
+      text:
+        values.failureClass && formatField("failureClass", values.failureClass),
+    },
     ...exactIds.map((key) => ({
       key,
       label: exactLabels[key],
@@ -448,6 +484,7 @@ function ListFilters({
         "limit",
         ...exactIds,
         "blocked",
+        "failureClass",
       ] as const
     ).some((key) => {
       const normalize = (v: unknown) =>
@@ -521,6 +558,18 @@ function ListFilters({
             />
           </Form.Item>
         ))}
+        {spec.failureClass && (
+          <Form.Item name="failureClass" label="最新事件失败分类">
+            <Select
+              allowClear
+              placeholder="全部分类"
+              options={eventFailureClasses.map((value) => ({
+                value,
+                label: formatField("failureClass", value),
+              }))}
+            />
+          </Form.Item>
+        )}
         {spec.blocked && (
           <Form.Item name="blocked" label="售后阻拦">
             <Select
@@ -639,6 +688,7 @@ export function listGuardPath(path: string): string {
     "enabled",
     ...exactIds,
     "blocked",
+    "failureClass",
   ] as const) {
     if (!q.has(key)) continue;
     const value = q.get(key) ?? "";
@@ -653,6 +703,8 @@ export function listGuardPath(path: string): string {
         (!spec.enabled || !["true", "false"].includes(value))) ||
       (key === "blocked" &&
         (!spec.blocked || !["true", "false"].includes(value))) ||
+      (key === "failureClass" &&
+        (!spec.failureClass || !eventFailureClasses.includes(value))) ||
       (exactIds.some((id) => key === id) &&
         (!spec.exact?.some((id) => key === id) || !identifier.test(value))) ||
       (key === "q" && value.length > 64) ||

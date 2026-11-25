@@ -57,6 +57,27 @@ const labels: Record<TradePage, string> = {
   refunds: "查看退款",
 };
 const businessId = /^[A-Za-z0-9_.:-]{1,64}$/;
+const orderEventTypes = new Set([
+  "order.created.v1",
+  "order.ready.v1",
+  "order.closing.v1",
+  "order.paid.v1",
+  "order.cancelled.v1",
+  "order.fulfilling.v1",
+  "order.completed.v1",
+]);
+
+export function OrderEventLink({
+  eventType,
+  aggregateId,
+}: {
+  eventType: unknown;
+  aggregateId: unknown;
+}) {
+  return typeof eventType === "string" && orderEventTypes.has(eventType) ? (
+    <TradeLinks orderId={aggregateId} pages={["orders"]} />
+  ) : null;
+}
 
 export function TradeLinks({
   orderId,

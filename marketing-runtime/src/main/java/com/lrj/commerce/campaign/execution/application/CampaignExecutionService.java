@@ -14,6 +14,7 @@ import com.lrj.commerce.marketing.api.DecisionModels;
 import com.lrj.commerce.runtime.api.event.EventHandler;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.ListFilter;
+import com.lrj.commerce.runtime.work.FailureClass;
 import com.lrj.commerce.runtime.api.access.EmployeeAccess;
 import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.MARKETING_EXECUTION_READ;
 import com.lrj.commerce.runtime.api.validation.Inputs;
@@ -30,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 /** 固定订单参与和履约投影；规则决定与额度权威仍由既有模块承担。 */
 @Service
 public class CampaignExecutionService implements CampaignExecutionApi, EventHandler {
+
+	private static final String GRANT_REQUESTED_EVENT = "benefit.grant.requested.v1";
 
 	private record GrantAvailable(String orderId, String grantId) {
 	}
@@ -120,7 +123,7 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 						: coupon == null ? null : Long.valueOf(coupon.version()),
 				grant != null ? grant.grantId() : couponHold == null ? null : couponHold.couponId(),
 				discount.amount().toPlainString(), trace.reason().name(), "RESERVED", trigger.evaluatedAt(), null,
-				null, 0, benefit != null ? "CREDIT" : coupon != null ? "COUPON" : null);
+				null, 0, benefit != null ? "CREDIT" : coupon != null ? "COUPON" : null, null, null, null);
 		executions.insert(actor.tenantId(), row);
 	}
 
@@ -158,12 +161,16 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 		EmployeeAccess.requireSame(permit,access.scope(actor,MARKETING_EXECUTION_READ));return result;
 	}
 
-	/** 列表只查询本租户审计表，避免逐行加载权益和事件导致N+1。 */
+	/** 失败分类在分页前使用最新事件的只读投影；默认目录仍仅扫描参与表。 */
 	@Override
-	public List<View> list(Actor actor, String afterOrder, int limit, ListFilter filter) {
+	public List<View> list(Actor actor, String afterOrder, int limit, ListFilter filter, FailureClass failureClass) {
+		filter.requireNoTime();
+		filter.requireNoStatus();
+		filter.requireNoEnabled();
 		var permit=access.scope(actor,MARKETING_EXECUTION_READ);
 		Inputs.page(afterOrder, limit);
-		var result=executions.list(actor.tenantId(), afterOrder, limit, filter)
+		var result=executions.list(actor.tenantId(), afterOrder, limit, filter, GRANT_REQUESTED_EVENT,
+				failureClass == null ? null : failureClass.name())
 			.stream()
 			.map(row -> view(row, actor.tenantId(), false))
 			.toList();
@@ -175,7 +182,7 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 		var grant = detail && "CREDIT".equals(benefitType) ? entitlements.orderGrant(tenant, row.orderId()) : null;
 		var couponHold = detail && "COUPON".equals(benefitType) ? coupons.campaignHold(tenant, row.orderId()) : null;
 		var event = detail && "CREDIT".equals(benefitType)
-				? events.latest(tenant, "benefit.grant.requested.v1", row.grantId()) : null;
+				? events.latest(tenant, GRANT_REQUESTED_EVENT, row.grantId()) : null;
 		String status = row.status();
 		if (status.equals("GRANT_REQUESTED") && grant != null
 				&& Set.of(EntitlementApi.State.AVAILABLE, EntitlementApi.State.CONSUMED,
@@ -189,8 +196,9 @@ public class CampaignExecutionService implements CampaignExecutionApi, EventHand
 				row.storeId(), row.ruleId(), row.ruleVersion(), row.audienceId(), row.audienceVersion(), row.benefitId(),
 				row.benefitVersion(), row.grantId(), row.discountAmount(), row.reasonCode(), status,
 				grant != null ? grant.status().getCode() : couponHold == null ? null : couponHold.status(),
-				event == null ? null : event.eventId(),
-				event == null ? null : event.status(), event == null ? null : event.failureClass(), row.evaluatedAt(),
+				detail ? (event == null ? null : event.eventId()) : row.eventId(),
+				detail ? (event == null ? null : event.status()) : row.eventStatus(),
+				detail ? (event == null ? null : event.failureClass()) : row.failureClass(), row.evaluatedAt(),
 				row.createdAt(), row.updatedAt(), row.lockVersion(), benefitType);
 	}
 

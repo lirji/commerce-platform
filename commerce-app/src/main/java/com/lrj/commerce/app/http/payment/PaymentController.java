@@ -73,8 +73,9 @@ public class PaymentController {
 	/** 仅查询租户内事件元信息。 */
 	@GetMapping("/admin/events")
 	public Object list(@AuthenticationPrincipal Actor actor, @RequestParam(defaultValue = "") String after,
-			@RequestParam(defaultValue = "50") int limit, @RequestParam(required = false) String q, @RequestParam(required = false) String status) {
-		return events.list(actor, after, limit, new ListFilter(q, status, null, null));
+			@RequestParam(defaultValue = "50") int limit, @RequestParam(required = false) String q,
+			@RequestParam(required = false) String status, @RequestParam(required = false) String aggregateId) {
+		return events.list(actor, after, limit, ListFilter.events(q, status, aggregateId));
 	}
 
 	/** 本租户积压诊断：到期数、最老到期年龄、重试与隔离数、近期投递延迟，不含载荷。 */

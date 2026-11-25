@@ -5,7 +5,7 @@ import java.time.Instant;
 
 /** 有界只读筛选值；字段和 SQL 由各 Owner 显式决定，不能传入列名或排序表达式。 */
 public record ListFilter(String q, String status, Instant from, Instant to, Boolean enabled,
-		String storeId, String orderId, Boolean blocked, String merchantId, String campaignId) {
+		String storeId, String orderId, Boolean blocked, String merchantId, String campaignId, String aggregateId) {
 
 	/** 统一清理空白并拒绝无界输入；时间使用半开区间，避免相邻范围重复。 */
 	public ListFilter {
@@ -13,6 +13,7 @@ public record ListFilter(String q, String status, Instant from, Instant to, Bool
 		if (orderId != null) Identifiers.require(orderId);
 		if (merchantId != null) Identifiers.require(merchantId);
 		if (campaignId != null) Identifiers.require(campaignId);
+		if (aggregateId != null) Identifiers.require(aggregateId);
 		q = normalize(q);
 		status = normalize(status);
 		Inputs.require(q == null || q.length() <= 64, "查询关键词最多64个字符");
@@ -27,19 +28,24 @@ public record ListFilter(String q, String status, Instant from, Instant to, Bool
 
 	/** 兼容原启用状态筛选调用。 */
 	public ListFilter(String q, String status, Instant from, Instant to, Boolean enabled) {
-		this(q, status, from, to, enabled, null, null, null, null, null);
+		this(q, status, from, to, enabled, null, null, null, null, null, null);
 	}
 
 	/** 交易条件只会缩小 Owner 原有授权范围，精确标识在 SQL 分页前应用。 */
 	public static ListFilter trade(String q, String status, Instant from, Instant to,
 			String storeId, String orderId, Boolean blocked) {
-		return new ListFilter(q, status, from, to, null, storeId, orderId, blocked, null, null);
+		return new ListFilter(q, status, from, to, null, storeId, orderId, blocked, null, null, null);
 	}
 
 	/** 目录关联使用实际商家与活动编号，在目标 Owner 权限范围内检索。 */
 	public static ListFilter related(String q, String status, Instant from, Instant to,
 			String merchantId, String campaignId) {
-		return new ListFilter(q, status, from, to, null, null, null, null, merchantId, campaignId);
+		return new ListFilter(q, status, from, to, null, null, null, null, merchantId, campaignId, null);
+	}
+
+	/** 聚合编号不参与模糊匹配，事件类型仍由原记录标明。 */
+	public static ListFilter events(String q, String status, String aggregateId) {
+		return new ListFilter(q, status, null, null, null, null, null, null, null, null, aggregateId);
 	}
 
 	/** 仅明确支持启用标志的 Owner 可以使用该条件。 */
