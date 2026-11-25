@@ -7,11 +7,13 @@ import {
   App,
   Button,
   Card,
+  Checkbox,
   Descriptions,
   Form,
   Input,
   InputNumber,
   Modal,
+  Popover,
   Select,
   Space,
   Table,
@@ -29,6 +31,7 @@ import {
   type OperationFamily,
 } from "./operationsClient";
 import { useOperationsCommand, useOperationsLeave } from "./operationsCommand";
+import { useTradeListPreferences } from "./tradeListPreferences";
 
 export type OperationsProps = {
   context: Context;
@@ -190,22 +193,25 @@ export function OperationsList({
     );
   const related = tradeRelated[path as keyof typeof tradeRelated];
   const record = detailPath ? detail.data : selected;
-  const table: ColumnsType<OperationRow> = columns.map(([key, title]) => ({
-    key,
-    title,
-    dataIndex: key,
-    ellipsis: true,
-    width: key.endsWith("At")
-      ? 180
-      : key.toLowerCase().includes("amount") || key === "payable"
-        ? 120
-        : 150,
-    align:
-      key.toLowerCase().includes("amount") || key === "payable"
-        ? "right"
-        : "left",
-    render: (v) => formatField(key, v),
-  }));
+  const preferences = useTradeListPreferences(path, columns);
+  const table: ColumnsType<OperationRow> = preferences.columns.map(
+    ([key, title]) => ({
+      key,
+      title,
+      dataIndex: key,
+      ellipsis: true,
+      width: key.endsWith("At")
+        ? 180
+        : key.toLowerCase().includes("amount") || key === "payable"
+          ? 120
+          : 150,
+      align:
+        key.toLowerCase().includes("amount") || key === "payable"
+          ? "right"
+          : "left",
+      render: (v) => formatField(key, v),
+    }),
+  );
   table.push({
     title: "操作",
     width: 100,
@@ -231,13 +237,75 @@ export function OperationsList({
       }
     >
       {filters.toolbar}
+      {preferences.ready && (
+        <Space wrap style={{ marginBlock: 8 }}>
+          {preferences.optional.length > 0 && (
+            <Popover
+              trigger="click"
+              title="可选列"
+              content={
+                <Space orientation="vertical" size="small">
+                  {preferences.optional.map(([id, label]) => (
+                    <Checkbox
+                      key={id}
+                      checked={!preferences.hidden.includes(id)}
+                      onChange={(event) =>
+                        preferences.save({
+                          hidden: event.target.checked
+                            ? preferences.hidden.filter((field) => field !== id)
+                            : [...preferences.hidden, id],
+                        })
+                      }
+                    >
+                      {label}
+                    </Checkbox>
+                  ))}
+                  <Button onClick={() => preferences.save({ hidden: [] })}>
+                    恢复全部列
+                  </Button>
+                </Space>
+              }
+            >
+              <Button>表格列</Button>
+            </Popover>
+          )}
+          <Popover
+            content="保存已应用的状态、售后阻拦和每页条数，仅在当前浏览器使用。"
+            trigger={["hover", "focus"]}
+          >
+            <Button
+              onClick={() => preferences.save({ preset: filters.preset })}
+            >
+              保存状态筛选
+            </Button>
+          </Popover>
+          {preferences.preset && (
+            <>
+              <Button onClick={() => filters.applyPreset(preferences.preset!)}>
+                应用已保存筛选
+              </Button>
+              <Button
+                type="link"
+                onClick={() => preferences.save({ preset: undefined })}
+              >
+                清除已保存筛选
+              </Button>
+            </>
+          )}
+          {preferences.failure && (
+            <Typography.Text type="warning" role="status">
+              {preferences.failure}
+            </Typography.Text>
+          )}
+        </Space>
+      )}
       <ErrorNotice error={list.error} onRetry={list.refresh} />
       <Table<OperationRow>
         rowKey={(r) => String(r[idField])}
         dataSource={list.data}
         loading={list.loading}
         columns={table}
-        scroll={{ x: Math.max(560, columns.length * 150) }}
+        scroll={{ x: Math.max(560, preferences.columns.length * 150) }}
         pagination={false}
         locale={{
           emptyText: list.error

@@ -7,6 +7,7 @@ type TradePage =
 
 export const CentralLinkScope = createContext<{
   tenant: string;
+  subject: string;
   routes: ReadonlyMap<string, string>;
 } | null>(null);
 

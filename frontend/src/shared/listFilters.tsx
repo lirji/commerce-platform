@@ -223,6 +223,7 @@ type Values = Partial<Record<(typeof exactIds)[number], string>> & {
   blocked?: boolean;
   limit?: number;
 };
+export type QueuePreset = Pick<Values, "status" | "blocked" | "limit">;
 const readText = (value: unknown) =>
   typeof value === "string" ? value : undefined;
 function decode(raw: string, spec?: FilterSpec): Values {
@@ -309,6 +310,23 @@ export function useListFilters(
     );
   };
   return {
+    preset: {
+      status: values.status,
+      blocked: values.blocked,
+      limit,
+    } satisfies QueuePreset,
+    applyPreset: (preset: QueuePreset) =>
+      apply({
+        ...values,
+        status:
+          preset.status && spec?.states?.includes(preset.status)
+            ? preset.status
+            : undefined,
+        blocked: spec?.blocked ? preset.blocked : undefined,
+        limit: [10, 25, 50, 100].includes(preset.limit ?? 50)
+          ? preset.limit
+          : 50,
+      }),
     active: !!(
       values.q ||
       values.status ||

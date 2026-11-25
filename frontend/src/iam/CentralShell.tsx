@@ -120,7 +120,9 @@ export function CentralShell({
               <span title={tenant}>{tenant}</span>
             </Typography.Text>
           </div>
-          <CentralLinkScope.Provider value={{ tenant, routes: model.routes }}>
+          <CentralLinkScope.Provider
+            value={{ tenant, subject, routes: model.routes }}
+          >
             {children}
           </CentralLinkScope.Provider>
         </Layout.Content>
