@@ -1,6 +1,7 @@
 import { formatField, workTypeLabel } from "../shared/ui";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
+import { recoveryTarget, useRecoveryAudit } from "../shared/recoveryAudit";
 import { TradeLinks } from "../shared/workspaceLinks";
 import {
   Alert,
@@ -13,7 +14,7 @@ import {
   Table,
   Tag,
 } from "antd";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useResource } from "../shared/api";
 import { ErrorNotice } from "../shared/ui";
 import {
@@ -62,6 +63,11 @@ function replayBody(v: Record<string, unknown>) {
   };
 }
 function RuntimeRead() {
+  const auditTitle = useRef<HTMLHeadingElement>(null);
+  const audit = useRecoveryAudit(
+    "CentralRuntime.work",
+    "CentralRuntime.historyAfter",
+  );
   const types = useResource<{ workType: string; actions: string[] }[]>(
       "/admin/runtime/work-types",
     ),
@@ -72,19 +78,13 @@ function RuntimeRead() {
     [stoppedAfter, setStoppedAfter] = useCursorState(
       "CentralRuntime.stoppedAfter",
       "",
-    ),
-    [historyAfter, setHistoryAfter] = useCursorState(
-      "CentralRuntime.historyAfter",
-      0,
     );
   const stopped = useResource<OperationRow[]>(
       workType
         ? `/admin/runtime/stopped?workType=${workType}&after=${encodeURIComponent(stoppedAfter)}&limit=50`
         : null,
     ),
-    history = useResource<OperationRow[]>(
-      `/admin/runtime/recoveries?after=${historyAfter}&limit=50`,
-    );
+    history = useResource<OperationRow[]>(audit.path);
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       <Card
@@ -132,15 +132,31 @@ function RuntimeRead() {
           ].map(([dataIndex, title]) => ({
             dataIndex,
             title,
-            render: (v) =>
-              dataIndex === "workId" && workType === "order.expiry" ? (
+            render: (v) => {
+              const target =
+                dataIndex === "workId"
+                  ? recoveryTarget(workType, v)
+                  : undefined;
+              return target ? (
                 <Space orientation="vertical" size={0}>
                   {formatField(dataIndex, v)}
-                  <TradeLinks orderId={v} pages={["orders"]} />
+                  {workType === "order.expiry" && (
+                    <TradeLinks orderId={v} pages={["orders"]} />
+                  )}
+                  <Button
+                    type="link"
+                    onClick={() => {
+                      audit.select(target);
+                      requestAnimationFrame(() => auditTitle.current?.focus());
+                    }}
+                  >
+                    查看原工作审计
+                  </Button>
                 </Space>
               ) : (
                 formatField(dataIndex, v)
-              ),
+              );
+            },
           }))}
         />
         <div className="pager-navigation">
@@ -170,6 +186,19 @@ function RuntimeRead() {
             下一批停止项
           </Button>
         </div>
+        <h3 ref={auditTitle} tabIndex={-1}>
+          恢复审计
+        </h3>
+        {(audit.target || audit.invalid) && (
+          <Space wrap>
+            <Tag>
+              {audit.target
+                ? `${workTypeLabel(audit.target.workType)} · ${audit.target.workId}`
+                : "工作类型或编号无效"}
+            </Tag>
+            <Button onClick={() => audit.select()}>清除原工作筛选</Button>
+          </Space>
+        )}
         <ErrorNotice error={history.error} onRetry={history.refresh} />
         <Table<OperationRow>
           rowKey={(r) => String(r.id)}
@@ -201,16 +230,16 @@ function RuntimeRead() {
         <div className="pager-navigation">
           <CursorBack
             name={"CentralRuntime.historyAfter"}
-            after={historyAfter}
-            onPrevious={setHistoryAfter}
+            after={audit.after}
+            onPrevious={audit.setAfter}
             initial={0}
             disabled={history.loading || !!history.error}
             count={history.data?.length}
             pageSize={50}
           />
           <Button
-            disabled={!historyAfter || history.loading}
-            onClick={() => setHistoryAfter(0)}
+            disabled={!audit.after || history.loading}
+            onClick={() => audit.setAfter(0)}
           >
             返回审计首页
           </Button>
@@ -219,7 +248,7 @@ function RuntimeRead() {
               history.loading || !!history.error || history.data?.length !== 50
             }
             onClick={() =>
-              setHistoryAfter(Number(history.data?.at(-1)?.id ?? 0))
+              audit.setAfter(Number(history.data?.at(-1)?.id ?? 0))
             }
           >
             下一批恢复审计

@@ -20,6 +20,7 @@ import { encode, request, useResource } from "../shared/api";
 import { useIntent } from "../shared/useIntent";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import { TradeLinks } from "../shared/workspaceLinks";
+import { recoveryTarget, useRecoveryAudit } from "../shared/recoveryAudit";
 import {
   ErrorNotice,
   ListPanel,
@@ -183,7 +184,7 @@ function Recovery() {
   const [workType, setWorkType] = useRouteState("workType", "");
   const [failureClass, setFailureClass] = useRouteState("failureClass", "");
   const [after, setAfter] = useCursorState("after", "");
-  const [auditAfter, setAuditAfter] = useCursorState("auditAfter", 0);
+  const audit = useRecoveryAudit("recoveryWork", "auditAfter");
   const [selected, setSelected] = useState<string[]>([]);
   const [detail, setDetail] = useState<Stopped>();
   const [form] = Form.useForm<{ action: string; reason: string }>();
@@ -193,11 +194,7 @@ function Recovery() {
       ? `${BASE}/stopped?workType=${encode(workType)}&failureClass=${encode(failureClass)}&after=${encode(after)}&limit=50`
       : null,
   );
-  const history = useResource<Audit[]>(
-    tab === "history"
-      ? `${BASE}/recoveries?after=${auditAfter}&limit=50`
-      : null,
-  );
+  const history = useResource<Audit[]>(tab === "history" ? audit.path : null);
   const command = useIntent<RecoveryResult>();
   useEffect(() => {
     if (!workType && types.data?.length) setWorkType(types.data[0].workType);
@@ -344,11 +341,28 @@ function Recovery() {
                       },
                       {
                         title: "操作",
-                        width: 100,
+                        width: 200,
                         render: (_, r) => (
-                          <Button type="link" onClick={() => setDetail(r)}>
-                            查看证据
-                          </Button>
+                          <Space wrap>
+                            <Button type="link" onClick={() => setDetail(r)}>
+                              查看证据
+                            </Button>
+                            <Button
+                              type="link"
+                              disabled={command.pending || command.busy}
+                              onClick={() => {
+                                const target = recoveryTarget(
+                                  r.workType,
+                                  r.workId,
+                                );
+                                if (!target) return;
+                                audit.select(target);
+                                setTab("history");
+                              }}
+                            >
+                              查看原工作审计
+                            </Button>
+                          </Space>
                         ),
                       },
                     ]}
@@ -470,13 +484,27 @@ function Recovery() {
               <>
                 <ErrorNotice error={history.error} onRetry={history.refresh} />
                 <ListPanel
+                  toolbar={
+                    (audit.target || audit.invalid) && (
+                      <Space wrap>
+                        <Tag>
+                          {audit.target
+                            ? `${workTypeLabel(audit.target.workType)} · ${audit.target.workId}`
+                            : "工作类型或编号无效"}
+                        </Tag>
+                        <Button onClick={() => audit.select()}>
+                          清除原工作筛选
+                        </Button>
+                      </Space>
+                    )
+                  }
                   count={history.data?.length ?? 0}
                   loading={history.loading}
                   error={history.error}
-                  after={auditAfter}
+                  after={audit.after}
                   cursorName={"auditAfter"}
-                  onHome={() => setAuditAfter(0)}
-                  onNext={() => setAuditAfter(history.data!.at(-1)!.id)}
+                  onHome={() => audit.setAfter(0)}
+                  onNext={() => audit.setAfter(history.data!.at(-1)!.id)}
                 >
                   <Table<Audit>
                     rowKey="id"
