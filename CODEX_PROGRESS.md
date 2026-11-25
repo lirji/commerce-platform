@@ -15,6 +15,7 @@
 - 当前权威计划为 `docs/design/operations-experience/IMPLEMENTATION_SLICES.md`，状态见 `docs/delivery/operations-experience/PROGRESS_STATE.md`。原仓库 `fix/operations-experience-foundation` 基于 `a5f1b37`，入场时已有上方审计文档与检查点，保留并按任务路径交付。
 - 用户已授权连续执行。S1–S5 已合入 `main` 的 `46a294c`。续批任务分支 `feat/operations-experience-queues` 从该提交开始。恢复时以权威状态与 `TEST_RESULT.md` 为准，继续遵循业务建模、契约、安全与验证、持久化、容量与发布章节。
 - 续批证据在 `.local/operations-experience-queues/`。S6–S8 与 S9 本地范围已实现并验证。Git、CI 回执从续批证据恢复。正式渠道和业务治理条件按权威进度核对。
+- 用户已授权本机 Docker 部署并在验收后继续项目。现有 `127.0.0.1:8602` 已运行 `c1f94c4`，健康、64 个前端文件和 Flyway V73 已核验。已继续完成 S9 四类队列的实机只读验证和隔离容量验证。恢复入口为权威进度和 `.local/operations-experience-queues/deployment/DEPLOYMENT_RESULT.json`。
 <!-- operations-experience-delivery:end -->
 
 <!-- lc02-store-pilot:start -->
