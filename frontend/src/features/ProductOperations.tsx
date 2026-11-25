@@ -146,9 +146,6 @@ export function ProductOperations({
           description="商品、规格、价格与上下架。历史报价保留原价格，修订需填写原因。"
         />
       )}
-      {productFilters.toolbar}
-      <ErrorNotice error={products.error} onRetry={products.refresh} />
-      <ErrorNotice error={skus.error} onRetry={skus.refresh} />
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -160,6 +157,7 @@ export function ProductOperations({
               <ListPanel
                 toolbar={
                   <>
+                    <ErrorNotice error={skus.error} onRetry={skus.refresh} />
                     <Space wrap>
                       <VariantCreator store={store} onDone={refresh} />
                       <BatchCatalogAction
@@ -317,16 +315,23 @@ export function ProductOperations({
             children: (
               <ListPanel
                 toolbar={
-                  <CommandModal
-                    title="创建商品"
-                    path="/operations/products"
-                    fields={[
-                      { name: "productId", label: "商品标识" },
-                      ...metadata,
-                    ]}
-                    build={(v) => ({ ...v, storeId: store })}
-                    onDone={refresh}
-                  />
+                  <>
+                    {productFilters.toolbar}
+                    <ErrorNotice
+                      error={products.error}
+                      onRetry={products.refresh}
+                    />
+                    <CommandModal
+                      title="创建商品"
+                      path="/operations/products"
+                      fields={[
+                        { name: "productId", label: "商品标识" },
+                        ...metadata,
+                      ]}
+                      build={(v) => ({ ...v, storeId: store })}
+                      onDone={refresh}
+                    />
+                  </>
                 }
                 pageSize={productFilters.limit}
                 count={products.data?.length ?? 0}
