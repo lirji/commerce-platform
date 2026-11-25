@@ -26,6 +26,159 @@ async function restoreCentralFixture(page: Page) {
   );
 }
 
+test("原订单下钻只打开当前导航允许的精确读取", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const order = {
+    orderId: "ORDER-1",
+    memberId: "MEMBER-1",
+    storeId: "STORE-A",
+    status: "PAID",
+    payable: "8.00",
+  };
+  const calls: URL[] = [];
+  const writes: string[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    calls.push(url);
+    if (route.request().method() !== "GET") writes.push(url.pathname);
+    if (url.pathname === "/v1/operations/navigation") {
+      const nav = centralNavigationFixture(tenant);
+      return route.fulfill({
+        json: {
+          ...nav,
+          menus: nav.menus.filter(
+            (menu) => menu.route !== "/operations/refunds",
+          ),
+        },
+      });
+    }
+    if (url.pathname === "/v1/admin/orders")
+      return route.fulfill({ json: [order] });
+    if (url.pathname === `/v1/admin/orders/${order.orderId}`)
+      return route.fulfill({ json: order });
+    if (url.pathname === `/v1/admin/orders/${order.orderId}/payment`)
+      return route.fulfill({
+        json: {
+          paymentId: "PAY-1",
+          orderId: order.orderId,
+          amount: "8.00",
+          currency: "CNY",
+          provider: "SANDBOX",
+          status: "UNKNOWN",
+          version: 1,
+        },
+      });
+    return route.fulfill({
+      json: url.pathname.endsWith("-access") ? { allowed: false } : [],
+    });
+  });
+  await page.goto(
+    `${base}/operations/orders?tenant_id=${tenant}&environment=test`,
+  );
+  await page.getByRole("button", { name: "查看详情", exact: true }).click();
+  const detail = page.getByRole("dialog");
+  await expect(detail.getByRole("link", { name: "查看退款" })).toHaveCount(0);
+  await expect(detail.getByRole("link", { name: "查看售后" })).toBeVisible();
+  await detail.getByRole("link", { name: "查看原支付" }).click();
+  await expect(page.getByLabel("订单编号", { exact: true })).toHaveValue(
+    order.orderId,
+  );
+  await expect(page.getByText("PAY-1", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "查看退款" })).toHaveCount(0);
+  expect(new URL(page.url()).searchParams.get("environment")).toBe("test");
+  expect(
+    calls
+      .filter((x) => x.pathname.includes("/payment"))
+      .some((x) => x.pathname === `/v1/admin/orders/${order.orderId}/payment`),
+  ).toBe(true);
+  expect(writes).toEqual([]);
+});
+
+test("异常待办使用独立权限，同门店筛选和有界实数", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const basePath = "/v1/admin/fulfillments";
+  const calls: URL[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    calls.push(url);
+    if (url.pathname === "/v1/operations/navigation") {
+      const nav = centralNavigationFixture(tenant);
+      return route.fulfill({
+        json: {
+          ...nav,
+          menus: nav.menus.filter(
+            (menu) => menu.route !== "/operations/refunds",
+          ),
+        },
+      });
+    }
+    if (url.pathname === basePath)
+      return route.fulfill({
+        json: Array.from({ length: 10 }, (_, i) => ({
+          orderId: `F-${i}`,
+          status: "READY",
+          blocked: true,
+        })),
+      });
+    if (url.pathname === "/v1/admin/aftersales")
+      return route.fulfill({ status: 403, json: {} });
+    if (url.pathname === "/v1/admin/dashboard")
+      return route.fulfill({ status: 403, json: {} });
+    return route.fulfill({
+      json: url.pathname.endsWith("-access") ? { allowed: false } : [],
+    });
+  });
+  await page.goto(
+    `${base}/operations/dashboard?tenant_id=${tenant}&environment=test&store_id=STORE-A`,
+  );
+  const queue = page.getByRole("link", { name: "查看售后阻拦的履约" });
+  await expect(queue).toContainText("至少 10 条");
+  await expect(
+    page.getByRole("link", { name: "查看待确认关闭的订单" }),
+  ).toContainText("0 条");
+  await expect(page.getByText("当前无队列读取权限")).toBeVisible();
+  await expect(page.getByText("结果未知的退款")).toHaveCount(0);
+  expect(calls.some((url) => url.pathname === "/v1/admin/refunds")).toBe(false);
+  const first = calls.find((url) => url.pathname === basePath)!;
+  expect(Object.fromEntries(first.searchParams)).toEqual({
+    after: "",
+    limit: "10",
+    blocked: "true",
+    storeId: "STORE-A",
+  });
+  for (const width of [1440, 1024, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(queue).toBeVisible();
+    await page.screenshot({
+      path: `${process.env.COMMERCE_EVIDENCE_DIR ?? "../.local"}/exceptions-${width}.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth + 1,
+      ),
+    ).toBe(false);
+  }
+  await queue.focus();
+  await expect(queue).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("row").filter({ hasText: "F-0" })).toBeVisible();
+  const list = calls.filter((url) => url.pathname === basePath).at(-1)!;
+  expect(list.searchParams.get("storeId")).toBe(
+    first.searchParams.get("storeId"),
+  );
+  expect(list.searchParams.get("blocked")).toBe(
+    first.searchParams.get("blocked"),
+  );
+});
+
 // 独立SSO预览只验证壳层与公开DTO，不以夹具证明中央授权或OIDC交换成功。
 test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，窄屏不溢出", async ({
   page,

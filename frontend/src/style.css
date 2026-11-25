@@ -936,6 +936,12 @@ textarea {
   font-size: 11px;
   color: var(--muted);
 }
+.exception-queues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 12px 20px;
+}
+
 .dashboard-main-grid {
   display: grid;
   grid-template-columns: minmax(0, 2.3fr) minmax(235px, 1fr);

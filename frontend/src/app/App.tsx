@@ -74,6 +74,11 @@ const MarketingEffects = lazy(() =>
     default: m.MarketingEffects,
   })),
 );
+const ExceptionQueues = lazy(() =>
+  import("../features/ExceptionQueues").then((m) => ({
+    default: m.ExceptionQueues,
+  })),
+);
 const Dashboard = lazy(() =>
   import("../features/Dashboard").then((m) => ({ default: m.Dashboard })),
 );
@@ -525,7 +530,14 @@ export function App() {
   else if (admin && (page === "recovery" || page === "replay"))
     content = <RuntimeOperations mode={page} />;
   else if (!operator && admin && page === "dashboard")
-    content = <Dashboard key={store} store={store} navigate={navigate} />;
+    content = (
+      <Dashboard
+        key={store}
+        store={store}
+        navigate={navigate}
+        exceptions={<ExceptionQueues store={store} />}
+      />
+    );
   else if (admin && page === "skus")
     content = <ProductOperations key={store} store={store} />;
   else if (operator)

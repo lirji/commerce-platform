@@ -9,6 +9,7 @@ import {
   Typography,
 } from "antd";
 import { useRouteState } from "../shared/routeState";
+import type { ReactNode } from "react";
 import { DailyTrend, type Daily, type TrendMetric } from "./DailyTrend";
 import { encode, useResource } from "../shared/api";
 import { ErrorNotice, PageHead, money, time } from "../shared/ui";
@@ -60,9 +61,15 @@ const shortcuts = [
 export function Dashboard({
   store,
   navigate,
+  canNavigate = () => true,
+  exceptions,
+  embedded = false,
 }: {
   store: string;
   navigate: (page: string) => void;
+  canNavigate?: (page: string) => boolean;
+  exceptions?: ReactNode;
+  embedded?: boolean;
 }) {
   const data = useResource<Summary>(
     store ? `/admin/dashboard?storeId=${encode(store)}` : null,
@@ -78,19 +85,25 @@ export function Dashboard({
   const summary = data.data;
   const daily = summary?.daily ?? [];
   const sums = summary?.totals;
+  const refresh = (
+    <Button onClick={data.refresh} loading={data.loading}>
+      刷新总览
+    </Button>
+  );
   return (
     <div className="dashboard">
-      <PageHead
-        eyebrow="经营工作台"
-        title="经营总览"
-        description="会员、商品与成交，沿着真实数据看清经营。"
-        extra={
-          <Button onClick={data.refresh} loading={data.loading}>
-            刷新总览
-          </Button>
-        }
-      />
+      {embedded ? (
+        refresh
+      ) : (
+        <PageHead
+          eyebrow="经营工作台"
+          title="经营总览"
+          description="会员、商品与成交，沿着真实数据看清经营。"
+          extra={refresh}
+        />
+      )}
       <ErrorNotice error={data.error} onRetry={data.refresh} />
+      {exceptions}
       <Spin spinning={data.loading}>
         {summary && sums && (
           <>
@@ -244,28 +257,32 @@ export function Dashboard({
                   <span>下架规格</span>
                   <b>{summary.catalog.frozen}</b>
                 </div>
-                <Button block onClick={() => navigate("members")}>
-                  查看会员档案
-                </Button>
+                {canNavigate("members") && (
+                  <Button block onClick={() => navigate("members")}>
+                    查看会员档案
+                  </Button>
+                )}
               </Card>
             </div>
             <div className="shortcut-grid">
-              {shortcuts.map((s) => (
-                <button
-                  className="dashboard-shortcut"
-                  key={s.page}
-                  onClick={() => navigate(s.page)}
-                >
-                  <span>
-                    <Icon name={s.mark as IconName} />
-                  </span>
-                  <div>
-                    <strong>{s.label}</strong>
-                    <small>{s.text}</small>
-                  </div>
-                  <Icon name="arrow" className="shortcut-arrow" />
-                </button>
-              ))}
+              {shortcuts
+                .filter((s) => canNavigate(s.page))
+                .map((s) => (
+                  <button
+                    className="dashboard-shortcut"
+                    key={s.page}
+                    onClick={() => navigate(s.page)}
+                  >
+                    <span>
+                      <Icon name={s.mark as IconName} />
+                    </span>
+                    <div>
+                      <strong>{s.label}</strong>
+                      <small>{s.text}</small>
+                    </div>
+                    <Icon name="arrow" className="shortcut-arrow" />
+                  </button>
+                ))}
             </div>
             <details className="dashboard-basis">
               <summary>数据口径与说明</summary>
@@ -274,12 +291,16 @@ export function Dashboard({
                 成交优惠不扣减退款，不含货品、支付或渠道成本；净收不等于利润。
               </Typography.Text>
               <Space wrap style={{ marginTop: 8 }}>
-                <Button type="link" onClick={() => navigate("effects")}>
-                  进入营销效果分析
-                </Button>
-                <Button type="link" onClick={() => navigate("events")}>
-                  查看事件处理
-                </Button>
+                {canNavigate("effects") && (
+                  <Button type="link" onClick={() => navigate("effects")}>
+                    进入营销效果分析
+                  </Button>
+                )}
+                {canNavigate("events") && (
+                  <Button type="link" onClick={() => navigate("events")}>
+                    查看事件处理
+                  </Button>
+                )}
               </Space>
             </details>
           </>

@@ -243,10 +243,7 @@ function Inventory({
     setWriteDenied(false);
   };
   const canReceive =
-    actions.data?.receive &&
-    !actions.error &&
-    !actions.loading &&
-    !writeDenied;
+    actions.data?.receive && !actions.error && !actions.loading && !writeDenied;
   async function receive(value: Receipt) {
     if (running.current || !canReceive) return;
     running.current = true;
