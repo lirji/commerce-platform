@@ -1,5 +1,21 @@
 # Codex Progress
 
+<!-- operations-experience-audit:start -->
+## 运营体验审计（文档交付完成）
+
+- 当前任务以 `~/Downloads/writing-block.md` 为准。覆盖全项目菜单、路由、列表与表单、后端和权限，交付九份 Markdown，范围为审计与方案。
+- 原项目目录，审计基线 `a5f1b37`，开始时工作树干净。该阶段产物为九份审计文档。覆盖和证据入口为 `docs/audit/operations-experience/01-system-overview.md`，本地证据与文档检查回执在 `.local/operations-experience-audit/`。
+- 已核对 73 个业务页面入口、44 个子表专题、89 项改造条目。本机 8602 制品与源码同版本，旧管理员 29 页、会员 7 页实测，另有 9 个窄屏页面和 5 条只读作业路径。中央壳层已核对，真实岗位态、平台身份、渠道和写入待隔离验证。
+- 已确认证据包括 SKU/SPU 搜索作用域、订单页门店和请求范围、中央组织入口 401、中央运营页面筛选未绑定请求。结论、风险分级和分期计划分别见九份报告。用户后续授权开始首批实施，见下方改造入口。
+<!-- operations-experience-audit:end -->
+
+<!-- operations-experience-delivery:start -->
+## 运营体验改造
+
+- 当前权威计划为 `docs/design/operations-experience/IMPLEMENTATION_SLICES.md`，状态见 `docs/delivery/operations-experience/PROGRESS_STATE.md`。原仓库 `fix/operations-experience-foundation` 基于 `a5f1b37`，入场时已有上方审计文档与检查点，保留并按任务路径交付。
+- 用户已授权开始执行。S1–S5 实现和本地验证通过，下一片 S6 先核实际门店查询契约。继续遵循业务建模、契约、安全与验证、发布章节。隔离证据目录 `.local/operations-experience-delivery/`。
+<!-- operations-experience-delivery:end -->
+
 <!-- lc02-store-pilot:start -->
 ## LC-02 商业试点门店范围
 
