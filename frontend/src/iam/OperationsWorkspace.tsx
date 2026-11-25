@@ -64,6 +64,13 @@ export function OperationDetails({
   row: OperationRow;
   fields: readonly [string, string][];
 }) {
+  const lines = Array.isArray(row.items) ? (row.items as OperationRow[]) : [];
+  const amounts = (
+    [
+      ["unitPrice", "单价"],
+      ["refundAmount", "退款金额"],
+    ] as const
+  ).filter(([key]) => lines.some((line) => line[key] != null));
   return (
     <>
       <Descriptions
@@ -76,26 +83,21 @@ export function OperationDetails({
           children: formatField(key, row[key]),
         }))}
       />
-      {Array.isArray(row.items) && (
+      {lines.length > 0 && (
         <Table<OperationRow>
           size="small"
           rowKey={(r, i) => `${r.skuId}-${i}`}
           pagination={false}
-          scroll={{ x: 480 }}
-          dataSource={row.items as OperationRow[]}
+          scroll={{ x: amounts.length > 1 ? 440 : 300 }}
+          dataSource={lines}
           columns={[
             { title: "商品规格", dataIndex: "skuId" },
             { title: "数量", dataIndex: "quantity" },
-            {
-              title: "单价",
-              dataIndex: "unitPrice",
-              render: (v) => (v == null ? "—" : money(v)),
-            },
-            {
-              title: "退款金额",
-              dataIndex: "refundAmount",
-              render: (v) => (v == null ? "—" : money(v)),
-            },
+            ...amounts.map(([dataIndex, title]) => ({
+              dataIndex,
+              title,
+              render: (v: unknown) => (v == null ? "—" : money(v)),
+            })),
           ]}
         />
       )}
