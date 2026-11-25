@@ -284,6 +284,9 @@ test("读取真实DTO分开三个版本，运行详情键盘与焦点返回", as
   });
   await expect(detail.getByText("输出快照版本", { exact: true })).toBeVisible();
   await expect(detail.getByText("尚未完成", { exact: true })).toBeVisible();
+  await expect(detail.getByRole("link", { name: "查看输出快照" })).toHaveCount(
+    0,
+  );
   await screenshot(page, "run-1440");
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
@@ -303,6 +306,68 @@ test("读取真实DTO分开三个版本，运行详情键盘与焦点返回", as
   await expect(definition).not.toBeVisible();
   await expect(open).toBeFocused();
   expect(new URL(page.url()).searchParams.get("tenant_id")).toEqual(tenant);
+});
+
+test("已完成的动态人群运行只按原快照版本进入有权目录", async ({ page }) => {
+  let allow = true;
+  await page.route(navigationApi, (route) => {
+    const nav = centralNavigationFixture(tenant);
+    if (!allow)
+      nav.menus = nav.menus.filter(
+        (menu) => menu.route !== "/operations/audiences",
+      );
+    return route.fulfill({ json: nav });
+  });
+  await page.route(businessApi, (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/admin/segments")
+      return route.fulfill({ json: [view] });
+    if (url.pathname === "/v1/admin/segments/SEG%3A7/runs")
+      return route.fulfill({ json: [{ ...run, status: "COMPLETED" }] });
+    const snapshot = {
+      audienceId: run.audienceId,
+      version: run.snapshotVersion,
+      name: "原动态人群快照",
+      source: "动态人群刷新",
+      watermark: run.startedAt,
+      validUntil: run.validUntil,
+      memberCount: run.matched,
+    };
+    if (url.pathname === "/v1/admin/audiences/snapshot")
+      return route.fulfill({ json: snapshot });
+    if (url.pathname === "/v1/admin/audiences")
+      return route.fulfill({ json: [{ ...snapshot, version: 3 }] });
+    return route.fulfill({ status: 403, json: {} });
+  });
+  const detail = page.getByRole("dialog", { name: "动态人群运行详情" });
+  async function openRun() {
+    await enter(page);
+    await page.getByRole("button", { name: "详情与记录" }).click();
+    await page
+      .getByRole("dialog", { name: "动态人群定义与运行记录" })
+      .getByRole("button", { name: "查看", exact: true })
+      .click();
+    await expect(detail.getByText("COMPLETED", { exact: true })).toBeVisible();
+  }
+  await openRun();
+  const reading = page.waitForRequest((request) =>
+    request.url().includes("/v1/admin/audiences/snapshot"),
+  );
+  await detail.getByRole("link", { name: "查看输出快照" }).click();
+  const request = await reading;
+  expect(request.method()).toBe("GET");
+  expect(Object.fromEntries(new URL(request.url()).searchParams)).toEqual({
+    audienceId: run.audienceId,
+    version: String(run.snapshotVersion),
+  });
+  expect(new URL(page.url()).searchParams.get("tenant_id")).toBe(tenant);
+  await expect(page.getByText("原人群快照", { exact: true })).toBeVisible();
+  await expect(page.getByText("固定版本", { exact: true })).toBeVisible();
+  allow = false;
+  await openRun();
+  await expect(detail.getByRole("link", { name: "查看输出快照" })).toHaveCount(
+    0,
+  );
 });
 
 test("pump未知不会自动重发或伪装幂等，显式确认才允许下一次", async ({

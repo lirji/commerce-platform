@@ -30,6 +30,7 @@ import type { Rule } from "../shared/contracts";
 import { RuleEditor, RuleSummary } from "../shared/marketing";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import { ErrorNotice, PageHead } from "../shared/ui";
+import { useWorkspaceHref } from "../shared/workspaceLinks";
 import { HTTP, type Context } from "./api";
 import {
   SEGMENT_PAGE_SIZE,
@@ -169,6 +170,14 @@ function DefinitionDetails({ value }: { value: SegmentView }) {
   );
 }
 function RunDetails({ value }: { value: SegmentRun }) {
+  const href = useWorkspaceHref();
+  // 运行在分配阶段已有版本号，完成状态才证明该版本已写入快照目录。
+  const snapshot =
+    value.status === "COMPLETED" &&
+    href("audiences", {
+      audienceId: value.audienceId,
+      version: String(value.snapshotVersion),
+    });
   return (
     <Descriptions
       column={1}
@@ -183,7 +192,14 @@ function RunDetails({ value }: { value: SegmentRun }) {
         {
           key: "snapshot",
           label: "输出快照版本",
-          children: value.snapshotVersion,
+          children: snapshot ? (
+            <Space>
+              {value.snapshotVersion}
+              <a href={snapshot}>查看输出快照</a>
+            </Space>
+          ) : (
+            value.snapshotVersion
+          ),
         },
         { key: "audience", label: "输出人群编号", children: value.audienceId },
         { key: "status", label: "实际任务状态", children: value.status },
