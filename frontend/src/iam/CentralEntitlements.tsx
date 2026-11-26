@@ -36,6 +36,7 @@ type ResolutionInput = {
   reference: string;
 };
 type Entitlement = {
+  businessNo?: string | null;
   grantId: string;
   orderId: string | null;
   memberId: string;
@@ -147,7 +148,7 @@ function Directory() {
               title: "权益实例",
               width: 200,
               render: (_, row) => (
-                <PrimaryCell title={row.name} subtitle={row.grantId} />
+                <PrimaryCell title={row.name} subtitle={row.businessNo ?? row.grantId} />
               ),
             },
             {

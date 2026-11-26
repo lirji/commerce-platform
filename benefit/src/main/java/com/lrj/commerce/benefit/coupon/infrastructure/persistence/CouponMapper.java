@@ -57,13 +57,18 @@ public interface CouponMapper {
 
 	void sourceCoupon(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id,
 			@Param("source") String source, @Param("type") String type, @Param("definition") DefinitionRow definition,
-			@Param("from") Instant from, @Param("to") Instant to);
+			@Param("from") Instant from, @Param("to") Instant to, @Param("createdAt") Instant createdAt,
+            @Param("number") String number);
 
 	Coupon existing(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id,
 			@Param("version") long version);
 
 	void coupon(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id,
-			@Param("definition") DefinitionRow definition, @Param("from") Instant from, @Param("to") Instant to);
+			@Param("definition") DefinitionRow definition, @Param("from") Instant from, @Param("to") Instant to,
+            @Param("createdAt") Instant createdAt, @Param("number") String number);
+
+    /** 冲突后当前读确认候选号是否已提交。 */
+    String lockBusinessNumber(@Param("number") String number);
 
 	Coupon find(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id);
 

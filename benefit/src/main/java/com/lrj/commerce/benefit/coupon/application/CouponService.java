@@ -1,5 +1,8 @@
 package com.lrj.commerce.benefit.coupon.application;
 
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
+
 import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.coupon.api.CouponApi;
 import com.lrj.commerce.benefit.coupon.infrastructure.persistence.CouponMapper;
@@ -156,7 +159,12 @@ public class CouponService implements CouponApi {
 				throw conflict("券未生效、已过期或配额不足");
 			String coupon = UUID.randomUUID().toString();
 			var validity = validity(definition);
-			mapper.coupon(actor.tenantId(), member.memberId(), coupon, definition, validity.from(), validity.to());
+			var createdAt = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+            BusinessNumberWriter.write(BusinessNumber.Type.COUPON, createdAt, number -> {
+                mapper.coupon(actor.tenantId(), member.memberId(), coupon, definition, validity.from(), validity.to(),
+                        createdAt, number);
+                return number;
+            }, number -> mapper.lockBusinessNumber(number) != null);
 			return mapper.find(actor.tenantId(), member.memberId(), coupon);
 		});
 	}
@@ -237,8 +245,7 @@ public class CouponService implements CouponApi {
 		if (mapper.issueCampaignQuota(tenant, hold.definitionId(), hold.version()) != 1)
 			throw conflict("活动券预留额度冲突");
 		var validity = validity(definition);
-		mapper.sourceCoupon(tenant, hold.memberId(), hold.couponId(), order, "CAMPAIGN", definition,
-				validity.from(), validity.to());
+		issueSourceCoupon(tenant, hold.memberId(), hold.couponId(), order, "CAMPAIGN", definition, validity);
 		if (mapper.campaignHoldStatus(tenant, order, "HELD", "ISSUED") != 1)
 			throw conflict("活动券发放状态冲突");
 	}
@@ -278,7 +285,7 @@ public class CouponService implements CouponApi {
 			throw conflict("兑换券状态、有效期或额度不足");
 		var coupon = UUID.randomUUID().toString();
 		var validity = validity(d);
-		mapper.sourceCoupon(tenant, member, coupon, source, type, d, validity.from(), validity.to());
+		issueSourceCoupon(tenant, member, coupon, source, type, d, validity);
 		return mapper.find(tenant, member, coupon);
 	}
 
@@ -296,6 +303,17 @@ public class CouponService implements CouponApi {
 			throw conflict("券撤销状态已变化");
 		return "REVOKED";
 	}
+
+    /** 券到账时生成运营编号，原领券来源和订单预占继续使用原券键。 */
+    private void issueSourceCoupon(String tenant, String member, String coupon, String source, String type,
+            CouponMapper.DefinitionRow definition, Validity validity) {
+        var createdAt = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+        BusinessNumberWriter.write(BusinessNumber.Type.COUPON, createdAt, number -> {
+            mapper.sourceCoupon(tenant, member, coupon, source, type, definition, validity.from(), validity.to(),
+                    createdAt, number);
+            return number;
+        }, number -> mapper.lockBusinessNumber(number) != null);
+    }
 
 	private record Validity(java.time.Instant from, java.time.Instant to) {
 	}
@@ -341,7 +359,7 @@ public class CouponService implements CouponApi {
 		var coupon = new Coupon(locked.couponId(), locked.definitionId(), locked.version(), locked.memberId(),
 				d.storeId(), d.name(), locked.status(), d.discountAmount(), d.minimumSpend(),
 				locked.validFrom() == null ? d.validFrom() : locked.validFrom(), locked.validTo(), d.stackable(),
-				d.platformFundingBps());
+				d.platformFundingBps(), null);
 		validate(coupon, store);
 		if (!coupon.definitionId().equals(selected.definitionId()) || coupon.version() != selected.version()
 				|| coupon.platformFundingBps() != selected.platformFundingBps()

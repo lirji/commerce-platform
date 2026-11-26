@@ -40,10 +40,10 @@ public interface EntitlementApi {
 
 	record View(String grantId, String orderId, String memberId, String benefitId, long benefitVersion, String name,
 			State status, int units, int remainingUnits, int debtUnits, Instant expiresAt, long version,
-			String sourceType, String sourceId) {
+			String sourceType, String sourceId, String businessNo) {
 	}
 
-	record Ledger(String entryId, String action, int units, int balance, String reference, Instant createdAt) {
+	record Ledger(String entryId, String action, int units, int balance, String reference, Instant createdAt, String businessNo) {
 	}
 
 	record Consume(int units) {

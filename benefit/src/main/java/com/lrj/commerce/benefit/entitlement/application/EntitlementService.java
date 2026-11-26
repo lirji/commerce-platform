@@ -1,5 +1,8 @@
 package com.lrj.commerce.benefit.entitlement.application;
 
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
+
 import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.benefit.entitlement.api.EntitlementApi;
 import com.lrj.commerce.benefit.entitlement.infrastructure.persistence.EntitlementMapper;
@@ -104,7 +107,7 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 				|| !clock.instant().isBefore(d.validTo())
 				|| mapper.reserveQuota(actor.tenantId(), ref.benefitId(), ref.version()) != 1)
 			throw conflict();
-		mapper.grant(actor.tenantId(), UUID.randomUUID().toString(), order, member, d, "ORDER", order);
+		issueGrant(actor.tenantId(), order, member, d, "ORDER", order);
 	}
 
 	/** 只供受信任的服务端用例读取；调用方必须带认证边界取得的租户。 */
@@ -295,8 +298,23 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 	}
 
 	private void entry(String tenant, String grant, String action, int units, int balance, String reference) {
-		mapper.entry(tenant, UUID.randomUUID().toString(), grant, action, units, balance, reference);
+		var createdAt = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+        BusinessNumberWriter.write(BusinessNumber.Type.ENTITLEMENT_LEDGER, createdAt, number -> {
+            mapper.entry(tenant, number, grant, action, units, balance, reference, createdAt, number);
+            return number;
+        }, number -> mapper.lockLedgerNumber(number) != null);
 	}
+
+    /** 外部履约事件仍以原授予 ID 成对校验，新旧来源共用运营编号。 */
+    private String issueGrant(String tenant, String order, String member, EntitlementMapper.DefinitionRow definition,
+            String sourceType, String sourceId) {
+        String id = UUID.randomUUID().toString();
+        var createdAt = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+        return BusinessNumberWriter.write(BusinessNumber.Type.ENTITLEMENT, createdAt, number -> {
+            mapper.grant(tenant, id, order, member, definition, sourceType, sourceId, createdAt, number);
+            return id;
+        }, number -> mapper.lockGrantNumber(number) != null);
+    }
 
 	private void validateRef(Ref ref) {
 		Inputs.require(ref != null && ref.version() > 0, "权益引用无效");
@@ -347,8 +365,7 @@ public class EntitlementService implements EntitlementApi, EventHandler {
 				|| !clock.instant().isBefore(d.validTo())
 				|| mapper.reserveQuota(tenant, ref.benefitId(), ref.version()) != 1)
 			throw conflict();
-		String id = UUID.randomUUID().toString();
-		mapper.grant(tenant, id, order, member, d, sourceType, effectId);
+		String id = issueGrant(tenant, order, member, d, sourceType, effectId);
 		var grant = mapper.find(tenant, id);
 		if (mapper.finishQuota(tenant, grant, true) != 1)
 			throw conflict();

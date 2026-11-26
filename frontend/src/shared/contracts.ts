@@ -77,6 +77,7 @@ export type CouponDefinition = {
   platformFundingBps?: number;
 };
 export type Coupon = {
+  businessNo?: string | null;
   couponId: string;
   definitionId: string;
   version: number;
@@ -93,6 +94,7 @@ export type Coupon = {
 };
 export const ENTITLEMENT_ORDER_SOURCE = "ORDER";
 export type Entitlement = {
+  businessNo?: string | null;
   grantId: string;
   orderId: string | null;
   memberId: string;

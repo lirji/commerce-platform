@@ -195,7 +195,7 @@ export function MemberWallet({
                         title: "优惠券",
                         dataIndex: "name",
                         render: (v, row) => (
-                          <PrimaryCell title={v} subtitle={row.couponId} />
+                          <PrimaryCell title={v} subtitle={row.businessNo ?? row.couponId} />
                         ),
                       },
                       {

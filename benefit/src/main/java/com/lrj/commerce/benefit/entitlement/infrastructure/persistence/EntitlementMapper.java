@@ -33,7 +33,12 @@ public interface EntitlementMapper {
 
 	void grant(@Param("tenant") String tenant, @Param("id") String id, @Param("order") String order,
 			@Param("member") String member, @Param("definition") DefinitionRow definition,
-			@Param("sourceType") String sourceType, @Param("sourceId") String sourceId);
+			@Param("sourceType") String sourceType, @Param("sourceId") String sourceId,
+            @Param("createdAt") Instant createdAt, @Param("number") String number);
+
+    /** 只在插入冲突后确认编号占用。 */
+    String lockGrantNumber(@Param("number") String number);
+    String lockLedgerNumber(@Param("number") String number);
 
 	View byOrder(@Param("tenant") String tenant, @Param("order") String order);
 
@@ -61,7 +66,7 @@ public interface EntitlementMapper {
 
 	void entry(@Param("tenant") String tenant, @Param("id") String id, @Param("grant") String grant,
 			@Param("action") String action, @Param("units") int units, @Param("balance") int balance,
-			@Param("reference") String reference);
+			@Param("reference") String reference, @Param("createdAt") Instant createdAt, @Param("number") String number);
 
 	List<Ledger> ledger(@Param("tenant") String tenant, @Param("grant") String grant, @Param("after") String after,
 			@Param("limit") int limit);

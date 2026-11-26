@@ -39,7 +39,7 @@ public interface CouponApi {
 
 	record Coupon(String couponId, String definitionId, long version, String memberId, String storeId, String name,
 			String status, String discountAmount, String minimumSpend, Instant validFrom, Instant validTo,
-			boolean stackable, int platformFundingBps) {
+			boolean stackable, int platformFundingBps, String businessNo) {
 	}
 
 	record Application(String couponId, String definitionId, long version, String discount, int platformFundingBps) {
