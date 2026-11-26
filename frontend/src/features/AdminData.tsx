@@ -7,6 +7,7 @@ import {
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { compactTradeFields, TradeRowFacts } from "../shared/TradeRowFacts";
+import { StockCounts } from "../shared/StockCounts";
 import { Button, Grid, Space, Spin, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
@@ -111,9 +112,9 @@ export const specs: Record<string, Spec> = {
     ],
     columns: [
       ["displayName", "会员"],
-      ["actorId", "认证主体"],
-      ["memberLevel", "等级"],
       ["status", "状态"],
+      ["memberLevel", "等级"],
+      ["actorId", "认证主体"],
     ],
   },
   merchants: {
@@ -434,7 +435,9 @@ export function AdminData({
 }) {
   const spec = specs[kind];
   const isTrade = ["fulfillments", "aftersales", "refunds"].includes(kind);
-  const compact = Grid.useBreakpoint().md === false && isTrade;
+  const narrow = Grid.useBreakpoint().md === false;
+  const compact = narrow && isTrade;
+  const compactStock = narrow && kind === "inventory";
   const href = useWorkspaceHref();
   const [after, setAfter] = useCursorState("after", "");
   const filters = useListFilters(
@@ -701,12 +704,18 @@ export function AdminData({
           scroll={{ x: 800 }}
           columns={[
             ...spec.columns
-              .filter(([key]) => !compact || !compactTradeFields.has(key))
+              .filter(
+                ([key]) =>
+                  (!compact || !compactTradeFields.has(key)) &&
+                  (!compactStock ||
+                    !["available", "held", "sold"].includes(key)),
+              )
               .map(([key, label], index) => ({
                 title: label,
                 dataIndex: key,
-                ellipsis: !(compact && index === 0),
-                width: compact && index === 0 ? 218 : undefined,
+                ellipsis: !((compact || compactStock) && index === 0),
+                width:
+                  (compact || compactStock) && index === 0 ? 218 : undefined,
                 align: [
                   "available",
                   "held",
@@ -730,7 +739,12 @@ export function AdminData({
                   ? ("right" as const)
                   : ("left" as const),
                 render: (_: unknown, r: Row) =>
-                  compact && index === 0 ? (
+                  compactStock && index === 0 ? (
+                    <div className="primary-cell">
+                      <strong>{string(r.skuId)}</strong>
+                      <StockCounts row={r} />
+                    </div>
+                  ) : compact && index === 0 ? (
                     <div className="trade-row-identity">
                       <Button type="link" onClick={() => setDetail(r)}>
                         {string(r[spec.id])}
@@ -841,9 +855,19 @@ export function AdminData({
               </a>
             )}
             {kind === "members" && typeof detail.memberId === "string" && (
-              <a href={href("growth", { member: detail.memberId })}>
-                查看会员成长
-              </a>
+              <Space wrap>
+                <a
+                  href={href("growth", {
+                    member: detail.memberId,
+                    tab: "wallet",
+                  })}
+                >
+                  查看会员成长
+                </a>
+                <a href={href("growth", { member: detail.memberId })}>
+                  查看会员行为
+                </a>
+              </Space>
             )}
             <Detail value={detail} />
           </>

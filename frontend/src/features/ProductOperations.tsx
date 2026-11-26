@@ -223,11 +223,6 @@ export function ProductOperations({
                       ),
                     },
                     {
-                      title: "SPU",
-                      width: 130,
-                      render: (_, r) => r.productId ?? "历史商品",
-                    },
-                    {
                       title: "规格",
                       width: 220,
                       render: (_, r) =>
@@ -247,6 +242,12 @@ export function ProductOperations({
                       width: 90,
                       dataIndex: "status",
                       render: (v) => <Status value={v} />,
+                    },
+                    { title: "门店", dataIndex: "storeId", width: 120 },
+                    {
+                      title: "SPU",
+                      width: 130,
+                      render: (_, r) => r.productId ?? "历史商品",
                     },
                     { title: "版本", dataIndex: "revision", width: 64 },
                     {

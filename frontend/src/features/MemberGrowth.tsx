@@ -77,6 +77,10 @@ export function MemberGrowth({
       : null
     : "/members/me/growth";
   const wallet = useResource<Wallet>(base);
+  const account =
+    wallet.error || (admin && wallet.data?.memberId !== member)
+      ? undefined
+      : wallet.data;
   const ledger = useResource<Entry[]>(
     base ? `${base}/ledger?after=${after}` : null,
   );
@@ -147,29 +151,34 @@ export function MemberGrowth({
                     style={{ maxWidth: 440, marginBottom: 16 }}
                   />
                 )}
-                {wallet.data ? (
+                {account ? (
                   <>
                     <Descriptions
                       items={[
                         {
+                          key: "identity",
+                          label: "当前会员",
+                          children: account.memberId,
+                        },
+                        {
                           key: "level",
                           label: "等级",
-                          children: wallet.data.memberLevel,
+                          children: account.memberLevel,
                         },
                         {
                           key: "growth",
                           label: "成长值",
-                          children: wallet.data.growth,
+                          children: account.growth,
                         },
                         {
                           key: "net",
                           label: "完成订单净消费",
-                          children: money(wallet.data.netSpend),
+                          children: money(account.netSpend),
                         },
                         {
                           key: "version",
                           label: "等级规则版本",
-                          children: wallet.data.policyVersion || "未启用",
+                          children: account.policyVersion || "未启用",
                         },
                       ]}
                     />
@@ -190,7 +199,7 @@ export function MemberGrowth({
                           ]}
                           build={(v) => ({
                             ...v,
-                            expectedVersion: wallet.data!.version,
+                            expectedVersion: account.version,
                           })}
                           onDone={refresh}
                         />

@@ -1,12 +1,14 @@
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
+import { StockCounts } from "../shared/StockCounts";
 import {
   Alert,
   App,
   Button,
   Card,
   Form,
+  Grid,
   Input,
   InputNumber,
   Space,
@@ -207,6 +209,7 @@ function Inventory({
   client: typeof request;
   markDirty: (v: boolean) => void;
 }) {
+  const compact = Grid.useBreakpoint().md === false;
   const [after, setAfter] = useCursorState("Inventory.after", "", store);
   const filters = useListFilters("Inventory.after", "/admin/inventory", () =>
     setAfter(""),
@@ -298,7 +301,7 @@ function Inventory({
       style={{ width: "100%", marginTop: 24 }}
     >
       <Card
-        title="门店库存"
+        title={`门店库存 · ${store}`}
         extra={
           <Button onClick={refresh} disabled={busy}>
             重新核验权限与库存
@@ -319,10 +322,36 @@ function Inventory({
             pagination={false}
             scroll={{ x: 640 }}
             columns={[
-              { title: "SKU", dataIndex: "skuId" },
-              { title: "可售", dataIndex: "available" },
-              { title: "预占", dataIndex: "held" },
-              { title: "已售", dataIndex: "sold" },
+              {
+                title: "SKU",
+                dataIndex: "skuId",
+                width: compact ? 192 : undefined,
+                render: (value, row) => (
+                  <div className="primary-cell">
+                    <strong>{value}</strong>
+                    {compact && <StockCounts row={row} />}
+                  </div>
+                ),
+              },
+              ...(!compact
+                ? [
+                    {
+                      title: "可售",
+                      dataIndex: "available",
+                      align: "right" as const,
+                    },
+                    {
+                      title: "预占",
+                      dataIndex: "held",
+                      align: "right" as const,
+                    },
+                    {
+                      title: "已售",
+                      dataIndex: "sold",
+                      align: "right" as const,
+                    },
+                  ]
+                : []),
               { title: "版本", dataIndex: "version" },
             ]}
           />
@@ -376,7 +405,7 @@ function Inventory({
               title={`入库门店 ${store}`}
               description={
                 selectedStock && !rows.loading && !rows.error
-                  ? `当前可售 ${selectedStock.available}，版本 ${selectedStock.version}。${Number.isSafeInteger(estimate) ? `按本次增量估算 ${estimate}，结果以服务端回执为准。` : ""}`
+                  ? `SKU ${selectedStock.skuId} 当前可售 ${selectedStock.available}，版本 ${selectedStock.version}。${Number.isSafeInteger(estimate) ? `按本次增量估算 ${estimate}，结果以服务端回执为准。` : ""}`
                   : "本页尚未读取此 SKU 的库存。核对门店、SKU 和入库增量后提交。"
               }
             />

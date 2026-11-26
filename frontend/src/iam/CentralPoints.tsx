@@ -285,17 +285,17 @@ function WalletDetails({ member }: { member: string }) {
           pagination={false}
           scroll={{ x: 1300 }}
           columns={[
-            { title: "流水编号", dataIndex: "sequenceId" },
-            { title: "来源", dataIndex: "sourceId" },
-            { title: "变动", dataIndex: "delta" },
+            { title: "积分变动", dataIndex: "delta", align: "right" },
             {
               title: "动作",
               dataIndex: "action",
               render: (v) => actions[v] ?? v,
             },
-            { title: "变动后可用", dataIndex: "available" },
-            { title: "冻结", dataIndex: "held" },
-            { title: "待偿扣回", dataIndex: "debt" },
+            { title: "来源", dataIndex: "sourceId" },
+            { title: "变动后可用", dataIndex: "available", align: "right" },
+            { title: "冻结", dataIndex: "held", align: "right" },
+            { title: "待偿扣回", dataIndex: "debt", align: "right" },
+            { title: "流水编号", dataIndex: "sequenceId" },
             { title: "政策版本", dataIndex: "policyVersion" },
             { title: "原因", dataIndex: "reason" },
             {

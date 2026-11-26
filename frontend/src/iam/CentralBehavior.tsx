@@ -281,7 +281,8 @@ function BehaviorDetail({ member }: { member: string }) {
   const rows = useResource<Event[]>(
     `/admin/member-behavior/${encodeURIComponent(member)}/events?after=${after}&limit=${PAGE_SIZE}`,
   );
-  const value = detail.data;
+  const value =
+    detail.data?.member.memberId === member ? detail.data : undefined;
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       <Button
@@ -292,7 +293,15 @@ function BehaviorDetail({ member }: { member: string }) {
       >
         刷新行为资料
       </Button>
-      <ErrorNotice error={detail.error} onRetry={detail.refresh} />
+      <ErrorNotice
+        error={
+          detail.error ??
+          (detail.data && !value
+            ? new Error("返回的会员与查询编号不一致")
+            : undefined)
+        }
+        onRetry={detail.refresh}
+      />
       {!detail.error &&
         (value ? (
           <Card title={`${value.member.displayName} · 行为资料`}>
@@ -374,9 +383,9 @@ function BehaviorDetail({ member }: { member: string }) {
               统计窗口包含UTC今天及前29天；完成订单按原下单时间统计，退款冲减净消费。交互信号不作为成交事实。
             </Typography.Text>
           </Card>
-        ) : (
+        ) : detail.loading ? (
           <Typography.Text>正在读取行为资料</Typography.Text>
-        ))}
+        ) : null)}
       <Card title="商品交互记录">
         <Space orientation="vertical" style={{ width: "100%" }}>
           <ErrorNotice error={rows.error} onRetry={rows.refresh} />

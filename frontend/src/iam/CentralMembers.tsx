@@ -24,7 +24,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import { ErrorNotice, PageHead, PrimaryCell } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Action = {
@@ -232,15 +232,20 @@ function MemberList() {
           pagination={false}
           scroll={{ x: 850 }}
           columns={[
-            { title: "会员编号", dataIndex: "memberId" },
-            { title: "姓名", dataIndex: "displayName" },
-            { title: "客户账号", dataIndex: "actorId" },
-            { title: "等级", dataIndex: "memberLevel" },
+            {
+              title: "会员",
+              width: 190,
+              render: (_, row) => (
+                <PrimaryCell title={row.displayName} subtitle={row.memberId} />
+              ),
+            },
             {
               title: "状态",
               dataIndex: "status",
               render: (value) => states[value] ?? value,
             },
+            { title: "等级", dataIndex: "memberLevel" },
+            { title: "客户账号", dataIndex: "actorId" },
             { title: "版本", dataIndex: "version" },
             {
               title: "操作",

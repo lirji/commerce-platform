@@ -27,7 +27,7 @@ import {
 } from "./CatalogMerchandising";
 import type { Coupon, Order, Quote } from "../shared/contracts";
 import { encode, post, useCommand, useResource } from "../shared/api";
-import { Blank, ErrorNotice, Status, money } from "../shared/ui";
+import { Blank, ErrorNotice, Status, money, time } from "../shared/ui";
 import { Icon } from "../shared/Icon";
 import { PagerActions } from "../shared/interactions";
 
@@ -533,7 +533,8 @@ export function Shop({
             <Alert
               type="info"
               showIcon
-              title="报价在5分钟内有效；提交订单时确认库存及优惠额度。"
+              title={`本次报价有效至 ${time(quote.expiresAt)}`}
+              description="提交订单时会重新核对库存与优惠额度。"
               style={{ margin: "16px 0" }}
             />
             <Form

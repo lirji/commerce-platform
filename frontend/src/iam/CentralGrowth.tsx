@@ -231,19 +231,21 @@ function WalletDetails({ member }: { member: string }) {
   const wallet = useResource<Wallet>(
     `/admin/member-growth/${encodeURIComponent(member)}`,
   );
+  const account =
+    !wallet.error && wallet.data?.memberId === member ? wallet.data : undefined;
   const ledger = useResource<Entry[]>(
-    wallet.data && !wallet.error
+    account
       ? `/admin/member-growth/${encodeURIComponent(member)}/ledger?after=${after}&limit=${PAGE_SIZE}`
       : null,
   );
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       <ErrorNotice error={wallet.error} onRetry={wallet.refresh} />
-      <Card title="成长钱包" loading={wallet.loading}>
-        {wallet.data && !wallet.error && <WalletValue value={wallet.data} />}
+      <Card title={`成长钱包 · ${member}`} loading={wallet.loading}>
+        {account && <WalletValue value={account} />}
       </Card>
       <ErrorNotice error={ledger.error} onRetry={ledger.refresh} />
-      {wallet.data && !wallet.error && !ledger.error && (
+      {account && !ledger.error && (
         <Table<Entry>
           rowKey="sequenceId"
           dataSource={ledger.data ?? []}
@@ -251,10 +253,10 @@ function WalletDetails({ member }: { member: string }) {
           pagination={false}
           scroll={{ x: 850 }}
           columns={[
-            { title: "流水编号", dataIndex: "sequenceId" },
+            { title: "变动", dataIndex: "delta", align: "right" },
+            { title: "变动后余额", dataIndex: "balance", align: "right" },
             { title: "来源", dataIndex: "sourceId" },
-            { title: "变动", dataIndex: "delta" },
-            { title: "变动后余额", dataIndex: "balance" },
+            { title: "流水编号", dataIndex: "sequenceId" },
             { title: "政策版本", dataIndex: "policyVersion" },
             { title: "原因", dataIndex: "reason" },
             {

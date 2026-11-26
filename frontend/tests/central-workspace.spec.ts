@@ -285,6 +285,61 @@ test("交易列和状态存档按浏览器范围恢复且保留当前精确归�
   ).toBeVisible();
 });
 
+test("库存首列在窄屏显示原SKU及三项库存，权限单独读取", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const storeId = "STORE-A";
+  const stock = {
+    storeId,
+    skuId: "SKU-1",
+    available: 12,
+    held: 3,
+    sold: 7,
+    version: 1,
+  };
+  const calls: URL[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    calls.push(url);
+    if (url.pathname.endsWith("/inventory/actions"))
+      return route.fulfill({ status: 403, json: {} });
+    return route.fulfill({ json: [stock] });
+  });
+  await page.goto(
+    `${base}/operations/inventory?tenant_id=${tenant}&store_id=${storeId}`,
+  );
+  await expect(
+    page.getByText("门店库存 · STORE-A", { exact: true }),
+  ).toBeVisible();
+  for (const width of [1440, 1024, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+      .toBe(width);
+    if (width < 768) {
+      const facts = page
+        .getByRole("row")
+        .filter({ hasText: "SKU-1" })
+        .getByRole("cell")
+        .first();
+      await expect(facts).toHaveText(/SKU-1.*可售12.*预占3.*已售7/);
+    }
+  }
+  await expect(page.getByRole("button", { name: "确认入库" })).toHaveCount(0);
+  expect(
+    calls
+      .find((url) => url.pathname.endsWith("/admin/inventory"))
+      ?.searchParams.get("storeId"),
+  ).toBe(storeId);
+  expect(calls.some((url) => url.pathname.endsWith("/inventory/actions"))).toBe(
+    true,
+  );
+});
+
 test("会员档案用实际会员编号打开独立授权行为读取", async ({ page }) => {
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需独立中央预览");

@@ -24,7 +24,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import { ErrorNotice, PageHead, PrimaryCell, time } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const OfferStatus = { ACTIVE: "ACTIVE", INACTIVE: "INACTIVE" } as const;
@@ -170,8 +170,26 @@ function OfferList({ store }: { store: string }) {
           pagination={false}
           scroll={{ x: 1900 }}
           columns={[
-            { title: "商品编号", dataIndex: ["content", "offerId"] },
-            { title: "名称", dataIndex: ["content", "name"] },
+            {
+              title: "兑换商品",
+              width: 190,
+              render: (_, row) => (
+                <PrimaryCell
+                  title={row.content.name}
+                  subtitle={row.content.offerId}
+                />
+              ),
+            },
+            {
+              title: "兑换积分",
+              dataIndex: ["content", "points"],
+              align: "right",
+            },
+            {
+              title: "已兑换 / 总额度",
+              align: "right",
+              render: (_, row) => `${row.issued} / ${row.content.quota}`,
+            },
             { title: "门店", dataIndex: ["content", "storeId"] },
             {
               title: "资产类型",
@@ -185,10 +203,7 @@ function OfferList({ store }: { store: string }) {
             },
             { title: "资产编号", dataIndex: ["content", "assetId"] },
             { title: "资产版本", dataIndex: ["content", "assetVersion"] },
-            { title: "兑换积分", dataIndex: ["content", "points"] },
-            { title: "总兑换额度", dataIndex: ["content", "quota"] },
             { title: "单会员上限", dataIndex: ["content", "perMemberLimit"] },
-            { title: "已兑换次数", dataIndex: "issued" },
             {
               title: "状态",
               dataIndex: "status",
@@ -203,12 +218,12 @@ function OfferList({ store }: { store: string }) {
             {
               title: "生效时间",
               dataIndex: ["content", "validFrom"],
-              render: (v) => new Date(v).toLocaleString(),
+              render: time,
             },
             {
               title: "失效时间",
               dataIndex: ["content", "validTo"],
-              render: (v) => new Date(v).toLocaleString(),
+              render: time,
             },
           ]}
         />
