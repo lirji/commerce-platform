@@ -43,6 +43,7 @@ import { useJourneyCommand } from "./journeyCommand";
 import { HTTP, type Context } from "./api";
 
 type EffectSeries = "campaigns" | "journeys" | "deliveries" | "counts";
+const SCAN_ISOLATED_STATUS = "ISOLATED";
 const cashFields = [
   ["received", "实收", "money"],
   ["refunded", "成功退款", "money"],
@@ -675,7 +676,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                   <Button
                     disabled={
                       !allowed("/operations/journey-scans/retry-access") ||
-                      row.status !== "ISOLATED" ||
+                      row.status !== SCAN_ISOLATED_STATUS ||
                       command.frozen
                     }
                     onClick={() =>

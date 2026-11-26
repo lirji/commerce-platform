@@ -27,6 +27,7 @@ import {
 } from "../shared/api";
 import { ErrorNotice, PageHead, PrimaryCell, formatField } from "../shared/ui";
 import { TradeLinks } from "../shared/workspaceLinks";
+import { ENTITLEMENT_ORDER_SOURCE } from "../shared/contracts";
 import { CentralError, HTTP, type Context } from "./api";
 
 type ResolutionInput = {
@@ -158,7 +159,7 @@ function Directory() {
                     title={formatField("sourceType", row.sourceType)}
                     subtitle={row.sourceId}
                   />
-                  {row.sourceType === "ORDER" && (
+                  {row.sourceType === ENTITLEMENT_ORDER_SOURCE && (
                     <TradeLinks orderId={row.orderId} pages={["orders"]} />
                   )}
                 </div>

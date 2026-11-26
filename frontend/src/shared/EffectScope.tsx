@@ -23,6 +23,7 @@ export function EffectScope({
     <Descriptions
       size="small"
       column={compact ? 1 : 3}
+      layout={compact ? "vertical" : "horizontal"}
       className="effect-scope"
       items={[
         { key: "store", label: "已查询门店", children: store },
@@ -31,9 +32,12 @@ export function EffectScope({
           key: "bounds",
           label: "实际窗口（UTC，含起点）",
           children: (
-            <span>
-              {from} 至 {to}（不含）
-            </span>
+            <div className="effect-window">
+              <time dateTime={from}>{from}</time>
+              <span>
+                至 <time dateTime={to}>{to}</time>（不含）
+              </span>
+            </div>
           ),
         },
       ]}

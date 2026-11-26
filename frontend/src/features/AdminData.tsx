@@ -32,7 +32,10 @@ import {
   string,
   time,
 } from "../shared/ui";
-import type { Capabilities } from "../shared/contracts";
+import {
+  ENTITLEMENT_ORDER_SOURCE,
+  type Capabilities,
+} from "../shared/contracts";
 type Row = Record<string, unknown>;
 type Spec = {
   title: string;
@@ -450,7 +453,7 @@ export function AdminData({
   const isTrade = ["fulfillments", "aftersales", "refunds"].includes(kind);
   const narrow = Grid.useBreakpoint().md === false;
   const compact = narrow && isTrade;
-  const compactStock = narrow && kind === "inventory";
+  const compactStock = narrow && spec === specs.inventory;
   const href = useWorkspaceHref();
   const [after, setAfter] = useCursorState("after", "");
   const filters = useListFilters(
@@ -485,7 +488,7 @@ export function AdminData({
   };
   const rowCell = (key: string, row: Row) => {
     if (
-      kind === "budgets" &&
+      spec === specs.budgets &&
       ["cap", "held", "spent", "available"].includes(key)
     ) {
       return (key === "cap" || key === "available") && row.cap === null
@@ -845,15 +848,17 @@ export function AdminData({
             {isTrade && (
               <TradeLinks orderId={detail.orderId} pages={["orders"]} />
             )}
-            {kind === "entitlements" && detail.sourceType === "ORDER" && (
-              <TradeLinks orderId={detail.orderId} pages={["orders"]} />
-            )}
-            {kind === "instances" && typeof detail.instanceId === "string" && (
-              <LegacyJourneyHistory
-                key={detail.instanceId}
-                instanceId={detail.instanceId}
-              />
-            )}
+            {spec === specs.entitlements &&
+              detail.sourceType === ENTITLEMENT_ORDER_SOURCE && (
+                <TradeLinks orderId={detail.orderId} pages={["orders"]} />
+              )}
+            {spec === specs.instances &&
+              typeof detail.instanceId === "string" && (
+                <LegacyJourneyHistory
+                  key={detail.instanceId}
+                  instanceId={detail.instanceId}
+                />
+              )}
             {kind === "events" && (
               <OrderEventLink
                 eventType={detail.eventType}

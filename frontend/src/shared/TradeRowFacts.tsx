@@ -13,6 +13,8 @@ export const compactTradeFields = new Set([
 export function TradeRowFacts({ row }: { row: Record<string, unknown> }) {
   const storeName = typeof row.storeName === "string" ? row.storeName : "";
   const storeId = typeof row.storeId === "string" ? row.storeId : "";
+  const value = row.status;
+  const status = typeof value === "string" ? value : undefined;
   const amount = row.payable ?? row.refundAmount ?? row.amount;
   return (
     <div className="trade-row-facts">
@@ -25,9 +27,9 @@ export function TradeRowFacts({ row }: { row: Record<string, unknown> }) {
           )}
         </div>
       )}
-      {(typeof row.status === "string" || row.blocked === true) && (
+      {(status || row.blocked === true) && (
         <div className="trade-row-state">
-          {typeof row.status === "string" && <Status value={row.status} />}
+          {status && <Status value={status} />}
           {row.blocked === true && <span>售后阻拦</span>}
         </div>
       )}

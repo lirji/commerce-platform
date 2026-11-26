@@ -8,11 +8,12 @@ import { useCursorState } from "../shared/routeState";
 import { ErrorNotice, Pager } from "../shared/ui";
 
 const cursor = "LegacyJourneyHistory.after";
+const PAGE_SIZE = 50;
 
 export function LegacyJourneyHistory({ instanceId }: { instanceId: string }) {
   const [after, setAfter] = useCursorState(cursor, -1, instanceId);
   const history = useResource<JourneyHistory>(
-    `/admin/journey-instances/${encode(instanceId)}/history?afterVersion=${after}&limit=50`,
+    `/admin/journey-instances/${encode(instanceId)}/history?afterVersion=${after}&limit=${PAGE_SIZE}`,
   );
   const result = history.data;
   const matches =
@@ -38,6 +39,7 @@ export function LegacyJourneyHistory({ instanceId }: { instanceId: string }) {
             after={after}
             initial={-1}
             cursorName={cursor}
+            pageSize={PAGE_SIZE}
             count={result.steps.length}
             loading={history.loading}
             onHome={() => setAfter(-1)}

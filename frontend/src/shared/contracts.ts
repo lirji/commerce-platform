@@ -91,6 +91,7 @@ export type Coupon = {
   stackable: boolean;
   platformFundingBps: number;
 };
+export const ENTITLEMENT_ORDER_SOURCE = "ORDER";
 export type Entitlement = {
   grantId: string;
   orderId: string | null;
