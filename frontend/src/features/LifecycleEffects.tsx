@@ -1,5 +1,4 @@
 import { CursorBack } from "../shared/pagination";
-import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { Alert, Button, Card, Table, Tabs } from "antd";
 import { useState } from "react";
@@ -46,12 +45,19 @@ type Report<T> = {
   costBasis: string;
 };
 /** 描述性队列与实际用券两个口径分别分页，避免混加收入或编造ROI。 */
-export function LifecycleEffects({ query }: { query: string }) {
-  const [after, setAfter] = useCursorState("LifecycleEffects.after", "");
-  const [batchAfter, setBatchAfter] = useCursorState(
-    "LifecycleEffects.batchAfter",
-    "",
-  );
+export function LifecycleEffects({
+  query,
+  tab,
+  onTabChange,
+  versionPage: [after, setAfter],
+  batchPage: [batchAfter, setBatchAfter],
+}: {
+  query: string;
+  tab: string;
+  onTabChange: (tab: string) => void;
+  versionPage: [string, (cursor: string) => void];
+  batchPage: [string, (cursor: string) => void];
+}) {
   const journeys = useResource<Report<JourneySeries>>(
     `/admin/marketing-effects/journeys?${query}&after=${encode(after)}`,
   );
@@ -70,6 +76,8 @@ export function LifecycleEffects({ query }: { query: string }) {
     ) : null;
   return (
     <Tabs
+      activeKey={tab}
+      onChange={onTabChange}
       items={[
         {
           key: "lifecycle",
@@ -184,11 +192,11 @@ export function LifecycleEffects({ query }: { query: string }) {
                     fixed: "left",
                     width: 180,
                   },
+                  { title: "用券付费订单", dataIndex: "paidOrders" },
                   { title: "已发放", dataIndex: "issued" },
                   { title: "已跳过", dataIndex: "skipped" },
                   { title: "已撤销", dataIndex: "revoked" },
                   { title: "撤销时保留", dataIndex: "kept" },
-                  { title: "用券付费订单", dataIndex: "paidOrders" },
                   { title: "现金收款", dataIndex: "received", render: money },
                   { title: "成功退款", dataIndex: "refunded", render: money },
                   { title: "净收款", dataIndex: "netReceipts", render: money },

@@ -28,7 +28,7 @@ import {
   type request,
 } from "../shared/api";
 import { useRouteState, useCursorState } from "../shared/routeState";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import { ErrorNotice, PageHead, money } from "../shared/ui";
 import { HTTP, type Context } from "./api";
 import {
   CampaignDraftForm,
@@ -1108,16 +1108,30 @@ function Budgets() {
               title: "上限（元）",
               dataIndex: "cap",
               width: 100,
-              render: (value) => value ?? "未设上限",
+              align: "right",
+              render: (value) => (value === null ? "未设上限" : money(value)),
             },
-            { title: "已预占（元）", dataIndex: "held", width: 100 },
-            { title: "已支出（元）", dataIndex: "spent", width: 100 },
+            {
+              title: "已预占（元）",
+              dataIndex: "held",
+              width: 100,
+              align: "right",
+              render: money,
+            },
+            {
+              title: "已支出（元）",
+              dataIndex: "spent",
+              width: 100,
+              align: "right",
+              render: money,
+            },
             {
               title: "可用额度（元）",
               dataIndex: "available",
               width: 128,
+              align: "right",
               render: (value, row) =>
-                row.cap == null ? "未设上限" : (value ?? "—"),
+                row.cap === null ? "未设上限" : money(value),
             },
           ]}
         />
@@ -1130,7 +1144,7 @@ function Budgets() {
           initial={""}
           disabled={rows.loading || !!rows.error}
           count={rows.data?.length}
-          pageSize={50}
+          pageSize={filters.limit}
         />
         <Button disabled={!after} onClick={() => setAfter("")}>
           回到首页

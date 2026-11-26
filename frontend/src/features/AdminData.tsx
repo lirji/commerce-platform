@@ -25,6 +25,7 @@ import {
   type Field,
   type Values,
   instant,
+  formatField,
   money,
   string,
   time,
@@ -215,11 +216,13 @@ export const specs: Record<string, Spec> = {
     build: couponBody,
     columns: [
       ["name", "优惠券"],
-      ["definitionId", "标识"],
+      ["version", "内容版本"],
+      ["issuanceMode", "发行方式"],
+      ["validTo", "定义截止时间"],
+      ["issued", "累计已发行"],
+      ["quota", "发行上限"],
       ["discountAmount", "优惠"],
       ["minimumSpend", "门槛"],
-      ["quota", "发行上限"],
-      ["issued", "已领"],
     ],
   },
   definitions: {
@@ -389,6 +392,7 @@ const eyebrows: Record<string, string> = {
 };
 function cell(key: string, value: unknown): ReactNode {
   if (key === "status") return <Status value={string(value)} />;
+  if (key === "issuanceMode") return formatField(key, value);
   if (
     [
       "unitPrice",
@@ -404,9 +408,14 @@ function cell(key: string, value: unknown): ReactNode {
   )
     return money(value);
   if (
-    ["validUntil", "availableAt", "createdAt", "dueAt", "expiresAt"].includes(
-      key,
-    )
+    [
+      "validUntil",
+      "validTo",
+      "availableAt",
+      "createdAt",
+      "dueAt",
+      "expiresAt",
+    ].includes(key)
   )
     return time(value);
   if (typeof value === "boolean") return value ? "是" : "否";
@@ -457,6 +466,17 @@ export function AdminData({
   const refresh = () => {
     resource.refresh();
     if (kind === "stores") onStoresChanged();
+  };
+  const rowCell = (key: string, row: Row) => {
+    if (
+      kind === "budgets" &&
+      ["cap", "held", "spent", "available"].includes(key)
+    ) {
+      return (key === "cap" || key === "available") && row.cap === null
+        ? "未设上限"
+        : money(row[key]);
+    }
+    return cell(key, row[key]);
   };
   function actions(r: Row) {
     const value = string(r[spec.id]);
@@ -709,7 +729,7 @@ export function AdminData({
                 ].includes(key)
                   ? ("right" as const)
                   : ("left" as const),
-                render: (v: unknown, r: Row) =>
+                render: (_: unknown, r: Row) =>
                   compact && index === 0 ? (
                     <div className="trade-row-identity">
                       <Button type="link" onClick={() => setDetail(r)}>
@@ -719,14 +739,14 @@ export function AdminData({
                     </div>
                   ) : index === 0 ? (
                     <PrimaryCell
-                      title={cell(key, v)}
+                      title={rowCell(key, r)}
                       subtitle={
                         key === spec.id ? undefined : string(r[spec.id])
                       }
                       status={string(r.status)}
                     />
                   ) : (
-                    cell(key, v)
+                    rowCell(key, r)
                   ),
               })),
             {
@@ -787,7 +807,7 @@ export function AdminData({
                 .slice(0, 3)
                 .map(([key, label]) => ({
                   label,
-                  value: cell(key, detail[key]),
+                  value: rowCell(key, detail),
                 }))}
             />
             {isTrade && (

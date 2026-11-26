@@ -233,12 +233,22 @@ export function CouponDeliveries({ store }: { store: string }) {
               render: (v) => <Status value={v} />,
             },
             {
-              title: "处理 / 成功 / 跳过",
-              render: (_, r) => `${r.processed} / ${r.issued} / ${r.skipped}`,
+              title: "发放结果",
+              render: (_, r) => (
+                <PrimaryCell
+                  title={`已发放 ${r.issued} · 已跳过 ${r.skipped}`}
+                  subtitle={`已处理 ${r.processed}`}
+                />
+              ),
             },
             {
-              title: "撤销 / 保留",
-              render: (_, r) => `${r.revoked} / ${r.kept}`,
+              title: "撤回结果",
+              render: (_, r) => (
+                <PrimaryCell
+                  title={`已撤回 ${r.revoked}`}
+                  subtitle={`保留 ${r.kept}`}
+                />
+              ),
             },
             { title: "截止时间", render: (_, r) => time(r.content.deadline) },
             {

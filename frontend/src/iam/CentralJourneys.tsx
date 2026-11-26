@@ -31,6 +31,7 @@ import {
   type request,
 } from "../shared/api";
 import { PageHead, ErrorNotice, money, time } from "../shared/ui";
+import { EffectScope, effectTimeBasis } from "../shared/EffectScope";
 import type { Governed, Journey, JourneyInstance } from "../shared/contracts";
 import { JourneyMap } from "../features/JourneyMap";
 import { journeyClient, journeyId, journeyActions } from "./journeyClient";
@@ -41,13 +42,11 @@ type EffectSeries = "campaigns" | "journeys" | "deliveries" | "counts";
 const cashFields = [
   ["received", "实收", "money"],
   ["refunded", "成功退款", "money"],
-  ["netReceipts", "净收", "money"],
 ] as const;
 const fundingFields = [
   ["discountGranted", "已发优惠", "money"],
   ["platformFunding", "平台承担", "money"],
   ["merchantFunding", "商家承担", "money"],
-  ["updatedAt", "最后核对", "time"],
 ] as const;
 const effectFields: Record<
   EffectSeries,
@@ -56,10 +55,12 @@ const effectFields: Record<
   campaigns: [
     ["campaignId", "活动编号"],
     ["campaignVersion", "内容版本"],
-    ["orders", "下单数"],
-    ["paidOrders", "已付订单"],
-    ...cashFields,
+    ["netReceipts", "净收", "money"],
     ...fundingFields,
+    ["paidOrders", "已付订单"],
+    ["orders", "下单数"],
+    ...cashFields,
+    ["updatedAt", "最后核对", "time"],
   ],
   journeys: [
     ["journeyId", "旅程编号"],
@@ -72,16 +73,19 @@ const effectFields: Record<
     ["couponsGranted", "已发券"],
     ["paidMembers", "已付款会员"],
     ["paidOrders", "已付订单"],
+    ["netReceipts", "净收", "money"],
     ...cashFields,
     ...fundingFields,
+    ["updatedAt", "最后核对", "time"],
   ],
   deliveries: [
     ["batchId", "发券批次"],
+    ["paidOrders", "用券已付订单"],
+    ["netReceipts", "净收", "money"],
     ["issued", "已发"],
     ["skipped", "已跳过"],
     ["revoked", "已撤回"],
     ["kept", "撤回时保留"],
-    ["paidOrders", "用券已付订单"],
     ...cashFields,
     ["couponDiscount", "批次券优惠", "money"],
     ["updatedAt", "最后核对", "time"],
@@ -1028,6 +1032,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
       )}
       {area === "effects" && (
         <Card title="选择实际分析门店与UTC窗口">
+          {range && <EffectScope {...range} basis={effectTimeBasis[series]} />}
           <Form
             layout="vertical"
             onFinish={(value) => {
@@ -1041,7 +1046,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           >
             <div className="central-journey-fields">
               {field("store", "实际门店编号")}
-              {field("from", "起点（含，带时区）")}
+              {field("from", `${effectTimeBasis[series]}起点（含，带时区）`)}
               {field("to", "终点（不含，最多93天）")}
             </div>
             <Button htmlType="submit" type="primary">
@@ -1090,8 +1095,16 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           list.error.status === HTTP.FORBIDDEN && (
             <Alert
               type="info"
-              title="当前没有该目录读取权限"
-              description="独立操作岗位仍可使用上方已授权操作，直接输入实际目标。"
+              title={
+                area === "effects"
+                  ? "当前系列不可读取"
+                  : "当前没有该目录读取权限"
+              }
+              description={
+                area === "effects"
+                  ? undefined
+                  : "独立操作岗位仍可使用上方已授权操作，直接输入实际目标。"
+              }
             />
           )}
         {raw && !Array.isArray(raw) && (
@@ -1125,8 +1138,9 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           pagination={false}
           scroll={{ x: "max-content" }}
           locale={{
-            emptyText:
-              area === "effects" && !range
+            emptyText: list.error
+              ? "结果未读取"
+              : area === "effects" && !range
                 ? "填写实际门店与时间窗口后读取"
                 : "本批没有实际记录",
           }}
@@ -1135,7 +1149,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           after={after}
           cursorName="CentralJourneys.after"
           count={rows.length}
-          pageSize={filters.limit}
+          pageSize={area === "effects" ? 50 : filters.limit}
           loading={list.loading}
           error={list.error}
           onHome={() => setAfter("")}

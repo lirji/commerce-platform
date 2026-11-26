@@ -3,6 +3,7 @@ import { useRouteState, useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { Alert, Button, Card, Form, Input, Space, Table, Tabs } from "antd";
 import { LifecycleEffects } from "./LifecycleEffects";
+import { EffectScope, effectTimeBasis } from "../shared/EffectScope";
 import { useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
@@ -44,12 +45,23 @@ type Journey = {
 };
 export function MarketingEffects({ store }: { store: string }) {
   const [tab, setTab] = useRouteState("tab", "campaigns");
+  const [comparison, setComparison] = useRouteState("comparison", "lifecycle");
   const [range, setRange] = useState({
     from: instant(initialDate(-86400 * 30)),
     to: instant(initialDate(86400)),
   });
   const [after, setAfter] = useCursorState("after", "");
   const [journeyAfter, setJourneyAfter] = useCursorState("journeyAfter", "");
+  const [versionAfter, setVersionAfter] = useCursorState(
+    "LifecycleEffects.after",
+    "",
+    store,
+  );
+  const [batchAfter, setBatchAfter] = useCursorState(
+    "LifecycleEffects.batchAfter",
+    "",
+    store,
+  );
   const [cursor, setCursor] = useRouteState("cursor", "");
   const [rebuildDone, setRebuildDone] = useState(false);
   const query = `storeId=${encode(store)}&from=${encode(range.from)}&to=${encode(range.to)}`;
@@ -62,6 +74,10 @@ export function MarketingEffects({ store }: { store: string }) {
       : null,
   );
   const command = useCommand();
+  const basis =
+    tab === "comparisons"
+      ? effectTimeBasis[comparison === "batches" ? "deliveries" : "journeys"]
+      : effectTimeBasis[tab === "journeys" ? "counts" : "campaigns"];
   const refresh = () => {
     report.refresh();
     journeys.refresh();
@@ -75,35 +91,38 @@ export function MarketingEffects({ store }: { store: string }) {
         description="用成交快照和成功退款核对活动版本，先看清经营结果，再调整下一轮配置。"
         extra={<Button onClick={refresh}>刷新结果</Button>}
       />
-      <Card style={{ marginBottom: 16 }}>
-        <Form
-          className="effects-range-form"
-          layout="inline"
-          initialValues={{
-            from: initialDate(-86400 * 30),
-            to: initialDate(86400),
-          }}
-          onFinish={(v) => {
-            setRange({ from: instant(v.from), to: instant(v.to) });
-            setAfter("");
-            setJourneyAfter("");
-          }}
-        >
-          <Fields
-            fields={[
-              {
-                name: "from",
-                label: "下单 / 入组 / 批次起点",
-                type: "datetime",
-              },
-              { name: "to", label: "选择终点（不含）", type: "datetime" },
-            ]}
-          />
-          <Button htmlType="submit">查询（最多93天）</Button>
-        </Form>
-      </Card>
-      <ErrorNotice error={report.error} onRetry={report.refresh} />
-      <ErrorNotice error={journeys.error} onRetry={journeys.refresh} />
+      {tab !== "coverage" && (
+        <Card style={{ marginBottom: 16 }}>
+          <EffectScope store={store} {...range} basis={basis} />
+          <Form
+            className="effects-range-form"
+            layout="inline"
+            initialValues={{
+              from: initialDate(-86400 * 30),
+              to: initialDate(86400),
+            }}
+            onFinish={(v) => {
+              setRange({ from: instant(v.from), to: instant(v.to) });
+              setAfter("");
+              setJourneyAfter("");
+              setVersionAfter("");
+              setBatchAfter("");
+            }}
+          >
+            <Fields
+              fields={[
+                {
+                  name: "from",
+                  label: `${basis}起点（含）`,
+                  type: "datetime",
+                },
+                { name: "to", label: "选择终点（不含）", type: "datetime" },
+              ]}
+            />
+            <Button htmlType="submit">查询（最多93天）</Button>
+          </Form>
+        </Card>
+      )}
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -113,6 +132,7 @@ export function MarketingEffects({ store }: { store: string }) {
             label: "活动成交与退款",
             children: (
               <Card>
+                <ErrorNotice error={report.error} onRetry={report.refresh} />
                 {report.data && (
                   <Alert
                     type="info"
@@ -135,12 +155,8 @@ export function MarketingEffects({ store }: { store: string }) {
                           ? `${r.campaignId} / v${r.campaignVersion}`
                           : "无活动",
                     },
-                    { title: "下单数", dataIndex: "orders" },
-                    { title: "成交数", dataIndex: "paidOrders" },
-                    { title: "成交实付", dataIndex: "received", render: money },
-                    { title: "成功退款", dataIndex: "refunded", render: money },
                     {
-                      title: "净收入",
+                      title: "净收金额",
                       dataIndex: "netReceipts",
                       render: money,
                     },
@@ -159,6 +175,10 @@ export function MarketingEffects({ store }: { store: string }) {
                       dataIndex: "merchantFunding",
                       render: money,
                     },
+                    { title: "成交数", dataIndex: "paidOrders" },
+                    { title: "下单数", dataIndex: "orders" },
+                    { title: "成交实付", dataIndex: "received", render: money },
+                    { title: "成功退款", dataIndex: "refunded", render: money },
                     { title: "最后核对", dataIndex: "updatedAt", render: time },
                   ]}
                 />
@@ -192,13 +212,25 @@ export function MarketingEffects({ store }: { store: string }) {
           {
             key: "comparisons",
             label: "会员营销比较",
-            children: <LifecycleEffects key={query} query={query} />,
+            children: (
+              <LifecycleEffects
+                query={query}
+                tab={comparison}
+                onTabChange={setComparison}
+                versionPage={[versionAfter, setVersionAfter]}
+                batchPage={[batchAfter, setBatchAfter]}
+              />
+            ),
           },
           {
             key: "journeys",
             label: "旅程执行",
             children: (
               <Card>
+                <ErrorNotice
+                  error={journeys.error}
+                  onRetry={journeys.refresh}
+                />
                 <Alert
                   type="info"
                   title="此页汇总各版本新增的执行事实，升级前记录不追溯补计。时间按执行发生时间；入组、完成和触达次数不代表带来了相应成交。"
@@ -208,6 +240,7 @@ export function MarketingEffects({ store }: { store: string }) {
                   dataSource={journeys.data}
                   pagination={false}
                   loading={journeys.loading}
+                  scroll={{ x: 760 }}
                   columns={[
                     { title: "旅程", dataIndex: "journeyId" },
                     { title: "入组", dataIndex: "enrolled" },

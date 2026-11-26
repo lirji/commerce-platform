@@ -337,6 +337,76 @@ test("会员档案用实际会员编号打开独立授权行为读取", async ({
   expect(new URL(page.url()).searchParams.get("environment")).toBe("test");
 });
 
+test("营销效果切换系列保留实际窗口并独立反馈读取权限", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const start = "2026-10-01T00:00:00Z";
+  const end = "2026-10-02T00:00:00Z";
+  const calls: URL[] = [];
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (url.pathname.endsWith("-access"))
+      return route.fulfill({ json: { allowed: false } });
+    calls.push(url);
+    if (url.pathname.endsWith("/journeys"))
+      return route.fulfill({ status: 403, json: {} });
+    return route.fulfill({
+      json: {
+        rows: [],
+        basis: url.pathname.endsWith("/deliveries")
+          ? "用券订单范围"
+          : "下单选择范围",
+        coverage: "已处理投影",
+        costBasis: "成交快照",
+      },
+    });
+  });
+  await page.goto(`${base}/operations/marketing-effects?tenant_id=${tenant}`);
+  await page.getByLabel("实际门店编号", { exact: true }).fill("STORE-A");
+  await page.getByLabel("下单时间起点（含，带时区）").fill(start);
+  await page.getByLabel("终点（不含，最多93天）").fill(end);
+  await page.getByRole("button", { name: "读取分析" }).click();
+  await expect(page.getByText("下单选择范围", { exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "生命周期队列" }).click();
+  await expect(
+    page.getByText("当前系列不可读取", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("下单选择范围", { exact: true })).toHaveCount(0);
+  await page.getByRole("tab", { name: "批次券成交" }).click();
+  await expect(page.getByText("用券订单范围", { exact: true })).toBeVisible();
+  const scope = page.locator(".effect-scope");
+  await expect(scope).toContainText("发券批次创建时间");
+  await expect(scope).toContainText("STORE-A");
+  await expect(scope).toContainText("2026-10-02T00:00:00.000Z");
+  expect(
+    calls
+      .filter((url) => url.pathname.includes("/admin/marketing-effects"))
+      .map((url) => [
+        url.pathname,
+        url.searchParams.get("storeId"),
+        url.searchParams.get("from"),
+        url.searchParams.get("to"),
+      ]),
+  ).toEqual(
+    ["", "/journeys", "/deliveries"].map((suffix) => [
+      "/v1/admin/marketing-effects" + suffix,
+      "STORE-A",
+      new Date(start).toISOString(),
+      new Date(end).toISOString(),
+    ]),
+  );
+  for (const width of [1440, 1024, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+      .toBe(width);
+  }
+});
+
 test("营销执行用精确订单筛选并按原活动读取权益与事件事实", async ({ page }) => {
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需独立中央预览");

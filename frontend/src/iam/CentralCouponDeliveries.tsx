@@ -515,15 +515,26 @@ function Directory({
               },
               { title: "方向", dataIndex: "mode", width: 100 },
               {
-                title: "处理 / 发放 / 跳过",
+                title: "发放结果",
                 width: 180,
-                render: (_, value) =>
-                  `${value.processed} / ${value.issued} / ${value.skipped}`,
+                render: (_, value) => (
+                  <span>
+                    已发放 {value.issued} · 已跳过 {value.skipped}
+                    <br />
+                    已处理 {value.processed}
+                  </span>
+                ),
               },
               {
-                title: "撤回 / 保留",
+                title: "撤回结果",
                 width: 120,
-                render: (_, value) => `${value.revoked} / ${value.kept}`,
+                render: (_, value) => (
+                  <span>
+                    已撤回 {value.revoked}
+                    <br />
+                    保留 {value.kept}
+                  </span>
+                ),
               },
               { title: "进度 CAS", dataIndex: "version", width: 100 },
               {
