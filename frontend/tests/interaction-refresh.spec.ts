@@ -424,9 +424,15 @@ test("窄屏订单先显示实际范围，折叠后保留已应用日期和分�
   const from = page.getByLabel("创建起点", { exact: true });
   await expect(advanced).toHaveAttribute("aria-expanded", "false");
   await expect(from).toBeHidden();
+  const identity = page
+    .getByRole("row")
+    .filter({ hasText: orderFixture(1).orderId })
+    .getByRole("cell")
+    .first();
   await expect(
-    page.getByRole("columnheader", { name: "店铺编号" }),
+    identity.getByText("验收门店名称", { exact: true }),
   ).toBeVisible();
+  await expect(identity.getByText("store-ui", { exact: true })).toBeVisible();
   await advanced.click();
   await from.fill("2026-01-02T08:00");
   await page.getByLabel("店铺编号", { exact: true }).fill("store-ui");

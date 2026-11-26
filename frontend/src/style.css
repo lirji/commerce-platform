@@ -487,7 +487,8 @@ textarea {
   color: var(--muted);
   font-size: 12px;
 }
-.trade-row-state {
+.trade-row-state,
+.trade-row-store {
   display: flex;
   align-items: center;
   flex-wrap: wrap;

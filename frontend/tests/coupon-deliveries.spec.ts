@@ -37,7 +37,9 @@ test("定向发券：固定人群、相对期限、真实钱包与撤销回执",
   await expect(row).toContainText("运行中");
   await page.getByRole("button", { name: "推进一批发券", exact: true }).click();
   await expect(row).toContainText("已完成");
-  await expect(row).toContainText("2 / 2 / 0");
+  const issue = row.getByRole("cell").filter({ hasText: "已发放 2" });
+  await expect(issue).toContainText("已跳过 0");
+  await expect(issue).toContainText("已处理 2");
   const member = await browser.newPage();
   await login(member, false);
   await navigate(member, "优惠券");
