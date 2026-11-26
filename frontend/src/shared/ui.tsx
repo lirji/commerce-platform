@@ -431,6 +431,7 @@ const timeKeys = new Set([
   "evaluatedAt",
   "expiresAt",
   "generatedAt",
+  "lastFailedAt",
   "startedAt",
   "updatedAt",
   "validFrom",

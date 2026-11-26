@@ -19,7 +19,7 @@ import {
 } from "antd";
 import { useState } from "react";
 import { useResource, type request } from "../shared/api";
-import { ErrorNotice, Fields, type Values } from "../shared/ui";
+import { ErrorNotice, Fields, PrimaryCell, type Values } from "../shared/ui";
 import type { Governed, PageDefinition, PageRender } from "../shared/contracts";
 import { couponBody, couponFields } from "../shared/formSchemas";
 import {
@@ -586,6 +586,12 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
     render = useResource<PageRender>(
       target ? `/admin/ops-pages/${target}/render` : null,
     );
+  const actualPage =
+    !render.error &&
+    render.data?.preview === false &&
+    render.data.page?.content?.pageId === target
+      ? render.data
+      : undefined;
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
       <Card
@@ -601,8 +607,13 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
           pagination={false}
           scroll={{ x: 650 }}
           columns={[
-            { title: "页面", render: (_, r) => r.content.title },
-            { title: "编号", render: (_, r) => r.content.pageId },
+            {
+              title: "页面",
+              width: 175,
+              render: (_, { content }) => (
+                <PrimaryCell title={content.title} subtitle={content.pageId} />
+              ),
+            },
             { title: "门店", render: (_, r) => r.content.storeId },
             { title: "内容版本", render: (_, r) => r.content.version },
             {
@@ -653,7 +664,7 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
           <Button htmlType="submit">读取发布内容</Button>
         </Form>
         <ErrorNotice error={versions.error} onRetry={versions.refresh} />
-        {versions.data && (
+        {versions.data?.every((record) => record.content.pageId === target) && (
           <Table<Governed<PageDefinition>>
             rowKey={(r) => String(r.content.version)}
             dataSource={versions.data}
@@ -670,14 +681,22 @@ function PageRead({ client, dirty }: { client: typeof request; dirty: Dirty }) {
             ]}
           />
         )}
-        <ErrorNotice error={render.error} onRetry={render.refresh} />
-        {render.data && (
+        <ErrorNotice
+          error={
+            render.error ??
+            (render.data && !actualPage
+              ? new Error("返回内容与当前页面编号不一致")
+              : undefined)
+          }
+          onRetry={render.refresh}
+        />
+        {actualPage && (
           <>
-            <RenderView value={render.data} />
+            <RenderView value={actualPage} />
             <EmbeddedAction
               client={client}
               dirty={dirty}
-              page={render.data.page.content}
+              page={actualPage.page.content}
             />
           </>
         )}

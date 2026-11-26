@@ -129,6 +129,7 @@ function RuntimeRead() {
             ["failureClass", "失败分类"],
             ["lastError", "错误摘要"],
             ["attempts", "失败次数"],
+            ["lastFailedAt", "最近失败时间"],
           ].map(([dataIndex, title]) => ({
             dataIndex,
             title,
@@ -298,6 +299,7 @@ function RuntimeRead() {
           ["status", "状态"],
           ["examined", "已检查"],
           ["executed", "已执行"],
+          ["alreadyProcessed", "已处理跳过"],
           ["failed", "失败"],
         ]}
         fields={[
@@ -311,6 +313,7 @@ function RuntimeRead() {
           ["status", "任务状态"],
           ["examined", "已检查"],
           ["executed", "已执行"],
+          ["alreadyProcessed", "已处理跳过"],
           ["failed", "失败"],
           ["version", "控制版本"],
           ["createdBy", "原发起人"],

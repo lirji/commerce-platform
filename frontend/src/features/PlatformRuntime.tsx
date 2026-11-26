@@ -80,7 +80,7 @@ export function PlatformRuntime() {
         }
       />
       <ErrorNotice error={runtime.error} onRetry={runtime.refresh} />
-      {runtime.data && health && (
+      {!runtime.error && runtime.data && health && (
         <>
           <div className="runtime-observed">
             观测于 {time(runtime.data.observedAt)} · 聚合指标，不含租户业务数据
@@ -130,7 +130,7 @@ export function PlatformRuntime() {
               columns={[
                 { title: "工作车道", dataIndex: "name", width: 170 },
                 {
-                  title: "待处理",
+                  title: "已到期待处理",
                   align: "right",
                   render: (_, r) => r.backlog?.due ?? "—",
                 },
@@ -147,7 +147,11 @@ export function PlatformRuntime() {
                 {
                   title: "依赖状态",
                   render: (_, r) =>
-                    r.rotation?.breakerOpen ? "熔断打开" : "未熔断",
+                    r.rotation == null
+                      ? "未提供"
+                      : r.rotation.breakerOpen
+                        ? "熔断打开"
+                        : "未熔断",
                 },
                 {
                   title: "最后运行",

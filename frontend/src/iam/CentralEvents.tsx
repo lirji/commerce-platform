@@ -176,6 +176,8 @@ export default function CentralEvents(props: OperationsProps) {
               ["eventType", "类型"],
               ["aggregateId", "业务编号"],
               ["status", "状态"],
+              ["failureClass", "失败分类"],
+              ["availableAt", "下次可推进"],
               ["attempts", "失败次数"],
             ]}
             fields={[

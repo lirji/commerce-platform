@@ -110,6 +110,63 @@ test("售后详情读取当前原单，显示实际门店和商品行", async ({
   await expect(detail.getByText("SKU-REAL", { exact: true })).toHaveCount(0);
 });
 
+test("运营页面仅从匹配原页面的发布结果显示真实内容", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const pageId = "PAGE-A";
+  const reads: string[] = [];
+  let matches = false;
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (path.endsWith("-access"))
+      return route.fulfill({ status: 403, json: {} });
+    reads.push(path);
+    const fixture = {
+      content: {
+        pageId,
+        title: "运行观察",
+        storeId: "STORE-A",
+        version: 7,
+        sections: [],
+        actions: [],
+      },
+      status: "PUBLISHED",
+      lockVersion: 2,
+    };
+    if (path.endsWith("/render"))
+      return route.fulfill({
+        json: {
+          page: {
+            ...fixture,
+            content: { ...fixture.content, pageId: matches ? pageId : "OTHER" },
+          },
+          data: [],
+          preview: false,
+          bounded: true,
+        },
+      });
+    return route.fulfill({ json: [fixture] });
+  });
+  await page.goto(`${base}/operations/ops-pages?tenant_id=${tenant}`);
+  await page.getByRole("button", { name: "读取版本与发布页" }).click();
+  const mismatch = page
+    .getByRole("alert")
+    .filter({ hasText: "返回内容与当前页面编号不一致" });
+  await expect(mismatch).toBeVisible();
+  await expect(page.getByText(/版本7 · 当前发布/)).toHaveCount(0);
+  matches = true;
+  await mismatch.getByRole("button", { name: "重试加载" }).click();
+  await expect(page.getByText(/版本7 · 当前发布/)).toBeVisible();
+  expect(reads.filter((path) => path.endsWith("/render"))).toEqual([
+    "/v1/admin/ops-pages/PAGE-A/render",
+    "/v1/admin/ops-pages/PAGE-A/render",
+  ]);
+});
+
 test("停止任务按原类型和编号查恢复审计并重置游标", async ({ page }) => {
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需独立中央预览");

@@ -25,6 +25,7 @@ import {
   ErrorNotice,
   Fields,
   PageHead,
+  PrimaryCell,
   ListPanel,
   Status,
   Detail,
@@ -55,6 +56,9 @@ function RenderPage({
   return (
     <div className={render.preview ? "readonly-preview" : ""}>
       <h2>{d.title}</h2>
+      <p className="muted">
+        门店 {d.storeId} · {d.pageId} · 版本 {d.version}
+      </p>
       {render.preview && (
         <Alert
           type="info"
@@ -309,8 +313,15 @@ export function OpsPages({ store }: { store: string }) {
           loading={r.loading}
           scroll={{ x: 800 }}
           columns={[
-            { title: "页面名称", render: (_, row) => row.content.title },
-            { title: "版本", render: (_, row) => row.content.version },
+            {
+              title: "页面名称",
+              width: 190,
+              render: (_, { content }) => (
+                <PrimaryCell title={content.title} subtitle={content.pageId} />
+              ),
+            },
+            { title: "实际门店", render: (_, row) => row.content.storeId },
+            { title: "内容版本", render: (_, row) => row.content.version },
             {
               title: "组件数",
               render: (_, row) => row.content.sections.length,

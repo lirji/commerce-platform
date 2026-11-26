@@ -659,6 +659,12 @@ function Replay() {
         method: "POST",
         body: input,
       });
+      if (
+        result.consumer !== input.consumer ||
+        result.mode !== input.mode ||
+        result.maxEvents !== input.maxEvents
+      )
+        throw new Error("试运行结果与原消费者、模式或检查上限不一致");
       setPreview({ scope: input, result });
     } catch (error) {
       if (error instanceof Error) setPreviewError(error);
@@ -903,6 +909,26 @@ function Replay() {
                         className="replay-summary"
                         column={{ xs: 1, md: 3 }}
                         items={[
+                          {
+                            key: "scope",
+                            label: "本次试运行范围",
+                            span: "filled",
+                            children: (
+                              <div className="primary-cell">
+                                <strong>
+                                  {preview.scope.consumer} ·{" "}
+                                  {preview.scope.mode}
+                                </strong>
+                                <span>
+                                  {preview.scope.eventTypes.join("、")}
+                                </span>
+                                <span>
+                                  {preview.scope.from} 至 {preview.scope.to}
+                                  （UTC）
+                                </span>
+                              </div>
+                            ),
+                          },
                           {
                             key: "events",
                             label: "范围事件",

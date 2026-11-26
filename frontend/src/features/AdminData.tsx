@@ -349,8 +349,9 @@ export const specs: Record<string, Spec> = {
       ["eventType", "事件类型"],
       ["aggregateId", "业务标识"],
       ["status", "状态"],
+      ["failureClass", "失败分类"],
+      ["availableAt", "下次可投递"],
       ["attempts", "失败次数"],
-      ["availableAt", "可投递时间"],
     ],
   },
   instances: {
