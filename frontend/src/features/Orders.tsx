@@ -28,7 +28,6 @@ import {
   ErrorNotice,
   ListPanel,
   PageHead,
-  PrimaryCell,
   RecordHero,
   RecordModal,
   RowActions,
@@ -181,11 +180,7 @@ export function Orders({
                 render: (v: string, row) => (
                   <div className={compact ? "trade-row-identity" : undefined}>
                     <Button type="link" onClick={() => previewOrder(v)}>
-                      {compact ? (
-                        v
-                      ) : (
-                        <PrimaryCell title={v.slice(0, 8) + "…"} subtitle={v} />
-                      )}
+                      {row.businessNo ?? v}
                     </Button>
                     {compact && <TradeRowFacts row={row} />}
                   </div>
@@ -282,9 +277,10 @@ function OrderDetails({
 }) {
   const prefix = admin ? "/admin/orders/" : "/orders/";
   const order = useResource<Order>(prefix + encode(id));
+  const primaryId = order.data?.orderId ?? id;
   const [paymentVisible, setPaymentVisible] = useState(false);
   const payment = useResource<Payment>(
-    paymentVisible ? prefix + encode(id) + "/payment" : null,
+    paymentVisible ? prefix + encode(primaryId) + "/payment" : null,
   );
   const command = useCommand();
   const [returnOpen, setReturnOpen] = useState(false);
@@ -312,7 +308,7 @@ function OrderDetails({
         <>
           <RecordHero
             eyebrow="交易记录"
-            title={<Typography.Text copyable>{id}</Typography.Text>}
+            title={<Typography.Text copyable>{value.businessNo ?? value.orderId}</Typography.Text>}
             id={value.storeId}
             status={value.status}
             metrics={[
@@ -321,6 +317,9 @@ function OrderDetails({
               { label: "创建时间", value: time(value.createdAt) },
             ]}
           />
+          {value.businessNo && value.businessNo !== value.orderId && (
+            <Typography.Text type="secondary">原订单编号 {value.orderId}</Typography.Text>
+          )}
           <TradeLinks
             orderId={value.orderId}
             member={!admin}
@@ -380,7 +379,7 @@ function OrderDetails({
                   onClick={async () => {
                     if (
                       (await command.run(
-                        "/orders/" + encode(id) + "/payments",
+                        "/orders/" + encode(primaryId) + "/payments",
                       )) !== undefined
                     ) {
                       setPaymentVisible(true);
@@ -403,7 +402,7 @@ function OrderDetails({
                     description:
                       "取消请求会交由服务端核对支付结果，处理中的订单可稍后刷新查看。",
                   }}
-                  path={"/orders/" + encode(id) + "/cancel"}
+                  path={"/orders/" + encode(primaryId) + "/cancel"}
                   onDone={refresh}
                 />
               )}
@@ -438,7 +437,7 @@ function OrderDetails({
                   <Space wrap>
                     <ActionButton
                       label="核对渠道结果"
-                      path={prefix + encode(id) + "/payment/reconcile"}
+                      path={prefix + encode(primaryId) + "/payment/reconcile"}
                       onDone={refresh}
                     />
                     {admin && capabilities.sandboxEnabled && (
@@ -503,7 +502,7 @@ function OrderDetails({
                 ]}
                 disabled={!Object.values(quantities).some((q) => q > 0)}
                 build={(v) => ({
-                  orderId: id,
+                  orderId: primaryId,
                   reason: v.reason,
                   items: Object.entries(quantities)
                     .filter(([, q]) => q > 0)

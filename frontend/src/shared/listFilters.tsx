@@ -67,7 +67,7 @@ const specs: Record<string, FilterSpec> = {
   },
   "/admin/orders": {
     exact: tradeIds,
-    hint: "订单、会员、门店或商家编号",
+    hint: "完整订单号、原编号、日期加尾号或会员、门店、商家编号",
     states: [
       "PENDING_PAYMENT",
       "PAYMENT_IN_PROGRESS",
@@ -81,7 +81,7 @@ const specs: Record<string, FilterSpec> = {
   },
   "/orders": {
     exact: ["storeId"],
-    hint: "订单或门店编号",
+    hint: "完整订单号、原编号、日期加尾号或门店编号",
     states: [
       "PENDING_PAYMENT",
       "PAYMENT_IN_PROGRESS",

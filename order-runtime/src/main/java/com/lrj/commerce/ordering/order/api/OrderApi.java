@@ -17,7 +17,7 @@ public interface OrderApi {
 
 	record View(String orderId, String memberId, String storeId, String merchantId, String quoteId, String payable,
 			String status, String paymentKind, long version, Instant createdAt, Instant expiresAt,
-			List<QuoteApi.Line> items, Actor.Channel channel) {
+			List<QuoteApi.Line> items, Actor.Channel channel, String businessNo) {
 		public View {
 			channel = channel == null ? Actor.Channel.WEB : channel;
 			items = List.copyOf(items);

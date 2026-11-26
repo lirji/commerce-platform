@@ -6,7 +6,8 @@ import {
   type OperationsProps,
 } from "./OperationsWorkspace";
 const fields: readonly [string, string][] = [
-  ["orderId", "订单编号"],
+  ["businessNo", "订单号"],
+  ["orderId", "原订单编号"],
   ["memberId", "会员编号"],
   ["storeId", "实际门店"],
   ["merchantId", "商家编号"],
@@ -56,7 +57,8 @@ export default function CentralOrders(props: OperationsProps) {
             path="/admin/orders"
             idField="orderId"
             columns={[
-              ["orderId", "订单"],
+              ["businessNo", "订单号"],
+              ["orderId", "原订单编号"],
               ["storeId", "门店编号"],
               ["storeName", "门店名称"],
               ["status", "状态"],

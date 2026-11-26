@@ -10,6 +10,7 @@ import com.lrj.commerce.trade.api.QuoteApi;
 import com.lrj.commerce.inventory.api.InventoryApi;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.store.management.api.StoreApi;
+import com.lrj.commerce.kernel.BusinessNumber;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -33,6 +34,7 @@ import com.lrj.commerce.runtime.work.WorkLanes;
 /** 订单用例编排同库端口，远程支付/物流不进入这段事务。 */
 @Service
 public class OrderService implements OrderApi {
+	private static final int ORDER_NUMBER_ATTEMPTS = 4;
 	/** 仅隔离压测按需启用；不把订单、会员或租户标识写入性能日志。 */
 	@org.springframework.beans.factory.annotation.Value("${commerce.marketing.profiling-enabled:false}")
 	private boolean profilingEnabled;
@@ -154,11 +156,25 @@ public class OrderService implements OrderApi {
 				settle(actor.tenantId(), id, member.memberId(), true);
 			}
 			var now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
-			var view = new View(id, member.memberId(), quote.storeId(), quote.merchantId(), quote.quoteId(),
-					quote.payable(), lifecycle.state().name(), free ? "NO_PAYMENT_REQUIRED" : "CHANNEL_REQUIRED",
-					lifecycle.version(), now, now.plusSeconds(900), quote.items(), quote.channel());
-			mapper.insert(actor.tenantId(), view, JsonCodec.write(view.items()),
-					addresses.encrypt(actor.tenantId(), id, input.address()));
+			var encrypted = addresses.encrypt(actor.tenantId(), id, input.address());
+			var items = JsonCodec.write(quote.items());
+			View view = null;
+			for (int attempt = 0; attempt < ORDER_NUMBER_ATTEMPTS; attempt++) {
+				var candidate = new View(id, member.memberId(), quote.storeId(), quote.merchantId(), quote.quoteId(),
+						quote.payable(), lifecycle.state().name(), free ? "NO_PAYMENT_REQUIRED" : "CHANNEL_REQUIRED",
+						lifecycle.version(), now, now.plusSeconds(900), quote.items(), quote.channel(), BusinessNumber.next(BusinessNumber.Type.ORDER, now));
+				try {
+					mapper.insert(actor.tenantId(), candidate, items, encrypted);
+					view = candidate;
+					break;
+				} catch (org.springframework.dao.DuplicateKeyException duplicate) {
+					// 仅重试展示号碰撞，将同报价冲突交由既有业务约束处理。
+					if (attempt == ORDER_NUMBER_ATTEMPTS - 1
+							|| mapper.lockOrderIdByNumber(candidate.businessNo()) == null) {
+						throw duplicate;
+					}
+				}
+			}
 			outbox.append(actor.tenantId(), "order.created.v1", id, view.version(), view);
 			// 零元单可以履约，但不能伪造OrderPaid渠道收款事实。
 			if (free)
@@ -176,7 +192,8 @@ public class OrderService implements OrderApi {
 	/** 读取时只按可信会员归属查询。 */
 	public View read(Actor actor, String id) {
 		Identifiers.require(id);
-		return view(Inputs.found(mapper.read(actor.tenantId(), members.current(actor).memberId(), id)));
+		return view(Inputs.found(mapper.read(actor.tenantId(), members.current(actor).memberId(), id,
+                BusinessNumber.matches(BusinessNumber.Type.ORDER,id))));
 	}
 
 	/** 列表不加载明细快照，防止列表隐含N+1或放大响应。 */
@@ -188,7 +205,7 @@ public class OrderService implements OrderApi {
 	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
 		filter.requireNoEnabled();
 		Inputs.page(after, limit);
-		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit, filter)
+		return mapper.list(actor.tenantId(), members.current(actor).memberId(), after, limit, filter, numberLookup(filter))
 			.stream()
 			.map(this::view)
 			.toList();
@@ -227,11 +244,31 @@ public class OrderService implements OrderApi {
 		});
 	}
 
+    private static final java.util.regex.Pattern ORDER_TAIL = java.util.regex.Pattern.compile("([0-9]{6})-([0-9]{4})");
+    private static final java.time.format.DateTimeFormatter BUSINESS_DATE = java.time.format.DateTimeFormatter
+        .ofPattern("uuMMdd", java.util.Locale.ROOT).withResolverStyle(java.time.format.ResolverStyle.STRICT);
+
+    /** 把号码式查询从自由关键词中识别出来，避免对业务号使用全列扫描。 */
+    private static OrderMapper.NumberLookup numberLookup(ListFilter filter) {
+        String search = filter.orderId() == null ? filter.q() : filter.orderId();
+        if (search == null) return null;
+        if (BusinessNumber.matches(BusinessNumber.Type.ORDER, search)) {
+            return new OrderMapper.NumberLookup(search, null, null);
+        }
+        var tail = ORDER_TAIL.matcher(search);
+        if (!tail.matches()) return null;
+        try {
+            return new OrderMapper.NumberLookup(null, java.time.LocalDate.parse(tail.group(1), BUSINESS_DATE), tail.group(2));
+        } catch (java.time.DateTimeException invalid) {
+            throw new com.lrj.commerce.kernel.DomainException(com.lrj.commerce.kernel.DomainException.Code.INVALID_INPUT, "订单尾号查询日期无效");
+        }
+    }
+
 	private View view(OrderMapper.Row r) {
 		List<QuoteApi.Line> items = r.itemsJson() == null ? List.of()
 				: Arrays.asList(JsonCodec.read(r.itemsJson(), QuoteApi.Line[].class));
 		return new View(r.orderId(), r.memberId(), r.storeId(), r.merchantId(), r.quoteId(), r.payable(), r.status(),
-				r.paymentKind(), r.version(), r.createdAt(), r.expiresAt(), items, r.channel());
+				r.paymentKind(), r.version(), r.createdAt(), r.expiresAt(), items, r.channel(), r.businessNo());
 	}
 
 	/** 同事务锁住订单，取消/启动支付只能有一个先发生。 */
@@ -495,7 +532,7 @@ public class OrderService implements OrderApi {
 		filter.requireNoEnabled();
 		Inputs.page(after, limit);
 		var before = access.scope(actor, ORDER_READ);
-		var rows = mapper.scopedList(actor.tenantId(), before.filter(), after, limit, filter).stream().map(this::view).toList();
+		var rows = mapper.scopedList(actor.tenantId(), before.filter(), after, limit, filter, numberLookup(filter)).stream().map(this::view).toList();
 		var result = projection.apply(rows);
 		EmployeeAccess.requireSame(before, access.scope(actor, ORDER_READ));
 		return result;
@@ -503,8 +540,11 @@ public class OrderService implements OrderApi {
 
 	/** 只读取本租户商业快照，不返回加密地址。 */
 	public View adminRead(Actor actor, String id) {
-		var permit = authorize(actor, ORDER_READ, id);
-		var result = internalRead(actor.tenantId(), id);
+		Identifiers.require(id);
+		String primary = BusinessNumber.matches(BusinessNumber.Type.ORDER,id)
+                ? Inputs.found(mapper.orderIdByNumber(actor.tenantId(), id)) : id;
+		var permit = authorize(actor, ORDER_READ, primary);
+		var result = internalRead(actor.tenantId(), permit.orderId());
 		checkAuthorization(actor, permit);
 		return result;
 	}

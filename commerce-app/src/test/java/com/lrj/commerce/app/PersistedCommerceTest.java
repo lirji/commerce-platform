@@ -317,6 +317,11 @@ class PersistedCommerceTest {
 		var q = post("/v1/quotes", member, "quote", basket(2));
 		var order = post("/v1/orders", member, "order", orderInput(q));
 		String id = order.path("orderId").asString();
+		String number = order.path("businessNo").asString();
+		assertTrue(number.matches("COM-ORD-[0-9]{6}-[0-9]{10}"));
+		var byNumber = call("GET", "/v1/orders/" + number, member, null, null);
+		assertEquals(200, byNumber.status());
+		assertEquals(id, byNumber.body().path("orderId").asString());
 		assertEquals("PENDING_PAYMENT", order.path("status").asString());
 		assertEquals(order, post("/v1/orders", member, "order", orderInput(q)));
 		assertEquals(1, stockValue("available"));

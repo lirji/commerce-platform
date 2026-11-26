@@ -28,3 +28,9 @@ S3 依次交付商城报价证据、唯一交易引用、营销签价与应付�
 ## 受控配置
 
 商城使用 `COMMERCE_CHECKOUT_PILOT_*`。交易使用 `TRADE_CHECKOUT_PILOT_*`。开关默认关闭，启用时两侧须指定同一个范围版本、商城租户、商户、店铺和 SKU。交易的 `TENANT_ID` 匹配商城的 `TRADE_TENANT`，交易的 `COMMERCE_TOKEN` 对应商城的 `BEARER_TOKEN`。交易 `CALLER_KEY` 使用现有 `Actor.key()` 约定，由可信 issuer 和 subject 得到。交易到商城的地址使用 HTTPS，回环隔离验证可以使用 HTTP。两侧分别保存凭据并沿既有授权渠道轮换。
+
+## 订单展示与查询编号
+
+商城本地订单返回独立的 `businessNo`。新号形如 `COM-ORD-261126-0123456789`，`orderId` 继续用于原有生命周期与财务关联。订单列表和详情优先展示可读编号，详情支持复制，会员和后台可用原 ID 或可读编号查询。V75 建立唯一号索引及供尾号查询使用的业务日期索引。历史订单由交易仓库 `scripts/backfill-business-numbers.py` 的 `commerce-orders` 数据集分批按租户补录。
+
+试点原生订单由交易中心发出 `TRD-ORD`。商城端接入原生试点下单后，应展示交易返回的 `businessNo` 和原生归属。营销资金凭交易原生证据读取同一编号。

@@ -3,6 +3,7 @@ package com.lrj.commerce.ordering.order.infrastructure.persistence;
 import com.lrj.commerce.ordering.order.api.OrderApi.View;
 import org.apache.ibatis.annotations.*;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 /** 订单行只在所属域内部使用，跨域消费稳定API投影。 */
@@ -11,23 +12,39 @@ public interface OrderMapper {
 
 	record Row(String orderId, String memberId, String storeId, String merchantId, String quoteId, String payable,
 			String status, String paymentKind, long version, Instant createdAt, Instant expiresAt, String itemsJson,
-			com.lrj.commerce.runtime.api.identity.Actor.Channel channel) {
+			com.lrj.commerce.runtime.api.identity.Actor.Channel channel, String businessNo) {
 	}
+
+    /** 由订单用例解析，完整号和日期加尾号分别走精确索引。 */
+    record NumberLookup(String number, LocalDate date, String tail) {}
 
 	void insert(@Param("tenant") String tenant, @Param("view") View view, @Param("items") String items,
 			@Param("address") byte[] address);
 
-	Row read(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id);
+    /** 只读解析展示号，写入与关联仍使用原始主键。 */
+    String orderIdByNumber(@Param("tenant") String tenant, @Param("businessNo") String businessNo);
+
+    /** 插入发生唯一约束冲突后用当前读确认是否为展示号冲突。 */
+    String lockOrderIdByNumber(@Param("businessNo") String businessNo);
+
+	Row read(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id,
+         @Param("businessNumber") boolean businessNumber);
+
+    /** 内部已持有原生主键时保持原索引查找。 */
+    default Row read(String tenant, String member, String id) {
+        return read(tenant, member, id, false);
+    }
 
 	Row lock(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id);
 
 	List<Row> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
-			@Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+			@Param("limit") int limit, @Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter,
+        @Param("lookup") NumberLookup lookup);
 
 	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
 	default List<Row> list(@Param("tenant") String tenant, @Param("member") String member, @Param("after") String after,
 			@Param("limit") int limit) {
-		return list(tenant, member, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+		return list(tenant, member, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none(), null);
 	}
 
 	/** 实际创建时间范围、稳定订单游标，效果 Owner 内部授权先于调用。 */
@@ -36,12 +53,13 @@ public interface OrderMapper {
 
 	/** 员工列表与批次按 Owner 的真实门店列在 LIMIT 前过滤。 */
 	List<Row> scopedList(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
-			@Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
+			@Param("after") String after, @Param("limit") int limit, @Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter,
+        @Param("lookup") NumberLookup lookup);
 
 	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
 	default List<Row> scopedList(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
 			@Param("after") String after, @Param("limit") int limit) {
-		return scopedList(tenant, scope, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
+		return scopedList(tenant, scope, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none(), null);
 	}
 	List<Row> expiredScoped(@Param("tenant") String tenant, @Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
 			@Param("now") Instant now, @Param("max") int max, @Param("transientMax") int transientMax);

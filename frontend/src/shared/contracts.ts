@@ -130,6 +130,7 @@ export type Quote = {
 };
 export type Order = {
   orderId: string;
+  businessNo?: string | null;
   memberId: string;
   storeId: string;
   storeName?: string;
