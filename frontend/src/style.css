@@ -466,6 +466,11 @@ textarea {
   letter-spacing: -0.2px;
   overflow-wrap: anywhere;
 }
+/* 业务编号换行后，金额、渠道和状态仍有可辨的列宽。 */
+.trade-business-number-cell {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
 .trade-row-identity,
 .trade-row-facts {
   display: grid;

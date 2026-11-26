@@ -244,7 +244,8 @@ export function OperationsList({
         key,
         title,
         dataIndex: key,
-        ellipsis: true,
+        className: numberFields?.[key] ? "trade-business-number-cell" : undefined,
+        ellipsis: !numberFields?.[key],
         width: numberFields?.[key]
           ? tradeNumberColumnWidth
           : key.endsWith("At")

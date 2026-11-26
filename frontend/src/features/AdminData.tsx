@@ -340,6 +340,7 @@ export const specs: Record<string, Spec> = {
     description: "未知结果不释放资金预留，成功证据推动售后完成。",
     path: "/admin/refunds",
     id: "refundId",
+    actionWidth: 180,
     columns: [
       ["refundId", "退款编号"],
       ["orderId", "订单"],
@@ -739,7 +740,7 @@ export function AdminData({
           dataSource={rows}
           loading={resource.loading}
           pagination={false}
-          scroll={{ x: 800 }}
+          scroll={{ x: numberFields ? (kind === "refunds" ? 1150 : 1360) : 800 }}
           columns={[
             ...spec.columns
               .filter(
@@ -751,12 +752,13 @@ export function AdminData({
               .map(([key, label], index) => ({
                 title: label,
                 dataIndex: key,
-                ellipsis: !((compact || compactStock) && index === 0),
+                className: numberFields?.[key] ? "trade-business-number-cell" : undefined,
+                ellipsis: !numberFields?.[key] && !((compact || compactStock) && index === 0),
                 width:
-                  (compact || compactStock) && index === 0
-                    ? 218
-                    : numberFields?.[key]
-                      ? tradeNumberColumnWidth
+                  numberFields?.[key] || ((compact || compactStock) && index === 0)
+                    ? tradeNumberColumnWidth
+                    : kind === "refunds" && key === "provider"
+                      ? 118
                       : undefined,
                 align: [
                   "available",
@@ -808,6 +810,7 @@ export function AdminData({
             {
               title: "操作",
               width: spec.actionWidth ?? 280,
+              fixed: numberFields && !compact ? ("right" as const) : undefined,
               align: "right" as const,
               className: "row-actions-cell",
               render: (_, r) => actions(r),
