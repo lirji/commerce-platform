@@ -1,0 +1,587 @@
+{
+  "scope": "synthetic declarations and PNG fixtures; no native execution",
+  "checks": [
+    {
+      "name": "new_page:intent",
+      "actual": "FRONTEND_UI_PAGE",
+      "expected": "FRONTEND_UI_PAGE",
+      "pass_": true
+    },
+    {
+      "name": "new_page:compiler-errors",
+      "actual": [],
+      "expected": [],
+      "pass_": true
+    },
+    {
+      "name": "new_page:preflight",
+      "actual": "PASS",
+      "expected": "PASS",
+      "pass_": true
+    },
+    {
+      "name": "new_page:dag",
+      "actual": [
+        "frontend-design",
+        "implementation-validation"
+      ],
+      "expected": [
+        "frontend-design",
+        "implementation-validation"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "new_page:plan-coverage",
+      "actual": [
+        "failure_recovery",
+        "implementation",
+        "page_design",
+        "repository_discovery",
+        "visual_qa"
+      ],
+      "expected": [
+        "failure_recovery",
+        "implementation",
+        "page_design",
+        "repository_discovery",
+        "visual_qa"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "new_page:validation-level",
+      "actual": [
+        "STANDARD",
+        "STANDARD"
+      ],
+      "expected": [
+        "STANDARD",
+        "STANDARD"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "new_page:routing",
+      "actual": [
+        true,
+        true
+      ],
+      "expected": [
+        true,
+        true
+      ],
+      "pass_": true
+    },
+    {
+      "name": "new_page:ordered",
+      "actual": [
+        "FRONTEND_UI_PAGE",
+        "FRONTEND_UI_VERIFY"
+      ],
+      "expected": [
+        "FRONTEND_UI_PAGE",
+        "FRONTEND_UI_VERIFY"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "new_page:validator-no-write",
+      "actual": [
+        "read_repo",
+        "execute_tests"
+      ],
+      "expected": [
+        "read_repo",
+        "execute_tests"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "new_page:matrix-planned",
+      "actual": null,
+      "expected": null,
+      "pass_": true
+    },
+    {
+      "name": "new_page:missing-verifier",
+      "actual": "INVALID_VISUAL_VALIDATION_HANDOFF",
+      "expected": "INVALID_VISUAL_VALIDATION_HANDOFF",
+      "pass_": true
+    },
+    {
+      "name": "new_page:preflight-denies-grantless",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "redesign:intent",
+      "actual": "FRONTEND_UI_PAGE",
+      "expected": "FRONTEND_UI_PAGE",
+      "pass_": true
+    },
+    {
+      "name": "redesign:compiler-errors",
+      "actual": [],
+      "expected": [],
+      "pass_": true
+    },
+    {
+      "name": "redesign:preflight",
+      "actual": "PASS",
+      "expected": "PASS",
+      "pass_": true
+    },
+    {
+      "name": "redesign:dag",
+      "actual": [
+        "frontend-design",
+        "implementation-validation"
+      ],
+      "expected": [
+        "frontend-design",
+        "implementation-validation"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "redesign:plan-coverage",
+      "actual": [
+        "failure_recovery",
+        "implementation",
+        "page_design",
+        "repository_discovery",
+        "visual_qa"
+      ],
+      "expected": [
+        "failure_recovery",
+        "implementation",
+        "page_design",
+        "repository_discovery",
+        "visual_qa"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "redesign:validation-level",
+      "actual": [
+        "STANDARD",
+        "STANDARD"
+      ],
+      "expected": [
+        "STANDARD",
+        "STANDARD"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "redesign:routing",
+      "actual": [
+        true,
+        true
+      ],
+      "expected": [
+        true,
+        true
+      ],
+      "pass_": true
+    },
+    {
+      "name": "redesign:ordered",
+      "actual": [
+        "FRONTEND_UI_PAGE",
+        "FRONTEND_UI_VERIFY"
+      ],
+      "expected": [
+        "FRONTEND_UI_PAGE",
+        "FRONTEND_UI_VERIFY"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "redesign:validator-no-write",
+      "actual": [
+        "read_repo",
+        "execute_tests"
+      ],
+      "expected": [
+        "read_repo",
+        "execute_tests"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "redesign:matrix-planned",
+      "actual": null,
+      "expected": null,
+      "pass_": true
+    },
+    {
+      "name": "redesign:missing-verifier",
+      "actual": "INVALID_VISUAL_VALIDATION_HANDOFF",
+      "expected": "INVALID_VISUAL_VALIDATION_HANDOFF",
+      "pass_": true
+    },
+    {
+      "name": "redesign:preflight-denies-grantless",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "small:intent",
+      "actual": "FRONTEND_UI_LIGHT",
+      "expected": "FRONTEND_UI_LIGHT",
+      "pass_": true
+    },
+    {
+      "name": "small:compiler-errors",
+      "actual": [],
+      "expected": [],
+      "pass_": true
+    },
+    {
+      "name": "small:preflight",
+      "actual": "PASS",
+      "expected": "PASS",
+      "pass_": true
+    },
+    {
+      "name": "small:dag",
+      "actual": [
+        "frontend-design"
+      ],
+      "expected": [
+        "frontend-design"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "small:plan-coverage",
+      "actual": [
+        "failure_recovery",
+        "implementation",
+        "page_design",
+        "repository_discovery"
+      ],
+      "expected": [
+        "failure_recovery",
+        "implementation",
+        "page_design",
+        "repository_discovery"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "small:validation-level",
+      "actual": [
+        "FAST"
+      ],
+      "expected": [
+        "FAST"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "small:routing",
+      "actual": [
+        true
+      ],
+      "expected": [
+        true
+      ],
+      "pass_": true
+    },
+    {
+      "name": "small:preflight-denies-grantless",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "shared:intent",
+      "actual": "FRONTEND_UI_SYSTEM",
+      "expected": "FRONTEND_UI_SYSTEM",
+      "pass_": true
+    },
+    {
+      "name": "shared:compiler-errors",
+      "actual": [],
+      "expected": [],
+      "pass_": true
+    },
+    {
+      "name": "shared:preflight",
+      "actual": "PASS",
+      "expected": "PASS",
+      "pass_": true
+    },
+    {
+      "name": "shared:dag",
+      "actual": [
+        "frontend-architecture-design"
+      ],
+      "expected": [
+        "frontend-architecture-design"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "shared:plan-coverage",
+      "actual": [
+        "orchestration_frontend_architecture_design",
+        "repository_discovery"
+      ],
+      "expected": [
+        "orchestration_frontend_architecture_design",
+        "repository_discovery"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "shared:validation-level",
+      "actual": [
+        "FULL"
+      ],
+      "expected": [
+        "FULL"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "shared:routing",
+      "actual": [
+        true
+      ],
+      "expected": [
+        true
+      ],
+      "pass_": true
+    },
+    {
+      "name": "global:intent",
+      "actual": "FRONTEND_UI_SYSTEM",
+      "expected": "FRONTEND_UI_SYSTEM",
+      "pass_": true
+    },
+    {
+      "name": "global:compiler-errors",
+      "actual": [],
+      "expected": [],
+      "pass_": true
+    },
+    {
+      "name": "global:preflight",
+      "actual": "PASS",
+      "expected": "PASS",
+      "pass_": true
+    },
+    {
+      "name": "global:dag",
+      "actual": [
+        "frontend-architecture-design"
+      ],
+      "expected": [
+        "frontend-architecture-design"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "global:plan-coverage",
+      "actual": [
+        "orchestration_frontend_architecture_design",
+        "repository_discovery"
+      ],
+      "expected": [
+        "orchestration_frontend_architecture_design",
+        "repository_discovery"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "global:validation-level",
+      "actual": [
+        "FULL"
+      ],
+      "expected": [
+        "FULL"
+      ],
+      "pass_": true
+    },
+    {
+      "name": "global:routing",
+      "actual": [
+        true
+      ],
+      "expected": [
+        true
+      ],
+      "pass_": true
+    },
+    {
+      "name": "api_types:no-new-ui",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "retry:no-new-ui",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "back:no-new-ui",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "read_only:no-new-ui",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "existing_slice:no-new-ui",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "missing-receipt",
+      "actual": "FAIL",
+      "expected": "FAIL",
+      "pass_": true
+    },
+    {
+      "name": "complete-fixture",
+      "actual": "PASS",
+      "expected": "PASS",
+      "pass_": true
+    },
+    {
+      "name": "reject:revision",
+      "actual": "STALE_OR_UNBOUND_RECEIPT",
+      "expected": "STALE_OR_UNBOUND_RECEIPT",
+      "pass_": true
+    },
+    {
+      "name": "reject:plan-digest",
+      "actual": "STALE_OR_UNBOUND_RECEIPT",
+      "expected": "STALE_OR_UNBOUND_RECEIPT",
+      "pass_": true
+    },
+    {
+      "name": "reject:browser",
+      "actual": "BROWSER_ENVIRONMENT_MISMATCH",
+      "expected": "BROWSER_ENVIRONMENT_MISMATCH",
+      "pass_": true
+    },
+    {
+      "name": "reject:environment",
+      "actual": "BROWSER_ENVIRONMENT_MISMATCH",
+      "expected": "BROWSER_ENVIRONMENT_MISMATCH",
+      "pass_": true
+    },
+    {
+      "name": "reject:role",
+      "actual": "VISUAL_COVERAGE_MISMATCH",
+      "expected": "VISUAL_COVERAGE_MISMATCH",
+      "pass_": true
+    },
+    {
+      "name": "reject:viewport",
+      "actual": "VISUAL_COVERAGE_MISMATCH",
+      "expected": "VISUAL_COVERAGE_MISMATCH",
+      "pass_": true
+    },
+    {
+      "name": "reject:observation",
+      "actual": "VISUAL_REVIEW_NOT_PASSED",
+      "expected": "VISUAL_REVIEW_NOT_PASSED",
+      "pass_": true
+    },
+    {
+      "name": "reject:timestamp",
+      "actual": "CAPTURE_PROVENANCE_MISSING",
+      "expected": "CAPTURE_PROVENANCE_MISSING",
+      "pass_": true
+    },
+    {
+      "name": "reject:path-traversal",
+      "actual": "EVIDENCE_PATH_INVALID",
+      "expected": "EVIDENCE_PATH_INVALID",
+      "pass_": true
+    },
+    {
+      "name": "reject:digest",
+      "actual": "PNG_DIGEST_MISMATCH",
+      "expected": "PNG_DIGEST_MISMATCH",
+      "pass_": true
+    },
+    {
+      "name": "reject:state",
+      "actual": "VISUAL_COVERAGE_MISMATCH",
+      "expected": "VISUAL_COVERAGE_MISMATCH",
+      "pass_": true
+    },
+    {
+      "name": "reject:missing-coverage",
+      "actual": "VISUAL_COVERAGE_MISMATCH",
+      "expected": "VISUAL_COVERAGE_MISMATCH",
+      "pass_": true
+    },
+    {
+      "name": "reject:failed-state",
+      "actual": "VISUAL_REVIEW_NOT_PASSED",
+      "expected": "VISUAL_REVIEW_NOT_PASSED",
+      "pass_": true
+    },
+    {
+      "name": "reject:truncated-png",
+      "actual": "TRUNCATED_PNG",
+      "expected": "TRUNCATED_PNG",
+      "pass_": true
+    },
+    {
+      "name": "reject:bool-build",
+      "actual": "UNBOUND_RENDERED_BUILD",
+      "expected": "UNBOUND_RENDERED_BUILD",
+      "pass_": true
+    },
+    {
+      "name": "no-impact",
+      "actual": null,
+      "expected": null,
+      "pass_": true
+    },
+    {
+      "name": "actual-shared-impact",
+      "actual": "FULL",
+      "expected": "FULL",
+      "pass_": true
+    },
+    {
+      "name": "trusted-store-outside-project",
+      "actual": "TRUSTED_EVIDENCE_STORE_UNAVAILABLE",
+      "expected": "TRUSTED_EVIDENCE_STORE_UNAVAILABLE",
+      "pass_": true
+    },
+    {
+      "name": "quality:invalid-receipt-blocking",
+      "actual": true,
+      "expected": true,
+      "pass_": true
+    },
+    {
+      "name": "quality:unrelated-unchanged",
+      "actual": false,
+      "expected": false,
+      "pass_": true
+    }
+  ],
+  "passed": 73,
+  "failures": []
+}

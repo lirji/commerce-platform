@@ -1,0 +1,526 @@
+{
+  "buildDigest": "6e967fdef5bc1252e4a0bfa0e6f71125d16bceec2efb0c7903451d66326cf6bb",
+  "records": [
+    {
+      "state": "normal",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 297,
+            "width": 182
+          },
+          {
+            "label": "销售状态",
+            "left": 479,
+            "width": 85
+          },
+          {
+            "label": "售价",
+            "left": 564,
+            "width": 93
+          },
+          {
+            "label": "条码",
+            "left": 656,
+            "width": 145
+          }
+        ],
+        "documentWidth": 1440,
+        "windowWidth": 1440,
+        "tableViewportWidth": 1154,
+        "tableContentWidth": 1154,
+        "tableTop": 447.03125,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "observedBuildAssets": 14,
+      "rowCount": 2
+    },
+    {
+      "state": "detail",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 297,
+            "width": 182
+          },
+          {
+            "label": "销售状态",
+            "left": 479,
+            "width": 85
+          },
+          {
+            "label": "售价",
+            "left": 564,
+            "width": 93
+          },
+          {
+            "label": "条码",
+            "left": 656,
+            "width": 145
+          }
+        ],
+        "documentWidth": 1440,
+        "windowWidth": 1440,
+        "tableViewportWidth": 1154,
+        "tableContentWidth": 1154,
+        "tableTop": 447.03125,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "queryBound": true,
+      "matchedPrice": "35.00",
+      "dialogVisible": true
+    },
+    {
+      "state": "empty",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 297,
+            "width": 182
+          },
+          {
+            "label": "销售状态",
+            "left": 479,
+            "width": 85
+          },
+          {
+            "label": "售价",
+            "left": 564,
+            "width": 93
+          },
+          {
+            "label": "条码",
+            "left": 656,
+            "width": 145
+          }
+        ],
+        "documentWidth": 1440,
+        "windowWidth": 1440,
+        "tableViewportWidth": 1154,
+        "tableContentWidth": 1154,
+        "tableTop": 447.03125,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "elapsedMs": 211,
+      "filterReturned": true
+    },
+    {
+      "state": "service-error",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 297,
+            "width": 182
+          },
+          {
+            "label": "销售状态",
+            "left": 479,
+            "width": 85
+          },
+          {
+            "label": "售价",
+            "left": 564,
+            "width": 93
+          },
+          {
+            "label": "条码",
+            "left": 656,
+            "width": 145
+          }
+        ],
+        "documentWidth": 1440,
+        "windowWidth": 1440,
+        "tableViewportWidth": 1154,
+        "tableContentWidth": 1154,
+        "tableTop": 572.171875,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "injected": true
+    },
+    {
+      "state": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 352,
+            "width": 244
+          },
+          {
+            "label": "销售状态",
+            "left": 596,
+            "width": 114
+          },
+          {
+            "label": "售价",
+            "left": 709,
+            "width": 125
+          },
+          {
+            "label": "条码",
+            "left": 834,
+            "width": 195
+          }
+        ],
+        "documentWidth": 1920,
+        "windowWidth": 1920,
+        "tableViewportWidth": 1550,
+        "tableContentWidth": 1550,
+        "tableTop": 447.03125,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "observedBuildAssets": 14,
+      "rowCount": 2
+    },
+    {
+      "state": "detail",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 352,
+            "width": 244
+          },
+          {
+            "label": "销售状态",
+            "left": 596,
+            "width": 114
+          },
+          {
+            "label": "售价",
+            "left": 709,
+            "width": 125
+          },
+          {
+            "label": "条码",
+            "left": 834,
+            "width": 195
+          }
+        ],
+        "documentWidth": 1920,
+        "windowWidth": 1920,
+        "tableViewportWidth": 1550,
+        "tableContentWidth": 1550,
+        "tableTop": 447.03125,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "queryBound": true,
+      "matchedPrice": "35.00",
+      "dialogVisible": true
+    },
+    {
+      "state": "empty",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 352,
+            "width": 244
+          },
+          {
+            "label": "销售状态",
+            "left": 596,
+            "width": 114
+          },
+          {
+            "label": "售价",
+            "left": 709,
+            "width": 125
+          },
+          {
+            "label": "条码",
+            "left": 834,
+            "width": 195
+          }
+        ],
+        "documentWidth": 1920,
+        "windowWidth": 1920,
+        "tableViewportWidth": 1550,
+        "tableContentWidth": 1550,
+        "tableTop": 447.03125,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "elapsedMs": 214,
+      "filterReturned": true
+    },
+    {
+      "state": "service-error",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 352,
+            "width": 244
+          },
+          {
+            "label": "销售状态",
+            "left": 596,
+            "width": 114
+          },
+          {
+            "label": "售价",
+            "left": 709,
+            "width": 125
+          },
+          {
+            "label": "条码",
+            "left": 834,
+            "width": 195
+          }
+        ],
+        "documentWidth": 1920,
+        "windowWidth": 1920,
+        "tableViewportWidth": 1550,
+        "tableContentWidth": 1550,
+        "tableTop": 572.171875,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价",
+          "条码",
+          "SKU",
+          "规格",
+          "SPU",
+          "版本",
+          "操作"
+        ]
+      },
+      "injected": true
+    },
+    {
+      "state": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": 53,
+            "width": 156
+          },
+          {
+            "label": "销售状态",
+            "left": 209,
+            "width": 72
+          },
+          {
+            "label": "售价",
+            "left": 281,
+            "width": 88
+          },
+          {
+            "label": "条码",
+            "left": 369,
+            "width": 144
+          }
+        ],
+        "documentWidth": 390,
+        "windowWidth": 390,
+        "tableViewportWidth": 356,
+        "tableContentWidth": 1104,
+        "tableTop": 606.03125,
+        "visibleColumns": [
+          "商品名称",
+          "销售状态",
+          "售价"
+        ]
+      },
+      "observedBuildAssets": 14,
+      "rowCount": 2
+    },
+    {
+      "state": "detail",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": -695,
+            "width": 156
+          },
+          {
+            "label": "销售状态",
+            "left": -539,
+            "width": 72
+          },
+          {
+            "label": "售价",
+            "left": -467,
+            "width": 88
+          },
+          {
+            "label": "条码",
+            "left": -379,
+            "width": 144
+          }
+        ],
+        "documentWidth": 390,
+        "windowWidth": 390,
+        "tableViewportWidth": 356,
+        "tableContentWidth": 1104,
+        "tableTop": 606.03125,
+        "visibleColumns": [
+          "版本",
+          "操作"
+        ]
+      },
+      "queryBound": true,
+      "matchedPrice": "35.00",
+      "dialogVisible": true
+    },
+    {
+      "state": "empty",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "columns": [
+          {
+            "label": "商品名称",
+            "left": -695,
+            "width": 156
+          },
+          {
+            "label": "销售状态",
+            "left": -539,
+            "width": 72
+          },
+          {
+            "label": "售价",
+            "left": -467,
+            "width": 88
+          },
+          {
+            "label": "条码",
+            "left": -379,
+            "width": 144
+          }
+        ],
+        "documentWidth": 390,
+        "windowWidth": 390,
+        "tableViewportWidth": 356,
+        "tableContentWidth": 1104,
+        "tableTop": 606.03125,
+        "visibleColumns": [
+          "版本",
+          "操作"
+        ]
+      },
+      "elapsedMs": 196,
+      "filterReturned": true
+    }
+  ],
+  "failures": []
+}

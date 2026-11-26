@@ -1,0 +1,94 @@
+{
+  "selectedIntent": "FRONTEND_UI_PAGE",
+  "requiredConstructionInputs": [
+    "CONTRACTS",
+    "IMPLEMENTATION_SLICES"
+  ],
+  "declaredComposition": [
+    "frontend-design",
+    "implementation-validation"
+  ],
+  "actualAvailableArtifacts": [],
+  "liveDriverDescribe": [
+    {
+      "driver_id": "claude-code-local",
+      "status": "AVAILABLE",
+      "descriptor_digest": "188d3222756c9a5eeee6fb62c7e74d307a20b94e9ffa7a881a8621ee8c95f83f"
+    },
+    {
+      "driver_id": "codex-local",
+      "status": "UNAVAILABLE",
+      "descriptor_digest": null
+    },
+    {
+      "driver_id": "cursor-local",
+      "status": "UNAVAILABLE",
+      "descriptor_digest": null
+    }
+  ],
+  "preflight": {
+    "protocol": "intent-preflight/v1",
+    "task_id": "task-85c0f02ff3ff6f7e5abb95f3",
+    "status": "FAIL",
+    "checks": [
+      {
+        "check": "intent_validity",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "target_resolution",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "scope_resolution",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "required_fields",
+        "status": "FAIL",
+        "codes": [
+          "PREFLIGHT_FAILED"
+        ]
+      },
+      {
+        "check": "coverage",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "capability",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "permission",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "evidence",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "execution_feasibility",
+        "status": "PASS",
+        "codes": []
+      },
+      {
+        "check": "conflict_detection",
+        "status": "PASS",
+        "codes": []
+      }
+    ],
+    "failure_codes": [
+      "PREFLIGHT_FAILED"
+    ],
+    "clarification": "AUTO_RESOLVED"
+  },
+  "planResult": "PREFLIGHT_FAILED: PREFLIGHT_FAILED",
+  "dispatch": "NOT_RUN"
+}

@@ -1,0 +1,893 @@
+diff --git a/frontend/src/features/ProductOperations.tsx b/frontend/src/features/ProductOperations.tsx
+index 86b2205..6e698e1 100644
+--- a/frontend/src/features/ProductOperations.tsx
++++ b/frontend/src/features/ProductOperations.tsx
+@@ -11,24 +11,28 @@ import {
+   Alert,
+   Button,
+   Card,
++  Form,
+   Grid,
+-  Space,
++  Input,
++  InputNumber,
++  Select,
+   Table,
+   Tabs,
++  Tag,
+   Typography,
+ } from "antd";
+ import { Icon } from "../shared/Icon";
+ import {
+   BarcodeEditor,
+-  CatalogFilters,
+   CatalogStructure,
+   ProductPresentation,
+   VariantCreator,
+   type Category,
+ } from "./CatalogMerchandising";
+-import { useState } from "react";
++import { useEffect, useId, useState } from "react";
+ import { encode, useResource } from "../shared/api";
+ import {
++  Blank,
+   CommandModal,
+   ErrorNotice,
+   ListPanel,
+@@ -40,6 +44,7 @@ import {
+   time,
+   type Field,
+ } from "../shared/ui";
++import styles from "./product-operations.module.css";
+ 
+ type Product = {
+   productId: string;
+@@ -58,6 +63,7 @@ type Sku = {
+   revision: number;
+   status: string;
+   productId?: string;
++  barcode?: string | null;
+   specifications: { name: string; value: string }[];
+ };
+ type Revision = {
+@@ -78,6 +84,153 @@ const skuFields: Field[] = [
+   { name: "title", label: "销售名称" },
+   { name: "unitPrice", label: "售价（元）", type: "money" },
+ ];
++const salesStatuses = [
++  { value: "ACTIVE", label: "上架" },
++  { value: "FROZEN", label: "下架" },
++];
++
++function SkuFilters({
++  categories,
++  query,
++  onSearch,
++}: {
++  categories: Category[];
++  query: string;
++  onSearch: (query: string) => void;
++}) {
++  const [form] = Form.useForm();
++  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
++  const moreFiltersId = useId();
++  const appliedFilters = new URLSearchParams(query);
++  const extraFilterCount = [
++    "categoryId",
++    "minimumPrice",
++    "maximumPrice",
++  ].filter((key) => appliedFilters.get(key)).length;
++  useEffect(() => {
++    const params = new URLSearchParams(query);
++    form.setFieldsValue({
++      q: params.get("q") ?? undefined,
++      status: params.get("status") ?? undefined,
++      categoryId: params.get("categoryId") ?? undefined,
++      minimumPrice: params.has("minimumPrice")
++        ? Number(params.get("minimumPrice"))
++        : undefined,
++      maximumPrice: params.has("maximumPrice")
++        ? Number(params.get("maximumPrice"))
++        : undefined,
++    });
++  }, [form, query]);
++
++  return (
++    <Form
++      form={form}
++      name="skuFilters"
++      aria-label="规格筛选"
++      layout="vertical"
++      className={styles.filters}
++      onFinish={(values) => {
++        const params = new URLSearchParams();
++        for (const [key, value] of Object.entries(values)) {
++          if (value !== undefined && value !== null && value !== "")
++            params.set(key, String(value));
++        }
++        onSearch(params.toString());
++      }}
++    >
++      <Form.Item name="q" label="销售名称或条码" className={styles.keyword}>
++        <Input
++          aria-label="商品名称或条码"
++          placeholder="输入部分名称或条码"
++          allowClear
++          maxLength={64}
++        />
++      </Form.Item>
++      <Form.Item
++        name="status"
++        label="上下架状态"
++        className={styles.statusFilter}
++      >
++        <Select
++          aria-label="筛选销售状态"
++          placeholder="全部状态"
++          allowClear
++          options={salesStatuses}
++        />
++      </Form.Item>
++      <Button
++        type="text"
++        className={styles.moreFilters}
++        aria-expanded={moreFiltersOpen}
++        aria-controls={moreFiltersId}
++        onClick={() => setMoreFiltersOpen((open) => !open)}
++      >
++        {moreFiltersOpen ? "收起条件" : "更多条件"}
++        {extraFilterCount > 0 && ` (${extraFilterCount})`}
++      </Button>
++      <div
++        id={moreFiltersId}
++        className={`${styles.extraFilters} ${moreFiltersOpen ? styles.extraFiltersOpen : ""}`}
++      >
++        <Form.Item
++          name="categoryId"
++          label="商品类目"
++          className={styles.categoryFilter}
++        >
++          <Select
++            aria-label="筛选商品类目"
++            placeholder="全部类目"
++            allowClear
++            options={categories.map((category) => ({
++              value: category.categoryId,
++              label: category.name,
++            }))}
++          />
++        </Form.Item>
++        <Form.Item
++          name="minimumPrice"
++          label="最低价（元）"
++          className={styles.priceFilter}
++        >
++          <InputNumber
++            aria-label="最低售价"
++            placeholder="不限"
++            min={0}
++            precision={2}
++          />
++        </Form.Item>
++        <Form.Item
++          name="maximumPrice"
++          label="最高价（元）"
++          className={styles.priceFilter}
++        >
++          <InputNumber
++            aria-label="最高售价"
++            placeholder="不限"
++            min={0}
++            precision={2}
++          />
++        </Form.Item>
++      </div>
++      <Button htmlType="submit" className={styles.submitFilters}>
++        筛选商品
++      </Button>
++    </Form>
++  );
++}
++
++function SalesStatus({ value }: { value: string }) {
++  const status = salesStatuses.find((option) => option.value === value);
++  if (!status) return <Status value={value} />;
++  return (
++    <Tag
++      className={`status-tag ${value === "ACTIVE" ? styles.onSale : styles.offSale}`}
++      variant="filled"
++    >
++      {status.label}
++    </Tag>
++  );
++}
+ 
+ /** 操作入口相同，但每次请求由服务端重新判断实际门店授权。 */
+ export function ProductOperations({
+@@ -87,7 +240,7 @@ export function ProductOperations({
+   store: string;
+   embedded?: boolean;
+ }) {
+-  const compact = Grid.useBreakpoint().md === false;
++  const fixSkuActions = Grid.useBreakpoint().lg;
+   const [tab, setTab] = useRouteState("tab", "sku");
+   const [batch, setBatch] = useState<Sku[]>([]);
+   const [channelSku, setChannelSku] = useState<Sku>();
+@@ -136,6 +289,12 @@ export function ProductOperations({
+     setBatch([]);
+     setSkuAfter(cursor);
+   };
++  const skuLoading = skus.loading || (!skus.data && !skus.error);
++  const skuEmptyText = skuAfter
++    ? "当前页没有销售规格，可返回上一页或首页。"
++    : filters
++      ? "没有符合当前条件的销售规格，请调整筛选。"
++      : "当前门店暂无销售规格。";
+   if (!store) return <Alert type="info" title="请先选择有经营权限的门店" />;
+   return (
+     <Workbench>
+@@ -154,159 +313,227 @@ export function ProductOperations({
+             key: "sku",
+             label: "销售规格与上下架",
+             children: (
+-              <ListPanel
+-                toolbar={
+-                  <>
+-                    <ErrorNotice error={skus.error} onRetry={skus.refresh} />
+-                    <Space wrap>
+-                      <VariantCreator store={store} onDone={refresh} />
+-                      <BatchCatalogAction
+-                        store={store}
+-                        rows={batch}
+-                        onDone={refresh}
++              <section className={styles.skuList} aria-label="销售规格列表">
++                <ListPanel
++                  toolbar={
++                    <>
++                      <SkuFilters
++                        query={filters}
++                        categories={categories.data ?? []}
++                        onSearch={(query) => {
++                          setBatch([]);
++                          setFilters(query);
++                          setSkuAfter("");
++                        }}
+                       />
+-                      <Button onClick={refresh}>刷新</Button>
+-                    </Space>
+-                    <CatalogFilters
+-                      query={filters}
+-                      categories={categories.data ?? []}
+-                      operations
+-                      onSearch={(query) => {
+-                        setBatch([]);
+-                        setFilters(query);
+-                        setSkuAfter("");
+-                      }}
+-                    />
+-                  </>
+-                }
+-                count={skus.data?.length ?? 0}
+-                loading={skus.loading}
+-                error={skus.error}
+-                after={skuAfter}
+-                cursorName={"skuAfter"}
+-                onHome={() => changeSkuPage("")}
+-                onNext={() => changeSkuPage(skus.data!.at(-1)!.skuId)}
+-                homeLabel="回到首页"
+-              >
+-                <Table<Sku>
+-                  rowSelection={{
+-                    selectedRowKeys: batch.map((r) => r.skuId),
+-                    onChange: (_, rows) => setBatch(rows),
+-                  }}
+-                  rowKey="skuId"
+-                  dataSource={skus.data}
+-                  loading={skus.loading}
+-                  pagination={false}
+-                  scroll={{ x: 1150 }}
+-                  columns={[
+-                    {
+-                      title: "商品",
+-                      width: 250,
+-                      render: (_, r) => (
+-                        <div className="catalog-identity">
+-                          <span className="catalog-thumbnail">
+-                            {r.images?.[0] ? (
+-                              <img
+-                                src={r.images[0].url}
+-                                alt={r.images[0].alt || r.title}
+-                                loading="lazy"
+-                                onError={(event) => {
+-                                  event.currentTarget.hidden = true;
+-                                }}
+-                              />
+-                            ) : (
+-                              <Icon name="image" />
+-                            )}
+-                          </span>
+-                          <PrimaryCell title={r.title} subtitle={r.skuId} />
++                      <div className={styles.listHeader}>
++                        <div className={styles.listHeading}>
++                          <Typography.Title level={2}>
++                            规格列表
++                          </Typography.Title>
++                          <Typography.Text type="secondary" role="status">
++                            {batch.length
++                              ? `已选 ${batch.length} 个规格`
++                              : "勾选规格可创建批量计划"}
++                          </Typography.Text>
+                         </div>
+-                      ),
+-                    },
+-                    {
+-                      title: "SPU",
+-                      width: 130,
+-                      render: (_, r) => r.productId ?? "历史商品",
+-                    },
+-                    {
+-                      title: "规格",
+-                      width: 220,
+-                      render: (_, r) =>
+-                        r.specifications
+-                          .map((s) => `${s.name}：${s.value}`)
+-                          .join(" / ") || "—",
+-                    },
+-                    {
+-                      title: "售价",
+-                      align: "right",
+-                      dataIndex: "unitPrice",
+-                      render: money,
+-                      width: 100,
+-                    },
+-                    {
+-                      title: "状态",
+-                      width: 90,
+-                      dataIndex: "status",
+-                      render: (v) => <Status value={v} />,
+-                    },
+-                    { title: "版本", dataIndex: "revision", width: 64 },
+-                    {
+-                      title: "操作",
+-                      width: 230,
+-                      fixed: compact ? undefined : "right",
+-                      className: "row-actions-cell",
+-                      render: (_, r) => (
+-                        <RowActions>
+-                          <CommandModal
+-                            key={`${r.skuId}:${r.revision}`}
+-                            title="调价 / 上下架"
+-                            path={"/operations/skus/" + encode(r.skuId)}
+-                            buttonType="link"
+-                            fields={[
+-                              ...skuFields,
+-                              {
+-                                name: "status",
+-                                label: "销售状态",
+-                                type: "select",
+-                                options: [
+-                                  { label: "上架", value: "ACTIVE" },
+-                                  { label: "下架", value: "FROZEN" },
+-                                ],
+-                              },
+-                              { name: "reason", label: "修订原因" },
+-                            ]}
+-                            initialValues={{
+-                              title: r.title,
+-                              unitPrice: r.unitPrice,
+-                              status: r.status,
+-                            }}
+-                            build={(v) => ({
+-                              ...v,
+-                              storeId: store,
+-                              expectedVersion: r.revision,
+-                            })}
++                        <div className={styles.listActions}>
++                          <Button onClick={refresh}>刷新</Button>
++                          <BatchCatalogAction
++                            store={store}
++                            rows={batch}
+                             onDone={refresh}
+                           />
+-                          <Button type="link" onClick={() => setChannelSku(r)}>
+-                            渠道价
+-                          </Button>
+-                          <Button type="link" onClick={() => setBarcode(r)}>
+-                            条码资料
+-                          </Button>
+-                          <Button
+-                            type="link"
+-                            onClick={() => {
+-                              setHistoryAfter(0);
+-                              setSelected(r);
+-                            }}
+-                          >
+-                            修订记录
+-                          </Button>
+-                        </RowActions>
+-                      ),
+-                    },
+-                  ]}
+-                />
+-              </ListPanel>
++                          <VariantCreator store={store} onDone={refresh} />
++                        </div>
++                      </div>
++                      {skus.error && (
++                        <div className={styles.listError}>
++                          <ErrorNotice
++                            error={skus.error}
++                            onRetry={skus.refresh}
++                          />
++                        </div>
++                      )}
++                    </>
++                  }
++                  count={skus.data?.length ?? 0}
++                  loading={skuLoading}
++                  error={skus.error}
++                  after={skuAfter}
++                  cursorName={"skuAfter"}
++                  onHome={() => changeSkuPage("")}
++                  onNext={() => changeSkuPage(skus.data!.at(-1)!.skuId)}
++                  homeLabel="回到首页"
++                >
++                  <Table<Sku>
++                    rowSelection={{
++                      columnWidth: "var(--sku-selection-width)",
++                      selectedRowKeys: batch.map((r) => r.skuId),
++                      onChange: (_, rows) => setBatch(rows),
++                    }}
++                    rowKey="skuId"
++                    dataSource={skus.data}
++                    loading={skuLoading}
++                    locale={{
++                      emptyText:
++                        skuLoading || skus.error ? null : (
++                          <div className={styles.emptyResult}>
++                            <Blank text={skuEmptyText} />
++                          </div>
++                        ),
++                    }}
++                    pagination={false}
++                    tableLayout="fixed"
++                    scroll={{ x: "var(--sku-table-width)" }}
++                    className={styles.skuTable}
++                    columns={[
++                      {
++                        title: "销售名称",
++                        dataIndex: "title",
++                        render: (_, r) => (
++                          <div className="catalog-identity">
++                            <span
++                              className={`catalog-thumbnail ${styles.thumbnail}`}
++                            >
++                              <Icon name="image" />
++                              {r.images?.[0] && (
++                                <img
++                                  key={r.images[0].url}
++                                  src={r.images[0].url}
++                                  alt={r.images[0].alt || r.title}
++                                  loading="lazy"
++                                  onError={(event) => {
++                                    event.currentTarget.hidden = true;
++                                  }}
++                                />
++                              )}
++                            </span>
++                            <span className={styles.skuTitle}>{r.title}</span>
++                          </div>
++                        ),
++                      },
++                      {
++                        title: "销售状态",
++                        width: "var(--sku-status-width)",
++                        dataIndex: "status",
++                        render: (value) => <SalesStatus value={value} />,
++                      },
++                      {
++                        title: "售价",
++                        align: "right",
++                        dataIndex: "unitPrice",
++                        render: (value) => (
++                          <span className={styles.price}>{money(value)}</span>
++                        ),
++                        width: "var(--sku-price-width)",
++                      },
++                      {
++                        title: "规格",
++                        key: "specifications",
++                        width: 104,
++                        className: styles.wrapValue,
++                        render: (_, r) =>
++                          r.specifications
++                            .map((s) => `${s.name}：${s.value}`)
++                            .join(" / ") || "—",
++                      },
++                      {
++                        title: "条码",
++                        dataIndex: "barcode",
++                        width: 146,
++                        className: styles.identifier,
++                        render: (value) =>
++                          value || (
++                            <Typography.Text type="secondary">
++                              未设置
++                            </Typography.Text>
++                          ),
++                      },
++                      {
++                        title: "SKU 编号",
++                        dataIndex: "skuId",
++                        width: 124,
++                        className: styles.identifier,
++                      },
++                      {
++                        title: "SPU 编号",
++                        dataIndex: "productId",
++                        width: 124,
++                        className: styles.identifier,
++                        render: (value) =>
++                          value ?? (
++                            <Typography.Text type="secondary">
++                              历史商品
++                            </Typography.Text>
++                          ),
++                      },
++                      {
++                        title: "版本",
++                        dataIndex: "revision",
++                        width: 52,
++                        align: "center",
++                      },
++                      {
++                        title: "操作",
++                        key: "actions",
++                        width: 184,
++                        fixed: fixSkuActions ? "right" : undefined,
++                        className: styles.rowActions,
++                        render: (_, r) => (
++                          <RowActions>
++                            <Button type="link" onClick={() => setBarcode(r)}>
++                              条码资料
++                            </Button>
++                            <CommandModal
++                              key={`${r.skuId}:${r.revision}`}
++                              title="调价 / 上下架"
++                              path={"/operations/skus/" + encode(r.skuId)}
++                              buttonType="link"
++                              fields={[
++                                ...skuFields,
++                                {
++                                  name: "status",
++                                  label: "销售状态",
++                                  type: "select",
++                                  options: salesStatuses,
++                                },
++                                { name: "reason", label: "修订原因" },
++                              ]}
++                              initialValues={{
++                                title: r.title,
++                                unitPrice: r.unitPrice,
++                                status: r.status,
++                              }}
++                              build={(v) => ({
++                                ...v,
++                                storeId: store,
++                                expectedVersion: r.revision,
++                              })}
++                              onDone={refresh}
++                            />
++                            <Button
++                              type="link"
++                              onClick={() => setChannelSku(r)}
++                            >
++                              渠道价
++                            </Button>
++                            <Button
++                              type="link"
++                              onClick={() => {
++                                setHistoryAfter(0);
++                                setSelected(r);
++                              }}
++                            >
++                              修订记录
++                            </Button>
++                          </RowActions>
++                        ),
++                      },
++                    ]}
++                  />
++                </ListPanel>
++              </section>
+             ),
+           },
+           {
+diff --git a/frontend/src/features/product-operations.module.css b/frontend/src/features/product-operations.module.css
+new file mode 100644
+index 0000000..6a60621
+--- /dev/null
++++ b/frontend/src/features/product-operations.module.css
+@@ -0,0 +1,282 @@
++.skuList {
++  --sku-table-width: 1150px;
++  --sku-selection-width: 42px;
++  --sku-status-width: 88px;
++  --sku-price-width: 100px;
++  min-width: 0;
++  container-type: inline-size;
++}
++
++.skuList :global(.list-toolbar) {
++  display: block;
++  padding: 0;
++}
++
++.filters {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: flex-end;
++  gap: 12px;
++  padding: 16px 20px;
++  border-bottom: 1px solid var(--line);
++}
++
++.filters :global(.ant-form-item) {
++  min-width: 0;
++  margin-block: 0;
++}
++
++.filters :global(.ant-form-item-label) {
++  padding-bottom: 4px;
++}
++
++.filters > .moreFilters {
++  display: none;
++}
++
++.extraFilters {
++  display: contents;
++}
++
++.submitFilters {
++  font-weight: 600;
++}
++
++.filters .keyword {
++  flex: 2 1 188px;
++  max-width: 340px;
++}
++
++.filters .statusFilter {
++  flex: 1 0 108px;
++  max-width: 144px;
++}
++
++.filters .categoryFilter {
++  flex: 1 0 128px;
++  max-width: 180px;
++}
++
++.filters .priceFilter {
++  flex: 0 1 108px;
++}
++
++.priceFilter :global(.ant-input-number) {
++  width: 100%;
++}
++
++.listHeader {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  justify-content: space-between;
++  gap: 12px 20px;
++  padding: 14px 20px;
++}
++
++.listHeading,
++.listActions {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: 8px 12px;
++}
++
++.listHeading h2:global(.ant-typography) {
++  margin: 0;
++  font-size: 16px;
++  font-weight: 600;
++}
++
++.listHeading :global(.ant-typography-secondary) {
++  font-size: 12px;
++}
++
++.listError {
++  padding: 0 20px;
++  overflow-wrap: anywhere;
++}
++
++.skuList :global(.table-overflow-hint) {
++  margin: 0;
++  padding: 8px 12px;
++  border-top: 1px solid var(--line);
++}
++
++.emptyResult {
++  position: sticky;
++  inset-inline-start: 12px;
++  max-width: calc(100cqw - 26px);
++}
++
++.skuTable :global(.ant-table-thead) > tr > th,
++.skuTable :global(.ant-table-tbody) > tr > td {
++  padding: 10px 12px;
++}
++
++.skuTable :global(.ant-table-thead) > tr > th {
++  white-space: nowrap;
++}
++
++.skuTable :global(.ant-table-tbody) > tr:global(.ant-table-row-selected) > td {
++  background: var(--selected);
++}
++
++.skuTable .thumbnail {
++  width: 36px;
++  height: 36px;
++}
++
++.thumbnail > * {
++  grid-area: 1 / 1;
++}
++
++.thumbnail img:not([hidden]) {
++  background: var(--surface);
++}
++
++.skuTitle {
++  min-width: 0;
++  color: var(--ink);
++  font-weight: 600;
++  overflow-wrap: anywhere;
++}
++
++.skuTable .onSale,
++.skuTable .offSale {
++  margin-inline-end: 0;
++  white-space: nowrap;
++}
++
++.skuTable .onSale {
++  background: var(--okSoft);
++  color: var(--ok);
++}
++
++.skuTable .offSale {
++  background: var(--idleSoft);
++  color: var(--idle);
++}
++
++.price {
++  color: var(--ink);
++  font-weight: 600;
++  font-variant-numeric: tabular-nums;
++  overflow-wrap: anywhere;
++}
++
++.wrapValue,
++.skuTable .identifier {
++  overflow-wrap: anywhere;
++}
++
++.skuTable td.identifier {
++  padding-inline: 10px;
++  color: var(--muted);
++  font-variant-numeric: tabular-nums;
++}
++
++.rowActions :global(.row-actions) {
++  display: grid;
++  grid-template-columns: max-content max-content;
++  justify-content: start;
++  gap: 0 12px;
++}
++
++.rowActions :global(.ant-btn-link) {
++  justify-self: start;
++  padding-inline: 0;
++}
++
++.rowActions :global(.ant-btn-link:first-child) {
++  font-weight: 600;
++}
++
++@container (width < 820px) {
++  .filters {
++    display: grid;
++    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
++  }
++
++  .filters :global(.ant-form-item) {
++    max-width: none;
++  }
++
++  .filters > button {
++    justify-self: start;
++  }
++}
++
++@container (width < 520px) {
++  .skuTable {
++    /* 734px 是售价之后六列的总宽度，首屏空间留给勾选、名称、状态和售价。 */
++    --sku-table-width: calc(100cqw - 10px + 734px);
++    --sku-selection-width: 36px;
++    --sku-status-width: 68px;
++    --sku-price-width: 96px;
++  }
++
++  .filters,
++  .listHeader {
++    padding: 12px;
++  }
++
++  .listError {
++    padding-inline: 12px;
++  }
++
++  .filters {
++    grid-template-columns: minmax(0, 1fr) auto auto;
++    gap: 8px;
++  }
++
++  .filters .keyword {
++    grid-column: 1 / -1;
++  }
++
++  .filters > .moreFilters {
++    display: inline-flex;
++    padding-inline: 6px;
++    color: var(--muted);
++  }
++
++  .extraFilters {
++    display: none;
++  }
++
++  .extraFiltersOpen {
++    display: grid;
++    grid-column: 1 / -1;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 8px;
++    padding-block-start: 8px;
++    border-top: 1px solid var(--line);
++  }
++
++  .extraFiltersOpen .categoryFilter {
++    grid-column: 1 / -1;
++  }
++
++  .extraFiltersOpen + .submitFilters {
++    grid-column: 1 / -1;
++  }
++
++  .listHeader,
++  .listActions {
++    gap: 8px;
++  }
++
++  .skuTable :global(.ant-table-thead) > tr > th,
++  .skuTable :global(.ant-table-tbody) > tr > td {
++    padding-inline: 8px;
++  }
++
++  .skuTable :global(.catalog-identity) {
++    gap: 8px;
++  }
++
++  .skuTable .thumbnail {
++    width: 32px;
++    height: 32px;
++  }
++}

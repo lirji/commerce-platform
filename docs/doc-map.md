@@ -1,5 +1,7 @@
 # 文档地图
 
+2026-11-26 商品经营页前端设计工程隔离 A/B 试点见[验收报告](delivery/frontend-design-engineering-mvp/TEST_RESULT.md)和[实页截图](delivery/frontend-design-engineering-mvp/SCREENSHOTS.md)。试点比较两种设计方法，结论为暂缓接入共享核心。该记录对应历史商品经营基线。
+
 2026-11-26 运营与商业化页面优化以 [总体方案](design/commerce-operations-product/FRONTEND_ARCHITECTURE.md) 为入口，含 [73 个业务入口逐页清单](design/commerce-operations-product/PAGE_DESIGN.md) 和 [重点页面草图](design/commerce-operations-product/WIREFRAMES.md)。现有改造和 S9 验收见 [运营体验进度](delivery/operations-experience/PROGRESS_STATE.md)。
 
 历史同步基线：fb7adf6。2026-09-27 Java 包能力细分的当前约定见 `architecture/java-packages.md`，执行证据见 `evidence/capability-package-refactor/PROJECT_REFACTORING_REPORT.md`；上一轮排版证据仍在 `evidence/java-package-refactor/PROJECT_REFACTORING_REPORT.md`。S0–S10 为历史实现。历史切片证据保留当时计数和失败排查记录；本轮前端优化的最新验证入口为 [实施与验证证据](delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md)，历史会员链路验收为 `delivery/member-lifecycle-catalog-ui/LP11_TEST_RESULT.md`，规范状态为 `PROGRESS_STATE.json`。

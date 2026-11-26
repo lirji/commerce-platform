@@ -1,0 +1,95 @@
+{
+  "system": "Engineering Skill System 2.0.0-final",
+  "health": "SHARED_CORE_NOT_READY",
+  "observedDrift": [
+    {
+      "kind": "CORE_DRIFT",
+      "resource": "frontend-design/SKILL.md"
+    },
+    {
+      "kind": "CORE_DRIFT",
+      "resource": "project-documentation/.DS_Store"
+    },
+    {
+      "kind": "CORE_DRIFT",
+      "resource": "public-engineering-workflow/_portable/.DS_Store"
+    },
+    {
+      "kind": "MANIFEST_DRIFT",
+      "resource": "scan-input"
+    }
+  ],
+  "authoritySnapshotUnchanged": true,
+  "officialInstall": false,
+  "candidatePatchSha256": "9de2a7ab526f848352a6f4f58a97789913e47e234df005b17ae9922b9508611d",
+  "genealogy": {
+    "baseline": [
+      {
+        "name": "test-intent-compiler",
+        "exit": 0
+      },
+      {
+        "name": "test-workflow-synthesis",
+        "exit": 1
+      },
+      {
+        "name": "test-quality-runtime",
+        "exit": 0
+      },
+      {
+        "name": "test-skill-router",
+        "exit": 0
+      },
+      {
+        "name": "test-authorization-boundary",
+        "exit": 1
+      },
+      {
+        "name": "test-execution-plan-runtime",
+        "exit": 0
+      },
+      {
+        "name": "test-incremental-validation",
+        "exit": 0
+      },
+      {
+        "name": "registry-lint",
+        "exit": 1
+      }
+    ],
+    "candidate": [
+      {
+        "name": "test-intent-compiler",
+        "exit": 0
+      },
+      {
+        "name": "test-workflow-synthesis",
+        "exit": 0
+      },
+      {
+        "name": "test-quality-runtime",
+        "exit": 0
+      },
+      {
+        "name": "test-skill-router",
+        "exit": 0
+      },
+      {
+        "name": "test-authorization-boundary",
+        "exit": 1
+      },
+      {
+        "name": "test-execution-plan-runtime",
+        "exit": 0
+      },
+      {
+        "name": "test-incremental-validation",
+        "exit": 0
+      },
+      {
+        "name": "registry-lint",
+        "exit": 1
+      }
+    ]
+  }
+}

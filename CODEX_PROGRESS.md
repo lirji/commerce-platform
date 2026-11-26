@@ -1,5 +1,12 @@
 # Codex Progress
 
+<!-- frontend-design-engineering-mvp:start -->
+## 商品经营页设计工程试点归档
+
+- 用户要求将隔离 A/B 结果记入统一电商项目。[验收报告](docs/delivery/frontend-design-engineering-mvp/TEST_RESULT.md)、[截图索引](docs/delivery/frontend-design-engineering-mvp/SCREENSHOTS.md)及同批证据为项目入口。
+- 历史试点从 `107a8c0` 冻结，A/B 两套实现有独立补丁。窄屏收益和桌面差异均已记录，正式接入暂缓。本次归档随文档分支交付。
+<!-- frontend-design-engineering-mvp:end -->
+
 <!-- commerce-operations-product-design:start -->
 ## 运营与商业化页面优化设计
 

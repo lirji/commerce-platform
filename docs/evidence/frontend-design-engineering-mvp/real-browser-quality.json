@@ -1,0 +1,59 @@
+{
+  "runs": {
+    "a": {
+      "check": {
+        "blocking": true,
+        "checkId": "VISUAL_ACCEPTANCE",
+        "executor": "quality-runtime",
+        "required": true,
+        "skipReason": null,
+        "status": "PASS",
+        "type": "VISUAL_ACCEPTANCE"
+      },
+      "negativeBlocking": [
+        "VISUAL_ACCEPTANCE"
+      ],
+      "positive": {
+        "buildDigest": "9cbee56e4e832f7467d6f31cce6aee1ff7d01d91490846b381e650344dc3d95d",
+        "caseCount": 8,
+        "level": "STANDARD",
+        "status": "PASS"
+      },
+      "projectCommit": "909edb9b1fa113ba608491e583159425404d5382",
+      "source": "browser/a-final/capture.json",
+      "staleNegative": {
+        "level": "STANDARD",
+        "reason": "STALE_OR_UNBOUND_RECEIPT",
+        "status": "FAIL"
+      }
+    },
+    "b": {
+      "check": {
+        "blocking": true,
+        "checkId": "VISUAL_ACCEPTANCE",
+        "executor": "quality-runtime",
+        "required": true,
+        "skipReason": null,
+        "status": "PASS",
+        "type": "VISUAL_ACCEPTANCE"
+      },
+      "negativeBlocking": [
+        "VISUAL_ACCEPTANCE"
+      ],
+      "positive": {
+        "buildDigest": "dceb60398a7fa7c43ccde79a71c45c05478beb5e476d0d0b2b96216bc1d9d6bd",
+        "caseCount": 8,
+        "level": "STANDARD",
+        "status": "PASS"
+      },
+      "projectCommit": "81d8c4f1dd4d5ad48ea1e4bbc927920434b915af",
+      "source": "browser/b-final/capture.json",
+      "staleNegative": {
+        "level": "STANDARD",
+        "reason": "STALE_OR_UNBOUND_RECEIPT",
+        "status": "FAIL"
+      }
+    }
+  },
+  "scope": "Real screenshots in isolated trusted coordinator path, no native dispatcher or release authorization"
+}

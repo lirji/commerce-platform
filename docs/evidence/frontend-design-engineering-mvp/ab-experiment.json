@@ -1,0 +1,492 @@
+{
+  "cohort": "two independent CLI sessions per group; one task per arm",
+  "model": "gpt-6.2-sol",
+  "reasoning": "medium",
+  "fixedCommit": "107a8c0a81e07073ced12dc6a3282c2908de1e4a",
+  "actions": {
+    "a": {
+      "rounds": {
+        "first": {
+          "durationSeconds": 266,
+          "input_tokens": 1656035,
+          "cached_input_tokens": 1581440,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 9967,
+          "reasoning_output_tokens": 2607,
+          "eventsDigest": "2187ca573917c682d8fbe10331e1f224009e350728797e1015390ab5b758f3b9"
+        },
+        "second": {
+          "durationSeconds": 197,
+          "input_tokens": 1088577,
+          "cached_input_tokens": 1021568,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 7777,
+          "reasoning_output_tokens": 3089,
+          "eventsDigest": "82133d0a67348a42fae9bf3d3fc55d0be52f4a644ce17fef332cc5dc0e020821"
+        }
+      },
+      "total": {
+        "durationSeconds": 463,
+        "input_tokens": 2744612,
+        "cached_input_tokens": 2603008,
+        "output_tokens": 17744,
+        "reasoning_output_tokens": 5696,
+        "uncachedInputTokens": 141604
+      }
+    },
+    "b": {
+      "rounds": {
+        "first": {
+          "durationSeconds": 235,
+          "input_tokens": 1292966,
+          "cached_input_tokens": 1217920,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 9382,
+          "reasoning_output_tokens": 2221,
+          "eventsDigest": "102ec72ff4f7c0dc5a6692327f268931605883649d0249b6055f6fbaa1e89358"
+        },
+        "second": {
+          "durationSeconds": 185,
+          "input_tokens": 803301,
+          "cached_input_tokens": 743552,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 7457,
+          "reasoning_output_tokens": 3030,
+          "eventsDigest": "fb05b13a1ae620f8b81bd078193c55f4936cbf1773b7714ee9dc77543e1c3b89"
+        }
+      },
+      "total": {
+        "durationSeconds": 420,
+        "input_tokens": 2096267,
+        "cached_input_tokens": 1961472,
+        "output_tokens": 16839,
+        "reasoning_output_tokens": 5251,
+        "uncachedInputTokens": 134795
+      }
+    }
+  },
+  "captures": {
+    "original": {
+      "assetDigest": "f57051ce0915e2f602cd75549dbf9c8b2cc54f635eccee13e5f2fb0bd3035ed8",
+      "sourceDigest": "052cf53d4632da3b2c310fad2bb0185e21a339dbc724f1737edcdb945412164f",
+      "screenshotCount": 11,
+      "browser": "158.0.8127.38",
+      "normal": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "geometry": {
+            "documentWidth": 1440,
+            "windowWidth": 1440,
+            "tableViewportWidth": 1154,
+            "tableContentWidth": 1154,
+            "tableTop": 420.03125,
+            "visibleColumns": [
+              "商品",
+              "SPU",
+              "规格",
+              "售价",
+              "状态",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "geometry": {
+            "documentWidth": 1920,
+            "windowWidth": 1920,
+            "tableViewportWidth": 1550,
+            "tableContentWidth": 1550,
+            "tableTop": 420.03125,
+            "visibleColumns": [
+              "商品",
+              "SPU",
+              "规格",
+              "售价",
+              "状态",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "geometry": {
+            "documentWidth": 390,
+            "windowWidth": 390,
+            "tableViewportWidth": 356,
+            "tableContentWidth": 1150,
+            "tableTop": 536.828125,
+            "visibleColumns": [
+              "商品"
+            ]
+          },
+          "rowCount": 2
+        }
+      ],
+      "elapsedMs": [
+        292,
+        516,
+        274
+      ]
+    },
+    "a-first": {
+      "assetDigest": "6b44110c0eadf9e4d3a7ed9bdea30d4824bf88a442433bcdc76862ebb5d05ae3",
+      "sourceDigest": "4f1a2d95a6cb864554348137cc23453f2203c61dca280e61c491489d21996eac",
+      "screenshotCount": 11,
+      "browser": "158.0.8127.38",
+      "normal": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "geometry": {
+            "documentWidth": 1440,
+            "windowWidth": 1440,
+            "tableViewportWidth": 1154,
+            "tableContentWidth": 1154,
+            "tableTop": 451.03125,
+            "visibleColumns": [
+              "商品名称",
+              "SKU",
+              "销售状态",
+              "售价",
+              "条码",
+              "规格",
+              "SPU",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "geometry": {
+            "documentWidth": 1920,
+            "windowWidth": 1920,
+            "tableViewportWidth": 1550,
+            "tableContentWidth": 1550,
+            "tableTop": 451.03125,
+            "visibleColumns": [
+              "商品名称",
+              "SKU",
+              "销售状态",
+              "售价",
+              "条码",
+              "规格",
+              "SPU",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "geometry": {
+            "documentWidth": 390,
+            "windowWidth": 390,
+            "tableViewportWidth": 356,
+            "tableContentWidth": 1100,
+            "tableTop": 708.03125,
+            "visibleColumns": [
+              "商品名称",
+              "SKU"
+            ]
+          },
+          "rowCount": 2
+        }
+      ],
+      "elapsedMs": [
+        469,
+        214,
+        426
+      ]
+    },
+    "b-first": {
+      "assetDigest": "60de9910e944b257948e9217ceb095dff72bdb2e6f6defcb6b99534143dfdd8e",
+      "sourceDigest": "36b1e03aacdcc7567b4ba509e235b4d8f5fa50e30b1fc6674963f78270bfbb84",
+      "screenshotCount": 11,
+      "browser": "158.0.8127.38",
+      "normal": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "geometry": {
+            "documentWidth": 1440,
+            "windowWidth": 1440,
+            "tableViewportWidth": 1154,
+            "tableContentWidth": 1154,
+            "tableTop": 455.03125,
+            "visibleColumns": [
+              "销售名称",
+              "销售状态",
+              "售价",
+              "规格",
+              "条码",
+              "SKU 编号",
+              "SPU 编号",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "geometry": {
+            "documentWidth": 1920,
+            "windowWidth": 1920,
+            "tableViewportWidth": 1550,
+            "tableContentWidth": 1550,
+            "tableTop": 455.03125,
+            "visibleColumns": [
+              "销售名称",
+              "销售状态",
+              "售价",
+              "规格",
+              "条码",
+              "SKU 编号",
+              "SPU 编号",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "geometry": {
+            "documentWidth": 390,
+            "windowWidth": 390,
+            "tableViewportWidth": 356,
+            "tableContentWidth": 1060,
+            "tableTop": 724.09375,
+            "visibleColumns": [
+              "销售名称",
+              "销售状态"
+            ]
+          },
+          "rowCount": 2
+        }
+      ],
+      "elapsedMs": [
+        522,
+        217,
+        166
+      ]
+    },
+    "a-final": {
+      "assetDigest": "6e967fdef5bc1252e4a0bfa0e6f71125d16bceec2efb0c7903451d66326cf6bb",
+      "sourceDigest": "4745a89ee48427eef67dae3ab82395a1050037b01cc5ddf6fa3e1f6d3a830551",
+      "screenshotCount": 11,
+      "browser": "158.0.8127.38",
+      "normal": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "geometry": {
+            "documentWidth": 1440,
+            "windowWidth": 1440,
+            "tableViewportWidth": 1154,
+            "tableContentWidth": 1154,
+            "tableTop": 447.03125,
+            "visibleColumns": [
+              "商品名称",
+              "销售状态",
+              "售价",
+              "条码",
+              "SKU",
+              "规格",
+              "SPU",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "geometry": {
+            "documentWidth": 1920,
+            "windowWidth": 1920,
+            "tableViewportWidth": 1550,
+            "tableContentWidth": 1550,
+            "tableTop": 447.03125,
+            "visibleColumns": [
+              "商品名称",
+              "销售状态",
+              "售价",
+              "条码",
+              "SKU",
+              "规格",
+              "SPU",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "geometry": {
+            "documentWidth": 390,
+            "windowWidth": 390,
+            "tableViewportWidth": 356,
+            "tableContentWidth": 1104,
+            "tableTop": 606.03125,
+            "visibleColumns": [
+              "商品名称",
+              "销售状态",
+              "售价"
+            ]
+          },
+          "rowCount": 2
+        }
+      ],
+      "elapsedMs": [
+        241,
+        262,
+        210
+      ]
+    },
+    "b-final": {
+      "assetDigest": "d193ad27db1d894b0e992022d8674c18a904288af6dbf0243bc5bbebc389d320",
+      "sourceDigest": "5c3867fbb9640703887582937916307c7f15ed91de2a5954bf15d1c13d67cd8e",
+      "screenshotCount": 11,
+      "browser": "158.0.8127.38",
+      "normal": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "geometry": {
+            "documentWidth": 1440,
+            "windowWidth": 1440,
+            "tableViewportWidth": 1154,
+            "tableContentWidth": 1154,
+            "tableTop": 455.03125,
+            "visibleColumns": [
+              "销售名称",
+              "销售状态",
+              "售价",
+              "规格",
+              "条码",
+              "SKU 编号",
+              "SPU 编号",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "geometry": {
+            "documentWidth": 1920,
+            "windowWidth": 1920,
+            "tableViewportWidth": 1550,
+            "tableContentWidth": 1550,
+            "tableTop": 455.03125,
+            "visibleColumns": [
+              "销售名称",
+              "销售状态",
+              "售价",
+              "规格",
+              "条码",
+              "SKU 编号",
+              "SPU 编号",
+              "版本",
+              "操作"
+            ]
+          },
+          "rowCount": 2
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "geometry": {
+            "documentWidth": 390,
+            "windowWidth": 390,
+            "tableViewportWidth": 356,
+            "tableContentWidth": 1082,
+            "tableTop": 586.09375,
+            "visibleColumns": [
+              "销售名称",
+              "销售状态",
+              "售价"
+            ]
+          },
+          "rowCount": 2
+        }
+      ],
+      "elapsedMs": [
+        272,
+        447,
+        242
+      ]
+    }
+  },
+  "sameFixtureDigest": "57a4773e92a1342a6d9a1c287eabc9f409a0d08dff6b66cd96b93e47cfa7efd6",
+  "behavior": "真实 Name 过滤、售价匹配、条码弹窗以及返回时保留查询状态；隔离故障注入 503。",
+  "existingE2E": {
+    "a": {
+      "startTime": "2026-11-26T01:16:10.830Z",
+      "duration": 17342.701,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "b": {
+      "startTime": "2026-11-26T01:16:10.943Z",
+      "duration": 17357.696,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  }
+}
