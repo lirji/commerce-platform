@@ -142,7 +142,7 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 		var row = mapper.scopedDetail(actor.tenantId(), permit.filter(), id);
 		EmployeeAccess.requireSame(permit, access.scope(actor, AFTERSALE_READ));
 		var found = Inputs.found(row);
-		return new Detail(view(found), found.storeId(), found.createdAt());
+		return new Detail(adminView(found), found.storeId(), found.createdAt());
 	}
 
 	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
@@ -156,19 +156,24 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 			.toList();
 	}
 
-	public List<View> adminList(Actor actor, String after, int limit) {
+	public List<AdminView> adminList(Actor actor, String after, int limit) {
 		return adminList(actor, after, limit, ListFilter.none());
 	}
 
 	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
-	public List<View> adminList(Actor actor, String after, int limit, ListFilter filter) {
+	public List<AdminView> adminList(Actor actor, String after, int limit, ListFilter filter) {
 		filter.requireNoEnabled();
 		filter.requireNoTime();
 		Inputs.page(after, limit);
 		var permit = access.scope(actor, AFTERSALE_READ);
-		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit, filter).stream().map(this::view).toList();
+		var result = mapper.scopedList(actor.tenantId(), permit.filter(), after, limit, filter).stream().map(this::adminView).toList();
 		EmployeeAccess.requireSame(permit, access.scope(actor, AFTERSALE_READ));
 		return result;
+	}
+
+	/** 关联号只来自运营查询，避免改变会员及写命令的返回契约。 */
+	private AdminView adminView(AftersaleMapper.Row row) {
+		return new AdminView(view(row), row.orderBusinessNo(), row.refundBusinessNo());
 	}
 
 	/** 批准未发货退款直接释放可售；已发货必须等收回实物。 */

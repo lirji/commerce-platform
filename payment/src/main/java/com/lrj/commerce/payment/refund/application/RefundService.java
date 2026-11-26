@@ -112,7 +112,7 @@ public class RefundService implements RefundApi {
 		return Inputs.found(mapper.find(tenant, id));
 	}
 
-	public List<View> list(Actor actor, String after, int limit) {
+	public List<Detail> list(Actor actor, String after, int limit) {
 		return list(actor, after, limit, ListFilter.none());
 	}
 
@@ -126,7 +126,7 @@ public class RefundService implements RefundApi {
 	}
 
 	/** 筛选在数据库分页前执行，沿用本用例的身份与权限复核。 */
-	public List<View> list(Actor actor, String after, int limit, ListFilter filter) {
+	public List<Detail> list(Actor actor, String after, int limit, ListFilter filter) {
 		filter.requireNoEnabled();
 		filter.requireNoTime();
 		Inputs.page(after, limit);

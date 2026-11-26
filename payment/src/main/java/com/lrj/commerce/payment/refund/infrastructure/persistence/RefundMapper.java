@@ -53,18 +53,18 @@ public interface RefundMapper {
 	int claim(@Param("check") Check check, @Param("delay") int delay);
 
 	/** 只读订单归属投影，不写跨模块表；实际门店过滤先于分页。 */
-	List<RefundApi.View> scopedList(@Param("tenant") String tenant,
+	List<RefundApi.Detail> scopedList(@Param("tenant") String tenant,
 			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
 			@Param("after") String after, @Param("limit") int limit, @org.apache.ibatis.annotations.Param("filter") com.lrj.commerce.runtime.api.validation.ListFilter filter);
 
 	/** 兼容内部既有读取调用，缺省时不附加筛选条件。 */
-	default List<RefundApi.View> scopedList(@Param("tenant") String tenant,
+	default List<RefundApi.Detail> scopedList(@Param("tenant") String tenant,
 			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope,
 			@Param("after") String after, @Param("limit") int limit) {
 		return scopedList(tenant, scope, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
 	}
 
-	/** 精确原编号与列表使用相同的可信租户、订单归属和员工范围。 */
+	/** 编号查询与列表使用相同的可信租户、订单归属和员工范围。 */
 	RefundApi.Detail scopedDetail(@Param("tenant") String tenant,
 			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope, @Param("id") String id);
 

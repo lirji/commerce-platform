@@ -130,6 +130,7 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
   expect(returned.orderId).toBe(order.orderId);
   expect(returned.status).toBe("REQUESTED");
   expect(typeof returned.caseId).toBe("string");
+  expect(returned.businessNo).toMatch(/^COM-AFS-\d{6}-\d{10}$/);
   await expect(
     member.getByRole("dialog", { name: "提交售后申请" }),
   ).toBeHidden();
@@ -144,7 +145,7 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
   await nav(admin, "售后审批");
   const returnedRow = admin
     .getByRole("row")
-    .filter({ hasText: returned.caseId });
+    .filter({ hasText: returned.businessNo });
   await returnedRow.getByRole("button", { name: "批准", exact: true }).click();
   await returnedRow
     .getByRole("button", { name: "确认退货入库", exact: true })
@@ -160,10 +161,19 @@ test("真实浏览器：会员下单、沙箱收款、履约、售后退款与�
     )
     .toBe(true);
   await nav(admin, "退款核对");
-  await admin
+  const refund = (await api("/admin/refunds")).find(
+    (r: { orderId: string }) => r.orderId === order.orderId,
+  );
+  expect(refund.businessNo).toMatch(/^COM-RFD-\d{6}-\d{10}$/);
+  const refundRow = admin
+    .getByRole("row")
+    .filter({ hasText: refund.businessNo });
+  await expect(refundRow).toContainText(returned.businessNo);
+  await expect(refundRow).not.toContainText(refund.refundId);
+  await refundRow
     .getByRole("button", { name: "沙箱：模拟退款成功", exact: true })
     .click();
-  await admin.getByRole("button", { name: "核对退款", exact: true }).click();
+  await refundRow.getByRole("button", { name: "核对退款", exact: true }).click();
   await expect
     .poll(
       async () =>

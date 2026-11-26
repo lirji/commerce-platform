@@ -634,10 +634,16 @@ export function RecordFields({
     </>
   );
 }
-export function Detail({ value }: { value: unknown }) {
+export function Detail({
+  value,
+  displayValue = value,
+}: {
+  value: unknown;
+  displayValue?: unknown;
+}) {
   return (
     <div className="record-detail">
-      <RecordFields value={value} />
+      <RecordFields value={displayValue} />
       <details className="record-raw">
         <summary>原始记录</summary>
         <pre className="json-detail">{JSON.stringify(value, null, 2)}</pre>

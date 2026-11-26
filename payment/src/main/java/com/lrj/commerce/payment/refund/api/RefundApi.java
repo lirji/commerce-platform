@@ -11,22 +11,23 @@ public interface RefundApi {
 			String status, long version, String businessNo) {
 	}
 
-	/** 运营详情沿用本域读权限，归属从原订单获取。 */
+	/** 运营列表和详情共用编号投影；退款事件和写命令沿用原视图。 */
 	record Detail(String refundId, String caseId, String orderId, String amount, String currency,
-			String provider, String status, long version, String storeId, java.time.Instant createdAt) {
+			String provider, String status, long version, String businessNo, String orderBusinessNo, String caseBusinessNo,
+			String storeId, java.time.Instant createdAt) {
 	}
 
-	/** 以原编号读取当前事实，写岗位资格独立。 */
+	/** 按业务编号或原编号读取当前事实，写岗位资格独立。 */
 	Detail adminDetail(Actor actor, String id);
 
 	View request(String tenant, String caseId, String orderId, String amount);
 
 	View internalRead(String tenant, String refundId);
 
-	List<View> list(Actor actor, String after, int limit);
+	List<Detail> list(Actor actor, String after, int limit);
 
 	/** 只读查询条件，不改变既有数据权限或业务记录。 */
-	List<View> list(Actor actor, String after, int limit, ListFilter filter);
+	List<Detail> list(Actor actor, String after, int limit, ListFilter filter);
 
 	View reconcile(Actor actor, String refundId);
 

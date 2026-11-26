@@ -33,8 +33,7 @@ export default function CentralRefunds(props: OperationsProps) {
             detailPath={(id) => `/admin/refunds/${id}`}
             idField="refundId"
             columns={[
-              ["businessNo", "业务编号"],
-              ["refundId", "退款"],
+              ["refundId", "退款编号"],
               ["orderId", "订单"],
               ["status", "渠道状态"],
               ["amount", "退款金额"],
@@ -43,12 +42,12 @@ export default function CentralRefunds(props: OperationsProps) {
               ["currency", "币种"],
             ]}
             fields={[
-              ["businessNo", "业务编号"],
-              ["refundId", "退款编号"],
+              ["businessNo", "退款编号"],
+              ["refundId", "原退款标识"],
               ["storeId", "实际门店编号"],
               ["createdAt", "退款请求时间"],
-              ["caseId", "售后编号"],
-              ["orderId", "订单编号"],
+              ["caseBusinessNo", "售后编号"],
+              ["orderBusinessNo", "订单编号"],
               ["amount", "退款金额"],
               ["currency", "币种"],
               ["provider", "原渠道"],

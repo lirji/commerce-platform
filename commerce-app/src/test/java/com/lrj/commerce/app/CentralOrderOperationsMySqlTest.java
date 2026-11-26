@@ -108,7 +108,7 @@ class CentralOrderOperationsMySqlTest {
         jdbc.update("INSERT INTO payment_refund(tenant_id,refund_id,case_id,order_id,amount,currency,provider,status) VALUES(?,'0-refund','old0','0-denied',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED'),(?,'1-refund','old1','1-allowed',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED')",tenant,tenant);
         assertEquals("1-allowed",orders.adminList(actor(ORDER_READ),"",1).getFirst().orderId());
         assertEquals("1-allowed",fulfillment.list(actor(FULFILLMENT_READ),"",1).getFirst().orderId());
-        assertEquals("1-case",cases.adminList(actor(AFTERSALE_READ),"",1).getFirst().caseId());
+        assertEquals("1-case",cases.adminList(actor(AFTERSALE_READ),"",1).getFirst().application().caseId());
         assertEquals("1-refund",refunds.list(actor(REFUND_READ),"",1).getFirst().refundId());
         // 查询条件不能覆盖 SQL 门店权限；只匹配未授权记录时必须为空。
         var deniedFilter = new ListFilter("0-denied", "PAID", null, null);
@@ -118,7 +118,7 @@ class CentralOrderOperationsMySqlTest {
         assertTrue(fulfillment.list(actor(FULFILLMENT_READ), "", 1, new ListFilter("0-denied", "READY", null, null)).isEmpty());
         assertTrue(cases.adminList(actor(AFTERSALE_READ), "", 1, new ListFilter("0-case", "REQUESTED", null, null)).isEmpty());
         assertTrue(refunds.list(actor(REFUND_READ), "", 1, new ListFilter("0-refund", "SUCCEEDED", null, null)).isEmpty());
-        assertEquals("1-case", cases.adminList(actor(AFTERSALE_READ), "", 1, new ListFilter("1-case", "REQUESTED", null, null)).getFirst().caseId());
+        assertEquals("1-case", cases.adminList(actor(AFTERSALE_READ), "", 1, new ListFilter("1-case", "REQUESTED", null, null)).getFirst().application().caseId());
         assertEquals("1-refund", refunds.list(actor(REFUND_READ), "", 1, new ListFilter("1-refund", "SUCCEEDED", null, null)).getFirst().refundId());
         forbidden(()->orders.adminRead(actor(ORDER_READ),"0-denied"));forbidden(()->orders.adminList(admin,"",1));
         assertEquals(200,http("GET","/v1/orders/1-allowed",customerToken,false,null,null).statusCode());
@@ -190,6 +190,60 @@ class CentralOrderOperationsMySqlTest {
         }
         only(AFTERSALE_APPROVE);
         assertEquals(403, http("GET", "/v1/admin/aftersales/case-own", "valid", true, null, null).statusCode());
+    }
+
+    /** 新旧编号指向同一记录，关联编号检索也受门店授权限制。 */
+    @Test void readableTradeNumbersProjectAndSearchWithinStoreScope() throws Exception {
+        var orderNo = "COM-ORD-260101-0000000001";
+        var caseNo = "COM-AFS-260101-0000000001";
+        var refundNo = "COM-RFD-260101-0000000001";
+        var outsideCaseNo = "COM-AFS-260101-0000000002";
+        var outsideRefundNo = "COM-RFD-260101-0000000002";
+        order("own", "S1", "PAID");
+        order("outside", "S2", "PAID");
+        aftersale("case-own", "own", true);
+        aftersale("case-outside", "outside", true);
+        jdbc.update("UPDATE order_record SET business_no=? WHERE tenant_id=? AND order_id='own'", orderNo, tenant);
+        jdbc.update("""
+            INSERT INTO payment_refund(tenant_id,refund_id,case_id,order_id,amount,currency,provider,status,business_no)
+            VALUES(?,'refund-own','case-own','own',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED',?),
+                  (?,'refund-outside','case-outside','outside',0,'CNY','NO_PAYMENT_REQUIRED','SUCCEEDED',?)
+            """, tenant, refundNo, tenant, outsideRefundNo);
+        jdbc.update("UPDATE aftersales_case SET business_no=?,refund_id='refund-own' WHERE tenant_id=? AND case_id='case-own'", caseNo, tenant);
+        jdbc.update("UPDATE aftersales_case SET business_no=?,refund_id='refund-outside' WHERE tenant_id=? AND case_id='case-outside'", outsideCaseNo, tenant);
+
+        for (String kind : List.of("aftersales", "refunds")) {
+            boolean aftersales = kind.equals("aftersales");
+            String path = "/v1/admin/" + kind;
+            String original = aftersales ? "case-own" : "refund-own";
+            String number = aftersales ? caseNo : refundNo;
+            String outside = aftersales ? outsideCaseNo : outsideRefundNo;
+            String relatedField = aftersales ? "refundBusinessNo" : "caseBusinessNo";
+            String relatedNumber = aftersales ? refundNo : caseNo;
+            String idField = aftersales ? "caseId" : "refundId";
+
+            for (String id : List.of(original, number)) {
+                var response = http("GET", path + "/" + id, "valid", true, null, null);
+                assertEquals(200, response.statusCode(), path);
+                var row = JsonCodec.read(response.body(), Map.class);
+                assertEquals(original, row.get(idField));
+                assertEquals(number, row.get("businessNo"));
+                assertEquals(relatedNumber, row.get(relatedField));
+                assertEquals(orderNo, row.get("orderBusinessNo"));
+            }
+            for (String query : List.of("q=" + original, "q=" + number, "q=" + relatedNumber, "q=" + orderNo, "orderId=" + orderNo)) {
+                var result = http("GET", path + "?" + query + "&limit=1", "valid", true, null, null);
+                assertEquals(200, result.statusCode(), query);
+                var row = (Map<?, ?>) JsonCodec.read(result.body(), List.class).getFirst();
+                assertEquals(original, row.get(idField));
+                assertEquals(number, row.get("businessNo"));
+                assertEquals(relatedNumber, row.get(relatedField));
+            }
+            assertEquals(404, http("GET", path + "/" + outside, "valid", true, null, null).statusCode());
+            for (String denied : List.of(outsideCaseNo, outsideRefundNo)) {
+                assertEquals("[]", http("GET", path + "?q=" + denied, "valid", true, null, null).body());
+            }
+        }
     }
 
     @Test void fulfillmentIndependentCapabilitiesPreserveOriginalKeyAndOrderLifecycle() {

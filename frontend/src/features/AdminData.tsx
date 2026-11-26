@@ -8,6 +8,7 @@ import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { compactTradeFields, TradeRowFacts } from "../shared/TradeRowFacts";
 import { StockCounts } from "../shared/StockCounts";
+import { tradeFieldValue, tradeNumberFields } from "../shared/tradeNumbers";
 import { Button, Grid, Space, Spin, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { LegacyJourneyHistory } from "./LegacyJourneyHistory";
@@ -338,6 +339,7 @@ export const specs: Record<string, Spec> = {
     columns: [
       ["refundId", "退款编号"],
       ["orderId", "订单"],
+      ["caseId", "售后编号"],
       ["amount", "金额"],
       ["provider", "渠道"],
       ["status", "状态"],
@@ -495,7 +497,7 @@ export function AdminData({
         ? "未设上限"
         : money(row[key]);
     }
-    return cell(key, row[key]);
+    return cell(key, tradeFieldValue(spec.path, key, row));
   };
   function actions(r: Row) {
     const value = string(r[spec.id]);
@@ -637,9 +639,20 @@ export function AdminData({
       </RowActions>
     );
   }
+  const numberFields = tradeNumberFields[spec.path];
+  const detailId = detail
+    ? string(tradeFieldValue(spec.path, spec.id, detail))
+    : "";
+  const displayedDetail = detail && numberFields ? { ...detail } : detail;
+  if (displayedDetail && detail && numberFields) {
+    for (const [idField, numberField] of Object.entries(numberFields)) {
+      displayedDetail[idField] = tradeFieldValue(spec.path, idField, detail);
+      delete displayedDetail[numberField];
+    }
+  }
   const detailTitle = detail
     ? string(
-        detail.name || detail.title || detail.displayName || detail[spec.id],
+        detail.name || detail.title || detail.displayName || detailId,
       )
     : spec.title;
   return (
@@ -736,7 +749,9 @@ export function AdminData({
                 dataIndex: key,
                 ellipsis: !((compact || compactStock) && index === 0),
                 width:
-                  (compact || compactStock) && index === 0 ? 218 : undefined,
+                  numberFields?.[key] || ((compact || compactStock) && index === 0)
+                    ? 218
+                    : undefined,
                 align: [
                   "available",
                   "held",
@@ -768,7 +783,7 @@ export function AdminData({
                   ) : compact && index === 0 ? (
                     <div className="trade-row-identity">
                       <Button type="link" onClick={() => setDetail(r)}>
-                        {string(r[spec.id])}
+                        {rowCell(key, r)}
                       </Button>
                       <TradeRowFacts row={r} />
                     </div>
@@ -821,8 +836,8 @@ export function AdminData({
               eyebrow={spec.title}
               title={detailTitle}
               id={
-                <Typography.Text copyable={{ text: string(detail[spec.id]) }}>
-                  {string(detail[spec.id])}
+                <Typography.Text copyable={{ text: detailId }}>
+                  {detailId}
                 </Typography.Text>
               }
               status={detail.status ? string(detail.status) : undefined}
@@ -901,7 +916,7 @@ export function AdminData({
                 </a>
               </Space>
             )}
-            <Detail value={detail} />
+            <Detail value={detail} displayValue={displayedDetail} />
           </>
         )}
       </RecordModal>

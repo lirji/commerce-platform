@@ -1,3 +1,4 @@
+import { tradeFieldValue, tradeNumberFields } from "../shared/tradeNumbers";
 import { Pager, Status, formatField, TableReadHint } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
@@ -184,6 +185,7 @@ export function OperationsList({
   detailPath?: (id: string) => string;
 }) {
   const related = tradeRelated[path as keyof typeof tradeRelated];
+  const numberFields = tradeNumberFields[path];
   const compact = Grid.useBreakpoint().md === false && !!related;
   const [after, setAfter] = useCursorState("OperationsWorkspace.after", ""),
     [selected, setSelected] = useState<OperationRow>(),
@@ -201,6 +203,16 @@ export function OperationsList({
       detailId && detailPath ? detailPath(detailId) : null,
     );
   const record = detailPath ? detail.data : selected;
+  const detailRecord = record && numberFields
+    ? {
+        ...record,
+        ...Object.fromEntries(
+          Object.entries(numberFields)
+            .filter(([field]) => field !== idField)
+            .map(([field, numberField]) => [numberField, tradeFieldValue(path, field, record)]),
+        ),
+      }
+    : record;
   const preferences = useTradeListPreferences(path, columns);
   const openDetail = (row: OperationRow) => {
     setSelected(row);
@@ -229,18 +241,20 @@ export function OperationsList({
         title,
         dataIndex: key,
         ellipsis: true,
-        width: key.endsWith("At")
-          ? 180
-          : key.toLowerCase().includes("amount") || key === "payable"
-            ? 120
-            : 150,
+        width: numberFields?.[key]
+          ? 218
+          : key.endsWith("At")
+            ? 180
+            : key.toLowerCase().includes("amount") || key === "payable"
+              ? 120
+              : 150,
         align:
           key.toLowerCase().includes("amount") || key === "payable"
             ? "right"
             : "left",
         render: (v, row) => key === "businessNo"
           ? <Typography.Text copyable>{String(v ?? row[idField])}</Typography.Text>
-          : formatField(key, v),
+          : formatField(key, tradeFieldValue(path, key, row)),
       };
     });
   table.push({
@@ -374,6 +388,7 @@ export function OperationsList({
         ) : (
           selected &&
           record &&
+          detailRecord &&
           record[idField] === selected[idField] && (
             <Space orientation="vertical" style={{ width: "100%" }}>
               {related && (
@@ -385,7 +400,7 @@ export function OperationsList({
                   aggregateId={record.aggregateId}
                 />
               )}
-              <OperationDetails row={record} fields={fields} />
+              <OperationDetails row={detailRecord} fields={fields} />
             </Space>
           )
         )}

@@ -9,7 +9,8 @@ import java.util.List;
 public interface AftersaleMapper {
 
 	record Row(String caseId, String orderId, String memberId, String status, boolean returnRequired,
-			String refundAmount, String refundId, long version, String itemsJson, String storeId, java.time.Instant createdAt, String businessNo) {
+			String refundAmount, String refundId, long version, String itemsJson, String storeId, java.time.Instant createdAt, String businessNo,
+			String orderBusinessNo, String refundBusinessNo) {
 	}
 
 	record Returned(String skuId, int quantity) {
@@ -53,7 +54,7 @@ public interface AftersaleMapper {
 		return scopedList(tenant, scope, after, limit, com.lrj.commerce.runtime.api.validation.ListFilter.none());
 	}
 
-	/** 精确原编号与列表使用相同的可信租户、订单归属和员工范围。 */
+	/** 编号查询与列表使用相同的可信租户、订单归属和员工范围。 */
 	Row scopedDetail(@Param("tenant") String tenant,
 			@Param("scope") com.lrj.commerce.runtime.api.scope.ScopeQuery.Filter scope, @Param("id") String id);
 

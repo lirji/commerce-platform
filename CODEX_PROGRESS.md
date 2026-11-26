@@ -1108,3 +1108,7 @@ session85180/PID21761/rehearsal-81eacc02b592/10.254.128.0/24已确认实际live�
 读取本补修顶节与frozen-receipt-004-evidence-v1，继续root只读current source/artifact受影响gate；不得复写原149/945/135、不得原目录/target并发构建或DB写入。补修新三源已PASS提交4b7c20a，根目录运行由root唯一持有。
 
 ---
+
+## 商城售后与退款可读编号修复（2026-11-26）
+
+- 当前任务与恢复入口见 `.local/aftersale-refund-business-numbers/PROGRESS.md`。

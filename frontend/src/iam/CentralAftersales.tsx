@@ -51,8 +51,7 @@ export default function CentralAftersales(props: OperationsProps) {
             detailPath={(id) => `/admin/aftersales/${id}`}
             idField="caseId"
             columns={[
-              ["businessNo", "业务编号"],
-              ["caseId", "申请"],
+              ["caseId", "售后编号"],
               ["orderId", "订单"],
               ["status", "状态"],
               ["refundAmount", "退款金额"],
@@ -61,16 +60,16 @@ export default function CentralAftersales(props: OperationsProps) {
               ["refundId", "退款编号"],
             ]}
             fields={[
-              ["businessNo", "业务编号"],
-              ["caseId", "售后编号"],
+              ["businessNo", "售后编号"],
+              ["caseId", "原售后标识"],
               ["storeId", "实际门店编号"],
               ["createdAt", "申请时间"],
-              ["orderId", "订单编号"],
+              ["orderBusinessNo", "订单编号"],
               ["memberId", "会员编号"],
               ["status", "售后状态"],
               ["returnRequired", "需退货"],
               ["refundAmount", "退款金额"],
-              ["refundId", "退款编号"],
+              ["refundBusinessNo", "退款编号"],
               ["version", "数据版本"],
             ]}
           />

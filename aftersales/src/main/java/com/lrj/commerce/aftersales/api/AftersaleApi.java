@@ -27,12 +27,17 @@ public interface AftersaleApi {
 			String refundAmount, String refundId, long version, List<Line> items, String businessNo) {
 	}
 
+	/** 运营列表联查业务编号，售后状态和命令继续使用原申请标识。 */
+	record AdminView(@com.fasterxml.jackson.annotation.JsonUnwrapped View application, String orderBusinessNo,
+			String refundBusinessNo) {
+	}
+
 	/** 运营详情沿用本域读权限，归属从原订单获取。 */
-	record Detail(@com.fasterxml.jackson.annotation.JsonUnwrapped View application, String storeId,
+	record Detail(@com.fasterxml.jackson.annotation.JsonUnwrapped AdminView application, String storeId,
 			java.time.Instant createdAt) {
 	}
 
-	/** 以原编号读取当前事实，写岗位资格独立。 */
+	/** 按业务编号或原编号读取当前事实，写岗位资格独立。 */
 	Detail adminDetail(Actor actor, String id);
 
 	record Completion(String caseId, String orderId, String refundId, boolean fullReturn) {
@@ -47,10 +52,10 @@ public interface AftersaleApi {
 	/** 只读查询条件，不改变既有数据权限或业务记录。 */
 	List<View> list(Actor actor, String after, int limit, ListFilter filter);
 
-	List<View> adminList(Actor actor, String after, int limit);
+	List<AdminView> adminList(Actor actor, String after, int limit);
 
 	/** 只读查询条件，不改变既有数据权限或业务记录。 */
-	List<View> adminList(Actor actor, String after, int limit, ListFilter filter);
+	List<AdminView> adminList(Actor actor, String after, int limit, ListFilter filter);
 
 	View approve(Actor actor, String key, String id);
 
