@@ -8,6 +8,7 @@ import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
 import com.lrj.commerce.merchant.api.MerchantApi;
 import com.lrj.commerce.store.management.api.StoreApi;
+import com.lrj.commerce.store.management.api.StoreOpeningApi;
 import com.lrj.commerce.kernel.DomainException;
 import java.time.*;
 import java.net.*;
@@ -136,6 +137,27 @@ class CentralDirectoryMySqlTest {
             denied.set(true);assertEquals(403,http("GET",path,"valid",true,null).statusCode());denied.set(false);
             unavailable.set(true);assertEquals(503,http("GET",path,"valid",true,null).statusCode());unavailable.set(false);
         }
+    }
+    /** 新开店路径沿用运营授权、租户隔离和真实门店审计。 */
+    @Test void centralStoreOpeningRequiresWholeTenantPermission() throws Exception {
+        String path = "/v1/admin/store-openings";
+        var draft = new StoreOpeningApi.Draft("OPENING", "M1", "新店",
+                StoreOpeningApi.SubjectType.ENTERPRISE, "居家用品");
+        assertEquals(403, http("POST", path, "valid", true, draft).statusCode());
+        createAll.set(true);
+        var saved = http("POST", path, "valid", true, draft);
+        assertEquals(200, saved.statusCode(), saved.body());
+        assertTrue(saved.body().contains("PENDING_OPEN"));
+        assertEquals(200, http("GET", path + "/OPENING", "valid", true, null).statusCode());
+        var opening = new StoreOpeningApi.Activation(0L, "REVIEW-334");
+        denied.set(true);
+        assertEquals(403, http("POST", path + "/OPENING/open", "valid", true, opening).statusCode());
+        denied.set(false);
+        var opened = http("POST", path + "/OPENING/open", "valid", true, opening);
+        assertEquals(200, opened.statusCode(), opened.body());
+        assertEquals(2, jdbc.queryForObject(
+                "SELECT count(*) FROM employee_command_identity WHERE tenant_id=? AND resource_type='store' AND resource_id='OPENING'",
+                Integer.class, tenant));
     }
     private HttpResponse<String> http(String method,String path,String token,boolean central,Object body)throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+token);

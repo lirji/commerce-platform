@@ -46,6 +46,14 @@
 - S1 本机目录、双店 MySQL 与商城应用回归通过，S2 完成路径核对。S3 已验证商城报价来源、唯一交易引用、营销签价与应付冻结。当前证据入口为 `docs/delivery/lc02-store-pilot/TEST_RESULT.md`，实施顺序见原切片。交易任务工作树为 `~/.local/share/git-worktrees/transaction-center/lc02-store-pilot`。从买家与规格身份核对、原生订单关联和支付前预留继续。正式签收的权威进度位于营销仓 `docs/delivery/lowcode-commercialization/PROGRESS.md`。
 <!-- lc02-store-pilot:end -->
 
+<!-- store-opening-workflow:start -->
+## 店铺开通流程
+
+- 用户授权补齐店铺开通与三方方案。原目录的 `feat/store-opening-workflow` 基于 `a42d790`，入场工作树干净。对照淘宝主体认证和京东资质审核、开店任务，将内部运营流程拆成可恢复的资料草稿与授权开通。
+- 两后台入口已接真实草稿、修改、确认和审核资料查询。待开店不进入买家目录，旧接口保留。契约和首店配置签收单见 `docs/design/store-opening/STORE_OPENING.md`。
+- 前端构建、Flyway V82 和 MySQL 8.4 全量 Maven 验证通过（568 通过、5 条件跳过），最终制品的真实浏览器开店至首笔 118 元报价通过，开店弹窗核对 1440 和 390 像素。证据位于 `.local/store-opening-workflow/`。本机 18610 以隔离库验证，已有 8602 运行环境保留。Git 与 CI 回执按同目录证据恢复。
+<!-- store-opening-workflow:end -->
+
 ## 任务目标
 
 按Claude当前最新个人frontend-design优化已有全站前端，并按用户后续明确授权部署既有本机Docker8602；正常任务分支提交、合入推送main，保留原数据库、密钥和回退镜像。

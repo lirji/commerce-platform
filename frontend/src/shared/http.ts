@@ -2,6 +2,7 @@
 export const HTTP = {
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
+  NOT_FOUND: 404,
   CONFLICT: 409,
   UNAVAILABLE: 503,
 } as const;

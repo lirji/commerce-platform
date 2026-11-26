@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.store.management.infrastructure.persistence.StoreOpeningMapper">
+  <insert id="insert">
+    INSERT INTO store_record(tenant_id,store_id,merchant_id,name,status,version,opening_subject_type,opening_category)
+    VALUES(#{tenant},#{input.storeId},#{input.merchantId},#{input.name},'PENDING_OPEN',0,#{input.subjectType},#{input.category})
+  </insert>
+  <select id="find" resultType="com.lrj.commerce.store.management.api.StoreOpeningApi$Opening">
+    SELECT store_id,merchant_id,name,status,version,opening_subject_type AS subject_type,opening_category AS category,
+           opening_review_ref AS review_reference,opened_by,opened_at
+    FROM store_record
+    WHERE tenant_id=#{tenant} AND store_id=#{id} AND opening_subject_type IS NOT NULL
+  </select>
+  <update id="revise">
+    UPDATE store_record
+    SET name=#{input.name}, opening_subject_type=#{input.subjectType}, opening_category=#{input.category}, version=version+1
+    WHERE tenant_id=#{tenant} AND store_id=#{id} AND status='PENDING_OPEN' AND version=#{input.expectedVersion}
+  </update>
+  <update id="open">
+    UPDATE store_record
+    SET status='ACTIVE', opening_review_ref=#{input.reviewReference}, opened_by=#{actor},
+        opened_at=UTC_TIMESTAMP(3), version=version+1
+    WHERE tenant_id=#{tenant} AND store_id=#{id} AND status='PENDING_OPEN' AND version=#{input.expectedVersion}
+  </update>
+</mapper>

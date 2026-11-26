@@ -9,6 +9,7 @@ import {
   Card,
   Form,
   Input,
+  Select,
   Space,
   Table,
   Tabs,
@@ -21,7 +22,13 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead, PrimaryCell } from "../shared/ui";
+import { ErrorNotice, PageHead, PrimaryCell, statusText } from "../shared/ui";
+import {
+  openingSubjects,
+  PENDING_OPEN,
+  STORE_OPENINGS,
+  StoreOpeningActions,
+} from "../features/StoreOpening";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Kind = { MERCHANT: "merchants", STORE: "stores" } as const;
@@ -33,9 +40,15 @@ type Entry = {
   status: string;
   version: number;
 };
-type Creation = { merchantId: string; storeId?: string; name: string };
+type Creation = {
+  merchantId: string;
+  storeId?: string;
+  name: string;
+  subjectType?: string;
+  category?: string;
+};
 const PAGE_SIZE = 50;
-const identifier = /^[A-Za-z0-9_-]{1,100}$/;
+const identifier = /^[A-Za-z0-9_.:-]{1,64}$/;
 const denied = (error?: Error) =>
   error instanceof ApiError && error.status === HTTP.FORBIDDEN;
 const directoryQuery = (kind: Kind) => `DirectorySection.${kind}`;
@@ -53,10 +66,13 @@ function directoryClient(
     if (!(
       (method === "GET" &&
         (/^\/admin\/(merchants|stores)\?/.test(path) ||
+          /^\/admin\/store-openings\/[^/]+$/.test(path) ||
           /^\/operations\/directory\/(merchants|stores)\/create-access$/.test(
             path,
           ))) ||
-      (method === "POST" && /^\/admin\/(merchants|stores)$/.test(path))
+      (method === "POST" &&
+        (/^\/admin\/(merchants|store-openings)$/.test(path) ||
+          /^\/admin\/store-openings\/[^/]+\/(revise|open)$/.test(path)))
     ))
       throw new ApiError(HTTP.FORBIDDEN, "此入口不支持该操作");
     const headers: Record<string, string> = {
@@ -245,14 +261,23 @@ function DirectorySection({
         body: {
           merchantId: value.merchantId.trim(),
           name: value.name.trim(),
-          ...(merchant ? {} : { storeId: value.storeId!.trim() }),
+          ...(merchant
+            ? {}
+            : {
+                storeId: value.storeId!.trim(),
+                subjectType: value.subjectType,
+                category: value.category!.trim(),
+              }),
         },
       };
     try {
-      const result = await client<Entry>(`/admin/${kind}`, {
-        method: "POST",
-        ...intent.current,
-      });
+      const result = await client<Entry>(
+        merchant ? "/admin/merchants" : STORE_OPENINGS,
+        {
+          method: "POST",
+          ...intent.current,
+        },
+      );
       setCreated(merchant ? result.merchantId : result.storeId);
       intent.current = null;
       setFrozen(false);
@@ -291,11 +316,11 @@ function DirectorySection({
         { required: true, message: `请输入${title}` },
         {
           pattern: identifier,
-          message: "编号须为1至100位字母、数字、下划线或连字符",
+          message: "编号须为1至64位字母、数字或 . _ : -",
         },
       ]}
     >
-      <Input disabled={busy || frozen} autoComplete="off" maxLength={100} />
+      <Input disabled={busy || frozen} autoComplete="off" maxLength={64} />
     </Form.Item>
   );
   return (
@@ -350,7 +375,7 @@ function DirectorySection({
             {
               title: "状态",
               dataIndex: "status",
-              render: (value: string) => (value === "ACTIVE" ? "可用" : value),
+              render: (value: string) => statusText(value),
             },
             { title: "版本", dataIndex: "version" },
             ...(merchant && href("directory")
@@ -377,22 +402,39 @@ function DirectorySection({
                   },
                 ]
               : []),
-            ...(!merchant && storePages.some(([page]) => href(page))
+            ...(!merchant &&
+            (canCreate || storePages.some(([page]) => href(page)))
               ? [
                   {
                     title: "关联作业",
                     render: (_: unknown, row: Entry) => (
                       <Space wrap>
-                        {storePages.map(([page, title]) => {
-                          const url =
-                            row.storeId &&
-                            href(page, { store_id: row.storeId });
-                          return (
-                            url && (
-                              <a key={page} href={url}>{`查看门店${title}`}</a>
-                            )
-                          );
-                        })}
+                        {canCreate && row.storeId && (
+                          <StoreOpeningActions
+                            storeId={row.storeId}
+                            onDone={refresh}
+                            onOpened={() => setCreated(undefined)}
+                            buttonLabel={
+                              row.status === PENDING_OPEN
+                                ? "继续开店"
+                                : "开店资料"
+                            }
+                          />
+                        )}
+                        {row.status !== PENDING_OPEN &&
+                          storePages.map(([page, title]) => {
+                            const url =
+                              row.storeId &&
+                              href(page, { store_id: row.storeId });
+                            return (
+                              url && (
+                                <a
+                                  key={page}
+                                  href={url}
+                                >{`查看门店${title}`}</a>
+                              )
+                            );
+                          })}
                       </Space>
                     ),
                   },
@@ -432,8 +474,19 @@ function DirectorySection({
       {created && (
         <Alert
           type="success"
-          title={`${label}已创建：${created}`}
-          description="创建成功不代表获授该对象的读取权限；目录按当前权限显示。"
+          title={
+            merchant ? `商家已创建 · ${created}` : `开店草稿已保存 · ${created}`
+          }
+          description={merchant ? "目录按当前权限显示。" : undefined}
+          action={
+            !merchant && canCreate ? (
+              <StoreOpeningActions
+                storeId={created}
+                onDone={refresh}
+                onOpened={() => setCreated(undefined)}
+              />
+            ) : undefined
+          }
         />
       )}
       <ErrorNotice error={error} />
@@ -478,8 +531,36 @@ function DirectorySection({
             >
               <Input disabled={busy || frozen} maxLength={128} />
             </Form.Item>
+            {!merchant && (
+              <>
+                <Form.Item
+                  name="subjectType"
+                  label="经营主体类型"
+                  rules={[{ required: true, message: "请选择经营主体类型" }]}
+                >
+                  <Select options={openingSubjects} disabled={busy || frozen} />
+                </Form.Item>
+                <Form.Item
+                  name="category"
+                  label="主营类目"
+                  rules={[
+                    {
+                      required: true,
+                      whitespace: true,
+                      message: "请输入主营类目",
+                    },
+                  ]}
+                >
+                  <Input maxLength={128} disabled={busy || frozen} />
+                </Form.Item>
+              </>
+            )}
             <Button type="primary" htmlType="submit" loading={busy}>
-              {frozen ? `原样重试创建${label}` : `确认创建${label}`}
+              {frozen
+                ? `原样重试创建${label}`
+                : merchant
+                  ? "确认创建商家"
+                  : "保存开店草稿"}
             </Button>
           </Form>
         ) : (

@@ -13,7 +13,13 @@ import {
   tradeNumberColumnWidth,
   tradeNumberFields,
 } from "../shared/tradeNumbers";
-import { Button, Grid, Space, Spin, Table, Typography } from "antd";
+import { Alert, Button, Grid, Space, Spin, Table, Typography } from "antd";
+import {
+  openingProfile,
+  PENDING_OPEN,
+  STORE_OPENINGS,
+  StoreOpeningActions,
+} from "./StoreOpening";
 import { MemberActions } from "./MemberActions";
 import { LegacyJourneyHistory } from "./LegacyJourneyHistory";
 import { useState, type ReactNode } from "react";
@@ -137,10 +143,9 @@ export const specs: Record<string, Spec> = {
   },
   stores: {
     title: "店铺管理",
-    description: "商品、优惠与旅程绑定具体店铺。",
+    description: "维护店铺归属、开店资料和经营状态。",
     path: "/admin/stores",
     id: "storeId",
-    fields: [id("storeId", "店铺标识"), id("merchantId", "商家标识"), name],
     columns: [
       ["name", "店铺"],
       ["storeId", "标识"],
@@ -457,6 +462,7 @@ export function AdminData({
   onStoresChanged: () => void;
 }) {
   const spec = specs[kind];
+  const storeDirectory = spec === specs.stores;
   const isTrade = ["fulfillments", "aftersales", "refunds"].includes(kind);
   const narrow = Grid.useBreakpoint().md === false;
   const compact = narrow && isTrade;
@@ -470,6 +476,7 @@ export function AdminData({
     compact,
   );
   const [selected, setDetail] = useState<Row>();
+  const [newOpening, setNewOpening] = useState<string>();
   const tradeDetail = useResource<Row>(
     isTrade && selected
       ? `${spec.path}/${encode(string(selected[spec.id]))}`
@@ -491,7 +498,7 @@ export function AdminData({
   }));
   const refresh = () => {
     resource.refresh();
-    if (kind === "stores") onStoresChanged();
+    if (storeDirectory) onStoresChanged();
   };
   const rowCell = (key: string, row: Row) => {
     if (
@@ -533,6 +540,13 @@ export function AdminData({
               expectedVersion: r.version,
             })}
             onDone={refresh}
+          />
+        )}
+        {storeDirectory && (
+          <StoreOpeningActions
+            storeId={value}
+            onDone={refresh}
+            buttonLabel={state === PENDING_OPEN ? "继续开店" : "开店资料"}
           />
         )}
         {kind === "fulfillments" && capabilities.sandboxEnabled && (
@@ -669,6 +683,26 @@ export function AdminData({
         extra={
           <>
             <Button onClick={refresh}>刷新</Button>
+            {storeDirectory && (
+              <CommandModal
+                title="新建店铺"
+                path={STORE_OPENINGS}
+                fields={[
+                  id("storeId", "店铺编号"),
+                  id("merchantId", "所属商家编号"),
+                  ...openingProfile,
+                ]}
+                submitLabel="保存开店草稿"
+                onDone={(result) => {
+                  setNewOpening((result as { storeId: string }).storeId);
+                  refresh();
+                }}
+              >
+                <Typography.Paragraph>
+                  保存草稿后可补充资料和审核记录，再确认开店。
+                </Typography.Paragraph>
+              </CommandModal>
+            )}
             {spec.fields && (
               <CommandModal
                 title={
@@ -723,6 +757,19 @@ export function AdminData({
           </>
         }
       />
+      {storeDirectory && newOpening && (
+        <Alert
+          type="success"
+          title={`开店草稿已保存 · ${newOpening}`}
+          action={
+            <StoreOpeningActions
+              storeId={newOpening}
+              onDone={refresh}
+              onOpened={() => setNewOpening(undefined)}
+            />
+          }
+        />
+      )}
       <ErrorNotice error={resource.error} onRetry={resource.refresh} />
       <ListPanel
         toolbar={filters.toolbar}

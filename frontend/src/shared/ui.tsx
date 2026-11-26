@@ -61,6 +61,7 @@ const labels: Record<string, string> = {
   IDLE: "等待下一轮",
   REVOKING: "撤销处理中",
   FROZEN: "已冻结",
+  PENDING_OPEN: "待开店",
   DRAFT: "草稿",
   IN_REVIEW: "待审批",
   APPROVED: "已批准",
@@ -984,6 +985,7 @@ export function CommandModal({
   path,
   build,
   onDone,
+  submitLabel = "确认提交",
   children,
   disabled = false,
   initialValues = {},
@@ -996,7 +998,8 @@ export function CommandModal({
   fields: Field[];
   path: string | ((v: Values) => string);
   build?: (v: Values) => unknown;
-  onDone: () => void;
+  onDone: (result: unknown) => void;
+  submitLabel?: string;
   children?: ReactNode;
   disabled?: boolean;
   initialValues?: Values;
@@ -1052,7 +1055,7 @@ export function CommandModal({
               loading={command.busy}
               onClick={() => form.submit()}
             >
-              确认提交
+              {submitLabel}
             </Button>
           </div>
         }
@@ -1080,7 +1083,7 @@ export function CommandModal({
               if (result !== undefined) {
                 form.resetFields();
                 setOpen(false);
-                onDone();
+                onDone(result);
               }
             } catch (e) {
               form.setFields([

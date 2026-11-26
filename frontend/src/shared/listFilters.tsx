@@ -55,7 +55,7 @@ const specs: Record<string, FilterSpec> = {
   "/admin/merchants": { hint: "商家编号或名称", states: ["ACTIVE", "FROZEN"] },
   "/admin/stores": {
     hint: "门店编号、商家编号或名称",
-    states: ["ACTIVE", "FROZEN"],
+    states: ["PENDING_OPEN", "ACTIVE", "FROZEN"],
     exact: ["merchantId"],
   },
   "/admin/skus": { hint: "规格编号、商品编号或名称" },
