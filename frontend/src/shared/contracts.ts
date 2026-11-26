@@ -131,6 +131,7 @@ export type Order = {
   orderId: string;
   memberId: string;
   storeId: string;
+  storeName?: string;
   payable: string;
   status: string;
   paymentKind: string;

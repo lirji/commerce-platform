@@ -1,5 +1,6 @@
 import { useListFilters } from "../shared/listFilters";
 import { TradeLinks } from "../shared/workspaceLinks";
+import { TradeRowFacts } from "../shared/TradeRowFacts";
 import { useCursorState } from "../shared/routeState";
 import {
   Button,
@@ -176,24 +177,37 @@ export function Orders({
               {
                 title: "订单编号",
                 dataIndex: "orderId",
-                render: (v: string) => (
-                  <Button type="link" onClick={() => previewOrder(v)}>
-                    <PrimaryCell title={v.slice(0, 8) + "…"} subtitle={v} />
-                  </Button>
+                width: compact ? 218 : undefined,
+                render: (v: string, row) => (
+                  <div className={compact ? "trade-row-identity" : undefined}>
+                    <Button type="link" onClick={() => previewOrder(v)}>
+                      {compact ? (
+                        v
+                      ) : (
+                        <PrimaryCell title={v.slice(0, 8) + "…"} subtitle={v} />
+                      )}
+                    </Button>
+                    {compact && <TradeRowFacts row={row} />}
+                  </div>
                 ),
               },
-              { title: "店铺编号", dataIndex: "storeId" },
-              {
-                title: "店铺名称",
-                dataIndex: "storeName",
-                render: (name: string | undefined) => name ?? "—",
-              },
-              { title: "应付金额", dataIndex: "payable", render: money },
-              {
-                title: "订单状态",
-                dataIndex: "status",
-                render: (v: string) => <Status value={v} />,
-              },
+              ...(!compact
+                ? [
+                    { title: "店铺编号", dataIndex: "storeId" },
+                    {
+                      title: "店铺名称",
+                      dataIndex: "storeName",
+                      render: (name: string | undefined) => name ?? "—",
+                    },
+                    { title: "应付金额", dataIndex: "payable", render: money },
+                    {
+                      title: "订单状态",
+                      dataIndex: "status",
+                      render: (v: string) => <Status value={v} />,
+                    },
+                  ]
+                : []),
+              { title: "创建时间", dataIndex: "createdAt", render: time },
               ...(admin
                 ? [
                     {
@@ -205,7 +219,6 @@ export function Orders({
                     { title: "支付截止", dataIndex: "expiresAt", render: time },
                   ]
                 : []),
-              { title: "创建时间", dataIndex: "createdAt", render: time },
               {
                 title: "操作",
                 className: "row-actions-cell",

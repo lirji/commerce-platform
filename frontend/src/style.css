@@ -466,6 +466,33 @@ textarea {
   letter-spacing: -0.2px;
   overflow-wrap: anywhere;
 }
+.trade-row-identity,
+.trade-row-facts {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.trade-row-identity .ant-btn-link {
+  justify-self: start;
+  height: auto;
+  min-height: 32px;
+  max-width: 100%;
+  padding-inline: 0;
+  white-space: normal;
+  text-align: start;
+}
+.trade-row-facts {
+  color: var(--muted);
+  font-size: 12px;
+}
+.trade-row-state {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 .list-count {
   font-size: 12px;
   color: var(--muted);

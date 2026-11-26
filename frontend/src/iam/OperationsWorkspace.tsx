@@ -2,6 +2,7 @@ import { Pager, Status, formatField, TableReadHint } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
 import { OrderEventLink, TradeLinks } from "../shared/workspaceLinks";
+import { compactTradeFields, TradeRowFacts } from "../shared/TradeRowFacts";
 import {
   Alert,
   App,
@@ -10,6 +11,7 @@ import {
   Checkbox,
   Descriptions,
   Form,
+  Grid,
   Input,
   InputNumber,
   Modal,
@@ -181,11 +183,16 @@ export function OperationsList({
   fields: readonly [string, string][];
   detailPath?: (id: string) => string;
 }) {
+  const related = tradeRelated[path as keyof typeof tradeRelated];
+  const compact = Grid.useBreakpoint().md === false && !!related;
   const [after, setAfter] = useCursorState("OperationsWorkspace.after", ""),
     [selected, setSelected] = useState<OperationRow>(),
     [detailId, setDetailId] = useState<string>();
-  const filters = useListFilters(`OperationsList.${path}`, path, () =>
-    setAfter(""),
+  const filters = useListFilters(
+    `OperationsList.${path}`,
+    path,
+    () => setAfter(""),
+    compact,
   );
   const list = useResource<OperationRow[]>(
       `${path}?after=${encodeURIComponent(after)}&${filters.query}`,
@@ -193,41 +200,52 @@ export function OperationsList({
     detail = useResource<OperationRow>(
       detailId && detailPath ? detailPath(detailId) : null,
     );
-  const related = tradeRelated[path as keyof typeof tradeRelated];
   const record = detailPath ? detail.data : selected;
   const preferences = useTradeListPreferences(path, columns);
-  const table: ColumnsType<OperationRow> = preferences.columns.map(
-    ([key, title]) => ({
-      key,
-      title,
-      dataIndex: key,
-      ellipsis: true,
-      width: key.endsWith("At")
-        ? 180
-        : key.toLowerCase().includes("amount") || key === "payable"
-          ? 120
-          : 150,
-      align:
-        key.toLowerCase().includes("amount") || key === "payable"
-          ? "right"
-          : "left",
-      render: (v) => formatField(key, v),
-    }),
-  );
+  const openDetail = (row: OperationRow) => {
+    setSelected(row);
+    setDetailId(String(row[idField]));
+  };
+  const table: ColumnsType<OperationRow> = preferences.columns
+    .filter(([key]) => !compact || !compactTradeFields.has(key))
+    .map(([key, title]) => {
+      if (compact && key === idField) {
+        return {
+          key,
+          title,
+          width: 202,
+          render: (_, row) => (
+            <div className="trade-row-identity">
+              <Button type="link" onClick={() => openDetail(row)}>
+                {String(row[idField])}
+              </Button>
+              <TradeRowFacts row={row} />
+            </div>
+          ),
+        };
+      }
+      return {
+        key,
+        title,
+        dataIndex: key,
+        ellipsis: true,
+        width: key.endsWith("At")
+          ? 180
+          : key.toLowerCase().includes("amount") || key === "payable"
+            ? 120
+            : 150,
+        align:
+          key.toLowerCase().includes("amount") || key === "payable"
+            ? "right"
+            : "left",
+        render: (v) => formatField(key, v),
+      };
+    });
   table.push({
     title: "操作",
     width: 100,
     key: "details",
-    render: (_, r) => (
-      <Button
-        onClick={() => {
-          setSelected(r);
-          setDetailId(String(r[idField]));
-        }}
-      >
-        查看详情
-      </Button>
-    ),
+    render: (_, r) => <Button onClick={() => openDetail(r)}>查看详情</Button>,
   });
   return (
     <Card
@@ -307,7 +325,7 @@ export function OperationsList({
         dataSource={list.data}
         loading={list.loading}
         columns={table}
-        scroll={{ x: Math.max(560, preferences.columns.length * 150) }}
+        scroll={{ x: Math.max(560, table.length * 150) }}
         pagination={false}
         locale={{
           emptyText: list.error

@@ -6,7 +6,8 @@ import {
 } from "../shared/workspaceLinks";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
-import { Button, Space, Spin, Table, Typography } from "antd";
+import { compactTradeFields, TradeRowFacts } from "../shared/TradeRowFacts";
+import { Button, Grid, Space, Spin, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";
@@ -423,13 +424,17 @@ export function AdminData({
   onStoresChanged: () => void;
 }) {
   const spec = specs[kind];
+  const isTrade = ["fulfillments", "aftersales", "refunds"].includes(kind);
+  const compact = Grid.useBreakpoint().md === false && isTrade;
   const href = useWorkspaceHref();
   const [after, setAfter] = useCursorState("after", "");
-  const filters = useListFilters(`AdminData.${kind}`, spec.path, () =>
-    setAfter(""),
+  const filters = useListFilters(
+    `AdminData.${kind}`,
+    spec.path,
+    () => setAfter(""),
+    compact,
   );
   const [selected, setDetail] = useState<Row>();
-  const isTrade = ["fulfillments", "aftersales", "refunds"].includes(kind);
   const tradeDetail = useResource<Row>(
     isTrade && selected
       ? `${spec.path}/${encode(string(selected[spec.id]))}`
@@ -675,43 +680,55 @@ export function AdminData({
           pagination={false}
           scroll={{ x: 800 }}
           columns={[
-            ...spec.columns.map(([key, label], index) => ({
-              title: label,
-              dataIndex: key,
-              ellipsis: true,
-              align: [
-                "available",
-                "held",
-                "sold",
-                "units",
-                "quota",
-                "issued",
-                "reserved",
-                "remainingUnits",
-                "debtUnits",
-                "memberCount",
-                "unitPrice",
-                "discountAmount",
-                "minimumSpend",
-                "refundAmount",
-                "amount",
-                "cap",
-                "spent",
-                "attempts",
-              ].includes(key)
-                ? ("right" as const)
-                : ("left" as const),
-              render: (v: unknown, r: Row) =>
-                index === 0 ? (
-                  <PrimaryCell
-                    title={cell(key, v)}
-                    subtitle={key === spec.id ? undefined : string(r[spec.id])}
-                    status={string(r.status)}
-                  />
-                ) : (
-                  cell(key, v)
-                ),
-            })),
+            ...spec.columns
+              .filter(([key]) => !compact || !compactTradeFields.has(key))
+              .map(([key, label], index) => ({
+                title: label,
+                dataIndex: key,
+                ellipsis: !(compact && index === 0),
+                width: compact && index === 0 ? 218 : undefined,
+                align: [
+                  "available",
+                  "held",
+                  "sold",
+                  "units",
+                  "quota",
+                  "issued",
+                  "reserved",
+                  "remainingUnits",
+                  "debtUnits",
+                  "memberCount",
+                  "unitPrice",
+                  "discountAmount",
+                  "minimumSpend",
+                  "refundAmount",
+                  "amount",
+                  "cap",
+                  "spent",
+                  "attempts",
+                ].includes(key)
+                  ? ("right" as const)
+                  : ("left" as const),
+                render: (v: unknown, r: Row) =>
+                  compact && index === 0 ? (
+                    <div className="trade-row-identity">
+                      <Button type="link" onClick={() => setDetail(r)}>
+                        {string(r[spec.id])}
+                      </Button>
+                      <TradeRowFacts row={r} />
+                    </div>
+                  ) : index === 0 ? (
+                    <PrimaryCell
+                      title={cell(key, v)}
+                      subtitle={
+                        key === spec.id ? undefined : string(r[spec.id])
+                      }
+                      status={string(r.status)}
+                    />
+                  ) : (
+                    cell(key, v)
+                  ),
+              })),
             {
               title: "操作",
               width: spec.actionWidth ?? 280,

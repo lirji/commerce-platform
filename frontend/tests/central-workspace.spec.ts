@@ -88,6 +88,22 @@ test("售后详情读取当前原单，显示实际门店和商品行", async ({
     animations: "disabled",
   });
   await detail.getByRole("button", { name: "返回列表" }).click();
+  const firstCell = page
+    .getByRole("row")
+    .filter({ hasText: "CASE-1" })
+    .getByRole("cell")
+    .first();
+  await expect(firstCell.getByText("已受理", { exact: true })).toBeVisible();
+  await expect(firstCell.getByText(/退款金额.*8\.00/)).toBeVisible();
+  await expect(firstCell.getByText(/门店/)).toHaveCount(0);
+  const opener = firstCell.getByRole("button", { name: "CASE-1", exact: true });
+  await opener.focus();
+  await opener.press("Enter");
+  await expect(
+    detail.getByRole("link", { name: "查看原订单" }),
+  ).toHaveAttribute("href", /ORDER-1/);
+  await detail.getByRole("button", { name: "返回列表" }).click();
+  await expect(opener).toBeFocused();
   deny = true;
   await page.getByRole("button", { name: "查看详情", exact: true }).click();
   await expect(detail.getByText(/没有.*权限/).first()).toBeVisible();

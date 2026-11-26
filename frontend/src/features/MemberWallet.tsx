@@ -1,7 +1,9 @@
 import { useCursorState } from "../shared/routeState";
 import { useListFilters } from "../shared/listFilters";
 import { Pager, PrimaryCell } from "../shared/ui";
-import { Button, Card, Col, Row, Space, Table, Tabs } from "antd";
+import { TradeRowFacts } from "../shared/TradeRowFacts";
+import { TradeLinks } from "../shared/workspaceLinks";
+import { Button, Card, Col, Grid, Row, Space, Table, Tabs } from "antd";
 import type {
   Aftersale,
   Coupon,
@@ -27,6 +29,7 @@ export function MemberWallet({
   store: string;
   section: string;
 }) {
+  const compact = Grid.useBreakpoint().md === false;
   const [availableAfter, setAvailableAfter] = useCursorState(
     "MemberWallet.claim.after",
     "",
@@ -296,28 +299,62 @@ export function MemberWallet({
             locale={{ emptyText: <Blank text="还没有售后记录" /> }}
             pagination={false}
             columns={[
-              { title: "申请编号", dataIndex: "caseId", ellipsis: true },
-              { title: "订单编号", dataIndex: "orderId", ellipsis: true },
-              { title: "退款金额", dataIndex: "refundAmount", render: money },
+              {
+                title: "申请编号",
+                dataIndex: "caseId",
+                width: compact ? 190 : undefined,
+                ellipsis: !compact,
+                render: (id, row) =>
+                  compact ? (
+                    <div className="trade-row-identity">
+                      <strong>{id}</strong>
+                      <TradeRowFacts row={row} />
+                      <TradeLinks
+                        orderId={row.orderId}
+                        pages={["orders"]}
+                        member
+                      />
+                    </div>
+                  ) : (
+                    id
+                  ),
+              },
+              ...(!compact
+                ? [
+                    { title: "订单编号", dataIndex: "orderId", ellipsis: true },
+                    {
+                      title: "退款金额",
+                      dataIndex: "refundAmount",
+                      render: money,
+                    },
+                  ]
+                : []),
               {
                 title: "名义返还积分",
                 render: (_, r) =>
                   r.items.reduce((sum, line) => sum + (line.points ?? 0), 0),
               },
-              {
-                title: "处理状态",
-                dataIndex: "status",
-                render: (v: string) => <Status value={v} />,
-              },
+              ...(!compact
+                ? [
+                    {
+                      title: "处理状态",
+                      dataIndex: "status",
+                      render: (v: string) => <Status value={v} />,
+                    },
+                  ]
+                : []),
             ]}
             expandable={{
               expandedRowRender: (r) => (
-                <p>
+                <Space orientation="vertical">
                   {r.returnRequired
                     ? "请按运营确认的退货指引完成退回，入库后继续退款。"
                     : "无需退货，等待审批及退款核对。"}{" "}
                   {r.refundId && `退款编号：${r.refundId}`}
-                </p>
+                  {!compact && (
+                    <TradeLinks orderId={r.orderId} pages={["orders"]} member />
+                  )}
+                </Space>
               ),
             }}
           />
