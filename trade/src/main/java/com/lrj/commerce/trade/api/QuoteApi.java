@@ -63,7 +63,7 @@ public interface QuoteApi {
 			com.lrj.commerce.benefit.coupon.api.CouponApi.Application coupon, String campaignDiscount,
 			String couponStatus, com.lrj.commerce.campaign.funding.api.CampaignFundingApi.Commitment promotion,
 			Funding funding, com.lrj.commerce.member.points.spend.api.PointsSpendApi.Application points,
-			Actor.Channel channel) {
+			Actor.Channel channel, String businessNo) {
 		public View {
 			channel = channel == null ? Actor.Channel.WEB : channel;
 			items = List.copyOf(items);

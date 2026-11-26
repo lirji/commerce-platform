@@ -15,10 +15,10 @@ public final class ScopeWork {
     public record Cursor(String id,String tenantId,String principalId,String binding,String resourceType,String search,String afterId,Instant expiresAt) {}
     /** 任务头与扫描进度同事务，重试不得覆盖新检查点。 */
     public record Job(String id,String tenantId,String principalId,String membershipId,long generation,String binding,String resourceType,String search,
-                      String state,String afterId,int rowCount,long version,Instant expiresAt) {}
+                      String state,String afterId,int rowCount,long version,Instant expiresAt,String businessNo) {}
     /** 对外状态去掉内部绑定摘要及主体ID。 */
     /** 仅对通过本人任务校验的调用方返回冻结的检索条件，用于核对导出范围。 */
-    public record JobView(String id,String resourceType,String state,int rowCount,long version,String expiresAt,String search) {}
+    public record JobView(String id,String resourceType,String state,int rowCount,long version,String expiresAt,String search,String businessNo) {}
     /** 分页、count、统计都来自同一授权谓词。 */
     public record Page(List<ScopeQuery.Row> items,long total,long stores,String nextCursor) {}
     /** 下载返回有界已验证快照，不生成公开永久URL。 */

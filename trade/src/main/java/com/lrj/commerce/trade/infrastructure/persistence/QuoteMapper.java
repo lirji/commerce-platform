@@ -14,6 +14,9 @@ public interface QuoteMapper {
 
 	void insert(@Param("tenant") String tenant, @Param("view") View view, @Param("json") String json);
 
+	/** 只在插入失败后确认报价展示号冲突。 */
+	String lockBusinessNumber(@Param("number") String number);
+
 	String read(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id);
 
 	Consumption lock(@Param("tenant") String tenant, @Param("member") String member, @Param("id") String id);

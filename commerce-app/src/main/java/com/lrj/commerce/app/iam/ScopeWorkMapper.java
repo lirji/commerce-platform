@@ -16,7 +16,9 @@ public interface ScopeWorkMapper {
     /** 未过期活动任务同时受企业及申请人预算限制。 */
     int active(@Param("tenant") String tenant,@Param("principal") String principal);
     /** 幂等命令事务内插入固定上下文任务头。 */
-    int insert(@Param("j") Job job);
+    int insert(@Param("j") Job job,@Param("createdAt") java.time.Instant createdAt);
+    /** 冲突重试只检查确实由业务号触发的重复键。 */
+    String lockBusinessNumber(@Param("number") String number);
     /** 读取自己的任务，过期任务直接拒绝。 */
     Job job(@Param("tenant") String tenant,@Param("id") String id);
     /** 短事务锁当前任务，不在持锁时调用auth。 */

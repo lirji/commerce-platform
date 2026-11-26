@@ -1,4 +1,6 @@
 package com.lrj.commerce.app.iam;
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 
 import com.lrj.authz.protocol.CentralAccessDtos.Check;
 import com.lrj.authz.protocol.ScopeAccessDtos.Plan;
@@ -111,21 +113,27 @@ public final class CentralScopeService {
         return commands.run(a.actor(),"central.export.submit",key,input,JobView.class,()->{
             work.quota(a.actor().tenantId());if(work.lockQuota(a.actor().tenantId())==null)throw conflict("导出配额不可用");
             if(work.active(a.actor().tenantId(),null)>=MAX_TENANT_JOBS||work.active(a.actor().tenantId(),a.plan().context().principalId())>=MAX_USER_JOBS)throw limit();
-            var c=a.plan().context();var job=new Job(id(),a.actor().tenantId(),c.principalId(),c.membershipId(),c.membershipGeneration(),a.binding(),type,search,State.SUBMITTED.code(),"",0,1,Instant.now().plusSeconds(900));
-            one(work.insert(job));return view(job);
+            var c=a.plan().context();
+            Instant createdAt=Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+            return BusinessNumberWriter.write(BusinessNumber.Type.SCOPE_EXPORT,createdAt,number->{
+                var job=new Job(number,a.actor().tenantId(),c.principalId(),c.membershipId(),c.membershipGeneration(),
+                    a.binding(),type,search,State.SUBMITTED.code(),"",0,1,createdAt.plusSeconds(900),number);
+                one(work.insert(job,createdAt));
+                return view(job);
+            },number->work.lockBusinessNumber(number)!=null);
         });
     }
     /** 实际开始与提交分开，排队期间的撤权不能被旧提交状态覆盖。 */
-    public JobView start(CentralStoreIdentity identity,String type,String jobId,long version,String key){
-        var a=authorizeExport(identity,type);owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);recheckExport(identity,type,a);
+    public JobView start(CentralStoreIdentity identity,String type,String number,long version,String key){
+        var a=authorizeExport(identity,type);String jobId=owned(work.job(a.actor().tenantId(),exportNumber(number)),a,type).id();recheckExport(identity,type,a);
         return commands.run(a.actor(),"central.export.start",key,List.of(jobId,version,a.binding()),JobView.class,()->{
             var job=owned(work.lock(a.actor().tenantId(),jobId),a,type);version(job,version,State.SUBMITTED);
             one(work.start(a.actor().tenantId(),jobId,version));return view(work.job(a.actor().tenantId(),jobId));
         });
     }
     /** 每次至多50行，崩溃重放由命令回执和原子检查点保证不重复、不遗漏。 */
-    public JobView advance(CentralStoreIdentity identity,String type,String jobId,long version,String key){
-        var a=authorizeExport(identity,type);owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);recheckExport(identity,type,a);
+    public JobView advance(CentralStoreIdentity identity,String type,String number,long version,String key){
+        var a=authorizeExport(identity,type);String jobId=owned(work.job(a.actor().tenantId(),exportNumber(number)),a,type).id();recheckExport(identity,type,a);
         return commands.run(a.actor(),"central.export.batch",key,List.of(jobId,version,a.binding()),JobView.class,()->{
             var job=owned(work.lock(a.actor().tenantId(),jobId),a,type);version(job,version,State.RUNNING);
             var page=owner(type).page(a.actor(),a.filter(),job.search(),job.afterId(),BATCH_SIZE+1);
@@ -138,10 +146,11 @@ public final class CentralScopeService {
         });
     }
     /** 状态查询也绑定申请主体，不能通过猜任务ID查看其他人的进度。 */
-    public JobView job(CentralStoreIdentity identity,String type,String jobId){var a=authorizeExport(identity,type);return view(owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type));}
+    public JobView job(CentralStoreIdentity identity,String type,String jobId){var a=authorizeExport(identity,type);return view(owned(work.job(a.actor().tenantId(),exportNumber(jobId)),a,type));}
     /** 下载每批重新判权并核对当前资源归属/版本；完成的历史文件也不能绕过撤权。 */
-    public Download download(CentralStoreIdentity identity,String type,String jobId){
-        var a=authorizeExport(identity,type);var job=owned(work.job(a.actor().tenantId(),uuid(jobId)),a,type);
+    public Download download(CentralStoreIdentity identity,String type,String number){
+        var a=authorizeExport(identity,type);var job=owned(work.job(a.actor().tenantId(),exportNumber(number)),a,type);
+        String jobId=job.id();
         if(!State.COMPLETED.code().equals(job.state()))throw conflict("导出尚未完成");
         List<ScopeQuery.Row> rows=new ArrayList<>();int after=0;
         for(int batch=0;batch<=MAX_EXPORT_ROWS/BATCH_SIZE;batch++){
@@ -192,8 +201,12 @@ public final class CentralScopeService {
             ||!job.binding().equals(a.binding())||!job.resourceType().equals(type)||!job.expiresAt().isAfter(Instant.now()))throw denied();return job;
     }
     private static void version(Job job,long expected,State state){if(expected<1||job.version()!=expected||!state.code().equals(job.state()))throw conflict("导出检查点或状态已变化");}
-    private static JobView view(Job j){return new JobView(j.id(),j.resourceType(),j.state(),j.rowCount(),j.version(),j.expiresAt().toString(),j.search());}
+    private static JobView view(Job j){return new JobView(j.id(),j.resourceType(),j.state(),j.rowCount(),j.version(),j.expiresAt().toString(),j.search(),j.businessNo());}
     private static void validateQuery(int limit,String search){if(limit<1||limit>100||search==null||search.length()>100||search.chars().anyMatch(Character::isISOControl))throw new IllegalArgumentException("查询参数无效");}
+    /** 标准号和永久历史 UUID 都受同一申请人及时间范围约束。 */
+    private static String exportNumber(String value){
+        return BusinessNumber.matches(BusinessNumber.Type.SCOPE_EXPORT,value)?value:uuid(value);
+    }
     private static String uuid(String value){try{if(value==null||!UUID.fromString(value).toString().equals(value))throw denied();return value;}catch(IllegalArgumentException e){throw denied();}}
     private static void resourceId(String value){if(value==null||!value.matches("[A-Za-z0-9_:/.-]{1,100}"))throw new IllegalArgumentException("资源标识无效");}
     private static String id(){return UUID.randomUUID().toString();}

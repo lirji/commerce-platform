@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.app.iam.ScopeWorkMapper">
- <sql id="jobColumns">id,tenant_id,principal_id,membership_id,generation,binding,resource_type,search,state,after_id,row_count,version,expires_at</sql>
+ <sql id="jobColumns">id,tenant_id,principal_id,membership_id,generation,binding,resource_type,search,state,after_id,row_count,version,expires_at,business_no AS businessNo</sql>
  <insert id="cursor">INSERT INTO central_scope_cursor(id,tenant_id,principal_id,binding,resource_type,search,after_id,expires_at)
  VALUES(#{c.id},#{c.tenantId},#{c.principalId},#{c.binding},#{c.resourceType},#{c.search},#{c.afterId},#{c.expiresAt})</insert>
  <select id="cursorById" resultType="com.lrj.commerce.app.iam.ScopeWork$Cursor">SELECT id,tenant_id,principal_id,binding,resource_type,search,after_id,expires_at
@@ -10,9 +10,12 @@
  <select id="lockQuota" resultType="string">SELECT tenant_id FROM central_scope_quota WHERE tenant_id=#{tenant} FOR UPDATE</select>
  <select id="active" resultType="int">SELECT count(*) FROM central_scope_export WHERE tenant_id=#{tenant} AND expires_at&gt;CURRENT_TIMESTAMP(3)
  <if test="principal != null">AND principal_id=#{principal}</if></select>
- <insert id="insert">INSERT INTO central_scope_export(id,tenant_id,principal_id,membership_id,generation,binding,resource_type,search,state,after_id,row_count,version,expires_at)
- VALUES(#{j.id},#{j.tenantId},#{j.principalId},#{j.membershipId},#{j.generation},#{j.binding},#{j.resourceType},#{j.search},#{j.state},#{j.afterId},#{j.rowCount},#{j.version},#{j.expiresAt})</insert>
- <select id="job" resultType="com.lrj.commerce.app.iam.ScopeWork$Job">SELECT <include refid="jobColumns"/> FROM central_scope_export WHERE tenant_id=#{tenant} AND id=#{id} AND expires_at&gt;CURRENT_TIMESTAMP(3)</select>
+ <insert id="insert">INSERT INTO central_scope_export(id,tenant_id,principal_id,membership_id,generation,binding,resource_type,search,state,after_id,row_count,version,expires_at,created_at,business_no)
+ VALUES(#{j.id},#{j.tenantId},#{j.principalId},#{j.membershipId},#{j.generation},#{j.binding},#{j.resourceType},#{j.search},#{j.state},#{j.afterId},#{j.rowCount},#{j.version},#{j.expiresAt},#{createdAt},#{j.businessNo})</insert>
+ <select id="lockBusinessNumber" resultType="string" useCache="false">SELECT business_no FROM central_scope_export WHERE business_no=#{number} FOR UPDATE</select>
+ <select id="job" resultType="com.lrj.commerce.app.iam.ScopeWork$Job">SELECT <include refid="jobColumns"/> FROM central_scope_export WHERE tenant_id=#{tenant} AND
+ <choose><when test='id.startsWith("COM-EXP-")'>business_no=#{id}</when><otherwise>id=#{id}</otherwise></choose>
+ AND expires_at&gt;CURRENT_TIMESTAMP(3)</select>
  <select id="lock" resultType="com.lrj.commerce.app.iam.ScopeWork$Job">SELECT <include refid="jobColumns"/> FROM central_scope_export WHERE tenant_id=#{tenant} AND id=#{id} AND expires_at&gt;CURRENT_TIMESTAMP(3) FOR UPDATE</select>
  <update id="start">UPDATE central_scope_export SET state='RUNNING',version=version+1 WHERE tenant_id=#{tenant} AND id=#{id} AND version=#{version} AND state='SUBMITTED' AND expires_at&gt;CURRENT_TIMESTAMP(3)</update>
  <update id="advance">UPDATE central_scope_export SET state=#{state},after_id=#{after},row_count=row_count+#{count},version=version+1

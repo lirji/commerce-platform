@@ -117,6 +117,7 @@ export type QuoteLine = {
 };
 export type Quote = {
   quoteId: string;
+  businessNo?: string | null;
   storeId: string;
   gross: string;
   discount: string;

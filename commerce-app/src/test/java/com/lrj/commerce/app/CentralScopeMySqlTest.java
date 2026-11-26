@@ -74,6 +74,8 @@ class CentralScopeMySqlTest {
     }
     @Test void exportBatchesArePersistentIdempotentAndResourceChangesBlockDownload(){
         var job=service.submit(identity,"product","",id());assertEquals("SUBMITTED",job.state());
+        assertTrue(job.businessNo().matches("COM-EXP-[0-9]{6}-[0-9]{10}"));
+        assertEquals(job,service.job(identity,"product",job.businessNo()));
         var running=service.start(identity,"product",job.id(),job.version(),id());String key=id();
         var batch=service.advance(identity,"product",job.id(),running.version(),key);assertEquals(50,batch.rowCount());assertEquals("RUNNING",batch.state());
         assertEquals(batch,service.advance(identity,"product",job.id(),running.version(),key));

@@ -22,6 +22,7 @@ type Job = {
   rowCount: number;
   version: number;
   expiresAt: string;
+  businessNo?: string | null;
   search?: string;
 };
 /** URL任务只定位，后台每次重新检查本人、代际、范围与固定授权期限。 */
@@ -187,7 +188,7 @@ export function ProductExport({
                     label: "导出任务",
                     children: (
                       <Typography.Text copyable>
-                        {currentJob.id}
+                        {currentJob.businessNo ?? currentJob.id}
                       </Typography.Text>
                     ),
                   },
@@ -231,7 +232,7 @@ export function ProductExport({
                     loading={busy}
                     onClick={() =>
                       command(
-                        `/exports/${currentJob.id}/start?version=${currentJob.version}`,
+                        `/exports/${currentJob.businessNo ?? currentJob.id}/start?version=${currentJob.version}`,
                       )
                     }
                   >
@@ -245,7 +246,7 @@ export function ProductExport({
                     loading={busy}
                     onClick={() =>
                       command(
-                        `/exports/${currentJob.id}/advance?version=${currentJob.version}`,
+                        `/exports/${currentJob.businessNo ?? currentJob.id}/advance?version=${currentJob.version}`,
                       )
                     }
                   >

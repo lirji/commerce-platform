@@ -1,5 +1,8 @@
 package com.lrj.commerce.trade.application;
 
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
+
 import com.lrj.commerce.trade.api.QuoteApi;
 import com.lrj.commerce.trade.infrastructure.persistence.QuoteMapper;
 import com.lrj.commerce.member.profile.api.MemberApi;
@@ -221,15 +224,25 @@ public class QuoteService implements QuoteApi {
 					Money platform = campaignPlatform.add(couponPlatform).add(pointDiscount);
 					var fundingSnapshot = new Funding(platform.amount().toPlainString(),
 							totalDiscount.subtract(platform).amount().toPlainString(), fundingLines);
-					var result = new View(UUID.randomUUID().toString(), member.memberId(), store.merchantId(),
+					var quoteExpiresAt = expires;
+					var selectedOffer = selectedCampaign;
+					var selectedCoupon = couponApplication;
+					var selectedCouponStatus = couponStatus;
+					var selectedPromotion = promotion;
+					var selectedPoints = pointApplication;
+					String selectedCampaignDiscount = campaignDiscount.amount().toPlainString();
+					long persistenceStarted = System.nanoTime();
+					var result = BusinessNumberWriter.write(BusinessNumber.Type.QUOTE, now, number -> {
+						var quote = new View(number, member.memberId(), store.merchantId(),
 							store.storeId(), "CNY", gross.amount().toPlainString(),
 							totalDiscount.amount().toPlainString(),
-							gross.subtract(totalDiscount).amount().toPlainString(), now, expires, resultLines,
-							selectedCampaign, rollingTrace(priced.trace(), extendedTraceEnabled), candidates.sources(), couponApplication,
-							campaignDiscount.amount().toPlainString(), couponStatus, promotion, fundingSnapshot,
-							pointApplication, actor.channel());
-					long persistenceStarted = System.nanoTime();
-					mapper.insert(actor.tenantId(), result, JsonCodec.write(result));
+							gross.subtract(totalDiscount).amount().toPlainString(), now, quoteExpiresAt, resultLines,
+							selectedOffer, rollingTrace(priced.trace(), extendedTraceEnabled), candidates.sources(), selectedCoupon,
+							selectedCampaignDiscount, selectedCouponStatus, selectedPromotion, fundingSnapshot,
+							selectedPoints, actor.channel(), number);
+						mapper.insert(actor.tenantId(), quote, JsonCodec.write(quote));
+						return quote;
+					}, number -> mapper.lockBusinessNumber(number) != null);
 					if (profilingEnabled) {
 						long finished = System.nanoTime();
 						// 仅输出固定阶段与候选数量，不记录租户、会员、订单或活动标识。
@@ -275,7 +288,7 @@ public class QuoteService implements QuoteApi {
 		var snapshot = snapshot(locked.snapshotJson());
 		if (snapshot.channel() != actor.channel())
 			throw new DomainException(DomainException.Code.FORBIDDEN, "报价渠道与当前身份不一致");
-		if (mapper.consume(actor.tenantId(), id, orderId) != 1)
+		if (mapper.consume(actor.tenantId(), snapshot.quoteId(), orderId) != 1)
 			throw new DomainException(DomainException.Code.CONFLICT, "报价消费冲突");
 		return snapshot;
 	}
