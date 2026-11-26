@@ -895,13 +895,12 @@ textarea {
   gap: 8px;
   color: var(--muted);
   font-size: 12px;
-  margin: -8px 0 20px;
+  margin: 0 0 12px;
 }
-.live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ok);
+.dashboard-store {
+  color: var(--ink);
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
 .dashboard-updated {
   margin-left: auto;

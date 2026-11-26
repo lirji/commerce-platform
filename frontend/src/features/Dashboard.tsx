@@ -60,12 +60,14 @@ const shortcuts = [
 /** 所有经营数字来自后端域聚合，空值和失败不会生成虚构趋势。 */
 export function Dashboard({
   store,
+  storeName,
   navigate,
   canNavigate = () => true,
   exceptions,
   embedded = false,
 }: {
   store: string;
+  storeName?: string;
   navigate: (page: string) => void;
   canNavigate?: (page: string) => boolean;
   exceptions?: ReactNode;
@@ -82,9 +84,18 @@ export function Dashboard({
   const [tableQuery, setTable] = useRouteState("daily", "");
   const table = tableQuery === "open";
   if (!store) return <Alert type="info" title="选择门店查看经营总览" />;
-  const summary = data.data;
+  const summary =
+    data.error || data.data?.storeId !== store ? undefined : data.data;
   const daily = summary?.daily ?? [];
   const sums = summary?.totals;
+  const projectionTime = daily.reduce<string | undefined>(
+    (latest, day) =>
+      day.updatedAt &&
+      (!latest || Date.parse(day.updatedAt) > Date.parse(latest))
+        ? day.updatedAt
+        : latest,
+    undefined,
+  );
   const refresh = (
     <Button onClick={data.refresh} loading={data.loading}>
       刷新总览
@@ -92,24 +103,35 @@ export function Dashboard({
   );
   return (
     <div className="dashboard">
-      {embedded ? (
-        refresh
-      ) : (
+      {!embedded && (
         <PageHead
           eyebrow="经营工作台"
           title="经营总览"
-          description="会员、商品与成交，沿着真实数据看清经营。"
+          description="处理门店异常，核对成交与退款。"
           extra={refresh}
         />
       )}
-      <ErrorNotice error={data.error} onRetry={data.refresh} />
+      <div className="dashboard-intro">
+        <strong className="dashboard-store">
+          当前门店 {storeName ? `${storeName} · ${store}` : store}
+        </strong>
+        {embedded && refresh}
+      </div>
       {exceptions}
+      <ErrorNotice error={data.error} onRetry={data.refresh} />
       <Spin spinning={data.loading}>
         {summary && sums && (
           <>
             <div className="dashboard-intro">
-              <span className="live-dot" />
-              <span>当前门店 · 近30个UTC自然日</span>
+              <span>
+                门店交易 · {summary.from.slice(0, 10)} 至{" "}
+                {summary.to.slice(0, 10)} UTC
+              </span>
+              <span>
+                {projectionTime
+                  ? `最近投影更新 ${time(projectionTime)}`
+                  : "此窗口暂无投影更新时间"}
+              </span>
               <span className="dashboard-updated">
                 读取于 {time(summary.generatedAt)}
               </span>
@@ -124,18 +146,18 @@ export function Dashboard({
                   mark: "trade",
                 },
                 {
-                  label: "会员总数",
-                  value: summary.members.total.toLocaleString(),
-                  note: `租户范围 · 可用 ${summary.members.active}`,
+                  label: "实收金额",
+                  value: money(sums.received),
+                  note: "已付订单 · 成交投影",
                   tone: "blue",
-                  mark: "member",
+                  mark: "trade",
                 },
                 {
-                  label: "在售规格",
-                  value: summary.catalog.active.toLocaleString(),
-                  note: `当前门店 · 全部 ${summary.catalog.total}`,
+                  label: "成功退款",
+                  value: money(sums.refunded),
+                  note: "截至投影已知成功退款",
                   tone: "teal",
-                  mark: "catalog",
+                  mark: "trade",
                 },
                 {
                   label: "已付订单",
@@ -174,12 +196,6 @@ export function Dashboard({
               >
                 <div className="trend-summary">
                   <span>
-                    实收 <b>{money(sums.received)}</b>
-                  </span>
-                  <span>
-                    成功退款 <b>{money(sums.refunded)}</b>
-                  </span>
-                  <span>
                     成交优惠 <b>{money(sums.discountGranted)}</b>
                   </span>
                 </div>
@@ -216,7 +232,7 @@ export function Dashboard({
                   />
                 )}
               </Card>
-              <Card title="经营状态" className="state-card">
+              <Card title="经营规模" className="state-card">
                 <div className="state-heading">
                   <Icon name="member" />
                   <Typography.Text type="secondary">
@@ -241,6 +257,10 @@ export function Dashboard({
                 <div className="state-row">
                   <span>已注销</span>
                   <b>{summary.members.closed}</b>
+                </div>
+                <div className="state-row">
+                  <span>会员总数</span>
+                  <b>{summary.members.total}</b>
                 </div>
                 <div className="state-divider" />
                 <div className="state-heading">

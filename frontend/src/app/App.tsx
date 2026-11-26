@@ -534,6 +534,7 @@ export function App() {
       <Dashboard
         key={store}
         store={store}
+        storeName={stores.data?.find((item) => item.storeId === store)?.name}
         navigate={navigate}
         exceptions={<ExceptionQueues store={store} />}
       />

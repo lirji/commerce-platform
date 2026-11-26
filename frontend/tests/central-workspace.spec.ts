@@ -800,6 +800,7 @@ test("异常待办使用独立权限，同门店筛选和有界实数", async ({
   const tenant = "11111111-1111-4111-8111-111111111111";
   const basePath = "/v1/admin/fulfillments";
   const calls: URL[] = [];
+  let queueUnavailable = false;
   await restoreCentralFixture(page);
   await page.route("**/v1/**", (route) => {
     const url = new URL(route.request().url());
@@ -815,7 +816,8 @@ test("异常待办使用独立权限，同门店筛选和有界实数", async ({
         },
       });
     }
-    if (url.pathname === basePath)
+    if (url.pathname === basePath) {
+      if (queueUnavailable) return route.fulfill({ status: 503, json: {} });
       return route.fulfill({
         json: Array.from({ length: 10 }, (_, i) => ({
           orderId: `F-${i}`,
@@ -823,6 +825,7 @@ test("异常待办使用独立权限，同门店筛选和有界实数", async ({
           blocked: true,
         })),
       });
+    }
     if (url.pathname === "/v1/admin/aftersales")
       return route.fulfill({ status: 403, json: {} });
     if (url.pathname === "/v1/admin/dashboard")
@@ -840,6 +843,9 @@ test("异常待办使用独立权限，同门店筛选和有界实数", async ({
     page.getByRole("link", { name: "查看待确认关闭的订单" }),
   ).toContainText("0 条");
   await expect(page.getByText("当前无队列读取权限")).toBeVisible();
+  await expect(
+    page.getByText("当前门店 STORE-A", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("结果未知的退款")).toHaveCount(0);
   expect(calls.some((url) => url.pathname === "/v1/admin/refunds")).toBe(false);
   const first = calls.find((url) => url.pathname === basePath)!;
@@ -849,6 +855,14 @@ test("异常待办使用独立权限，同门店筛选和有界实数", async ({
     blocked: "true",
     storeId: "STORE-A",
   });
+  queueUnavailable = true;
+  await page.getByRole("button", { name: "刷新待办", exact: true }).click();
+  const retry = page.getByRole("button", { name: "重试读取售后阻拦的履约" });
+  await expect(retry).toBeVisible();
+  await expect(queue).toHaveCount(0);
+  queueUnavailable = false;
+  await retry.click();
+  await expect(queue).toContainText("至少 10 条");
   for (const width of [1440, 1024, 390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     await expect(queue).toBeVisible();

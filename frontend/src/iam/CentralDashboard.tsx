@@ -68,6 +68,7 @@ export default function CentralDashboard(props: OperationsProps) {
             </Form>
           </Card>
           <Dashboard
+            key={store}
             embedded
             store={store}
             exceptions={

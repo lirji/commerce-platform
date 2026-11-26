@@ -84,7 +84,7 @@ function QueueLine({
         <Typography.Text type="secondary">
           {denied === 401 ? "登录已失效" : "当前无队列读取权限"}
         </Typography.Text>
-      ) : count === undefined ? (
+      ) : error || count === undefined ? (
         <Button type="link" onClick={refresh}>
           重试读取{name}
         </Button>
