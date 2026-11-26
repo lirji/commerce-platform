@@ -48,7 +48,8 @@ public class CentralEmployeeConfiguration {
             if ("GET".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_DIRECTORY_READ;
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_CREATE;
         }
-        if (("GET".equals(r.getMethod()) && path.matches("/v1/admin/store-openings/[^/]+"))
+        if (("GET".equals(r.getMethod()) && ("/v1/admin/store-opening-categories".equals(path)
+                    || path.matches("/v1/admin/store-openings/[^/]+")))
                 || ("POST".equals(r.getMethod()) && ("/v1/admin/store-openings".equals(path)
                     || path.matches("/v1/admin/store-openings/[^/]+/(revise|open)")))) {
             return EmployeeAccess.Capability.STORE_CREATE;

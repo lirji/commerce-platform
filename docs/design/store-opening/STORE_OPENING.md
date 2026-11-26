@@ -4,7 +4,7 @@
 
 淘宝的开店认证把主体核验纳入开店流程。京麦把公司、品牌及行业资质、费用查询和入驻进度作为独立事项。京东的供销平台区分旗舰店、专卖店、专营店等经营类型。商城据此把经营主体、资质记录、店铺启用和经营就绪分别管理。 [淘宝开店认证授权说明](https://terms.alicdn.com/legal-agreement/terms/suit_bu1_taobao/suit_bu1_taobao202203241732_90379.html) · [京麦开店指南](https://jm.jd.com/mobile/merchant_guide.html) · [京东供销平台](https://gxpt-front-pro.pf.jd.com/)
 
-首批支持已有商家下由运营办理开店，并记录申报主体类型（个人、个体工商户、企业）、店铺名称和主营类目。审核在有权受理的现有流程完成，开店仅存审核记录编号。品牌型店铺需另签经营类型、品牌及授权链规则后再开放。交易和营销接入另有门禁，商城启用店铺不会自动开通外部渠道或试点结算。
+首批支持已有商家下由运营办理开店，记录申报主体类型（个人、个体工商户、企业）、店铺名称和一个主营经营类目。经营类目在平台两级字典中选择。审核在有权受理的现有流程完成，开店仅存审核记录编号。品牌型店铺需另签经营类型、品牌及授权链规则后再开放。交易和营销接入另有门禁，商城启用店铺不会自动开通外部渠道或试点结算。
 
 ## 技术与影响
 
@@ -16,13 +16,14 @@
 
 ## 操作和接口契约
 
-入口为店铺管理或中央「商家与门店」的门店目录。填写基础资料保存草稿，按待开店筛选可继续，修改后由运营填写已完成的审核记录编号，显式确认开店。确认时复核该商家仍为可用。开店主体代码是 `PERSONAL`、`INDIVIDUAL` 或 `ENTERPRISE`。主营类目是申报名称，开店后仍需在商品域配置实际商品类目。
+入口为店铺管理或中央「商家与门店」的门店目录。填写基础资料、选择经营类目后保存草稿，按待开店筛选可继续。确认时复核所属商家以及所选类目均可用。开店主体代码是 `PERSONAL`、`INDIVIDUAL` 或 `ENTERPRISE`。经营类目来自 V83 初始化的数据库字典，和开店后门店自行管理的商品类目分别使用。开店记录同时保存代码及显示名称快照，历史手填资料可原样查看或在改草稿时改选标准类目。
 
 | HTTP | 请求与结果 |
 | --- | --- |
-| `POST /v1/admin/store-openings` | `storeId, merchantId, name, subjectType, category` 保存为 `PENDING_OPEN`、版本 0。 |
+| `GET /v1/admin/store-opening-categories` | 返回可选二级类目及完整路径。 |
+| `POST /v1/admin/store-openings` | `storeId, merchantId, name, subjectType, categoryCode` 保存为 `PENDING_OPEN`、版本 0。兼容旧客户端的 `category` 文本。 |
 | `GET /v1/admin/store-openings/{storeId}` | 返回草稿或已确认的资料、版本、审核记录引用及开店审计字段。 |
-| `POST /v1/admin/store-openings/{storeId}/revise` | `expectedVersion, name, subjectType, category` 补正待开店资料，版本加一。 |
+| `POST /v1/admin/store-openings/{storeId}/revise` | `expectedVersion, name, subjectType, categoryCode` 补正待开店资料，版本加一。旧 `category` 文本仍可解析。 |
 | `POST /v1/admin/store-openings/{storeId}/open` | `expectedVersion, reviewReference` 将对应待开店版本变为 `ACTIVE`，保存操作主体及 UTC 时间，版本加一。 |
 
 开店接口沿用 `commerce.store.create` 及可信租户，中央入口需租户范围许可。命令使用 `Idempotency-Key`，同键异载荷及旧版本冲突返回 409。其他租户或无开店资料的记录返回 404。门店编号在租户内唯一。旧直建接口 `POST /v1/admin/stores` 保留给已有调用方。

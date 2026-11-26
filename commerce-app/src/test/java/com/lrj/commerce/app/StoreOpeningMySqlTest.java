@@ -68,11 +68,20 @@ class StoreOpeningMySqlTest {
 
 	@Test
 	void draftIsRecoverableAndOpeningRequiresCurrentReviewedVersion() throws Exception {
+		var categories = get("/v1/admin/store-opening-categories", admin);
+		assertEquals(200, categories.status());
+		assertTrue(categories.body().toString().contains("家居百货 / 家居收纳"));
+		assertEquals(403, get("/v1/admin/store-opening-categories", member).status());
+		assertEquals(400, post(OPENINGS, "root-category", Map.of("storeId", "bad-root", "merchantId", MERCHANT,
+				"name", "大类", "subjectType", "ENTERPRISE", "categoryCode", "HOME")).status());
+		assertEquals(400, post(OPENINGS, "unknown-category", Map.of("storeId", "bad-code", "merchantId", MERCHANT,
+				"name", "未知类目", "subjectType", "ENTERPRISE", "categoryCode", "UNKNOWN")).status());
 		assertEquals(400, post(OPENINGS, "bad-subject", Map.of("storeId", "invalid", "merchantId", MERCHANT,
 				"name", "错误类型", "subjectType", 0, "category", "家居")).status());
 		var draft = post(OPENINGS, "draft", DRAFT);
 		assertEquals(200, draft.status(), draft.body().toString());
 		assertEquals("PENDING_OPEN", draft.body().path("status").asText());
+		assertEquals("家居", draft.body().path("category").asText());
 		assertEquals(draft, post(OPENINGS, "draft", DRAFT));
 		assertEquals("PENDING_OPEN", get("/v1/admin/stores?status=PENDING_OPEN", admin).body().path(0).path("status").asText());
 		assertEquals(0, get("/v1/stores", member).body().size());
@@ -81,9 +90,11 @@ class StoreOpeningMySqlTest {
 		assertEquals(404, get(STORE_PATH, otherAdmin).status());
 		assertEquals(400, post(STORE_PATH + "/open", "no-review", Map.of("expectedVersion", 0)).status());
 		var revise = post(STORE_PATH + "/revise", "revise", Map.of("expectedVersion", 0, "name", "修订后新店",
-				"subjectType", "ENTERPRISE", "category", "家居收纳"));
+				"subjectType", "ENTERPRISE", "categoryCode", "HOME_STORAGE", "category", "由客户端伪造的名称"));
 		assertEquals(200, revise.status(), revise.body().toString());
-		assertEquals("家居收纳", get(STORE_PATH, admin).body().path("category").asText());
+		var detail = get(STORE_PATH, admin).body();
+		assertEquals("家居百货 / 家居收纳", detail.path("category").asText());
+		assertEquals("HOME_STORAGE", detail.path("categoryCode").asText());
 		assertEquals(409, post(STORE_PATH + "/open", "stale", Map.of("expectedVersion", 0, "reviewReference", "REVIEW-1")).status());
 
 		var request = Map.of("expectedVersion", 1, "reviewReference", "REVIEW-2");

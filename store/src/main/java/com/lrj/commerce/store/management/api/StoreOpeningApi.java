@@ -1,8 +1,10 @@
 package com.lrj.commerce.store.management.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import java.time.Instant;
+import java.util.List;
 
 /** 开店资料仅开放给负责开店的运营身份，买家目录继续读店铺公开投影。 */
 public interface StoreOpeningApi {
@@ -18,18 +20,33 @@ public interface StoreOpeningApi {
 		}
 	}
 
-	record Draft(String storeId, String merchantId, String name, SubjectType subjectType, String category) {
+	record Draft(String storeId, String merchantId, String name, SubjectType subjectType, String category,
+			@JsonInclude(JsonInclude.Include.NON_NULL) String categoryCode) {
+		public Draft(String storeId, String merchantId, String name, SubjectType subjectType, String category) {
+			this(storeId, merchantId, name, subjectType, category, null);
+		}
 	}
 
-	record Revision(Long expectedVersion, String name, SubjectType subjectType, String category) {
+	record Revision(Long expectedVersion, String name, SubjectType subjectType, String category,
+			@JsonInclude(JsonInclude.Include.NON_NULL) String categoryCode) {
+		public Revision(Long expectedVersion, String name, SubjectType subjectType, String category) {
+			this(expectedVersion, name, subjectType, category, null);
+		}
 	}
 
 	record Activation(Long expectedVersion, String reviewReference) {
 	}
 
 	record Opening(String storeId, String merchantId, String name, String status, long version,
-			SubjectType subjectType, String category, String reviewReference, String openedBy, Instant openedAt) {
+			SubjectType subjectType, String category, String reviewReference, String openedBy, Instant openedAt,
+			@JsonInclude(JsonInclude.Include.NON_NULL) String categoryCode) {
 	}
+
+	record Category(String code, String label) {
+	}
+
+	/** 开店选择使用平台字典，仅列出启用的二级类目。 */
+	List<Category> categories(Actor actor);
 
 	/** 保存待开店记录并预留店铺编号。 */
 	Opening draft(Actor actor, String key, Draft input);

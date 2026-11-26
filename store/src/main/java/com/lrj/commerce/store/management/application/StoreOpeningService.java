@@ -11,6 +11,7 @@ import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
 import com.lrj.commerce.store.management.api.StoreOpeningApi;
 import com.lrj.commerce.store.management.infrastructure.persistence.StoreOpeningMapper;
+import java.util.List;
 import java.util.function.Supplier;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ public class StoreOpeningService implements StoreOpeningApi {
 	private static final String REVISE = "store.opening.revise";
 	private static final String OPEN = "store.opening.open";
 	private static final String VERSION_CONFLICT = "开店资料或状态已变化，请刷新后重试";
+	private static final String CATEGORY_UNAVAILABLE = "请选择当前可用的经营类目";
 
 	private final StoreOpeningMapper mapper;
 	private final MerchantApi merchants;
@@ -36,16 +38,25 @@ public class StoreOpeningService implements StoreOpeningApi {
 		this.access = access;
 	}
 
+	/** 目录读取沿用开店权限，避免将其当作公开的经营授权。 */
+	@Override
+	public List<Category> categories(Actor actor) {
+		var permit = access.scope(actor, STORE_CREATE);
+		var categories = mapper.categories();
+		EmployeeAccess.requireSame(permit, access.scope(actor, STORE_CREATE));
+		return categories;
+	}
+
 	/** 保存草稿时校验真实商家归属，避免创建可交易门店。 */
 	@Override
 	public Opening draft(Actor actor, String key, Draft input) {
 		Inputs.require(input != null, "请求不能为空");
 		var draft = new Draft(Identifiers.require(input.storeId()), Identifiers.require(input.merchantId()),
 				Inputs.text(input.name(), 128).strip(), subjectType(input.subjectType()),
-				Inputs.text(input.category(), 128).strip());
+				legacyCategory(input.categoryCode(), input.category()), categoryCode(input.categoryCode()));
 		return run(actor, key, DRAFT, draft.storeId(), draft, () -> {
 			merchants.requireActive(actor, draft.merchantId());
-			mapper.insert(actor.tenantId(), draft);
+			mapper.insert(actor.tenantId(), draft, categoryLabel(draft.categoryCode(), draft.category()));
 			return opening(actor, draft.storeId());
 		});
 	}
@@ -66,10 +77,12 @@ public class StoreOpeningService implements StoreOpeningApi {
 		Inputs.require(input != null, "请求不能为空");
 		requireVersion(input.expectedVersion());
 		var revision = new Revision(input.expectedVersion(), Inputs.text(input.name(), 128).strip(),
-				subjectType(input.subjectType()), Inputs.text(input.category(), 128).strip());
+				subjectType(input.subjectType()), legacyCategory(input.categoryCode(), input.category()),
+				categoryCode(input.categoryCode()));
 		return run(actor, key, REVISE, storeId, revision, () -> {
 			opening(actor, storeId);
-			requireUpdated(mapper.revise(actor.tenantId(), storeId, revision));
+			requireUpdated(mapper.revise(actor.tenantId(), storeId, revision,
+					categoryLabel(revision.categoryCode(), revision.category())));
 			return opening(actor, storeId);
 		});
 	}
@@ -84,6 +97,7 @@ public class StoreOpeningService implements StoreOpeningApi {
 		return run(actor, key, OPEN, storeId, activation, () -> {
 			var current = opening(actor, storeId);
 			merchants.requireActive(actor, current.merchantId());
+			categoryLabel(current.categoryCode(), current.category());
 			requireUpdated(mapper.open(actor.tenantId(), storeId, actor.actorId(), activation));
 			return opening(actor, storeId);
 		});
@@ -103,6 +117,24 @@ public class StoreOpeningService implements StoreOpeningApi {
 
 	private Opening opening(Actor actor, String storeId) {
 		return Inputs.found(mapper.find(actor.tenantId(), storeId));
+	}
+
+	private static String categoryCode(String code) {
+		return code == null ? null : Identifiers.require(code);
+	}
+
+	/** 老客户端保留原有命令指纹，新客户端只按稳定代码确定类目。 */
+	private static String legacyCategory(String code, String label) {
+		return code == null ? Inputs.text(label, 128).strip() : null;
+	}
+
+	/** 名称由平台字典产生并保留审核快照，禁用或只选大类时阻止新写入。 */
+	private String categoryLabel(String code, String legacyLabel) {
+		if (code == null)
+			return legacyLabel;
+		var label = mapper.categoryLabel(code);
+		Inputs.require(label != null, CATEGORY_UNAVAILABLE);
+		return label;
 	}
 
 	private static void requireVersion(Long version) {

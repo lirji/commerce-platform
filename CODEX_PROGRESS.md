@@ -52,6 +52,7 @@
 - 用户授权补齐店铺开通与三方方案。原目录的 `feat/store-opening-workflow` 基于 `a42d790`，入场工作树干净。对照淘宝主体认证和京东资质审核、开店任务，将内部运营流程拆成可恢复的资料草稿与授权开通。
 - 两后台入口已接真实草稿、修改、确认和审核资料查询。待开店不进入买家目录，旧接口保留。契约和首店配置签收单见 `docs/design/store-opening/STORE_OPENING.md`。
 - 前端构建、Flyway V82 和 MySQL 8.4 全量 Maven 验证通过（568 通过、5 条件跳过），最终制品的真实浏览器开店至首笔 118 元报价通过，开店弹窗核对 1440 和 390 像素。证据位于 `.local/store-opening-workflow/`。本机 18610 以隔离库验证，已有 8602 运行环境保留。Git 与 CI 回执按同目录证据恢复。
+- 补充经营类目走 `feat/store-opening-categories`，基于 `66fe874`。V83 平台字典提供 9 个大类、28 个可搜索的细类，旧开店快照及客户端继续兼容。已通过隔离 MySQL 及授权回归、前端构建和真实浏览器搜索、修改、确认开店。CI 及本机部署回执从 `.local/store-opening-categories/` 恢复。
 <!-- store-opening-workflow:end -->
 
 ## 任务目标

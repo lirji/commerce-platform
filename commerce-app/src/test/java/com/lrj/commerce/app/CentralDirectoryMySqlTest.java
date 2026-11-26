@@ -141,10 +141,15 @@ class CentralDirectoryMySqlTest {
     /** 新开店路径沿用运营授权、租户隔离和真实门店审计。 */
     @Test void centralStoreOpeningRequiresWholeTenantPermission() throws Exception {
         String path = "/v1/admin/store-openings";
+        String categories = "/v1/admin/store-opening-categories";
         var draft = new StoreOpeningApi.Draft("OPENING", "M1", "新店",
                 StoreOpeningApi.SubjectType.ENTERPRISE, "居家用品");
         assertEquals(403, http("POST", path, "valid", true, draft).statusCode());
+        assertEquals(403, http("GET", categories, "valid", true, null).statusCode());
         createAll.set(true);
+        var directory = http("GET", categories, "valid", true, null);
+        assertEquals(200, directory.statusCode(), directory.body());
+        assertTrue(directory.body().contains("HOME_STORAGE"));
         var saved = http("POST", path, "valid", true, draft);
         assertEquals(200, saved.statusCode(), saved.body());
         assertTrue(saved.body().contains("PENDING_OPEN"));

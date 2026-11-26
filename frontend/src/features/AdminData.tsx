@@ -15,6 +15,7 @@ import {
 } from "../shared/tradeNumbers";
 import { Alert, Button, Grid, Space, Spin, Table, Typography } from "antd";
 import {
+  OpeningCategoryField,
   openingProfile,
   PENDING_OPEN,
   STORE_OPENINGS,
@@ -698,6 +699,7 @@ export function AdminData({
                   refresh();
                 }}
               >
+                <OpeningCategoryField />
                 <Typography.Paragraph>
                   保存草稿后可补充资料和审核记录，再确认开店。
                 </Typography.Paragraph>

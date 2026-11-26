@@ -1,4 +1,12 @@
-import { Button, Descriptions, Space, Spin, Typography } from "antd";
+import {
+  Button,
+  Descriptions,
+  Form,
+  Select,
+  Space,
+  Spin,
+  Typography,
+} from "antd";
 import { useRef, useState } from "react";
 import { ApiError, encode, useResource } from "../shared/api";
 import { HTTP } from "../shared/http";
@@ -12,6 +20,7 @@ import {
 } from "../shared/ui";
 
 export const STORE_OPENINGS = "/admin/store-openings";
+export const STORE_OPENING_CATEGORIES = "/admin/store-opening-categories";
 export const PENDING_OPEN = "PENDING_OPEN";
 export const openingSubjects = [
   { value: "PERSONAL", label: "个人" },
@@ -26,8 +35,44 @@ export const openingProfile: Field[] = [
     type: "select",
     options: openingSubjects,
   },
-  { name: "category", label: "主营类目" },
 ];
+
+/** 两个开店入口使用同一份平台类目，表单提交二级类目的稳定代码。 */
+export function OpeningCategoryField({
+  disabled,
+  previousCategory,
+}: {
+  disabled?: boolean;
+  previousCategory?: string;
+}) {
+  const categories = useResource<{ code: string; label: string }[]>(
+    STORE_OPENING_CATEGORIES,
+  );
+  return (
+    <>
+      <ErrorNotice error={categories.error} onRetry={categories.refresh} />
+      <Form.Item
+        name="categoryCode"
+        label="经营类目"
+        extra={
+          previousCategory ? `原申报类目 · ${previousCategory}` : undefined
+        }
+        rules={[{ required: true, message: "请选择经营类目" }]}
+      >
+        <Select
+          placeholder="搜索大类或细类"
+          showSearch={{ optionFilterProp: "label" }}
+          loading={categories.loading}
+          disabled={disabled || !categories.data}
+          options={categories.data?.map(({ code, label }) => ({
+            value: code,
+            label,
+          }))}
+        />
+      </Form.Item>
+    </>
+  );
+}
 
 type Opening = {
   storeId: string;
@@ -37,6 +82,7 @@ type Opening = {
   version: number;
   subjectType: string;
   category: string;
+  categoryCode?: string;
   reviewReference?: string;
   openedBy?: string;
   openedAt?: string;
@@ -107,7 +153,7 @@ export function StoreOpeningActions({
                     ({ value }) => value === opening.subjectType,
                   )?.label,
                 },
-                { label: "主营类目", children: opening.category },
+                { label: "经营类目", children: opening.category },
                 {
                   label: "店铺状态",
                   children: <Status value={opening.status} />,
@@ -130,7 +176,7 @@ export function StoreOpeningActions({
                   initialValues={{
                     name: opening.name,
                     subjectType: opening.subjectType,
-                    category: opening.category,
+                    categoryCode: opening.categoryCode,
                   }}
                   build={(values) => ({
                     ...values,
@@ -140,7 +186,13 @@ export function StoreOpeningActions({
                     revised.current = true;
                     detail.refresh();
                   }}
-                />
+                >
+                  <OpeningCategoryField
+                    previousCategory={
+                      opening.categoryCode ? undefined : opening.category
+                    }
+                  />
+                </CommandModal>
                 <CommandModal
                   title="确认开店"
                   submitLabel="确认开店"

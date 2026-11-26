@@ -46,7 +46,13 @@ test("店铺开通草稿可续办，确认后买家目录可见", async ({ page,
     .locator(".ant-select-item-option-content")
     .filter({ hasText: /^企业$/ })
     .click();
-  await create.getByLabel("主营类目", { exact: true }).fill("家居");
+  const category = create.getByRole("combobox", { name: "经营类目" });
+  await category.click();
+  await category.fill("收纳");
+  await page
+    .locator(".ant-select-item-option-content")
+    .filter({ hasText: /^家居百货 \/ 家居收纳$/ })
+    .click();
   await create.getByRole("button", { name: "保存开店草稿" }).click();
   await expect(page.getByText(`开店草稿已保存 · ${storeId}`)).toBeVisible();
   expect(await buyerStores()).not.toContain(storeId);
@@ -63,9 +69,17 @@ test("店铺开通草稿可续办，确认后买家目录可见", async ({ page,
     name: "修改开店资料",
     exact: true,
   });
-  await revise.getByLabel("主营类目", { exact: true }).fill("家居收纳");
+  const newCategory = revise.getByRole("combobox", { name: "经营类目" });
+  await newCategory.click();
+  await newCategory.fill("餐具");
+  await page
+    .locator(".ant-select-item-option-content")
+    .filter({ hasText: /^家居百货 \/ 厨具餐具$/ })
+    .click();
   await revise.getByRole("button", { name: "确认提交", exact: true }).click();
-  await expect(profile.getByText("家居收纳", { exact: true })).toBeVisible();
+  await expect(
+    profile.getByText("家居百货 / 厨具餐具", { exact: true }),
+  ).toBeVisible();
   await profile.getByRole("button", { name: "确认开店", exact: true }).click();
   const open = page.getByRole("dialog", { name: "确认开店", exact: true });
   await open

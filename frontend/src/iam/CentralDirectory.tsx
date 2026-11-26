@@ -24,8 +24,10 @@ import {
 } from "../shared/api";
 import { ErrorNotice, PageHead, PrimaryCell, statusText } from "../shared/ui";
 import {
+  OpeningCategoryField,
   openingSubjects,
   PENDING_OPEN,
+  STORE_OPENING_CATEGORIES,
   STORE_OPENINGS,
   StoreOpeningActions,
 } from "../features/StoreOpening";
@@ -45,7 +47,7 @@ type Creation = {
   storeId?: string;
   name: string;
   subjectType?: string;
-  category?: string;
+  categoryCode?: string;
 };
 const PAGE_SIZE = 50;
 const identifier = /^[A-Za-z0-9_.:-]{1,64}$/;
@@ -66,6 +68,7 @@ function directoryClient(
     if (!(
       (method === "GET" &&
         (/^\/admin\/(merchants|stores)\?/.test(path) ||
+          path === STORE_OPENING_CATEGORIES ||
           /^\/admin\/store-openings\/[^/]+$/.test(path) ||
           /^\/operations\/directory\/(merchants|stores)\/create-access$/.test(
             path,
@@ -266,7 +269,7 @@ function DirectorySection({
             : {
                 storeId: value.storeId!.trim(),
                 subjectType: value.subjectType,
-                category: value.category!.trim(),
+                categoryCode: value.categoryCode,
               }),
         },
       };
@@ -540,19 +543,7 @@ function DirectorySection({
                 >
                   <Select options={openingSubjects} disabled={busy || frozen} />
                 </Form.Item>
-                <Form.Item
-                  name="category"
-                  label="主营类目"
-                  rules={[
-                    {
-                      required: true,
-                      whitespace: true,
-                      message: "请输入主营类目",
-                    },
-                  ]}
-                >
-                  <Input maxLength={128} disabled={busy || frozen} />
-                </Form.Item>
+                <OpeningCategoryField disabled={busy || frozen} />
               </>
             )}
             <Button type="primary" htmlType="submit" loading={busy}>
