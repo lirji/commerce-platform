@@ -12,7 +12,7 @@ public interface PaymentApi {
 	}
 
 	record View(String paymentId, String orderId, String amount, String currency, String provider, Status status,
-			long version) {
+			long version, String businessNo) {
 	}
 
 	record SandboxFact(Status status) {

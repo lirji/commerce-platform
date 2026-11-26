@@ -1,5 +1,7 @@
 package com.lrj.commerce.payment.refund.application;
 
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.payment.charge.infrastructure.persistence.PaymentMapper;
 import com.lrj.commerce.payment.refund.infrastructure.persistence.RefundMapper;
@@ -92,9 +94,15 @@ public class RefundService implements RefundApi {
 		// 条件更新而不是RR快照SUM承担最终资金上限，避免等待锁后仍读旧退款总额。
 		if (paymentId != null && payments.reserveRefund(tenant, paymentId, amount) != 1)
 			throw conflict();
-		var view = new View(UUID.randomUUID().toString(), caseId, orderId, money.setScale(2).toPlainString(), "CNY",
-				provider, money.signum() == 0 ? "SUCCEEDED" : "UNKNOWN", 0);
-		mapper.insert(tenant, view);
+		String id = UUID.randomUUID().toString();
+		var createdAt = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+		String originalProvider = provider;
+		var view = BusinessNumberWriter.write(BusinessNumber.Type.REFUND, createdAt, number -> {
+			var candidate = new View(id, caseId, orderId, money.setScale(2).toPlainString(), "CNY",
+					originalProvider, money.signum() == 0 ? "SUCCEEDED" : "UNKNOWN", 0, number);
+			mapper.insert(tenant, candidate, createdAt);
+			return candidate;
+		}, number -> mapper.lockBusinessNumber(number) != null);
 		if (money.signum() == 0)
 			outbox.append(tenant, "refund.succeeded.v1", view.refundId(), view.version(), view);
 		return view;

@@ -24,7 +24,7 @@ public interface AftersaleApi {
 	}
 
 	record View(String caseId, String orderId, String memberId, String status, boolean returnRequired,
-			String refundAmount, String refundId, long version, List<Line> items) {
+			String refundAmount, String refundId, long version, List<Line> items, String businessNo) {
 	}
 
 	/** 运营详情沿用本域读权限，归属从原订单获取。 */

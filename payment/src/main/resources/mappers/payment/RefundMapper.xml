@@ -2,11 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.payment.refund.infrastructure.persistence.RefundMapper">
   <select id="totals" resultType="com.lrj.commerce.payment.refund.api.RefundApi$Total">SELECT order_id,CAST(SUM(amount) AS CHAR) amount FROM payment_refund WHERE tenant_id=#{tenant} AND status='SUCCEEDED' AND order_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach> GROUP BY order_id</select>
-  <sql id="view">refund_id,case_id,order_id,CAST(amount AS CHAR) amount,currency,provider,status,version</sql>
+  <sql id="view">refund_id,case_id,order_id,CAST(amount AS CHAR) amount,currency,provider,status,version,business_no</sql>
   <select id="byCase" resultType="com.lrj.commerce.payment.refund.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND case_id=#{caseId} FOR UPDATE</select>
   <select id="find" resultType="com.lrj.commerce.payment.refund.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND refund_id=#{id}</select>
   <select id="lock" resultType="com.lrj.commerce.payment.refund.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND refund_id=#{id} FOR UPDATE</select>
-  <insert id="insert">INSERT INTO payment_refund(tenant_id,refund_id,case_id,order_id,amount,currency,provider,status,version) VALUES(#{tenant},#{view.refundId},#{view.caseId},#{view.orderId},#{view.amount},#{view.currency},#{view.provider},#{view.status},#{view.version})</insert>
+  <select id="lockBusinessNumber" resultType="string">SELECT business_no FROM payment_refund WHERE business_no=#{number} FOR UPDATE</select>
+  <insert id="insert">INSERT INTO payment_refund(tenant_id,refund_id,case_id,order_id,amount,currency,provider,status,version,business_no,created_at) VALUES(#{tenant},#{view.refundId},#{view.caseId},#{view.orderId},#{view.amount},#{view.currency},#{view.provider},#{view.status},#{view.version},#{view.businessNo},#{createdAt})</insert>
   <update id="succeed">UPDATE payment_refund SET status='SUCCEEDED',version=version+1,channel_transaction_id=#{transaction},evidence_json=#{proof} WHERE tenant_id=#{tenant} AND refund_id=#{id} AND status='UNKNOWN'</update>
   <select id="list" resultType="com.lrj.commerce.payment.refund.api.RefundApi$View">SELECT <include refid="view"/> FROM payment_refund WHERE tenant_id=#{tenant} AND refund_id&gt;#{after} ORDER BY refund_id LIMIT #{limit}</select>
   <insert id="ensureChannel">INSERT INTO payment_refund_sandbox(tenant_id,refund_id,order_id,amount,currency,status) VALUES(#{tenant},#{view.refundId},#{view.orderId},#{view.amount},#{view.currency},'UNKNOWN') ON DUPLICATE KEY UPDATE refund_id=refund_id</insert>
@@ -21,12 +22,12 @@
   <select id="checkBacklog" resultType="com.lrj.commerce.runtime.work.WorkLanes$Backlog">SELECT COALESCE(SUM(check_attempts&lt;5 AND check_transient_failures&lt;#{transientMax} AND next_check_at&lt;=CURRENT_TIMESTAMP(3)),0) due,TIMESTAMPDIFF(SECOND,MIN(IF(check_attempts&lt;5 AND check_transient_failures&lt;#{transientMax} AND next_check_at&lt;=CURRENT_TIMESTAMP(3),next_check_at,NULL)),CURRENT_TIMESTAMP(3)) oldest_due_age_seconds,COALESCE(SUM(check_attempts&gt;=5 OR check_transient_failures&gt;=#{transientMax}),0) quarantined FROM payment_refund WHERE status='UNKNOWN'</select>
   <!-- 只读同库 Order Owner 归属投影，所有值绑定，不接受调用者提供列名。 -->
   <sql id="employeeStoreScope"><choose><when test="scope.paths.size() > 0">AND (<foreach collection="scope.paths" item="g" separator=" OR ">(1=1<if test="!g.stores.isEmpty()"> AND o.store_id IN <foreach collection="g.stores" item="id" open="(" separator="," close=")">#{id}</foreach></if><if test="!g.resources.isEmpty()"> AND o.store_id IN <foreach collection="g.resources" item="id" open="(" separator="," close=")">#{id}</foreach></if>)</foreach>)</when><otherwise>AND 1=0</otherwise></choose></sql>
-  <sql id="scopedFields">r.refund_id,r.case_id,r.order_id,CAST(r.amount AS CHAR) amount,r.currency,r.provider,r.status,r.version</sql>
+  <sql id="scopedFields">r.refund_id,r.case_id,r.order_id,CAST(r.amount AS CHAR) amount,r.currency,r.provider,r.status,r.version,r.business_no</sql>
   <sql id="scopedOrder">FROM payment_refund r JOIN order_record o ON o.tenant_id=r.tenant_id AND o.order_id=r.order_id WHERE r.tenant_id=#{tenant} <include refid="employeeStoreScope"/></sql>
   <select id="scopedList" resultType="com.lrj.commerce.payment.refund.api.RefundApi$View">SELECT <include refid="scopedFields"/> <include refid="scopedOrder"/> AND r.refund_id&gt;#{after}
     <if test="filter.storeId != null">AND o.store_id=#{filter.storeId}</if>
     <if test="filter.orderId != null">AND r.order_id=#{filter.orderId}</if>
-    <if test="filter.q != null">AND (LOCATE(#{filter.q},r.refund_id)&gt;0 OR LOCATE(#{filter.q},r.case_id)&gt;0 OR LOCATE(#{filter.q},r.order_id)&gt;0 OR LOCATE(#{filter.q},r.provider)&gt;0)</if>
+    <if test="filter.q != null"><choose><when test='filter.q.startsWith("COM-RFD-")'>AND r.business_no=#{filter.q}</when><otherwise>AND (LOCATE(#{filter.q},r.refund_id)&gt;0 OR LOCATE(#{filter.q},r.case_id)&gt;0 OR LOCATE(#{filter.q},r.order_id)&gt;0 OR LOCATE(#{filter.q},r.provider)&gt;0)</otherwise></choose></if>
     <if test="filter.status != null">AND r.status=#{filter.status}</if> ORDER BY r.refund_id LIMIT #{limit}</select>
   <select id="scopedDetail" resultType="com.lrj.commerce.payment.refund.api.RefundApi$Detail">SELECT <include refid="scopedFields"/>,o.store_id,r.created_at <include refid="scopedOrder"/> AND r.refund_id=#{id}</select>
 </mapper>

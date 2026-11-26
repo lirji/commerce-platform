@@ -9,14 +9,17 @@ import java.util.List;
 public interface AftersaleMapper {
 
 	record Row(String caseId, String orderId, String memberId, String status, boolean returnRequired,
-			String refundAmount, String refundId, long version, String itemsJson, String storeId, java.time.Instant createdAt) {
+			String refundAmount, String refundId, long version, String itemsJson, String storeId, java.time.Instant createdAt, String businessNo) {
 	}
 
 	record Returned(String skuId, int quantity) {
 	}
 
+    /** 只在插入碰撞后确认编号是否已被占用。 */
+    String lockBusinessNumber(@Param("number") String number);
+
 	void insert(@Param("tenant") String tenant, @Param("view") AftersaleApi.View view, @Param("reason") String reason,
-			@Param("items") String items);
+			@Param("items") String items, @Param("createdAt") java.time.Instant createdAt);
 
 	void line(@Param("tenant") String tenant, @Param("caseId") String caseId, @Param("line") AftersaleApi.Line line);
 

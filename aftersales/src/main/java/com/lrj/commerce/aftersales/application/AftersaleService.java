@@ -1,5 +1,7 @@
 package com.lrj.commerce.aftersales.application;
 
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.runtime.api.validation.ListFilter;
 import com.lrj.commerce.aftersales.api.AftersaleApi;
 import com.lrj.commerce.aftersales.infrastructure.persistence.AftersaleMapper;
@@ -107,9 +109,15 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 			}
 			Inputs.require(lines.size() == quantities.size(), "退货商品不属于原订单");
 			Inputs.require(returns || full, "未发货只支持整单退款");
-			var view = new View(UUID.randomUUID().toString(), order.orderId(), order.memberId(), "REQUESTED", returns,
-					Money.minor(total).amount().toPlainString(), null, 0, List.copyOf(lines));
-			mapper.insert(actor.tenantId(), view, input.reason(), JsonCodec.write(lines));
+			String id = UUID.randomUUID().toString();
+			var createdAt = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+			String refundAmount = Money.minor(total).amount().toPlainString();
+			var view = BusinessNumberWriter.write(BusinessNumber.Type.AFTERSALE, createdAt, number -> {
+				var candidate = new View(id, order.orderId(), order.memberId(), "REQUESTED", returns,
+						refundAmount, null, 0, List.copyOf(lines), number);
+				mapper.insert(actor.tenantId(), candidate, input.reason(), JsonCodec.write(lines), createdAt);
+				return candidate;
+			}, number -> mapper.lockBusinessNumber(number) != null);
 			for (var line : lines)
 				mapper.line(actor.tenantId(), view.caseId(), line);
 			return view;
@@ -279,7 +287,7 @@ public class AftersaleService implements AftersaleApi, EventHandler {
 	private View view(AftersaleMapper.Row row) {
 		return new View(row.caseId(), row.orderId(), row.memberId(), row.status(), row.returnRequired(),
 				row.refundAmount(), row.refundId(), row.version(),
-				List.of(JsonCodec.read(row.itemsJson(), Line[].class)));
+				List.of(JsonCodec.read(row.itemsJson(), Line[].class)), row.businessNo());
 	}
 
 	private DomainException conflict() {

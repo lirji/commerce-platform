@@ -34,3 +34,5 @@ S3 依次交付商城报价证据、唯一交易引用、营销签价与应付�
 商城本地订单返回独立的 `businessNo`。新号形如 `COM-ORD-261126-0123456789`，`orderId` 继续用于原有生命周期与财务关联。订单列表和详情优先展示可读编号，详情支持复制，会员和后台可用原 ID 或可读编号查询。V75 建立唯一号索引及供尾号查询使用的业务日期索引。历史订单由交易仓库 `scripts/backfill-business-numbers.py` 的 `commerce-orders` 数据集分批按租户补录。
 
 试点原生订单由交易中心发出 `TRD-ORD`。商城端接入原生试点下单后，应展示交易返回的 `businessNo` 和原生归属。营销资金凭交易原生证据读取同一编号。
+
+商城支付、退款和售后新增 `COM-PAY`、`COM-RFD`、`COM-AFS` 展示号。V76 将它们与原支付、退款及售后主键分开保存，原渠道回调及售后关系按原字段核对。历史数据集分别为 `commerce-payments`、`commerce-refunds`、`commerce-aftersales`。

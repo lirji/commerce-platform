@@ -143,6 +143,7 @@ export type Order = {
   items: QuoteLine[];
 };
 export type Payment = {
+  businessNo?: string | null;
   paymentId: string;
   orderId: string;
   amount: string;
@@ -151,6 +152,7 @@ export type Payment = {
   currency: string;
 };
 export type Aftersale = {
+  businessNo?: string | null;
   caseId: string;
   orderId: string;
   memberId: string;
@@ -174,6 +176,7 @@ export type Fulfillment = {
   version: number;
 };
 export type Refund = {
+  businessNo?: string | null;
   refundId: string;
   orderId: string;
   caseId: string;

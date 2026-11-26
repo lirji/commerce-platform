@@ -17,7 +17,10 @@ public interface RefundMapper {
 
 	RefundApi.View lock(@Param("tenant") String tenant, @Param("id") String id);
 
-	void insert(@Param("tenant") String tenant, @Param("view") RefundApi.View view);
+    /** 只在插入碰撞后确认编号是否已被占用。 */
+    String lockBusinessNumber(@Param("number") String number);
+
+	void insert(@Param("tenant") String tenant, @Param("view") RefundApi.View view, @Param("createdAt") java.time.Instant createdAt);
 
 	int succeed(@Param("tenant") String tenant, @Param("id") String id, @Param("transaction") String transaction,
 			@Param("proof") String proof);

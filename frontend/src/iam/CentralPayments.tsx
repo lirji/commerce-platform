@@ -54,6 +54,7 @@ function PaymentRead() {
           <OperationDetails
             row={view.data}
             fields={[
+              ["businessNo", "业务编号"],
               ["paymentId", "支付编号"],
               ["orderId", "订单编号"],
               ["amount", "支付金额"],

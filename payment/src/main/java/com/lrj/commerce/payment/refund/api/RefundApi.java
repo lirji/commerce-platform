@@ -8,7 +8,7 @@ import java.util.List;
 public interface RefundApi {
 
 	record View(String refundId, String caseId, String orderId, String amount, String currency, String provider,
-			String status, long version) {
+			String status, long version, String businessNo) {
 	}
 
 	/** 运营详情沿用本域读权限，归属从原订单获取。 */

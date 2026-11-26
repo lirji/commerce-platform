@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.payment.charge.infrastructure.persistence.PaymentMapper">
-  <sql id="view">payment_id,order_id,CAST(amount AS CHAR) amount,currency,provider,status,version</sql>
+  <sql id="view">payment_id,order_id,CAST(amount AS CHAR) amount,currency,provider,status,version,business_no</sql>
   <select id="byOrder" resultType="com.lrj.commerce.payment.charge.api.PaymentApi$View">SELECT <include refid="view"/> FROM payment_attempt WHERE tenant_id=#{tenant} AND order_id=#{order}</select>
   <select id="find" resultType="com.lrj.commerce.payment.charge.api.PaymentApi$View">SELECT <include refid="view"/> FROM payment_attempt WHERE tenant_id=#{tenant} AND payment_id=#{id}</select>
   <select id="lock" resultType="com.lrj.commerce.payment.charge.api.PaymentApi$View">SELECT <include refid="view"/> FROM payment_attempt WHERE tenant_id=#{tenant} AND payment_id=#{id} FOR UPDATE</select>
-  <insert id="insert">INSERT INTO payment_attempt(tenant_id,payment_id,order_id,amount,currency,provider,status,version) VALUES(#{tenant},#{view.paymentId},#{view.orderId},#{view.amount},#{view.currency},#{view.provider},#{view.status},#{view.version})</insert>
+  <select id="lockBusinessNumber" resultType="string">SELECT business_no FROM payment_attempt WHERE business_no=#{number} FOR UPDATE</select>
+  <insert id="insert">INSERT INTO payment_attempt(tenant_id,payment_id,order_id,amount,currency,provider,status,version,business_no,created_at) VALUES(#{tenant},#{view.paymentId},#{view.orderId},#{view.amount},#{view.currency},#{view.provider},#{view.status},#{view.version},#{view.businessNo},#{createdAt})</insert>
   <update id="change">UPDATE payment_attempt SET status=#{status},version=version+1,channel_transaction_id=#{transaction},evidence_json=#{evidence} WHERE tenant_id=#{tenant} AND payment_id=#{id} AND version=#{version} AND status IN ('UNKNOWN','OPEN')</update>
   <insert id="ensureChannel">INSERT INTO payment_sandbox_ledger(tenant_id,payment_id,order_id,amount,currency,status) VALUES(#{tenant},#{view.paymentId},#{view.orderId},#{view.amount},#{view.currency},'UNKNOWN') ON DUPLICATE KEY UPDATE payment_id=payment_id</insert>
   <select id="channel" resultType="com.lrj.commerce.payment.charge.application.port.PaymentChannel$Evidence">SELECT payment_id,tenant_id,order_id,CAST(amount AS CHAR) amount,currency,status,transaction_id FROM payment_sandbox_ledger WHERE tenant_id=#{tenant} AND payment_id=#{id}</select>

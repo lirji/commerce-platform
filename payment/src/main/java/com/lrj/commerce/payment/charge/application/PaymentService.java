@@ -1,5 +1,7 @@
 package com.lrj.commerce.payment.charge.application;
 
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.payment.charge.infrastructure.persistence.PaymentMapper;
 import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.kernel.*;
@@ -73,10 +75,13 @@ public class PaymentService implements PaymentApi, EventHandler {
 			var existing = mapper.byOrder(actor.tenantId(), orderId);
 			if (existing != null)
 				return existing;
-			var view = new View(UUID.randomUUID().toString(), orderId, order.payable(), "CNY", provider, Status.UNKNOWN,
-					0);
-			mapper.insert(actor.tenantId(), view);
-			return view;
+			String id = UUID.randomUUID().toString();
+			var createdAt = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+			return BusinessNumberWriter.write(BusinessNumber.Type.PAYMENT, createdAt, number -> {
+				var view = new View(id, orderId, order.payable(), "CNY", provider, Status.UNKNOWN, 0, number);
+				mapper.insert(actor.tenantId(), view, createdAt);
+				return view;
+			}, number -> mapper.lockBusinessNumber(number) != null);
 		});
 		channel.ensure(actor.tenantId(), result);
 		return result;
