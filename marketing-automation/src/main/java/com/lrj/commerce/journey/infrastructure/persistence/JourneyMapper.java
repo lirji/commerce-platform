@@ -79,7 +79,7 @@ public interface JourneyMapper {
 
 	int change(String tenant, String id, long version, long expected, String status);
 
-	void instance(String tenant, String id, Definition definition, String member, String order, String event,
+	int instance(String tenant, String id, String number, Definition definition, String member, String order, String event,
 			Instant now, Instant deadline);
 
 	Instance byEvent(String tenant, String journey, long version, String event);

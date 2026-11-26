@@ -67,7 +67,7 @@ public interface SegmentMapper {
 	SegmentApi.Run active(@Param("tenant") String tenant, @Param("id") String id);
 
 	List<SegmentApi.Run> runs(@Param("tenant") String tenant, @Param("id") String id, @Param("after") String after,
-			@Param("limit") int limit);
+			@Param("limit") int limit, @Param("number") String number);
 
 	List<String> due(@Param("tenant") String tenant, @Param("now") Instant now);
 

@@ -217,7 +217,7 @@ export function OperationsList({
           render: (_, row) => (
             <div className="trade-row-identity">
               <Button type="link" onClick={() => openDetail(row)}>
-                {String(row[idField])}
+                {String(row.businessNo ?? row[idField])}
               </Button>
               <TradeRowFacts row={row} />
             </div>
@@ -238,7 +238,9 @@ export function OperationsList({
           key.toLowerCase().includes("amount") || key === "payable"
             ? "right"
             : "left",
-        render: (v) => formatField(key, v),
+        render: (v, row) => key === "businessNo"
+          ? <Typography.Text copyable>{String(v ?? row[idField])}</Typography.Text>
+          : formatField(key, v),
       };
     });
   table.push({

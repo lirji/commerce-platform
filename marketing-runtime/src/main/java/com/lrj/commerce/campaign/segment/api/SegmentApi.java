@@ -24,7 +24,7 @@ public interface SegmentApi {
 
 	record Run(String runId, String segmentId, long definitionVersion, String audienceId, long snapshotVersion,
 			String cursorMember, int processed, int matched, String status, int attempts, String errorCode,
-			Instant startedAt, Instant validUntil, Instant availableAt, boolean entriesAnnounced, int entryAttempts) {
+			Instant startedAt, Instant validUntil, Instant availableAt, boolean entriesAnnounced, int entryAttempts, String businessNo) {
 	}
 
 	View create(Actor actor, String key, Definition input);
@@ -38,7 +38,12 @@ public interface SegmentApi {
 
 	Run refresh(Actor actor, String key, String id);
 
-	List<Run> runs(Actor actor, String id, String after, int limit);
+	default List<Run> runs(Actor actor, String id, String after, int limit) {
+        return runs(actor, id, after, limit, null);
+    }
+
+    /** 在指定人群的授权范围内按新旧运行号查同一检查点。 */
+    List<Run> runs(Actor actor, String id, String after, int limit, String number);
 
 	Run control(Actor actor, String key, String id, String action);
 

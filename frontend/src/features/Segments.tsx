@@ -37,6 +37,7 @@ type Segment = {
 };
 type Run = {
   runId: string;
+  businessNo?: string | null;
   snapshotVersion: number;
   definitionVersion: number;
   processed: number;
@@ -228,6 +229,7 @@ export function Segments() {
           pagination={false}
           scroll={{ x: 850 }}
           columns={[
+            { title: "运行编号", render: (_, row) => row.businessNo ?? row.runId },
             { title: "受众版本", dataIndex: "snapshotVersion" },
             { title: "规则版本", dataIndex: "definitionVersion" },
             {

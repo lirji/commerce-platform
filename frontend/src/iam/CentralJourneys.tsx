@@ -599,15 +599,15 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
             {
               title: "实例",
               dataIndex: "instanceId",
-              render: (id: unknown) =>
+              render: (id: unknown, row: Row) =>
                 typeof id === "string" &&
                 journeyId.test(id) && (
                   <Button
                     type="link"
-                    aria-label={`查看实例 ${id} 的历史`}
+                    aria-label={`查看实例 ${row.businessNo ?? id} 的历史`}
                     onClick={() => readHistory(id)}
                   >
-                    {id}
+                    {typeof row.businessNo === "string" ? row.businessNo : id}
                   </Button>
                 ),
             },
@@ -637,7 +637,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                     command.frozen
                   }
                   onClick={() =>
-                    begin("control", { instanceId: row.instanceId })
+                    begin("control", { instanceId: row.businessNo ?? row.instanceId })
                   }
                 >
                   取消 / 重试

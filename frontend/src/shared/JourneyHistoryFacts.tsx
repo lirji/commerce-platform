@@ -44,7 +44,7 @@ export function JourneyHistoryFacts({ history }: { history: JourneyHistory }) {
           {
             key: "instance",
             label: "实例编号",
-            children: history.instance.instanceId,
+            children: history.instance.businessNo ?? history.instance.instanceId,
           },
           {
             key: "version",

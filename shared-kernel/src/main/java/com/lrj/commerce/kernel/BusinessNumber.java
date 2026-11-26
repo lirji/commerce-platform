@@ -16,7 +16,8 @@ public final class BusinessNumber {
 
     /** 已登记的商城发号对象。 */
     public enum Type {
-        ORDER("ORD"), PAYMENT("PAY"), REFUND("RFD"), AFTERSALE("AFS"), CATALOG_JOB("JOB"), QUOTE("QTE"), SCOPE_EXPORT("EXP"), COUPON("CPN"), ENTITLEMENT("GRT"), ENTITLEMENT_LEDGER("LED");
+        ORDER("ORD"), PAYMENT("PAY"), REFUND("RFD"), AFTERSALE("AFS"), CATALOG_JOB("JOB"), QUOTE("QTE"), SCOPE_EXPORT("EXP"), COUPON("CPN"), ENTITLEMENT("GRT"), ENTITLEMENT_LEDGER("LED"),
+        CAMPAIGN_BUDGET("BGT"), SEGMENT_RUN("SRN"), JOURNEY_INSTANCE("JIN");
 
         private final String prefix;
         private final Pattern pattern;

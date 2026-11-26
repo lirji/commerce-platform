@@ -18,6 +18,7 @@ import com.lrj.commerce.runtime.api.access.EmployeeAccess;
 import static com.lrj.commerce.runtime.api.access.EmployeeAccess.Capability.*;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 发布切换与审计同事务；旧版本不会在切换中和新版本同时生效。 */
@@ -149,9 +150,13 @@ public class CampaignService implements CampaignApi {
 			}
 			mapper.insert(actor.tenantId(), store.merchantId(), input, JsonCodec.write(rule),
 					input.policy() == null ? null : JsonCodec.write(input.policy()));
-			budgets.create(actor.tenantId(), java.util.UUID.randomUUID().toString(), input.campaignId(),
-					input.version(),
-					input.policy() == null || input.policy().terms() == null ? null : input.policy().terms().budget());
+			var budgetTime = clock.instant();
+			String cap = input.policy() == null || input.policy().terms() == null ? null : input.policy().terms().budget();
+			// 同一活动版本的预算和编号一并写入，额度和预占仍按活动版本核对。
+			BusinessNumberWriter.writeOnIndex(BusinessNumber.Type.CAMPAIGN_BUDGET, budgetTime,
+					number -> budgets.create(actor.tenantId(), java.util.UUID.randomUUID().toString(), number,
+							input.campaignId(), input.version(), cap, budgetTime),
+					"uk_marketing_budget_business_no");
 			access.auditVersion(actor, permit, "campaign.create", key, input.campaignId(), input.version());
 			return view(mapper.find(actor.tenantId(), input.campaignId(), input.version()));
 		});

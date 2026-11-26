@@ -120,7 +120,7 @@ public interface JourneyApi {
 
 	record Instance(String instanceId, String journeyId, long journeyVersion, String memberId, String orderId,
 			String currentNode, State status, Instant dueAt, Instant deadline, int steps, int attempts, String result,
-			long version) {
+			long version, String businessNo) {
 	}
 
 	record Notification(String notificationId, String title, String body, Instant createdAt) {

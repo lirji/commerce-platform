@@ -8,8 +8,8 @@ import java.util.List;
 @Mapper
 public interface BudgetMapper {
 
-	void create(@Param("tenant") String tenant, @Param("id") String id, @Param("campaign") String campaign,
-			@Param("version") long version, @Param("cap") String cap);
+	int create(@Param("tenant") String tenant, @Param("id") String id, @Param("number") String number, @Param("campaign") String campaign,
+			@Param("version") long version, @Param("cap") String cap, @Param("createdAt") java.time.Instant createdAt);
 
 	int reserve(@Param("tenant") String tenant, @Param("input") Commitment input);
 

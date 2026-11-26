@@ -124,8 +124,8 @@ class CentralCampaignMySqlTest {
     /** 九个实际HTTP入口逐一只给自己的权限，其余八个入口均拒绝，不靠页面隐藏证明独立性。 */
     /** 预算展示以原记录十进制为准，空上限不显示成零。 */
     @Test void availableBudgetProjectionPreservesCentsAndUnlimited() {
-        var cap = new CampaignFundingApi.Budget("cap", "campaign", 1, "10.00", "0.10", "0.20");
-        var unlimited = new CampaignFundingApi.Budget("unlimited", "campaign", 2, null, "0.00", "0.00");
+        var cap = new CampaignFundingApi.Budget("cap", "campaign", 1, "10.00", "0.10", "0.20", null);
+        var unlimited = new CampaignFundingApi.Budget("unlimited", "campaign", 2, null, "0.00", "0.00", null);
         assertEquals("9.70", JsonCodec.read(JsonCodec.write(cap), Map.class).get("available"));
         assertNull(JsonCodec.read(JsonCodec.write(unlimited), Map.class).get("available"));
     }
@@ -162,6 +162,10 @@ class CentralCampaignMySqlTest {
         allowed.clear();allowed.add(BUDGET_READ.code());
         var one=funding.budgets(actor(BUDGET_READ),"",1);var rest=funding.budgets(actor(BUDGET_READ),one.getFirst().budgetId(),10);
         assertEquals(2,rest.size());assertTrue(funding.budgets(actor(BUDGET_READ),rest.getLast().budgetId(),10).isEmpty());
+        var budget=one.getFirst();
+        assertTrue(budget.businessNo().matches("COM-BGT-[0-9]{6}-[0-9]{10}"));
+        assertEquals(one,funding.budgets(actor(BUDGET_READ),"",10,
+            new com.lrj.commerce.runtime.api.validation.ListFilter(budget.businessNo(),null,null,null,null)));
         assertEquals(Set.of(1L,7L,8L),java.util.stream.Stream.concat(one.stream(),rest.stream()).map(b->b.version()).collect(java.util.stream.Collectors.toSet()));
         assertEquals(3,count("marketing_campaign"));assertEquals(3,count("marketing_budget"));assertEquals(3,count("employee_command_identity"));
         assertEquals(7,jdbc.queryForObject("SELECT resource_version FROM employee_command_identity WHERE tenant_id=? AND command_key=?",Long.class,tenant,key));

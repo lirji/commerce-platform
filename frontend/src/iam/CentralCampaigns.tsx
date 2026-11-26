@@ -1101,7 +1101,9 @@ function Budgets() {
           pagination={false}
           scroll={{ x: 1040 }}
           columns={[
-            { title: "预算编号", dataIndex: "budgetId", width: 300 },
+            { title: "预算编号", width: 300, render: (_, row) => (
+              <Typography.Text copyable>{row.businessNo ?? row.budgetId}</Typography.Text>
+            ) },
             { title: "活动", dataIndex: "campaignId", width: 220 },
             { title: "内容版本", dataIndex: "version", width: 100 },
             {

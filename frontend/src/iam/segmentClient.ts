@@ -30,6 +30,7 @@ export type SegmentView = {
 };
 export type SegmentRun = {
   runId: string;
+  businessNo?: string | null;
   segmentId: string;
   definitionVersion: number;
   audienceId: string;

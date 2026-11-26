@@ -167,7 +167,10 @@ class CentralJourneyMySqlTest {
         String key=id();var first=enroll("J",key);var source=journeyMapper.source(tenant,first.instanceId());
         assertEquals(first,enroll("J",key));assertEquals(source,journeyMapper.source(tenant,first.instanceId()));
         assertEquals(1,journeys.pump(actor(JOURNEY_PUMP)));var advanced=journeyMapper.findInstance(tenant,first.instanceId());assertEquals(1,advanced.journeyVersion());assertEquals(1,advanced.version());
-        assertEquals(1,journeys.history(actor(JOURNEY_INSTANCE_READ),first.instanceId(),-1,50).definition().version());
+        assertTrue(first.businessNo().matches("COM-JIN-[0-9]{6}-[0-9]{10}"));
+        var history=journeys.history(actor(JOURNEY_INSTANCE_READ),first.instanceId(),-1,50);
+        assertEquals(1,history.definition().version());
+        assertEquals(history,journeys.history(actor(JOURNEY_INSTANCE_READ),first.businessNo(),-1,50));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM employee_command_identity WHERE tenant_id=? AND (resource_version<>1 OR store_id IS NOT NULL)",Integer.class,tenant));
         verify(client,atLeastOnce()).checkExecution(anyString(),any(),argThat(f->f.resourceVersion()==1));
         allowed.clear();allowed.add(JOURNEY_INSTANCE_READ.code());forbidden(()->journeys.definitions(actor(JOURNEY_INSTANCE_READ),"",50));

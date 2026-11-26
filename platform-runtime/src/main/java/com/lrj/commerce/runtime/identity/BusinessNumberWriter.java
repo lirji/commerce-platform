@@ -20,15 +20,29 @@ public final class BusinessNumberWriter {
         return BusinessNumber.format(type, createdAt, RANDOM.nextLong(SUFFIX_SPACE));
     }
 
+    /** 唯一索引明确时按冲突索引重试，避免为发号跨租户查询。 */
+    public static <T> T writeOnIndex(BusinessNumber.Type type, Instant createdAt, Function<String,T> insert,
+            String index) {
+        return write(type, createdAt, insert, (candidate, failure) -> {
+            String message = failure.getMostSpecificCause().getMessage();
+            return message != null && (message.endsWith("." + index + "'") || message.endsWith("'" + index + "'"));
+        });
+    }
+
     /** 只对已经被占用的展示号重新发号，原幂等键和金额约束错误继续传给调用方。 */
     public static <T> T write(BusinessNumber.Type type, Instant createdAt, Function<String,T> insert,
             Predicate<String> numberTaken) {
+        return write(type, createdAt, insert, (candidate, failure) -> numberTaken.test(candidate));
+    }
+
+    private static <T> T write(BusinessNumber.Type type, Instant createdAt, Function<String,T> insert,
+            java.util.function.BiPredicate<String,DuplicateKeyException> collision) {
         for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             String candidate = next(type, createdAt);
             try {
                 return insert.apply(candidate);
             } catch (DuplicateKeyException duplicate) {
-                if (attempt == MAX_ATTEMPTS - 1 || !numberTaken.test(candidate)) throw duplicate;
+                if (attempt == MAX_ATTEMPTS - 1 || !collision.test(candidate, duplicate)) throw duplicate;
             }
         }
         throw new IllegalStateException("business number allocation exhausted");

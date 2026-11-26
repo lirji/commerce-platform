@@ -1,6 +1,8 @@
 package com.lrj.commerce.campaign.segment.application;
 
 import com.lrj.commerce.runtime.api.validation.ListFilter;
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.campaign.segment.infrastructure.persistence.SegmentMapper;
 import com.lrj.commerce.member.growth.api.MemberGrowthApi;
 import com.lrj.commerce.marketing.api.*;
@@ -150,13 +152,14 @@ public class SegmentService implements SegmentApi {
 	}
 
 	/** 任务元信息不包含完整会员列表。 */
-	public List<Run> runs(Actor actor, String id, String after, int limit) {
+	public List<Run> runs(Actor actor, String id, String after, int limit, String number) {
 		var scope = access.scope(actor, SEGMENT_READ);
 		Identifiers.require(id);
 		Inputs.page(after, limit);
 		var fact = fact(Inputs.found(mapper.find(actor.tenantId(), id)));
 		access.resource(actor, scope, fact);
-		var rows = mapper.runs(actor.tenantId(), id, after, limit);
+		if (number != null) Identifiers.require(number);
+		var rows = mapper.runs(actor.tenantId(), id, after, limit, number);
 		var afterPermit = access.scope(actor, SEGMENT_READ);
 		EmployeeAccess.requireSame(scope, afterPermit);
 		var current = fact(Inputs.found(mapper.find(actor.tenantId(), id)));
@@ -174,11 +177,12 @@ public class SegmentService implements SegmentApi {
 	}
 
 	/** 取消保留已扫描但不可见的投影；重试从最后提交检查点继续。 */
-	public Run control(Actor actor, String key, String id, String action) {
+	public Run control(Actor actor, String key, String number, String action) {
 		var scope = access.scope(actor, SEGMENT_CONTROL);
-		Identifiers.require(id);
+		Identifiers.require(number);
 		Inputs.require(Set.of("cancel", "retry", "retry-announcement").contains(action), "任务操作无效");
-		var target = Inputs.found(mapper.runFind(actor.tenantId(), id));
+		var target = Inputs.found(mapper.runFind(actor.tenantId(), number));
+		String id = target.runId();
 		definition(actor.tenantId(), target.segmentId(), target.definitionVersion());
 		var permit = access.resource(actor, scope, fact(target));
 		var originGate = sourceGate(actor.tenantId(), target);
@@ -351,14 +355,17 @@ public class SegmentService implements SegmentApi {
 		}
 		var definition = definition(tenant, root.segmentId(), root.currentVersion());
 		Instant started = now();
-		var run = new Run(UUID.randomUUID().toString(), root.segmentId(), root.currentVersion(), root.audienceId(),
-				root.snapshotSequence() + 1, "", 0, 0, "RUNNING", 0, null, started,
-				started.plusSeconds(definition.ttlSeconds()), started, false, 0);
-		var sourceGate = sourceGate(tenant, run, source);
-		sourceGate.run();
+		// 重试只覆盖编号冲突，分配序号和来源许可仍处于同一个锁定事务。
+		var run = BusinessNumberWriter.writeOnIndex(BusinessNumber.Type.SEGMENT_RUN, started, number -> {
+			var issued = new Run(UUID.randomUUID().toString(), root.segmentId(), root.currentVersion(), root.audienceId(),
+					root.snapshotSequence() + 1, "", 0, 0, "RUNNING", 0, null, started,
+					started.plusSeconds(definition.ttlSeconds()), started, false, 0, number);
+			sourceGate(tenant, issued, source).run();
+			mapper.run(tenant, issued, JsonCodec.write(source));
+			return issued;
+		}, "uk_segment_run_business_no");
 		mapper.allocate(tenant, root.segmentId(), started.plusSeconds(Math.max(60, definition.refreshSeconds())));
-		mapper.run(tenant, run, JsonCodec.write(source));
-		sourceGate.run();
+		sourceGate(tenant, run, source).run();
 		return run;
 	}
 

@@ -120,10 +120,14 @@ class CentralSegmentMySqlTest {
     @Test void sixCapabilitiesAreIndependentAtRealHttpBoundary() throws Exception {
         create("S",7);
         var run=segments.refresh(actor(SEGMENT_REFRESH),id(),"S");
+        assertTrue(run.businessNo().matches("COM-SRN-[0-9]{6}-[0-9]{10}"));
+        assertEquals(segments.runs(actor(SEGMENT_READ),"S","",10,run.runId()),
+            segments.runs(actor(SEGMENT_READ),"S","",10,run.businessNo()));
+        assertEquals(run.runId(),segments.runs(actor(SEGMENT_READ),"S","",10,run.businessNo()).getFirst().runId());
         for(var cap:CAPS) {
             allowed.clear();allowed.add(cap.code());
             for(var other:CAPS) {
-                String path=switch(other){case SEGMENT_READ,SEGMENT_CREATE->"/v1/admin/segments";case SEGMENT_SCHEDULE->"/v1/admin/segments/S/schedule";case SEGMENT_REFRESH->"/v1/admin/segments/S/refresh";case SEGMENT_PUMP->"/v1/admin/segments/pump";default->"/v1/admin/segment-runs/"+run.runId()+"/cancel";};
+                String path=switch(other){case SEGMENT_READ,SEGMENT_CREATE->"/v1/admin/segments";case SEGMENT_SCHEDULE->"/v1/admin/segments/S/schedule";case SEGMENT_REFRESH->"/v1/admin/segments/S/refresh";case SEGMENT_PUMP->"/v1/admin/segments/pump";default->"/v1/admin/segment-runs/"+run.businessNo()+"/cancel";};
                 Object body=other==SEGMENT_CREATE?input("N-"+cap.name(),1):other==SEGMENT_SCHEDULE?new SegmentApi.Schedule(0,true):null;
                 var reply=http(other==SEGMENT_READ?"GET":"POST",path,"valid",true,body);
                 if(cap!=other)assertEquals(403,reply.statusCode(),cap+" must not grant "+other);

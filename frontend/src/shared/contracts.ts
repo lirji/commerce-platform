@@ -245,6 +245,7 @@ export type Journey = {
 };
 export type JourneyInstance = {
   instanceId: string;
+  businessNo?: string | null;
   journeyId: string;
   journeyVersion: number;
   memberId: string;
@@ -283,6 +284,7 @@ export type PageRender = {
 };
 export type Budget = {
   budgetId: string;
+  businessNo?: string | null;
   campaignId: string;
   version: number;
   cap: string | null;

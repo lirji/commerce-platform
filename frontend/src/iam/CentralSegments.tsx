@@ -182,7 +182,7 @@ function RunDetails({ value }: { value: SegmentRun }) {
     <Descriptions
       column={1}
       items={[
-        { key: "id", label: "运行编号", children: value.runId },
+        { key: "id", label: "运行编号", children: <Typography.Text copyable>{value.businessNo ?? value.runId}</Typography.Text> },
         { key: "parent", label: "实际父定义", children: value.segmentId },
         {
           key: "definition",
@@ -273,14 +273,17 @@ function Runs({
   select: (value: SegmentRun) => void;
 }) {
   const [after, setAfter] = useCursorState("SegmentRuns.after", "", segment);
+  const [number, setNumber] = useState("");
   const rows = useResource<SegmentRun[]>(
-    `/admin/segments/${encodeURIComponent(segment)}/runs?after=${encodeURIComponent(after)}&limit=${SEGMENT_PAGE_SIZE}`,
+    `/admin/segments/${encodeURIComponent(segment)}/runs?after=${encodeURIComponent(after)}&limit=${SEGMENT_PAGE_SIZE}${number ? `&number=${encodeURIComponent(number)}` : ""}`,
   );
   const [runId, setRunId] = useRouteState("SegmentRuns.detail", "");
   const selected = rows.data?.find((row) => row.runId === runId);
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       <Space wrap>
+        <Input.Search aria-label="运行编号" placeholder="输入完整运行编号" allowClear
+          onSearch={(value) => { setNumber(value.trim()); setAfter(""); }} />
         <Button onClick={rows.refresh}>刷新运行记录</Button>
         <Typography.Text type="secondary">
           定义版本、调度锁与快照版本分别独立。
@@ -295,7 +298,9 @@ function Runs({
           pagination={false}
           scroll={{ x: 950 }}
           columns={[
-            { title: "运行编号", dataIndex: "runId", width: 270 },
+            { title: "运行编号", width: 270, render: (_, row) => (
+              <Typography.Text copyable>{row.businessNo ?? row.runId}</Typography.Text>
+            ) },
             {
               title: "固定定义版本",
               dataIndex: "definitionVersion",
@@ -571,8 +576,9 @@ function Operation({
       setTarget(selected.content.segmentId);
     }
     if (action === "control" && selectedRun) {
-      form.setFieldsValue({ runId: selectedRun.runId });
-      setTarget(selectedRun.runId);
+      const number = selectedRun.businessNo ?? selectedRun.runId;
+      form.setFieldsValue({ runId: number });
+      setTarget(number);
     }
     // 只消费新的目录选择，提交结束不能用旧行再次覆盖已确认的锁版本。
   }, [selected, selectedRun, action, form]);

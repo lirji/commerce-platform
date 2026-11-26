@@ -14,7 +14,7 @@ public interface CampaignFundingApi {
 			@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) com.lrj.commerce.benefit.coupon.api.CouponApi.Ref coupon) {
 	}
 
-	record Budget(String budgetId, String campaignId, long version, String cap, String held, String spent) {
+	record Budget(String budgetId, String campaignId, long version, String cap, String held, String spent, String businessNo) {
 
 		/** 同一预算行精确计算可用金额；无上限时不存在可用余额数值。 */
 		@com.fasterxml.jackson.annotation.JsonProperty("available")

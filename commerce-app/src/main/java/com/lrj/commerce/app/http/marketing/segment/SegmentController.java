@@ -50,8 +50,9 @@ public class SegmentController {
 	/** 刷新记录与检查点。 */
 	@GetMapping("/segments/{id}/runs")
 	public Object runs(@AuthenticationPrincipal Actor actor, @PathVariable String id,
-			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit) {
-		return segments.runs(actor, id, after, limit);
+			@RequestParam(defaultValue = "") String after, @RequestParam(defaultValue = "50") int limit,
+			@RequestParam(required = false) String number) {
+		return segments.runs(actor, id, after, limit, number);
 	}
 
 	/** 单次触发严格有界的批处理。 */

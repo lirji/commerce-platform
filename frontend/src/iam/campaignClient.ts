@@ -39,6 +39,7 @@ export type CampaignView = {
 };
 export type CampaignBudget = {
   budgetId: string;
+  businessNo?: string | null;
   campaignId: string;
   version: number;
   cap: string | null;

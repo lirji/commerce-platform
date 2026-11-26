@@ -1,6 +1,8 @@
 package com.lrj.commerce.journey.application;
 
 import com.lrj.commerce.runtime.api.validation.ListFilter;
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.journey.api.JourneyApi;
 import com.lrj.commerce.journey.infrastructure.persistence.JourneyMapper;
 import com.lrj.commerce.kernel.*;
@@ -339,8 +341,10 @@ public class JourneyService implements JourneyApi, EventHandler {
 			mapper.cap(tenant, d.journeyId(), member, false, bucket, count + 1, false);
 		}
 		var now = now();
-		mapper.instance(tenant, UUID.randomUUID().toString(), d, member, order, event, now,
-				now.plusSeconds(d.maxDurationSeconds()));
+		// 同一触发事实在分配前已按入组键加锁，重复编号只重试本次新建。
+		BusinessNumberWriter.writeOnIndex(BusinessNumber.Type.JOURNEY_INSTANCE, now,
+				number -> mapper.instance(tenant, UUID.randomUUID().toString(), number, d, member, order, event, now,
+						now.plusSeconds(d.maxDurationSeconds())), "uk_journey_instance_business_no");
 		var inserted=mapper.byEvent(tenant,d.journeyId(),d.version(),event);
 		if(mapper.sourceOnce(tenant,inserted.instanceId(),JsonCodec.write(source))!=1)throw conflict("旅程原来源不能覆盖");
 		mapper.effect(tenant, effect, d, member, "ENROLLED", now);
@@ -370,10 +374,11 @@ public class JourneyService implements JourneyApi, EventHandler {
 
 	/** 一个短只读快照同时读取检查点和历史，避免推进期间误报历史覆盖缺口。 */
 	@Override
-	public History history(Actor actor, String id, long afterVersion, int limit) {
-		Identifiers.require(id);
+	public History history(Actor actor, String number, long afterVersion, int limit) {
+		Identifiers.require(number);
 		Inputs.require(afterVersion >= -1 && limit >= 1 && limit <= 50, "历史分页参数无效");
-		var candidate=Inputs.found(mapper.findInstance(actor.tenantId(),id));
+		var candidate=Inputs.found(mapper.findInstance(actor.tenantId(),number));
+		String id = candidate.instanceId();
 		var permit=actor.role()==Actor.Role.MEMBER?null:authorization.object(actor,JOURNEY_INSTANCE_READ,id,candidate.journeyVersion()).scope();
 		var result=readTx.execute(status->{
 		var row = Inputs.found(mapper.findInstance(actor.tenantId(), id));
@@ -398,10 +403,11 @@ public class JourneyService implements JourneyApi, EventHandler {
 	}
 
 	/** 取消不逆转已执行效果；隔离重试必须仍在截止时间内。 */
-	public Instance control(Actor actor, String key, String id, String action) {
-		Identifiers.require(id);
+	public Instance control(Actor actor, String key, String number, String action) {
+		Identifiers.require(number);
 		Inputs.require(Set.of("cancel", "retry").contains(action), "实例动作无效");
-		var candidate=Inputs.found(mapper.findInstance(actor.tenantId(),id));
+		var candidate=Inputs.found(mapper.findInstance(actor.tenantId(),number));
+		String id = candidate.instanceId();
 		var permit=authorization.object(actor,JOURNEY_INSTANCE_CONTROL,id,candidate.journeyVersion()).scope();
 		var source=action.equals("retry")?authorization.gate(actor.tenantId(),authorization.source(actor.tenantId(),candidate)):null;
 		return commands.runGuarded(actor, "journey." + action, key, authorization.input(permit,id), Instance.class, ()->{authorization.lock(permit);if(source!=null)authorization.lock(source);}, () -> {
