@@ -1,4 +1,8 @@
-import { tradeFieldValue, tradeNumberFields } from "../shared/tradeNumbers";
+import {
+  tradeFieldValue,
+  tradeNumberColumnWidth,
+  tradeNumberFields,
+} from "../shared/tradeNumbers";
 import { Pager, Status, formatField, TableReadHint } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
@@ -242,7 +246,7 @@ export function OperationsList({
         dataIndex: key,
         ellipsis: true,
         width: numberFields?.[key]
-          ? 218
+          ? tradeNumberColumnWidth
           : key.endsWith("At")
             ? 180
             : key.toLowerCase().includes("amount") || key === "payable"

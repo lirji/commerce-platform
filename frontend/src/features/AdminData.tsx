@@ -8,7 +8,11 @@ import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
 import { compactTradeFields, TradeRowFacts } from "../shared/TradeRowFacts";
 import { StockCounts } from "../shared/StockCounts";
-import { tradeFieldValue, tradeNumberFields } from "../shared/tradeNumbers";
+import {
+  tradeFieldValue,
+  tradeNumberColumnWidth,
+  tradeNumberFields,
+} from "../shared/tradeNumbers";
 import { Button, Grid, Space, Spin, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
 import { LegacyJourneyHistory } from "./LegacyJourneyHistory";
@@ -749,9 +753,11 @@ export function AdminData({
                 dataIndex: key,
                 ellipsis: !((compact || compactStock) && index === 0),
                 width:
-                  numberFields?.[key] || ((compact || compactStock) && index === 0)
+                  (compact || compactStock) && index === 0
                     ? 218
-                    : undefined,
+                    : numberFields?.[key]
+                      ? tradeNumberColumnWidth
+                      : undefined,
                 align: [
                   "available",
                   "held",

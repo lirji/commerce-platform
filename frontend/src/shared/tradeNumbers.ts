@@ -1,3 +1,5 @@
+export const tradeNumberColumnWidth = 268;
+
 export const tradeNumberFields: Record<string, Record<string, string>> = {
   "/admin/aftersales": {
     caseId: "businessNo",
