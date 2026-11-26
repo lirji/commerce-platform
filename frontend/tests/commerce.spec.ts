@@ -219,8 +219,11 @@ test("可视规则与低代码页面预览、审批、发布及窄屏", async ({
     await page.getByRole("button", { name: action, exact: true }).click();
   // 点击不会等待异步发布完成；确认真实发布状态后再验收已发布内容，避免抢先读取返回 404。
   const publishedPage = page.getByRole("row").filter({
-    has: page.getByRole("cell", { name: "会员营销运营台", exact: true }),
+    has: page.getByText("browser-page", { exact: true }),
   });
+  await expect(
+    publishedPage.getByText("会员营销运营台", { exact: true }),
+  ).toBeVisible();
   await expect(
     publishedPage.getByText("已发布", { exact: true }),
   ).toBeVisible();
