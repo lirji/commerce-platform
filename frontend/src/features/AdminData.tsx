@@ -63,10 +63,7 @@ export const specs: Record<string, Spec> = {
     path: "/admin/member-tags",
     id: "tagId",
     fields: [id("tagId", "标签标识"), name],
-    columns: [
-      ["tagId", "标识"],
-      ["name", "名称"],
-    ],
+    columns: [["name", "标签"]],
   },
   "store-grants": {
     title: "商家与门店经营授权",
@@ -94,7 +91,7 @@ export const specs: Record<string, Spec> = {
       ["actorId", "运营主体"],
       ["resourceType", "范围"],
       ["resourceId", "资源"],
-      ["active", "启用"],
+      ["active", "授权状态"],
       ["version", "版本"],
       ["reason", "原因"],
     ],
@@ -400,6 +397,12 @@ const eyebrows: Record<string, string> = {
 };
 function cell(key: string, value: unknown): ReactNode {
   if (key === "status") return <Status value={string(value)} />;
+  if (key === "resourceType") {
+    if (value === "STORE") return "单个门店";
+    if (value === "MERCHANT") return "商家及其门店";
+  }
+  if (key === "active" && typeof value === "boolean")
+    return value ? "生效" : "已撤销";
   if (key === "issuanceMode" || key === "sourceType")
     return formatField(key, value);
   if (
@@ -682,6 +685,11 @@ export function AdminData({
                 path="/admin/events/pump"
                 onDone={refresh}
               />
+            )}
+            {kind === "member-tags" && (
+              <Typography.Paragraph>
+                标签编号可用于会员关联及规则条件。会员关联可在会员成长的「成长与账本」中查看。
+              </Typography.Paragraph>
             )}
             {kind === "instances" && (
               <ActionButton

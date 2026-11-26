@@ -21,7 +21,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import { ErrorNotice, PageHead, PrimaryCell } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Kind = { MERCHANT: "merchants", STORE: "stores" } as const;
@@ -208,6 +208,10 @@ function DirectorySection({
   const filters = useListFilters(directoryQuery(kind), `/admin/${kind}`, () =>
     setAfter(""),
   );
+  const merchantCriteria = new URLSearchParams(location.search).get(
+    `${directoryQuery(Kind.MERCHANT)}.query`,
+  );
+  const merchantScope = new URLSearchParams(filters.query).get("merchantId");
   const rows = useResource<Entry[]>(
     `/admin/${kind}?after=${encodeURIComponent(after)}&${filters.query}`,
   );
@@ -303,6 +307,24 @@ function DirectorySection({
         </Button>
       </Space>
       {filters.toolbar}
+      {!merchant && merchantScope && (
+        <Space wrap>
+          <Typography.Text>所属商家 {merchantScope}</Typography.Text>
+          <a
+            href={href("directory", {
+              workspaceTab: Kind.MERCHANT,
+              ...(merchantCriteria
+                ? {
+                    [`${directoryQuery(Kind.MERCHANT)}.query`]:
+                      merchantCriteria,
+                  }
+                : {}),
+            })}
+          >
+            返回商家目录
+          </a>
+        </Space>
+      )}
       <ErrorNotice error={rows.error} onRetry={rows.refresh} />
       {!rows.error && (
         <Table<Entry>
@@ -313,10 +335,15 @@ function DirectorySection({
           scroll={{ x: 620 }}
           columns={[
             {
-              title: `${label}编号`,
-              dataIndex: merchant ? "merchantId" : "storeId",
+              title: label,
+              width: 180,
+              render: (_, row) => (
+                <PrimaryCell
+                  title={row.name}
+                  subtitle={merchant ? row.merchantId : row.storeId}
+                />
+              ),
             },
-            { title: "名称", dataIndex: "name" },
             ...(!merchant
               ? [{ title: "所属商家", dataIndex: "merchantId" }]
               : []),
@@ -334,6 +361,12 @@ function DirectorySection({
                       <a
                         href={href("directory", {
                           workspaceTab: "stores",
+                          ...(merchantCriteria
+                            ? {
+                                [`${directoryQuery(Kind.MERCHANT)}.query`]:
+                                  merchantCriteria,
+                              }
+                            : {}),
                           [`${directoryQuery(Kind.STORE)}.query`]:
                             JSON.stringify({ merchantId: row.merchantId }),
                         })}

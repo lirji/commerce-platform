@@ -9,6 +9,7 @@ import {
 } from "antd";
 import { useRef, useState } from "react";
 import { central, CentralError, useCentral, type Context } from "./api";
+import { time } from "../shared/ui";
 const State = {
   SUBMITTED: "SUBMITTED",
   RUNNING: "RUNNING",
@@ -122,16 +123,25 @@ export function ProductExport({
     }
   }
   const failure = error ?? access.error ?? job.error;
+  const allowed =
+    access.data?.export === true && !access.loading && !access.error;
+  const currentJob =
+    allowed && !job.error && job.data?.id === jobId ? job.data : undefined;
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
       {failure && <Alert type="error" showIcon title={failure.message} />}
+      {!jobId && (
+        <Typography.Text>
+          新任务检索条件 {search || "全部授权商品"}
+        </Typography.Text>
+      )}
       <Space wrap>
         {portal && (
           <Button href={portal} target="_blank" rel="noopener noreferrer">
             申请限时导出
           </Button>
         )}
-        {access.data?.export && !access.error && (
+        {allowed && (
           <Button
             disabled={busy || unknown}
             onClick={() =>
@@ -164,9 +174,9 @@ export function ProductExport({
       )}
       {jobId && (
         <>
-          {job.loading ? (
+          {job.loading || access.loading ? (
             <Spin />
-          ) : job.data && !job.error ? (
+          ) : currentJob ? (
             <>
               <Descriptions
                 column={1}
@@ -176,71 +186,73 @@ export function ProductExport({
                     key: "id",
                     label: "导出任务",
                     children: (
-                      <Typography.Text copyable>{job.data.id}</Typography.Text>
+                      <Typography.Text copyable>
+                        {currentJob.id}
+                      </Typography.Text>
                     ),
                   },
                   {
                     key: "search",
                     label: "提交时检索条件",
                     children:
-                      job.data.search === ""
+                      currentJob.search === ""
                         ? "全部授权商品"
-                        : (job.data.search ?? "暂未返回"),
+                        : (currentJob.search ?? "暂未返回"),
                   },
                   {
                     key: "state",
                     label: "执行状态",
                     children:
-                      job.data.state === State.SUBMITTED
+                      currentJob.state === State.SUBMITTED
                         ? "已提交，尚未开始"
-                        : job.data.state === State.RUNNING
+                        : currentJob.state === State.RUNNING
                           ? "处理中"
-                          : job.data.state === State.COMPLETED
+                          : currentJob.state === State.COMPLETED
                             ? "内容已生成"
-                            : job.data.state,
+                            : currentJob.state,
                   },
                   {
                     key: "count",
                     label: "已生成行数",
-                    children: job.data.rowCount,
+                    children: currentJob.rowCount,
                   },
                   {
                     key: "expires",
                     label: "任务有效期",
-                    children: new Date(job.data.expiresAt).toLocaleString(),
+                    children: time(currentJob.expiresAt),
                   },
                 ]}
               />
               <Space wrap>
-                {job.data.state === State.SUBMITTED && (
+                {currentJob.state === State.SUBMITTED && (
                   <Button
                     type="primary"
                     disabled={unknown}
                     loading={busy}
                     onClick={() =>
                       command(
-                        `/exports/${jobId}/start?version=${job.data!.version}`,
+                        `/exports/${currentJob.id}/start?version=${currentJob.version}`,
                       )
                     }
                   >
                     开始导出
                   </Button>
                 )}
-                {job.data.state === State.RUNNING && (
+                {currentJob.state === State.RUNNING && (
                   <Button
                     type="primary"
                     disabled={unknown}
                     loading={busy}
                     onClick={() =>
                       command(
-                        `/exports/${jobId}/advance?version=${job.data!.version}`,
+                        `/exports/${currentJob.id}/advance?version=${currentJob.version}`,
                       )
                     }
                   >
                     继续处理（每次最多50行）
                   </Button>
                 )}
-                {job.data.state === State.COMPLETED && (
+                {currentJob.state === State.COMPLETED && (
                   <Button type="primary" loading={busy} onClick={download}>
                     下载商品文件
                   </Button>

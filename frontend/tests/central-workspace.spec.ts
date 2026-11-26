@@ -1248,6 +1248,7 @@ test("中央商家与门店目录分别恢复查询，旧书签只恢复到原�
   test.skip(!base, "需启用独立中央 UI 预览");
   const tenant = "11111111-1111-4111-8111-111111111111";
   const keyword = new Map<string, string | null>();
+  let merchantScope: string | null = null;
   await restoreCentralFixture(page);
   await page.route("**/v1/**", (route) => {
     expect(route.request().method()).toBe("GET");
@@ -1256,7 +1257,30 @@ test("中央商家与门店目录分别恢复查询，旧书签只恢复到原�
       return route.fulfill({ json: centralNavigationFixture(tenant) });
     if (["/v1/admin/merchants", "/v1/admin/stores"].includes(url.pathname)) {
       keyword.set(url.pathname, url.searchParams.get("q"));
-      return route.fulfill({ json: [] });
+      if (url.pathname.endsWith("/merchants")) {
+        return route.fulfill({
+          json: [
+            {
+              merchantId: "MERCHANT-A",
+              name: "同名商家",
+              status: "ACTIVE",
+              version: 1,
+            },
+          ],
+        });
+      }
+      merchantScope = url.searchParams.get("merchantId");
+      return route.fulfill({
+        json: [
+          {
+            storeId: "STORE-A",
+            merchantId: "MERCHANT-A",
+            name: "同名门店",
+            status: "ACTIVE",
+            version: 1,
+          },
+        ],
+      });
     }
     return route.fulfill({ json: { allowed: false } });
   });
@@ -1285,4 +1309,63 @@ test("中央商家与门店目录分别恢复查询，旧书签只恢复到原�
   await expect.poll(() => keyword.get("/v1/admin/stores")).toBe(null);
   await page.getByRole("tab", { name: "商家目录", exact: true }).click();
   await expect(input).toHaveValue("新商家");
+  await page.getByRole("link", { name: "查看下属门店", exact: true }).click();
+  await expect(
+    page.getByText("所属商家 MERCHANT-A", { exact: true }),
+  ).toBeVisible();
+  await expect.poll(() => merchantScope).toBe("MERCHANT-A");
+  await expect(
+    page.getByRole("row").filter({ hasText: "同名门店" }),
+  ).toContainText("STORE-A");
+  await page.getByRole("link", { name: "返回商家目录", exact: true }).click();
+  await expect(input).toHaveValue("新商家");
+});
+
+test("协作导出回显任务原条件并随独立导出资格撤销", async ({ page }) => {
+  const base = process.env.COMMERCE_CENTRAL_UI_URL;
+  test.skip(!base, "需独立中央预览");
+  const tenant = "11111111-1111-4111-8111-111111111111";
+  const jobId = "33333333-3333-4333-8333-333333333333";
+  let allowed = true;
+  await restoreCentralFixture(page);
+  await page.route("**/v1/**", (route) => {
+    expect(route.request().method()).toBe("GET");
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/navigation"))
+      return route.fulfill({ json: centralNavigationFixture(tenant) });
+    if (path.endsWith("/export-access"))
+      return route.fulfill({ json: { export: allowed } });
+    if (path.endsWith(`/exports/${jobId}`))
+      return route.fulfill({
+        json: {
+          id: jobId,
+          resourceType: "product",
+          state: "COMPLETED",
+          rowCount: 2,
+          version: 3,
+          expiresAt: "2026-12-15T00:00:00Z",
+          search: "原任务条件",
+        },
+      });
+    return route.fulfill({ json: { total: 1, stores: 1, items: [] } });
+  });
+  const query = new URLSearchParams({
+    tenant_id: tenant,
+    search: "当前条件",
+    export: jobId,
+  });
+  await page.goto(`${base}/collaboration/products?${query}`);
+  await expect(page.getByText(/当前查询 当前条件/)).toBeVisible();
+  await expect(page.getByText("原任务条件", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "下载商品文件" }),
+  ).toBeVisible();
+  allowed = false;
+  await page.getByRole("button", { name: "刷新导出权限与进度" }).click();
+  await expect(page.getByText(/导出需申请独立的限时权限/)).toBeVisible();
+  await expect(page.getByText("原任务条件", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "下载商品文件" })).toHaveCount(
+    0,
+  );
+  await expect(page.getByText(/当前查询 当前条件/)).toBeVisible();
 });

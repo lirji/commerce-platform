@@ -22,7 +22,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import { ErrorNotice, PageHead, PrimaryCell } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 const Action = { DEFINE: "define", ASSIGN: "assign" } as const;
@@ -222,8 +222,12 @@ function TagDictionary() {
           pagination={false}
           scroll={{ x: 550 }}
           columns={[
-            { title: "标签编号", dataIndex: "tagId" },
-            { title: "标签名称", dataIndex: "name" },
+            {
+              title: "标签",
+              render: (_, row) => (
+                <PrimaryCell title={row.name} subtitle={row.tagId} />
+              ),
+            },
           ]}
         />
       )}

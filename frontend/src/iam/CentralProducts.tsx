@@ -526,8 +526,13 @@ function Products({
           </Space>
           <ErrorView error={page.error} />
           <Typography.Text>
-            当前范围内 {page.data?.total ?? "—"} 件商品 ·{" "}
-            {page.data?.stores ?? "—"} 家门店
+            当前查询 {search || "全部授权商品"}
+            {!page.error && page.data && (
+              <>
+                {" "}
+                · {page.data.total} 件商品 · {page.data.stores} 家门店
+              </>
+            )}
           </Typography.Text>
           <Table<Product>
             rowKey="resourceId"

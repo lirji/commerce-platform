@@ -301,9 +301,9 @@ function Policies() {
           pagination={false}
           scroll={{ x: 850 }}
           columns={[
-            { title: "版本", dataIndex: "version" },
-            { title: "生效时间", dataIndex: "effectiveFrom", render: time },
-            { title: "周期天数", dataIndex: "periodDays" },
+            { title: "固定政策版本", dataIndex: "version" },
+            { title: "本版开始生效", dataIndex: "effectiveFrom", render: time },
+            { title: "周期天数", dataIndex: "periodDays", align: "right" },
             {
               title: "等级门槛",
               render: (_, row) =>
@@ -510,8 +510,10 @@ function BundleList({ version }: { version: number }) {
           scroll={{ x: 1000 }}
           columns={[
             { title: "礼包编号", dataIndex: "bindingId" },
-            { title: "政策版本", dataIndex: "policyVersion" },
-            { title: "等级", dataIndex: "level" },
+            {
+              title: "适用政策与等级",
+              render: (_, row) => `v${row.policyVersion} · ${row.level}`,
+            },
             { title: "门店", dataIndex: "storeId" },
             { title: "发放截止", dataIndex: "validUntil", render: time },
             {
