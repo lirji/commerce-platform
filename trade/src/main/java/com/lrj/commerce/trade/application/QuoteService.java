@@ -231,9 +231,11 @@ public class QuoteService implements QuoteApi {
 					var selectedPromotion = promotion;
 					var selectedPoints = pointApplication;
 					String selectedCampaignDiscount = campaignDiscount.amount().toPlainString();
+					// 试点签名与交易中心的 V1 核验仍要求原报价 UUID。
+					String quoteId = UUID.randomUUID().toString();
 					long persistenceStarted = System.nanoTime();
 					var result = BusinessNumberWriter.write(BusinessNumber.Type.QUOTE, now, number -> {
-						var quote = new View(number, member.memberId(), store.merchantId(),
+						var quote = new View(quoteId, member.memberId(), store.merchantId(),
 							store.storeId(), "CNY", gross.amount().toPlainString(),
 							totalDiscount.amount().toPlainString(),
 							gross.subtract(totalDiscount).amount().toPlainString(), now, quoteExpiresAt, resultLines,

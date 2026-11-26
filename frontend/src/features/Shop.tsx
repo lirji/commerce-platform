@@ -503,6 +503,11 @@ export function Shop({
               column={1}
               items={[
                 {
+                  key: "number",
+                  label: "报价编号",
+                  children: quote.businessNo ?? quote.quoteId,
+                },
+                {
                   key: "gross",
                   label: "商品金额",
                   children: money(quote.gross),
