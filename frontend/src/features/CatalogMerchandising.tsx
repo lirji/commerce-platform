@@ -38,6 +38,7 @@ export type Category = {
   depth: number;
   status: string;
   version: number;
+  platformCategoryCode?: string;
 };
 export type Template = {
   templateId: string;
@@ -100,8 +101,26 @@ export function CatalogStructure({ store }: { store: string }) {
   const categories = useResource<Category[]>(
     `/operations/catalog-categories?storeId=${encode(store)}&after=${encode(categoryAfter)}`,
   );
+  const platformCategories = useResource<{ code: string; label: string }[]>(
+    `/operations/catalog-platform-categories?storeId=${encode(store)}`,
+  );
   const templates = useResource<Template[]>(
     `/operations/specification-templates?storeId=${encode(store)}&after=${encode(templateAfter)}`,
+  );
+  const platformOptions = platformCategories.data?.map(({ code, label }) => ({
+    value: code,
+    label,
+  }));
+  const platformField = (
+    <Form.Item name="platformCategoryCode" label="平台类目">
+      <Select
+        allowClear
+        showSearch={{ optionFilterProp: "label" }}
+        placeholder="搜索平台标准类目"
+        disabled={!platformOptions}
+        options={platformOptions}
+      />
+    </Form.Item>
   );
   return (
     <Tabs
@@ -114,6 +133,10 @@ export function CatalogStructure({ store }: { store: string }) {
               <ErrorNotice
                 error={categories.error}
                 onRetry={categories.refresh}
+              />
+              <ErrorNotice
+                error={platformCategories.error}
+                onRetry={platformCategories.refresh}
               />
               <Space>
                 <CommandModal
@@ -135,7 +158,9 @@ export function CatalogStructure({ store }: { store: string }) {
                     parentId: v.parentId || null,
                   })}
                   onDone={categories.refresh}
-                />
+                >
+                  {platformField}
+                </CommandModal>
                 <Button onClick={categories.refresh}>刷新类目</Button>
               </Space>
               <Table<Category>
@@ -155,6 +180,15 @@ export function CatalogStructure({ store }: { store: string }) {
                   { title: "标识", dataIndex: "categoryId" },
                   { title: "父级", render: (_, r) => r.parentId ?? "根类目" },
                   { title: "层级", dataIndex: "depth" },
+                  {
+                    title: "平台类目",
+                    render: (_, row) =>
+                      platformOptions?.find(
+                        ({ value }) => value === row.platformCategoryCode,
+                      )?.label ??
+                      row.platformCategoryCode ??
+                      "—",
+                  },
                   {
                     title: "状态",
                     dataIndex: "status",
@@ -182,14 +216,26 @@ export function CatalogStructure({ store }: { store: string }) {
                             },
                             { name: "reason", label: "类目变更原因" },
                           ]}
-                          initialValues={{ name: r.name, status: r.status }}
+                          initialValues={{
+                            name: r.name,
+                            status: r.status,
+                            platformCategoryCode: r.platformCategoryCode,
+                          }}
                           build={(v) => ({
                             ...v,
                             storeId: store,
                             expectedVersion: r.version,
+                            clearPlatformCategory:
+                              platformOptions &&
+                              r.platformCategoryCode &&
+                              !v.platformCategoryCode
+                                ? true
+                                : undefined,
                           })}
                           onDone={categories.refresh}
-                        />
+                        >
+                          {platformField}
+                        </CommandModal>
                       </RowActions>
                     ),
                   },

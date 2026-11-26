@@ -1,20 +1,31 @@
 package com.lrj.commerce.catalog.merchandising.api;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.store.management.api.StoreOpeningApi;
 import java.util.List;
 import com.lrj.commerce.catalog.product.api.ProductOperationsApi;
 
 /** 商品经营资料独立于价格快照，所有管理读写复用门店资源权限。 */
 public interface CatalogMerchandisingApi {
 
-	record CategoryInput(String categoryId, String storeId, String parentId, String name) {
+	record CategoryInput(String categoryId, String storeId, String parentId, String name,
+			@JsonInclude(JsonInclude.Include.NON_NULL) String platformCategoryCode) {
+		public CategoryInput(String categoryId, String storeId, String parentId, String name) {
+			this(categoryId, storeId, parentId, name, null);
+		}
 	}
 
 	record Category(String categoryId, String storeId, String parentId, String name, int depth, String status,
-			long version) {
+			long version, @JsonInclude(JsonInclude.Include.NON_NULL) String platformCategoryCode) {
 	}
 
-	record CategoryChange(String storeId, long expectedVersion, String name, String status, String reason) {
+	record CategoryChange(String storeId, long expectedVersion, String name, String status, String reason,
+			@JsonInclude(JsonInclude.Include.NON_NULL) String platformCategoryCode,
+			@JsonInclude(JsonInclude.Include.NON_NULL) Boolean clearPlatformCategory) {
+		public CategoryChange(String storeId, long expectedVersion, String name, String status, String reason) {
+			this(storeId, expectedVersion, name, status, reason, null, null);
+		}
 	}
 
 	record Attribute(String name, List<String> values) {
@@ -54,6 +65,9 @@ public interface CatalogMerchandisingApi {
 	Category changeCategory(Actor actor, String key, String id, CategoryChange input);
 
 	List<Category> categories(Actor actor, String store, String after, int limit, boolean publicOnly);
+
+	/** 门店商品人员在已获授权的店铺内查询可绑定的平台末级。 */
+	List<StoreOpeningApi.Category> platformCategories(Actor actor, String store);
 
 	Template createTemplate(Actor actor, String key, Template input);
 

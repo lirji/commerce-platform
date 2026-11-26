@@ -21,7 +21,7 @@ public interface MerchandisingMapper {
 
 	void categoryInsert(String tenant, CategoryInput input, int depth);
 
-	int categoryChange(String tenant, String id, CategoryChange input);
+	int categoryChange(String tenant, String id, CategoryChange input, String platformCategoryCode);
 
 	boolean categoryUsed(String tenant, String store, String id);
 

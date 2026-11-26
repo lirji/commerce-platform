@@ -10,7 +10,9 @@ import java.net.URI;
 import com.lrj.commerce.catalog.merchandising.api.CatalogMerchandisingApi;
 import com.lrj.commerce.catalog.product.api.ProductOperationsApi;
 import com.lrj.commerce.store.access.api.StoreAccessApi;
+import com.lrj.commerce.store.management.api.PlatformCategoryApi;
 import com.lrj.commerce.store.management.api.StoreApi;
+import com.lrj.commerce.store.management.api.StoreOpeningApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.command.Commands;
@@ -31,15 +33,17 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 	private final StoreApi stores;
 
 	private final Commands commands;
+	private final PlatformCategoryApi platformCategories;
 
 	public CatalogMerchandisingService(MerchandisingMapper mapper, ProductMapper products, StoreAccessApi access,
-			StoreApi stores, Commands commands, java.time.Clock clock) {
+			StoreApi stores, Commands commands, java.time.Clock clock, PlatformCategoryApi platformCategories) {
 		this.clock = clock;
 		this.mapper = mapper;
 		this.products = products;
 		this.access = access;
 		this.stores = stores;
 		this.commands = commands;
+		this.platformCategories = platformCategories;
 	}
 
 	/** 父节点锁使新建子类目与停用互斥，层级不会在并发下越界。 */
@@ -57,6 +61,8 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 				depth = parent.depth() + 1;
 			}
 			Inputs.require(depth <= 3, "类目最多三级");
+			if (input.platformCategoryCode() != null)
+				platformCategories.requireAssignable(input.platformCategoryCode());
 			mapper.categoryInsert(actor.tenantId(), input, depth);
 			return mapper.categoryLock(actor.tenantId(), input.storeId(), input.categoryId());
 		});
@@ -69,6 +75,8 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 		Inputs.text(input.name(), 64);
 		Inputs.text(input.reason(), 256);
 		Inputs.require("ACTIVE".equals(input.status()) || "RETIRED".equals(input.status()), "类目状态无效");
+		Inputs.require(input.platformCategoryCode() == null || !Boolean.TRUE.equals(input.clearPlatformCategory()),
+				"绑定与清除平台类目只能选一个");
 		access.requireCatalog(actor, input.storeId());
 		return commands.run(actor, "catalog.category.change", key, new Object[] { id, input }, Category.class, () -> {
 			access.requireCatalog(actor, input.storeId());
@@ -77,9 +85,29 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 				throw conflict("类目仍有启用子类目或绑定商品");
 			if (input.status().equals("ACTIVE") && row.parentId() != null)
 				activeCategory(actor.tenantId(), input.storeId(), row.parentId());
-			check(mapper.categoryChange(actor.tenantId(), id, input));
+			String platformCode = platformCode(row, input);
+			check(mapper.categoryChange(actor.tenantId(), id, input, platformCode));
 			return mapper.categoryLock(actor.tenantId(), input.storeId(), id);
 		});
+	}
+
+	/** 缺省字段维持原绑定，旧客户端修改店内名称时仍可保存。 */
+	private String platformCode(Category stored, CategoryChange input) {
+		if (Boolean.TRUE.equals(input.clearPlatformCategory()))
+			return null;
+		String requested = input.platformCategoryCode();
+		if (requested == null)
+			return stored.platformCategoryCode();
+		if (!Objects.equals(requested, stored.platformCategoryCode()))
+			platformCategories.requireAssignable(requested);
+		return requested;
+	}
+
+	/** 平台字典读取复用门店商品经营权限，不能凭店铺编号绕过授权。 */
+	@Override
+	public List<StoreOpeningApi.Category> platformCategories(Actor actor, String store) {
+		access.requireCatalog(actor, store);
+		return platformCategories.options();
 	}
 
 	/** 管理端包含停用项，销售端只显示启用类目。 */
@@ -168,9 +196,13 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 				() -> {
 					access.requireCatalog(actor, input.storeId());
 					Inputs.found(products.productLock(actor.tenantId(), input.storeId(), product));
-					if (input.categoryId() != null)
-						activeCategory(actor.tenantId(), input.storeId(), input.categoryId());
+					var category = input.categoryId() == null ? null
+							: activeCategory(actor.tenantId(), input.storeId(), input.categoryId());
 					var old = mapper.profileCurrent(actor.tenantId(), input.storeId(), product);
+					// 旧商品照常维护图文，只有新增分类引用才复核平台类目的有效性。
+					if (category != null && category.platformCategoryCode() != null
+							&& (old == null || !Objects.equals(old.categoryId(), input.categoryId())))
+						platformCategories.requireAssignable(category.platformCategoryCode());
 					if (old != null && old.templateId() != null
 							&& (!Objects.equals(old.templateId(), input.templateId())
 									|| !Objects.equals(old.templateVersion(), input.templateVersion())))

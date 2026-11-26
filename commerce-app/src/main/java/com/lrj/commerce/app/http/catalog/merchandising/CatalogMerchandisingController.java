@@ -37,6 +37,12 @@ public class CatalogMerchandisingController {
 		return catalog.categories(actor, storeId, after, limit, false);
 	}
 
+	/** 商品分类在原店铺权限下选择平台标准末级。 */
+	@GetMapping("/operations/catalog-platform-categories")
+	public Object platformCategories(@AuthenticationPrincipal Actor actor, @RequestParam String storeId) {
+		return catalog.platformCategories(actor, storeId);
+	}
+
 	/** 销售筛选仅用当前有效类目。 */
 	@GetMapping("/catalog/categories")
 	public Object publicCategories(@AuthenticationPrincipal Actor actor, @RequestParam String storeId,

@@ -16,11 +16,11 @@
 
 ## 操作和接口契约
 
-入口为店铺管理或中央「商家与门店」的门店目录。填写基础资料、选择经营类目后保存草稿，按待开店筛选可继续。确认时复核所属商家以及所选类目均可用。开店主体代码是 `PERSONAL`、`INDIVIDUAL` 或 `ENTERPRISE`。经营类目来自 V83 初始化的数据库字典，和开店后门店自行管理的商品类目分别使用。开店记录同时保存代码及显示名称快照，历史手填资料可原样查看或在改草稿时改选标准类目。
+入口为店铺管理或中央「商家与门店」的门店目录。填写基础资料、选择经营类目后保存草稿，按待开店筛选可继续。确认时复核所属商家以及所选类目均可用。开店主体代码是 `PERSONAL`、`INDIVIDUAL` 或 `ENTERPRISE`。经营类目来自可维护的平台分类字典，开店记录同时保存代码及显示名称快照，历史手填资料可原样查看或在改草稿时改选标准类目。门店商品分类可关联同一平台字典。 [平台分类维护契约](PLATFORM_CATEGORIES.md)
 
 | HTTP | 请求与结果 |
 | --- | --- |
-| `GET /v1/admin/store-opening-categories` | 返回可选二级类目及完整路径。 |
+| `GET /v1/admin/store-opening-categories` | 返回可选末级类目及完整路径，平台树最多三级。 |
 | `POST /v1/admin/store-openings` | `storeId, merchantId, name, subjectType, categoryCode` 保存为 `PENDING_OPEN`、版本 0。兼容旧客户端的 `category` 文本。 |
 | `GET /v1/admin/store-openings/{storeId}` | 返回草稿或已确认的资料、版本、审核记录引用及开店审计字段。 |
 | `POST /v1/admin/store-openings/{storeId}/revise` | `expectedVersion, name, subjectType, categoryCode` 补正待开店资料，版本加一。旧 `category` 文本仍可解析。 |

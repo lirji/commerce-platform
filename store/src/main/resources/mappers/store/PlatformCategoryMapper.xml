@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.store.management.infrastructure.persistence.PlatformCategoryMapper">
+  <sql id="node">c.category_code AS code,c.parent_code,c.name,c.node_kind AS kind,c.depth,c.sort_order,c.enabled,c.version</sql>
+  <select id="list" resultType="com.lrj.commerce.store.management.api.PlatformCategoryApi$Node">
+    SELECT <include refid="node"/> FROM store_opening_category c
+    ORDER BY c.depth,c.sort_order,c.category_code
+  </select>
+  <select id="find" resultType="com.lrj.commerce.store.management.api.PlatformCategoryApi$Node">
+    SELECT <include refid="node"/> FROM store_opening_category c WHERE c.category_code=#{code}
+  </select>
+  <select id="parentForCreate" resultType="com.lrj.commerce.store.management.api.PlatformCategoryApi$Node">
+    SELECT <include refid="node"/>
+    FROM store_opening_category c LEFT JOIN store_opening_category p ON p.category_code=c.parent_code
+    WHERE c.category_code=#{code} AND c.node_kind='BRANCH' AND c.enabled
+      AND (p.category_code IS NULL OR p.enabled)
+    FOR SHARE
+  </select>
+  <insert id="insert">
+    INSERT INTO store_opening_category(category_code,parent_code,name,node_kind,depth,sort_order)
+    VALUES(#{input.code},#{input.parentCode},#{input.name},#{input.kind},#{depth},#{input.sortOrder})
+  </insert>
+  <update id="change">
+    UPDATE store_opening_category SET name=#{input.name},sort_order=#{input.sortOrder},enabled=#{input.enabled},
+        version=version+1 WHERE category_code=#{code} AND version=#{input.expectedVersion}
+  </update>
+  <insert id="audit">
+    INSERT INTO platform_category_history(category_code,version,name,sort_order,enabled,actor_tenant_id,actor_id,reason)
+    SELECT category_code,version,name,sort_order,enabled,#{tenant},#{actor},#{reason}
+    FROM store_opening_category WHERE category_code=#{code}
+  </insert>
+  <select id="history" resultType="com.lrj.commerce.store.management.api.PlatformCategoryApi$History">
+    SELECT version,name,sort_order,enabled,actor_id,reason,changed_at
+    FROM platform_category_history WHERE category_code=#{code} ORDER BY version DESC LIMIT 20
+  </select>
+  <select id="curator" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM platform_category_curator WHERE tenant_id=#{tenant} AND actor_id=#{actor} AND active)
+  </select>
+  <select id="lockCurator" resultType="boolean">
+    SELECT active FROM platform_category_curator WHERE tenant_id=#{tenant} AND actor_id=#{actor} FOR SHARE
+  </select>
+</mapper>

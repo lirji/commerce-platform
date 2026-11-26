@@ -122,6 +122,58 @@ class StoreOpeningMySqlTest {
 		assertEquals("legacy-store", get("/v1/stores", member).body().path(0).path("storeId").asText());
 	}
 
+	/** 同一平台树驱动开店和商品分类。归档分支后旧引用仍能读取，新引用被拒绝。 */
+	@Test
+	void platformDictionaryMaintainsThreeLevelsAndPreservesReferences() throws Exception {
+		String tenant = "platform-" + UUID.randomUUID();
+		String curator = credential(tenant, "category-owner", "PLATFORM_OPERATOR");
+		String observer = credential(tenant, "category-observer", "PLATFORM_OPERATOR");
+		jdbc.update("INSERT INTO platform_category_curator(tenant_id,actor_id) VALUES(?,'category-owner')", tenant);
+		String platform = "/v1/platform/commerce-categories";
+		String root = "TEST_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(java.util.Locale.ROOT);
+		String group = root + "_GROUP";
+		String leaf = root + "_LEAF";
+		Map<String, Object> rootInput = Map.of("code", root, "name", root, "kind", "BRANCH", "sortOrder", 10, "reason", "增加一级分组");
+		assertEquals(403, get(platform, admin).status());
+		assertFalse(get(platform, observer).body().path("canEdit").asBoolean());
+		assertEquals(403, send("POST", platform, observer, "denied", rootInput).get().status());
+		assertTrue(get(platform, curator).body().path("canEdit").asBoolean());
+		var created = send("POST", platform, curator, "root", rootInput).get();
+		assertEquals(200, created.status(), created.body().toString());
+		assertEquals(created, send("POST", platform, curator, "root", rootInput).get());
+		assertEquals(200, send("POST", platform, curator, "group", Map.of(
+				"code", group, "parentCode", root, "name", "二级分组", "kind", "BRANCH", "sortOrder", 10, "reason", "增加分组")).get().status());
+		var terminal = send("POST", platform, curator, "leaf", Map.of(
+				"code", leaf, "parentCode", group, "name", "三级细类", "kind", "LEAF", "sortOrder", 10, "reason", "增加末级")).get();
+		assertEquals(200, terminal.status(), terminal.body().toString());
+		assertEquals(3, terminal.body().path("depth").asInt());
+		String optionPath = "/v1/admin/store-opening-categories";
+		assertTrue(get(optionPath, admin).body().toString().contains(root + " / 二级分组 / 三级细类"));
+		var draft = post(OPENINGS, "structured-draft", Map.of("storeId", "fresh-store", "merchantId", MERCHANT,
+				"name", "开店测试", "subjectType", "ENTERPRISE", "categoryCode", leaf));
+		assertEquals(200, draft.status(), draft.body().toString());
+		assertEquals(200, post(STORE_PATH + "/open", "confirm", Map.of("expectedVersion", 0, "reviewReference", "REVIEW-3")).status());
+		String localPath = "/v1/operations/catalog-categories";
+		var mapped = post(localPath, "store-category", Map.of("storeId", "fresh-store", "categoryId", "local-category",
+				"name", "店铺导航", "platformCategoryCode", leaf));
+		assertEquals(200, mapped.status(), mapped.body().toString());
+		assertEquals(leaf, mapped.body().path("platformCategoryCode").asText());
+		var change = Map.of("name", "新分组名称", "expectedVersion", 0, "sortOrder", 15, "enabled", false, "reason", "暂停该分支");
+		var stopped = send("POST", platform + "/" + group, curator, "stop", change).get();
+		assertEquals(200, stopped.status(), stopped.body().toString());
+		assertEquals(409, send("POST", platform + "/" + group, curator, "stale", change).get().status());
+		assertFalse(get(optionPath, admin).body().toString().contains(leaf));
+		assertEquals(400, post(localPath, "new-disabled-binding", Map.of("storeId", "fresh-store", "categoryId", "another",
+				"name", "新的导航", "platformCategoryCode", leaf)).status());
+		assertEquals(leaf, get(localPath + "?storeId=fresh-store", admin).body().path(0).path("platformCategoryCode").asText());
+		assertEquals(root + " / 二级分组 / 三级细类", get(STORE_PATH, admin).body().path("category").asText());
+		var history = get(platform + "/" + group + "/history", curator).body();
+		assertEquals(2, history.size());
+		assertEquals("暂停该分支", history.path(0).path("reason").asText());
+		jdbc.update("UPDATE platform_category_curator SET active=FALSE WHERE tenant_id=?", tenant);
+		assertEquals(403, send("POST", platform, curator, "root", rootInput).get().status());
+	}
+
 	private String credential(String tenant, String actor, String role) {
 		String value = UUID.randomUUID().toString();
 		jdbc.update("INSERT INTO platform_credential(token_hash,tenant_id,actor_id,role,expires_at) VALUES(?,?,?,?,?)",

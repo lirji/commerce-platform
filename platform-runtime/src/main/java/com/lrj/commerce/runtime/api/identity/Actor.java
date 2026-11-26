@@ -21,7 +21,7 @@ public record Actor(String tenantId, String actorId, Role role, Channel channel,
 		this(tenantId, actorId, role, Channel.WEB);
 	}
 
-	/** PLATFORM_OPERATOR只读取跨租户聚合运行指标，不是任何租户的管理员或会员；其tenantId只是凭据归属，平台接口不按它取数。 */
+	/** PLATFORM_OPERATOR 不是租户管理员或会员，平台字典写入仍须独立专岗授权。 */
 	public enum Role {
 
 		ADMIN, MEMBER, OPERATOR, PLATFORM_OPERATOR

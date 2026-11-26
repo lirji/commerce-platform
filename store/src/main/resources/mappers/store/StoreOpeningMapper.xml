@@ -20,15 +20,20 @@
   <sql id="availableCategories">
     FROM store_opening_category child
     JOIN store_opening_category parent ON parent.category_code=child.parent_code
-    WHERE parent.parent_code IS NULL AND parent.enabled AND child.enabled
+    LEFT JOIN store_opening_category grandparent ON grandparent.category_code=parent.parent_code
+    WHERE child.node_kind='LEAF' AND parent.enabled AND child.enabled
+      AND (grandparent.category_code IS NULL OR grandparent.enabled)
   </sql>
+  <sql id="categoryPath">CONCAT_WS(' / ',grandparent.name,parent.name,child.name)</sql>
   <select id="categories" resultType="com.lrj.commerce.store.management.api.StoreOpeningApi$Category">
-    SELECT child.category_code AS code, CONCAT(parent.name,' / ',child.name) AS label
+    SELECT child.category_code AS code, <include refid="categoryPath"/> AS label
     <include refid="availableCategories"/>
-    ORDER BY parent.sort_order, parent.category_code, child.sort_order, child.category_code
+    ORDER BY COALESCE(grandparent.sort_order,parent.sort_order),
+      COALESCE(grandparent.category_code,parent.category_code),parent.sort_order,parent.category_code,
+      child.sort_order,child.category_code
   </select>
   <select id="categoryLabel" resultType="string">
-    SELECT CONCAT(parent.name,' / ',child.name)
+    SELECT <include refid="categoryPath"/>
     <include refid="availableCategories"/>
     AND child.category_code=#{code} FOR SHARE
   </select>

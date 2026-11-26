@@ -93,6 +93,12 @@ const PlatformRuntime = lazy(() =>
     default: m.PlatformRuntime,
   })),
 );
+const PlatformCategories = lazy(() =>
+  import("../features/PlatformCategories").then((m) => ({
+    default: m.PlatformCategories,
+  })),
+);
+const PLATFORM_CATEGORIES_PAGE = "platform-categories";
 
 const groups = [
   {
@@ -400,7 +406,10 @@ export function App() {
                     const requested = route();
                     const allowed =
                       actorIdentity.role === "PLATFORM_OPERATOR"
-                        ? requested.page === "platform-runtime"
+                        ? [
+                            "platform-runtime",
+                            PLATFORM_CATEGORIES_PAGE,
+                          ].includes(requested.page)
                         : actorIdentity.role === "ADMIN"
                           ? adminPages.some(([key]) => key === requested.page)
                           : actorIdentity.role === "OPERATOR"
@@ -479,6 +488,10 @@ export function App() {
           ? "dashboard"
           : "shop");
   const store = locationState.store;
+  const categoryWorkspace = platform && page === PLATFORM_CATEGORIES_PAGE;
+  const platformContext = categoryWorkspace
+    ? "平台工具 · 分类字典"
+    : "平台运维 · 只读聚合";
   const caps = capabilities.data ?? {
     sandboxEnabled: false,
     workersEnabled: false,
@@ -492,6 +505,11 @@ export function App() {
           key: "platform-runtime",
           label: "运行健康",
           icon: <Icon name="platform" />,
+        },
+        {
+          key: PLATFORM_CATEGORIES_PAGE,
+          label: "平台分类字典",
+          icon: <Icon name="catalog" />,
         },
       ]
     : operator
@@ -522,10 +540,12 @@ export function App() {
   let content;
   if (platform)
     content =
-      page === "platform-runtime" ? (
+      page === PLATFORM_CATEGORIES_PAGE ? (
+        <PlatformCategories />
+      ) : page === "platform-runtime" ? (
         <PlatformRuntime />
       ) : (
-        <Alert type="warning" title="请进入平台运行健康查看已授权指标" />
+        <Alert type="warning" title="请从平台导航打开已授权功能" />
       );
   else if (admin && (page === "recovery" || page === "replay"))
     content = <RuntimeOperations mode={page} />;
@@ -584,7 +604,9 @@ export function App() {
           <WorkspaceBrand />
           <div className="nav-caption">
             {platform
-              ? "运行健康工作空间"
+              ? categoryWorkspace
+                ? "平台工具"
+                : "运行健康工作空间"
               : operator
                 ? "门店经营工作空间"
                 : "经营工作空间"}
@@ -600,13 +622,17 @@ export function App() {
           />
           <div className="sidebar-note">
             {platform
-              ? "跨租户聚合 · 只读指标"
+              ? categoryWorkspace
+                ? "开店 · 商品"
+                : "跨租户聚合 · 只读指标"
               : operator
                 ? "门店商品 · 授权经营"
                 : "会员 · 商品 · 营销"}
             <br />
             {platform
-              ? "从运行事实发现问题"
+              ? categoryWorkspace
+                ? "共享平台类目"
+                : "从运行事实发现问题"
               : operator
                 ? "操作范围由业务权限核验"
                 : "让每一次经营都有据可循"}
@@ -652,7 +678,9 @@ export function App() {
               </span>
               <strong>
                 {platform
-                  ? "运行健康"
+                  ? categoryWorkspace
+                    ? "平台分类字典"
+                    : "运行健康"
                   : (adminPages.find(([key]) => key === page)?.[1] ??
                     "商品经营")}
               </strong>
@@ -701,9 +729,7 @@ export function App() {
             </Space>
           )}
           {page === "orders" && sandboxBadge}
-          {platform && (
-            <span className="context-label">平台运维 · 只读聚合</span>
-          )}
+          {platform && <span className="context-label">{platformContext}</span>}
           <Space className="account-context">
             <Avatar
               size="small"
@@ -770,7 +796,7 @@ export function App() {
               <span>
                 {actor.tenantId} ·{" "}
                 {platform
-                  ? "平台运维 · 只读聚合"
+                  ? platformContext
                   : operator
                     ? "门店经营"
                     : "运营管理"}
