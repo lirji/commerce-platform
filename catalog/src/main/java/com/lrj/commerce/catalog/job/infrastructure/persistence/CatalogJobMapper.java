@@ -10,10 +10,13 @@ import java.util.List;
 public interface CatalogJobMapper {
 
 	record Row(String jobId, String storeId, String creatorJson, String contentJson, String status, Instant availableAt,
-			int cursorIndex, int succeeded, int conflicted, int attempts, String errorCode, long version) {
+			int cursorIndex, int succeeded, int conflicted, int attempts, String errorCode, long version, String businessNo) {
 	}
 
-	void insert(String tenant, Create input, String creator, String content, Instant runAt);
+	void insert(String tenant, Create input, String creator, String content, Instant runAt, Instant createdAt, String businessNo);
+
+	/** 当前读业务号占用情况，只用于裁决发号碰撞。 */
+	String lockBusinessNumber(String number);
 
 	Row lock(String tenant, String id);
 

@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.catalog.job.infrastructure.persistence.CatalogJobMapper">
-  <sql id="columns">job_id,store_id,CAST(creator_json AS CHAR) creator_json,CAST(content_json AS CHAR) content_json,status,available_at,cursor_index,succeeded,conflicted,attempts,error_code,version</sql>
-  <insert id="insert">INSERT INTO catalog_operation_job(tenant_id,job_id,store_id,creator_json,content_json,status,run_at,deadline,available_at) VALUES(#{tenant},#{input.jobId},#{input.storeId},#{creator},#{content},'SCHEDULED',#{runAt},#{input.deadline},#{runAt})</insert>
+  <sql id="columns">job_id,store_id,CAST(creator_json AS CHAR) creator_json,CAST(content_json AS CHAR) content_json,status,available_at,cursor_index,succeeded,conflicted,attempts,error_code,version,business_no</sql>
+  <insert id="insert">INSERT INTO catalog_operation_job(tenant_id,job_id,store_id,creator_json,content_json,status,run_at,deadline,available_at,created_at,business_no) VALUES(#{tenant},#{input.jobId},#{input.storeId},#{creator},#{content},'SCHEDULED',#{runAt},#{input.deadline},#{runAt},#{createdAt},#{businessNo})</insert>
+  <select id="lockBusinessNumber" resultType="string" useCache="false">SELECT business_no FROM catalog_operation_job WHERE business_no=#{number} FOR UPDATE</select>
   <select id="lock" resultType="com.lrj.commerce.catalog.job.infrastructure.persistence.CatalogJobMapper$Row">SELECT <include refid="columns"/> FROM catalog_operation_job WHERE tenant_id=#{tenant} AND job_id=#{id} FOR UPDATE</select>
   <select id="list" resultType="com.lrj.commerce.catalog.job.infrastructure.persistence.CatalogJobMapper$Row">SELECT <include refid="columns"/> FROM catalog_operation_job WHERE tenant_id=#{tenant} AND store_id=#{store} AND job_id&gt;#{after}
-    <if test="filter.q != null">AND (LOCATE(#{filter.q},job_id)&gt;0 OR LOCATE(#{filter.q},JSON_UNQUOTE(JSON_EXTRACT(content_json,'$.name')))&gt;0)</if>
+    <if test="filter.q != null"><choose>
+      <when test='filter.q.startsWith("COM-JOB-")'>AND business_no=CAST(#{filter.q} AS CHAR CHARACTER SET ascii) COLLATE ascii_bin</when>
+      <otherwise>AND (LOCATE(#{filter.q},job_id)&gt;0 OR LOCATE(#{filter.q},JSON_UNQUOTE(JSON_EXTRACT(content_json,'$.name')))&gt;0)</otherwise></choose></if>
     <if test="filter.status != null">AND status=#{filter.status}</if> ORDER BY job_id LIMIT #{limit}</select>
   <select id="items" resultType="com.lrj.commerce.catalog.job.api.CatalogJobApi$Item">SELECT item_index,sku_id,status,expected_revision,actual_revision,reason,processed_at FROM catalog_operation_item WHERE tenant_id=#{tenant} AND job_id=#{id} AND item_index&gt;#{after} ORDER BY item_index LIMIT #{limit}</select>
   <insert id="receipt">INSERT INTO catalog_operation_item(tenant_id,job_id,item_index,sku_id,status,expected_revision,actual_revision,reason,processed_at) VALUES(#{tenant},#{id},#{item.itemIndex},#{item.skuId},#{item.status},#{item.expectedRevision},#{item.actualRevision},#{item.reason},#{item.processedAt})</insert>

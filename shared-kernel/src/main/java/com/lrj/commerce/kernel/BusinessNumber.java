@@ -19,7 +19,7 @@ public final class BusinessNumber {
 
     /** 已登记的商城发号对象。 */
     public enum Type {
-        ORDER("ORD"), PAYMENT("PAY"), REFUND("RFD"), AFTERSALE("AFS");
+        ORDER("ORD"), PAYMENT("PAY"), REFUND("RFD"), AFTERSALE("AFS"), CATALOG_JOB("JOB");
 
         private final String prefix;
         private final Pattern pattern;

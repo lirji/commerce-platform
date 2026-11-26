@@ -283,6 +283,22 @@ class CatalogSchedulingTest {
 	}
 
 	@Test
+	void assignsBusinessNumberWhenTheCallerOmitsJobId() throws Exception {
+		seed();
+		var input = new java.util.HashMap<>(job("legacy", "PRICE", testClock.at.plusSeconds(60),
+				List.of(target("sku1", 1, "12.00"))));
+		input.remove("jobId");
+		var created = post("/v1/operations/catalog-jobs", admin, "numbered-batch", input);
+		String number = created.path("businessNo").asString();
+		assertTrue(number.matches("COM-JOB-[0-9]{6}-[0-9]{10}"));
+		assertEquals(number, created.path("definition").path("jobId").asString());
+		assertEquals(created, post("/v1/operations/catalog-jobs", admin, "numbered-batch", input));
+		var exact = call("GET", "/v1/operations/catalog-jobs?storeId=store1&q=" + number, admin, null, null).body();
+		assertEquals(1, exact.size());
+		assertEquals(number, exact.get(0).path("businessNo").asString());
+	}
+
+	@Test
 	void scheduledBatchSurvivesConcurrentPumpsAndSkipsStaleRevisions() throws Exception {
 		seed();
 		post("/v1/admin/skus", admin, "sku2",

@@ -41,6 +41,7 @@ type Job = {
   errorCode?: string;
   version: number;
   creatorId: string;
+  businessNo?: string | null;
 };
 type Receipt = {
   itemIndex: number;
@@ -77,7 +78,6 @@ export function BatchCatalogAction({
   rows: JobSku[];
   onDone: () => void;
 }) {
-  const [jobId, setJobId] = useState(() => crypto.randomUUID());
   const [prices, setPrices] = useState<Record<string, string>>({});
   return (
     <CommandModal
@@ -114,7 +114,6 @@ export function BatchCatalogAction({
       ]}
       build={(v) => ({
         ...v,
-        jobId,
         storeId: store,
         runAt: v.runAt ? instant(v.runAt) : null,
         deadline: instant(v.deadline),
@@ -127,7 +126,6 @@ export function BatchCatalogAction({
         })),
       })}
       onDone={() => {
-        setJobId(crypto.randomUUID());
         setPrices({});
         onDone();
       }}
@@ -237,6 +235,8 @@ export function CatalogJobs({ store }: { store: string }) {
             render: (_, r) => (
               <>
                 {r.definition.name}
+                <br />
+                <Typography.Text copyable>{r.businessNo ?? r.definition.jobId}</Typography.Text>
                 <br />
                 <Typography.Text type="secondary">
                   {actions[r.definition.action]}

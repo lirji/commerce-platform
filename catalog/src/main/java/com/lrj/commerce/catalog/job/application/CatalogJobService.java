@@ -13,6 +13,8 @@ import java.time.temporal.ChronoUnit;
 import java.math.BigDecimal;
 import java.util.*;
 import com.lrj.commerce.catalog.job.api.CatalogJobApi;
+import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.catalog.product.api.ProductOperationsApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.identity.OperatorDirectory;
@@ -69,7 +71,8 @@ public class CatalogJobService implements CatalogJobApi {
 	public View create(Actor actor, String key, Create input) {
 		Inputs.require(input != null && input.action() != null && input.deadline() != null && input.targets() != null
 				&& !input.targets().isEmpty() && input.targets().size() <= 100, "经营任务参数无效");
-		Identifiers.require(input.jobId());
+		// 已集成的调用方可继续传原作业号，新的界面由服务端发号。
+		if (input.jobId() != null) Identifiers.require(input.jobId());
 		Inputs.text(input.name(), 128);
 		Inputs.text(input.reason(), 256);
 		access.requireCatalog(actor, input.storeId());
@@ -102,10 +105,13 @@ public class CatalogJobService implements CatalogJobApi {
 					"开始或截止时间无效");
 			for (var item : targets)
 				Inputs.found(products.sku(actor.tenantId(), input.storeId(), item.skuId()));
-			var content = new Create(input.jobId(), input.storeId(), input.name(), input.action(), run,
-					input.deadline(), List.copyOf(targets), input.reason());
-			mapper.insert(actor.tenantId(), content, JsonCodec.write(actor), JsonCodec.write(content), run);
-			return view(mapper.lock(actor.tenantId(), input.jobId()));
+			return BusinessNumberWriter.write(BusinessNumber.Type.CATALOG_JOB, now, number -> {
+				String jobId = input.jobId() == null ? number : input.jobId();
+				var content = new Create(jobId, input.storeId(), input.name(), input.action(), run,
+						input.deadline(), List.copyOf(targets), input.reason());
+				mapper.insert(actor.tenantId(), content, JsonCodec.write(actor), JsonCodec.write(content), run, now, number);
+				return view(mapper.lock(actor.tenantId(), jobId));
+			}, number -> mapper.lockBusinessNumber(number) != null);
 		});
 	}
 
@@ -278,7 +284,7 @@ public class CatalogJobService implements CatalogJobApi {
 	private View view(CatalogJobMapper.Row row) {
 		return new View(content(row), row.status(), row.cursorIndex(), row.succeeded(), row.conflicted(),
 				row.attempts(), row.errorCode(), row.version(),
-				JsonCodec.read(row.creatorJson(), Actor.class).actorId());
+				JsonCodec.read(row.creatorJson(), Actor.class).actorId(), row.businessNo());
 	}
 
 	private Instant now() {

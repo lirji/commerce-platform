@@ -22,7 +22,7 @@ public interface CatalogJobApi {
 	}
 
 	record View(Create definition, String status, int processed, int succeeded, int conflicted, int attempts,
-			String errorCode, long version, String creatorId) {
+			String errorCode, long version, String creatorId, String businessNo) {
 	}
 
 	record Item(int itemIndex, String skuId, String status, long expectedRevision, Long actualRevision, String reason,
