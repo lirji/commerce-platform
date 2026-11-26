@@ -1,6 +1,5 @@
 package com.lrj.commerce.kernel;
 
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -12,8 +11,6 @@ public final class BusinessNumber {
     public static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
     private static final DateTimeFormatter BUSINESS_DATE = DateTimeFormatter.ofPattern("uuMMdd", Locale.ROOT)
         .withZone(BUSINESS_ZONE);
-    private static final long SUFFIX_SPACE = 10_000_000_000L;
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private BusinessNumber() {}
 
@@ -30,10 +27,10 @@ public final class BusinessNumber {
         }
     }
 
-    /** 使用创建时刻计算业务日期，唯一性由业务表的唯一键裁决。 */
-    public static String next(Type type, Instant createdAt) {
+    /** 格式化创建时间和已经生成的随机尾段，纯格式契约不依赖随机源。 */
+    public static String format(Type type, Instant createdAt, long suffix) {
         return type.prefix + BUSINESS_DATE.format(createdAt) + "-"
-            + String.format(Locale.ROOT, "%010d", RANDOM.nextLong(SUFFIX_SPACE));
+            + String.format(Locale.ROOT, "%010d", suffix);
     }
 
     /** 判断标识对应的查询索引，保留历史记录原号查找。 */

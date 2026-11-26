@@ -11,6 +11,7 @@ import com.lrj.commerce.inventory.api.InventoryApi;
 import com.lrj.commerce.member.profile.api.MemberApi;
 import com.lrj.commerce.store.management.api.StoreApi;
 import com.lrj.commerce.kernel.BusinessNumber;
+import com.lrj.commerce.runtime.identity.BusinessNumberWriter;
 import com.lrj.commerce.kernel.*;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -162,7 +163,7 @@ public class OrderService implements OrderApi {
 			for (int attempt = 0; attempt < ORDER_NUMBER_ATTEMPTS; attempt++) {
 				var candidate = new View(id, member.memberId(), quote.storeId(), quote.merchantId(), quote.quoteId(),
 						quote.payable(), lifecycle.state().name(), free ? "NO_PAYMENT_REQUIRED" : "CHANNEL_REQUIRED",
-						lifecycle.version(), now, now.plusSeconds(900), quote.items(), quote.channel(), BusinessNumber.next(BusinessNumber.Type.ORDER, now));
+						lifecycle.version(), now, now.plusSeconds(900), quote.items(), quote.channel(), BusinessNumberWriter.next(BusinessNumber.Type.ORDER, now));
 				try {
 					mapper.insert(actor.tenantId(), candidate, items, encrypted);
 					view = candidate;
