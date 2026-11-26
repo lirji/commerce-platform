@@ -25,7 +25,8 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import { ErrorNotice, PageHead, PrimaryCell, formatField } from "../shared/ui";
+import { TradeLinks } from "../shared/workspaceLinks";
 import { CentralError, HTTP, type Context } from "./api";
 
 type ResolutionInput = {
@@ -141,11 +142,28 @@ function Directory() {
           pagination={false}
           scroll={{ x: 2200 }}
           columns={[
-            { title: "权益实例编号", dataIndex: "grantId" },
-            { title: "会员编号", dataIndex: "memberId" },
-            { title: "权益定义编号", dataIndex: "benefitId" },
-            { title: "定义版本", dataIndex: "benefitVersion" },
-            { title: "名称", dataIndex: "name" },
+            {
+              title: "权益实例",
+              width: 200,
+              render: (_, row) => (
+                <PrimaryCell title={row.name} subtitle={row.grantId} />
+              ),
+            },
+            {
+              title: "来源",
+              width: 180,
+              render: (_, row) => (
+                <div className="primary-cell">
+                  <PrimaryCell
+                    title={formatField("sourceType", row.sourceType)}
+                    subtitle={row.sourceId}
+                  />
+                  {row.sourceType === "ORDER" && (
+                    <TradeLinks orderId={row.orderId} pages={["orders"]} />
+                  )}
+                </div>
+              ),
+            },
             {
               title: "状态",
               dataIndex: "status",
@@ -160,8 +178,9 @@ function Directory() {
               render: (v) => (v ? new Date(v).toLocaleString() : "尚未生效"),
             },
             { title: "实例版本", dataIndex: "version" },
-            { title: "来源类型", dataIndex: "sourceType" },
-            { title: "来源编号", dataIndex: "sourceId" },
+            { title: "会员编号", dataIndex: "memberId" },
+            { title: "权益定义编号", dataIndex: "benefitId" },
+            { title: "定义版本", dataIndex: "benefitVersion" },
             {
               title: "订单编号",
               dataIndex: "orderId",

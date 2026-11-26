@@ -23,7 +23,7 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead } from "../shared/ui";
+import { ErrorNotice, PageHead, PrimaryCell, time } from "../shared/ui";
 import { CentralError, HTTP, type Context } from "./api";
 
 type Definition = {
@@ -160,24 +160,31 @@ function DefinitionList({ store }: { store: string }) {
           pagination={false}
           scroll={{ x: 2000 }}
           columns={[
-            { title: "权益定义编号", dataIndex: ["content", "benefitId"] },
-            { title: "版本", dataIndex: ["content", "version"] },
-            { title: "名称", dataIndex: ["content", "name"] },
+            {
+              title: "权益定义",
+              width: 200,
+              render: (_, { content }) => (
+                <PrimaryCell
+                  title={content.name}
+                  subtitle={`${content.benefitId} · v${content.version}`}
+                />
+              ),
+            },
             { title: "门店", dataIndex: ["content", "storeId"] },
             { title: "每份单位数", dataIndex: ["content", "units"] },
             { title: "发行额度", dataIndex: ["content", "quota"] },
             { title: "预留数量", dataIndex: "reserved" },
             { title: "已发数量", dataIndex: "issued" },
-            { title: "生效后有效天数", dataIndex: ["content", "validityDays"] },
+            { title: "发放后有效天数", dataIndex: ["content", "validityDays"] },
             {
               title: "开始时间",
               dataIndex: ["content", "validFrom"],
-              render: (v) => new Date(v).toLocaleString(),
+              render: time,
             },
             {
               title: "截止时间",
               dataIndex: ["content", "validTo"],
-              render: (v) => new Date(v).toLocaleString(),
+              render: time,
             },
           ]}
         />

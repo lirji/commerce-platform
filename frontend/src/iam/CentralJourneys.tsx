@@ -32,7 +32,11 @@ import {
 } from "../shared/api";
 import { PageHead, ErrorNotice, money, time } from "../shared/ui";
 import { EffectScope, effectTimeBasis } from "../shared/EffectScope";
-import type { Governed, Journey, JourneyInstance } from "../shared/contracts";
+import type { Governed, Journey } from "../shared/contracts";
+import {
+  JourneyHistoryFacts,
+  type JourneyHistory,
+} from "../shared/JourneyHistoryFacts";
 import { JourneyMap } from "../features/JourneyMap";
 import { journeyClient, journeyId, journeyActions } from "./journeyClient";
 import { useJourneyCommand } from "./journeyCommand";
@@ -146,32 +150,6 @@ const executionFields: readonly [string, string][] = [
   ["updatedAt", "参与记录更新时间"],
 ];
 type Row = Record<string, unknown>;
-type HistoryStep = {
-  transitionVersion: number;
-  ordinal: number;
-  nodeId: string;
-  kind: string;
-  status: string;
-  startedAt: string;
-  completedAt: string | null;
-  outcome: string | null;
-};
-const historyCoverage: Record<string, string> = {
-  COMPLETE: "完整记录",
-  LEGACY_PARTIAL: "历史记录部分覆盖",
-};
-const historyOutcomes: Record<string, string> = {
-  BENEFIT_ACCEPTED: "权益请求已受理",
-  COUPON_GRANTED: "优惠券已发放",
-  NOTIFIED: "站内触达已写入",
-  NOTIFY_SUPPRESSED: "站内触达已抑制",
-  WAIT_SCHEDULED: "已安排等待",
-  DECIDED: "分支已判定",
-  RULE_UNKNOWN: "规则结果未知",
-  FINISHED: "旅程已结束",
-  NODE_DEFERRED: "已延后重试",
-  NODE_FAILED: "节点执行失败",
-};
 const titles: Record<Area, string> = {
   definitions: "旅程定义",
   instances: "旅程实例",
@@ -278,19 +256,19 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
       "CentralJourneys.historyAfter",
       -1,
     );
-  const history = useResource<{
-    instance: JourneyInstance;
-    definition: Journey;
-    traceCoverage: string;
-    steps: HistoryStep[];
-  }>(
+  const history = useResource<JourneyHistory>(
     historyTarget
       ? `/admin/journey-instances/${historyTarget}/history?afterVersion=${historyAfter}&limit=50`
       : null,
   );
+  const historyResult = history.data;
   const actualHistory =
-    history.data?.instance?.instanceId === historyTarget
-      ? history.data
+    historyResult?.instance?.instanceId === historyTarget &&
+    historyResult?.definition?.journeyId ===
+      historyResult?.instance?.journeyId &&
+    historyResult?.definition?.version ===
+      historyResult?.instance?.journeyVersion
+      ? historyResult
       : undefined;
   const readHistory = (id: string) => {
     if (!journeyId.test(id)) return;
@@ -570,6 +548,22 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
               (row as unknown as Governed<Journey>).content.trigger,
           },
           {
+            title: "入组窗口",
+            key: "window",
+            render: (_: unknown, row: Row) => {
+              const { validFrom, validTo } = (
+                row as unknown as Governed<Journey>
+              ).content;
+              return (
+                <div>
+                  {time(validFrom)}
+                  <br />
+                  截至 {time(validTo)}（不含）
+                </div>
+              );
+            },
+          },
+          {
             title: "操作",
             key: "actions",
             render: (_: unknown, row: Row) => {
@@ -628,6 +622,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
               render: (value: string) => <Status value={value} />,
             },
             { title: "当前节点", dataIndex: "currentNode" },
+            { title: "下次处理时间", dataIndex: "dueAt", render: time },
             { title: "已提交步数", dataIndex: "steps" },
             { title: "进度版本", dataIndex: "version" },
             { title: "执行截止", dataIndex: "deadline" },
@@ -658,15 +653,20 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                 dataIndex: "status",
                 render: (value: string) => <Status value={value} />,
               },
-              { title: "检查点", dataIndex: "memberCursor" },
+              {
+                title: "扫描范围截止",
+                dataIndex: "createdBefore",
+                render: time,
+              },
               {
                 title: "扫描 / 入组",
                 key: "counts",
                 render: (_: unknown, row: Row) =>
                   `${row.scanned} / ${row.enrolled}`,
               },
+              { title: "下次扫描", dataIndex: "nextDue", render: time },
+              { title: "检查点", dataIndex: "memberCursor" },
               { title: "进度版本", dataIndex: "version" },
-              { title: "下次扫描", dataIndex: "nextDue" },
               { title: "失败码", dataIndex: "errorCode" },
               {
                 title: "操作",
@@ -675,6 +675,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                   <Button
                     disabled={
                       !allowed("/operations/journey-scans/retry-access") ||
+                      row.status !== "ISOLATED" ||
                       command.frozen
                     }
                     onClick={() =>
@@ -1204,62 +1205,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           {history.loading && <Spin description="正在读取实例历史" />}
           {actualHistory && (
             <Space orientation="vertical" style={{ width: "100%" }}>
-              <Descriptions
-                column={1}
-                items={[
-                  {
-                    key: "instance",
-                    label: "实例编号",
-                    children: actualHistory.instance.instanceId,
-                  },
-                  {
-                    key: "version",
-                    label: "固定内容版本",
-                    children: actualHistory.definition.version,
-                  },
-                  {
-                    key: "coverage",
-                    label: "历史覆盖",
-                    children:
-                      historyCoverage[actualHistory.traceCoverage] ??
-                      "覆盖范围未知",
-                  },
-                ]}
-              />
-              <Table<HistoryStep>
-                rowKey="transitionVersion"
-                size="small"
-                pagination={false}
-                scroll={{ x: 660 }}
-                dataSource={actualHistory.steps}
-                locale={{ emptyText: "本批没有已记录的步骤" }}
-                columns={[
-                  { title: "节点", dataIndex: "nodeId", width: 120 },
-                  {
-                    title: "步骤状态",
-                    dataIndex: "status",
-                    width: 106,
-                    render: (value: string) => <Status value={value} />,
-                  },
-                  {
-                    title: "结果",
-                    dataIndex: "outcome",
-                    render: (value: string | null) =>
-                      value ? (historyOutcomes[value] ?? value) : "未提供",
-                  },
-                  {
-                    title: "开始时间",
-                    dataIndex: "startedAt",
-                    width: 165,
-                    render: time,
-                  },
-                  {
-                    title: "步骤版本",
-                    dataIndex: "transitionVersion",
-                    width: 85,
-                  },
-                ]}
-              />
+              <JourneyHistoryFacts history={actualHistory} />
               <Pager
                 after={historyAfter}
                 initial={-1}

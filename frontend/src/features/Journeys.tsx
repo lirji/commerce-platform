@@ -34,6 +34,7 @@ import {
   initialDate,
   instant,
   localDateTime,
+  time,
 } from "../shared/ui";
 import { JourneyScans } from "./JourneyScans";
 import { JourneyMap } from "./JourneyMap";
@@ -392,13 +393,22 @@ export function Journeys({ store }: { store: string }) {
               title: "触发方式",
               render: (_, r) => triggerLabels[r.content.trigger],
             },
-            { title: "节点数", render: (_, r) => r.content.nodes.length },
-            { title: "版本", render: (_, r) => r.content.version },
+            { title: "固定内容版本", render: (_, r) => r.content.version },
             {
               title: "状态",
               dataIndex: "status",
               render: (v: string) => <Status value={v} />,
             },
+            {
+              title: "入组窗口",
+              render: (_, r) => (
+                <PrimaryCell
+                  title={time(r.content.validFrom)}
+                  subtitle={`截至 ${time(r.content.validTo)}（不含）`}
+                />
+              ),
+            },
+            { title: "节点数", render: (_, r) => r.content.nodes.length },
             {
               title: "操作",
               className: "row-actions-cell",

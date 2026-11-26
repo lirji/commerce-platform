@@ -10,6 +10,7 @@ import { compactTradeFields, TradeRowFacts } from "../shared/TradeRowFacts";
 import { StockCounts } from "../shared/StockCounts";
 import { Button, Grid, Space, Spin, Table, Typography } from "antd";
 import { MemberActions } from "./MemberActions";
+import { LegacyJourneyHistory } from "./LegacyJourneyHistory";
 import { useState, type ReactNode } from "react";
 import { encode, useResource } from "../shared/api";
 import {
@@ -204,6 +205,7 @@ export const specs: Record<string, Spec> = {
       ["audienceId", "标识"],
       ["version", "版本"],
       ["memberCount", "人数"],
+      ["watermark", "来源时点"],
       ["validUntil", "有效期"],
     ],
   },
@@ -261,8 +263,10 @@ export const specs: Record<string, Spec> = {
     }),
     columns: [
       ["name", "权益"],
-      ["benefitId", "标识"],
+      ["version", "固定版本"],
       ["units", "每份单位"],
+      ["validTo", "定义截止"],
+      ["validityDays", "发放后有效天数"],
       ["quota", "发行额度"],
       ["reserved", "预占"],
       ["issued", "已发行"],
@@ -275,12 +279,13 @@ export const specs: Record<string, Spec> = {
     id: "grantId",
     columns: [
       ["name", "权益"],
-      ["memberId", "会员"],
-      ["orderId", "来源订单"],
-      ["expiresAt", "有效期"],
+      ["sourceType", "来源类型"],
+      ["sourceId", "来源编号"],
+      ["status", "状态"],
       ["remainingUnits", "剩余单位"],
       ["debtUnits", "待补偿单位"],
-      ["status", "状态"],
+      ["expiresAt", "有效期"],
+      ["memberId", "会员"],
     ],
   },
   budgets: {
@@ -363,11 +368,13 @@ export const specs: Record<string, Spec> = {
       id("eventKey", "触发去重标识"),
     ],
     columns: [
+      ["instanceId", "实例"],
       ["journeyId", "旅程"],
+      ["journeyVersion", "固定旅程版本"],
+      ["status", "状态"],
+      ["dueAt", "下次处理时间"],
       ["memberId", "会员"],
       ["currentNode", "待执行节点"],
-      ["status", "状态"],
-      ["dueAt", "下次执行"],
       ["attempts", "重试次数"],
     ],
   },
@@ -393,7 +400,8 @@ const eyebrows: Record<string, string> = {
 };
 function cell(key: string, value: unknown): ReactNode {
   if (key === "status") return <Status value={string(value)} />;
-  if (key === "issuanceMode") return formatField(key, value);
+  if (key === "issuanceMode" || key === "sourceType")
+    return formatField(key, value);
   if (
     [
       "unitPrice",
@@ -410,6 +418,7 @@ function cell(key: string, value: unknown): ReactNode {
     return money(value);
   if (
     [
+      "watermark",
       "validUntil",
       "validTo",
       "availableAt",
@@ -826,6 +835,15 @@ export function AdminData({
             />
             {isTrade && (
               <TradeLinks orderId={detail.orderId} pages={["orders"]} />
+            )}
+            {kind === "entitlements" && detail.sourceType === "ORDER" && (
+              <TradeLinks orderId={detail.orderId} pages={["orders"]} />
+            )}
+            {kind === "instances" && typeof detail.instanceId === "string" && (
+              <LegacyJourneyHistory
+                key={detail.instanceId}
+                instanceId={detail.instanceId}
+              />
             )}
             {kind === "events" && (
               <OrderEventLink

@@ -304,6 +304,12 @@ function Runs({
             { title: "快照版本", dataIndex: "snapshotVersion", width: 100 },
             { title: "实际状态", dataIndex: "status", width: 130 },
             {
+              title: "失败原因码",
+              dataIndex: "errorCode",
+              width: 140,
+              render: (value) => value ?? "—",
+            },
+            {
               title: "处理 / 匹配",
               width: 120,
               render: (_, row) => `${row.processed} / ${row.matched}`,
@@ -439,7 +445,12 @@ function Directory({
                 </Tag>
               ),
             },
-            { title: "输出人群", dataIndex: "audienceId", width: 290 },
+            { title: "输出人群", dataIndex: "audienceId", width: 220 },
+            {
+              title: "刷新间隔（秒）",
+              width: 126,
+              render: (_, row) => row.content.refreshSeconds,
+            },
             {
               title: "操作",
               width: 200,
