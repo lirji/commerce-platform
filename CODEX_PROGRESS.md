@@ -5,7 +5,7 @@
 
 - 用户提供 `~/Downloads/writing-block (1).md`，授权逐模块、逐页面分析及设计。从 `544ee2a` 在原仓库分支 `docs/commerce-operations-product-design` 开始，入场工作树干净。本阶段交付页面与指标方案、布局草图和优先级。
 - 权威入口为 `docs/design/commerce-operations-product/FRONTEND_ARCHITECTURE.md`。逐页方案覆盖 73 个业务入口，六张布局草图完成；86 次当前页面只读复核与 122 条本地链接检查通过。设计校验、浏览器证据与 Git 回执在 `.local/commerce-operations-product-design/`。后续按设计的批次验收条件进入实施，业务代码改动需对应实施授权。
-- 用户已确认列计划后直接实施。原仓库任务分支 `feat/commerce-operating-workspaces`，基线 `107a8c0`，入场干净。实施清单见 `docs/design/commerce-operations-product/IMPLEMENTATION_SLICES.md`，权威状态见 `docs/delivery/commerce-operations-product/PROGRESS_STATE.md`，新证据在 `.local/commerce-operating-workspaces/`。从 OP1 开始，沿既有 API 契约验证后衔接下一切片。
+- 用户已确认列计划后直接实施。原仓库任务分支 `feat/commerce-operating-workspaces`，基线 `107a8c0`，入场干净。实施清单见 `docs/design/commerce-operations-product/IMPLEMENTATION_SLICES.md`，权威状态见 `docs/delivery/commerce-operations-product/PROGRESS_STATE.md`。恢复时核对权威状态与 `.local/commerce-operating-workspaces/` 内的验证及 Git/CI 回执。
 <!-- commerce-operations-product-design:end -->
 
 <!-- operations-experience-audit:start -->

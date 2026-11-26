@@ -479,7 +479,6 @@ textarea {
   height: auto;
   min-height: 32px;
   max-width: 100%;
-  padding-inline: 0;
   white-space: normal;
   text-align: start;
 }
