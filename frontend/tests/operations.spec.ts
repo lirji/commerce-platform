@@ -298,8 +298,11 @@ test("旅程与效果：升级通知、成交退款和历史补齐", async ({ pa
   await events();
   await login(page);
   await nav(page, "营销效果");
-  const row = page.getByRole("row").filter({ hasText: "coffee-growth / v1" });
+  const row = page.getByRole("row").filter({
+    has: page.getByRole("cell", { name: "coffee-growth", exact: true }),
+  });
   await expect(row).toBeVisible();
+  await expect(row.getByRole("cell").nth(1)).toHaveText("1");
   await expect(row).toContainText("¥90.00");
   await expect(row).toContainText("¥0.00");
   await expect(row).toContainText("¥5.00");

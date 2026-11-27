@@ -1,8 +1,12 @@
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import type { ComponentProps } from "react";
 
+dayjs.extend(customParseFormat);
 const localFormat = "YYYY-MM-DDTHH:mm";
+const minuteFormats = ["YYYY-MM-DD HH:mm", localFormat];
+const instantFormats = ["YYYY-MM-DD HH:mm:ss", ...minuteFormats];
 
 type Props = Pick<
   ComponentProps<typeof DatePicker>,
@@ -18,26 +22,33 @@ export function DateTimeField({
   value,
   onChange,
   instant = false,
+  onBlur,
   ...props
 }: Props) {
   const selected = value ? dayjs(value) : null;
+  const formats = instant ? instantFormats : minuteFormats;
+  const serialize = (next: dayjs.Dayjs) =>
+    instant ? next.toISOString() : next.format(localFormat);
   return (
     <DatePicker
       {...props}
       className="date-time-field"
       value={selected?.isValid() ? selected : null}
-      format={
-        instant
-          ? ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", localFormat]
-          : ["YYYY-MM-DD HH:mm", localFormat]
-      }
+      format={formats}
       showTime={{ format: instant ? "HH:mm:ss" : "HH:mm" }}
       needConfirm={false}
       placeholder="选择日期和时间"
       renderExtraFooter={() => `本机时区 UTC${dayjs().format("Z")}`}
-      onChange={(next) =>
-        onChange?.(instant ? next?.toISOString() : next?.format(localFormat))
-      }
+      onBlur={(event, info) => {
+        // 点提交会先离开输入框。此时同步写入合法文本，表单无需等待弹层关闭动画。
+        if (event.target instanceof HTMLInputElement) {
+          const parsed = dayjs(event.target.value.trim(), formats, true);
+          const next = parsed.isValid() ? serialize(parsed) : undefined;
+          if (next !== value) onChange?.(next);
+        }
+        onBlur?.(event, info);
+      }}
+      onChange={(next) => onChange?.(next ? serialize(next) : undefined)}
     />
   );
 }
