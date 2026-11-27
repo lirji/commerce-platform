@@ -1,4 +1,5 @@
-import { Button, Input, Space, Table, Tag, Typography } from "antd";
+import { Table } from "../shared/BusinessTable";
+import { Button, Input, Space, Tag, Typography } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
 import { RecordModal, RowActions } from "../shared/interactions";

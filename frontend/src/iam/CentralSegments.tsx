@@ -1,3 +1,4 @@
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import {
@@ -14,7 +15,6 @@ import {
   Space,
   Spin,
   Switch,
-  Table,
   Tabs,
   Tag,
   Typography,
@@ -182,7 +182,15 @@ function RunDetails({ value }: { value: SegmentRun }) {
     <Descriptions
       column={1}
       items={[
-        { key: "id", label: "运行编号", children: <Typography.Text copyable>{value.businessNo ?? value.runId}</Typography.Text> },
+        {
+          key: "id",
+          label: "运行编号",
+          children: (
+            <Typography.Text copyable>
+              {value.businessNo ?? value.runId}
+            </Typography.Text>
+          ),
+        },
         { key: "parent", label: "实际父定义", children: value.segmentId },
         {
           key: "definition",
@@ -282,8 +290,15 @@ function Runs({
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       <Space wrap>
-        <Input.Search aria-label="运行编号" placeholder="输入完整运行编号" allowClear
-          onSearch={(value) => { setNumber(value.trim()); setAfter(""); }} />
+        <Input.Search
+          aria-label="运行编号"
+          placeholder="输入完整运行编号"
+          allowClear
+          onSearch={(value) => {
+            setNumber(value.trim());
+            setAfter("");
+          }}
+        />
         <Button onClick={rows.refresh}>刷新运行记录</Button>
         <Typography.Text type="secondary">
           定义版本、调度锁与快照版本分别独立。
@@ -298,9 +313,15 @@ function Runs({
           pagination={false}
           scroll={{ x: 950 }}
           columns={[
-            { title: "运行编号", width: 270, render: (_, row) => (
-              <Typography.Text copyable>{row.businessNo ?? row.runId}</Typography.Text>
-            ) },
+            {
+              title: "运行编号",
+              width: 270,
+              render: (_, row) => (
+                <Typography.Text copyable>
+                  {row.businessNo ?? row.runId}
+                </Typography.Text>
+              ),
+            },
             {
               title: "固定定义版本",
               dataIndex: "definitionVersion",

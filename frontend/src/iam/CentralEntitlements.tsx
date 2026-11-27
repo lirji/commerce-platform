@@ -1,3 +1,4 @@
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { listGuardPath } from "../shared/listFilters";
 import { useListFilters } from "../shared/listFilters";
 import { Status } from "../shared/ui";
@@ -14,7 +15,6 @@ import {
   InputNumber,
   Radio,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";
@@ -148,7 +148,10 @@ function Directory() {
               title: "权益实例",
               width: 200,
               render: (_, row) => (
-                <PrimaryCell title={row.name} subtitle={row.businessNo ?? row.grantId} />
+                <PrimaryCell
+                  title={row.name}
+                  subtitle={row.businessNo ?? row.grantId}
+                />
               ),
             },
             {
@@ -186,7 +189,7 @@ function Directory() {
             {
               title: "订单编号",
               dataIndex: "orderId",
-              render: (v) => v ?? "—",
+              render: (v) => (v ? <BusinessId value={v} /> : "—"),
             },
           ]}
         />

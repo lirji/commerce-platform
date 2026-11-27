@@ -1,3 +1,4 @@
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useRouteState, useCursorState } from "../shared/routeState";
@@ -11,7 +12,6 @@ import {
   InputNumber,
   Select,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";

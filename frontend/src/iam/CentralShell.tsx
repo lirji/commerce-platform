@@ -1,3 +1,4 @@
+import { BusinessTableScope } from "../shared/businessTableScope";
 import { RecordModal } from "../shared/interactions";
 import { Avatar, Button, Grid, Layout, Menu, Space, Typography } from "antd";
 import { useState, type ReactNode } from "react";
@@ -123,7 +124,9 @@ export function CentralShell({
           <CentralLinkScope.Provider
             value={{ tenant, subject, routes: model.routes }}
           >
-            {children}
+            <BusinessTableScope.Provider value>
+              {children}
+            </BusinessTableScope.Provider>
           </CentralLinkScope.Provider>
         </Layout.Content>
         <Layout.Footer className="footer">

@@ -1,3 +1,4 @@
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { useWorkspaceHref } from "../shared/workspaceLinks";
 import { CursorBack } from "../shared/pagination";
@@ -11,7 +12,6 @@ import {
   Input,
   Select,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";
@@ -368,7 +368,11 @@ function DirectorySection({
               render: (_, row) => (
                 <PrimaryCell
                   title={row.name}
-                  subtitle={merchant ? row.merchantId : row.storeId}
+                  subtitle={
+                    <BusinessId
+                      value={merchant ? row.merchantId : row.storeId}
+                    />
+                  }
                 />
               ),
             },

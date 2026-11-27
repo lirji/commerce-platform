@@ -1,3 +1,4 @@
+import { DateTimeField, dateRangePresets } from "./DateTimeField";
 import { Button, Form, Input, Select, Space, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useRouteState } from "./routeState";
@@ -42,6 +43,7 @@ type FilterSpec = {
   hint: string;
   failureClass?: boolean;
   states?: string[];
+  quickStates?: string[];
   time?: boolean;
   enabled?: boolean;
   exact?: readonly (typeof exactIds)[number][];
@@ -54,6 +56,7 @@ const specs: Record<string, FilterSpec> = {
   },
   "/admin/merchants": { hint: "商家编号或名称", states: ["ACTIVE", "FROZEN"] },
   "/admin/stores": {
+    quickStates: ["PENDING_OPEN", "ACTIVE", "FROZEN"],
     hint: "门店编号、商家编号或名称",
     states: ["PENDING_OPEN", "ACTIVE", "FROZEN"],
     exact: ["merchantId"],
@@ -66,6 +69,7 @@ const specs: Record<string, FilterSpec> = {
     states: ["ACTIVE", "FROZEN"],
   },
   "/admin/orders": {
+    quickStates: ["PENDING_PAYMENT", "PAYMENT_IN_PROGRESS", "CLOSING"],
     exact: tradeIds,
     hint: "完整订单号、原编号、日期加尾号或会员、门店、商家编号",
     states: [
@@ -100,6 +104,7 @@ const specs: Record<string, FilterSpec> = {
     states: ["READY", "SHIPPED", "DELIVERED", "CANCELLED"],
   },
   "/admin/aftersales": {
+    quickStates: ["REQUESTED", "WAIT_RETURN", "REFUNDING"],
     exact: tradeIds,
     hint: "售后、订单、会员或退款编号",
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
@@ -110,12 +115,14 @@ const specs: Record<string, FilterSpec> = {
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
   },
   "/admin/refunds": {
+    quickStates: ["UNKNOWN", "SUCCEEDED"],
     exact: tradeIds,
     hint: "退款、售后、订单编号或渠道",
     states: ["UNKNOWN", "SUCCEEDED"],
   },
 
   "/admin/campaigns": {
+    quickStates: ["IN_REVIEW", "PUBLISHED", "PAUSED"],
     hint: "活动编号、名称或门店编号",
     states: [
       "DRAFT",
@@ -161,6 +168,7 @@ const specs: Record<string, FilterSpec> = {
     states: ["RUNNING", "IDLE", "ISOLATED"],
   },
   "/admin/coupon-deliveries": {
+    quickStates: ["RUNNING", "ISOLATED", "REVOKING"],
     hint: "发券批次编号或名称",
     states: [
       "RUNNING",
@@ -197,6 +205,7 @@ const specs: Record<string, FilterSpec> = {
   },
 
   "/admin/entitlements": {
+    quickStates: ["AVAILABLE", "COMPENSATION_REQUIRED", "REVOKED"],
     hint: "权益、订单、会员编号或名称",
     states: [
       "RESERVED",
@@ -497,6 +506,24 @@ function ListFilters({
     });
   return (
     <div className="query-panel">
+      {spec.quickStates && (
+        <div
+          className="query-quick-states"
+          role="group"
+          aria-label="状态快捷筛选"
+        >
+          {[undefined, ...spec.quickStates].map((status) => (
+            <Button
+              key={status ?? "all"}
+              aria-pressed={values.status === status}
+              type={values.status === status ? "default" : "text"}
+              onClick={() => applyValues({ ...values, status })}
+            >
+              {status ? statusText(status) : "全部状态"}
+            </Button>
+          ))}
+        </div>
+      )}
       <Form
         form={form}
         layout="inline"
@@ -590,7 +617,7 @@ function ListFilters({
               className="query-wide"
               hidden={hideSecondary}
             >
-              <Input type="datetime-local" />
+              <DateTimeField />
             </Form.Item>
             <Form.Item
               name="to"
@@ -609,12 +636,33 @@ function ListFilters({
                 }),
               ]}
             >
-              <Input type="datetime-local" />
+              <DateTimeField />
             </Form.Item>
           </>
         )}
+        {spec.time && !hideSecondary && (
+          <Form.Item label="快捷时间" className="query-date-presets">
+            <Select
+              aria-label="快捷时间"
+              virtual={false}
+              placeholder="选择时间范围"
+              value={null}
+              options={dateRangePresets.map(({ label }) => ({
+                label,
+                value: label,
+              }))}
+              onChange={(label) => {
+                const preset = dateRangePresets.find(
+                  (item) => item.label === label,
+                );
+                if (preset) form.setFieldsValue(preset.range());
+              }}
+            />
+          </Form.Item>
+        )}
         <Form.Item name="limit" label="每页" hidden={hideSecondary}>
           <Select
+            virtual={false}
             options={[10, 25, 50, 100].map((value) => ({
               value,
               label: `${value}条`,

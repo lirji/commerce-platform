@@ -2071,9 +2071,6 @@ body .ant-modal-root .ant-modal {
 .query-form .ant-select {
   min-width: 120px;
 }
-.query-form .ant-form-item:has(input[type="datetime-local"]) {
-  max-width: 225px;
-}
 .query-summary {
   display: flex;
   flex-wrap: wrap;

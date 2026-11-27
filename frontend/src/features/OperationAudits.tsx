@@ -1,3 +1,4 @@
+import { Table } from "../shared/BusinessTable";
 import {
   Button,
   DatePicker,
@@ -7,7 +8,7 @@ import {
   Select,
   Space,
   Spin,
-  Table,
+  Typography,
   Tag,
 } from "antd";
 import { useState } from "react";
@@ -16,6 +17,7 @@ import { useResource } from "../shared/api";
 import { RecordModal } from "../shared/interactions";
 import { ErrorNotice, PageHead, Status, Workbench, time } from "../shared/ui";
 
+const auditPageSizes = [10, 25, 50, 100];
 const path = "/platform/operation-audits";
 const actions: Record<string, string> = {
   "platform.category.create": "新增类目",
@@ -223,8 +225,8 @@ export function ResourceAuditHistory({
   );
 }
 
-function query(filter: Filter, cursor: string) {
-  const params = new URLSearchParams();
+function query(filter: Filter, cursor: string, limit: number) {
+  const params = new URLSearchParams({ limit: String(limit) });
   const { from, to, ...criteria } = filter;
   if (from) params.set("from", from.toISOString());
   if (to) params.set("to", to.toISOString());
@@ -245,9 +247,10 @@ export function OperationAudits({
   const [form] = Form.useForm<Filter>();
   const [filter, setFilter] = useState<Filter>({});
   const [cursors, setCursors] = useState([""]);
+  const [pageSize, setPageSize] = useState(50);
   const [selected, setSelected] = useState<string>();
   const list = useResource<Page>(
-    path + "?" + query(filter, cursors[cursors.length - 1]),
+    path + "?" + query(filter, cursors[cursors.length - 1], pageSize),
   );
   const detail = useResource<Audit>(selected ? path + "/" + selected : null);
   const row = detail.data?.id === selected ? detail.data : undefined;
@@ -333,6 +336,7 @@ export function OperationAudits({
       {list.error === undefined && (
         <Table<Audit>
           rowKey="id"
+          onRefresh={list.refresh}
           dataSource={list.data?.items ?? []}
           loading={list.loading}
           pagination={false}
@@ -372,25 +376,59 @@ export function OperationAudits({
           ]}
         />
       )}
-      {(cursors.length > 1 || list.data?.nextCursor) && (
-        <Space style={{ marginTop: 16 }}>
-          <Button
-            disabled={cursors.length === 1 || list.loading}
-            onClick={() => setCursors(cursors.slice(0, -1))}
-          >
-            上一页
-          </Button>
-          <Button
-            disabled={!list.data?.nextCursor || list.loading}
-            onClick={() => {
-              const next = list.data?.nextCursor;
-              if (next) setCursors([...cursors, next]);
+      <div className="pager-navigation">
+        <Typography.Text type="secondary" className="cursor-summary">
+          {list.loading
+            ? "正在加载…"
+            : list.error
+              ? "列表未加载"
+              : `第${cursors.length}页 · 本页 ${list.data?.items.length ?? 0} 条`}
+        </Typography.Text>
+        <Select
+          aria-label="操作日志每页条数"
+          value={pageSize}
+          options={auditPageSizes.map((value) => ({
+            label: `每页 ${value} 条`,
+            value,
+          }))}
+          onChange={(value) => {
+            setPageSize(value);
+            setCursors([""]);
+          }}
+        />
+        <Button
+          disabled={cursors.length === 1 || list.loading}
+          onClick={() => setCursors(cursors.slice(0, -1))}
+        >
+          上一页
+        </Button>
+        {cursors.length > 2 && (
+          <Select
+            aria-label="跳转已访问日志页"
+            className="cursor-jump"
+            placeholder="已访问页"
+            value={null}
+            disabled={list.loading}
+            options={cursors.slice(0, -1).map((_, index) => ({
+              label: `第 ${index + 1} 页`,
+              value: index,
+            }))}
+            onChange={(index) => {
+              if (typeof index === "number")
+                setCursors(cursors.slice(0, index + 1));
             }}
-          >
-            下一页
-          </Button>
-        </Space>
-      )}
+          />
+        )}
+        <Button
+          disabled={!list.data?.nextCursor || list.loading}
+          onClick={() => {
+            const next = list.data?.nextCursor;
+            if (next) setCursors([...cursors, next]);
+          }}
+        >
+          下一页
+        </Button>
+      </div>
       <RecordModal
         title="操作日志详情"
         open={!!selected}

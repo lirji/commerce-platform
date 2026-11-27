@@ -57,6 +57,7 @@ async function assertPagerSpacing(page: Page) {
   const pager = page.locator(".pager-navigation").filter({
     has: page.getByRole("button", { name: "扫描首页", exact: true }),
   });
+  await expect(pager.locator(".cursor-summary")).toBeVisible();
   const bounds = await pager.locator(":scope > *").evaluateAll((elements) =>
     elements.map((element) => {
       const box = element.getBoundingClientRect();

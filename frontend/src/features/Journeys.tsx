@@ -1,16 +1,8 @@
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
-import {
-  Button,
-  Card,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Space,
-  Table,
-} from "antd";
+import { Button, Card, Form, Input, InputNumber, Select, Space } from "antd";
 import { useState } from "react";
 import {
   JourneyNodeKind,

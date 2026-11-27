@@ -1,4 +1,5 @@
-import { Alert, Button, Card, Descriptions, Table, Typography } from "antd";
+import { Table } from "../shared/BusinessTable";
+import { Alert, Button, Card, Descriptions, Typography } from "antd";
 import { useResource } from "../shared/api";
 import {
   ErrorNotice,

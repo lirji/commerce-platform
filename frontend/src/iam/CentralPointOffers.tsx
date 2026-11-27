@@ -1,3 +1,5 @@
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { listGuardPath } from "../shared/listFilters";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
@@ -13,7 +15,6 @@ import {
   InputNumber,
   Radio,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";
@@ -539,7 +540,7 @@ function OfferCommand({
                     },
                   ]}
                 >
-                  <Input type="datetime-local" disabled={busy || frozen} />
+                  <DateTimeField disabled={busy || frozen} />
                 </Form.Item>
                 <Form.Item
                   name="validTo"
@@ -560,7 +561,7 @@ function OfferCommand({
                     },
                   ]}
                 >
-                  <Input type="datetime-local" disabled={busy || frozen} />
+                  <DateTimeField disabled={busy || frozen} />
                 </Form.Item>
               </>
             ) : (

@@ -1,4 +1,5 @@
-import { Alert, Button, Descriptions, Form, Input, Space, Table } from "antd";
+import { Table } from "../shared/BusinessTable";
+import { Alert, Button, Descriptions, Form, Input, Space } from "antd";
 import { useContext, useEffect, useRef, useState } from "react";
 import { RequestContext } from "../shared/api";
 import { ErrorNotice, Status, time } from "../shared/ui";

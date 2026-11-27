@@ -1,19 +1,10 @@
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Row,
-  Space,
-  Statistic,
-  Table,
-  Tag,
-} from "antd";
+import { Alert, Button, Card, Col, Row, Space, Statistic, Tag } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
 import { CommandModal, ErrorNotice, instant, time } from "../shared/ui";

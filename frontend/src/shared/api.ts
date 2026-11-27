@@ -1,4 +1,5 @@
 import {
+  useMemo,
   createContext,
   useContext,
   useCallback,
@@ -73,33 +74,38 @@ export const post = <T>(path: string, body?: unknown, key?: string) =>
 /** 页面读取隔离生命周期，旧请求不能覆盖新的路由数据。 */
 export function useResource<T>(path: string | null) {
   const client = useContext(RequestContext);
-  const [data, setData] = useState<T>();
-  const [error, setError] = useState<Error>();
-  const [loading, setLoading] = useState(false);
   const [revision, setRevision] = useState(0);
   const refresh = useCallback(() => setRevision((v) => v + 1), []);
+  const query = useMemo(
+    () => ({ path, revision, client }),
+    [path, revision, client],
+  );
+  const [settled, setSettled] = useState<{
+    query: typeof query;
+    data?: T;
+    error?: Error;
+  }>();
   useEffect(() => {
+    if (!query.path) return;
     const controller = new AbortController();
-    setData(undefined);
-    setError(undefined);
-    if (!path) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    client<T>(path, { signal: controller.signal })
-      .then((value) => {
-        if (!controller.signal.aborted) setData(value);
+    query
+      .client<T>(query.path, { signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setSettled({ query, data });
       })
-      .catch((e) => {
-        if (!controller.signal.aborted) setError(e);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+      .catch((error) => {
+        if (!controller.signal.aborted) setSettled({ query, error });
       });
     return () => controller.abort();
-  }, [path, revision, client]);
-  return { data, error, loading, refresh };
+  }, [query]);
+  // 切换查询时同步卸下旧结果，避免把旧页数据和操作绑定到新条件。
+  const current = settled?.query === query ? settled : undefined;
+  return {
+    data: current?.data,
+    error: current?.error,
+    loading: path !== null && !current,
+    refresh,
+  };
 }
 /** 相同未完成意图复用键；输入改变或成功后才生成下一命令键。 */
 export function useCommand() {

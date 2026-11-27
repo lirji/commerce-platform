@@ -1,3 +1,5 @@
+import { BudgetUsage } from "../shared/MetricShare";
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import {
   OrderEventLink,
@@ -13,7 +15,7 @@ import {
   tradeNumberColumnWidth,
   tradeNumberFields,
 } from "../shared/tradeNumbers";
-import { Alert, Button, Grid, Space, Spin, Table, Typography } from "antd";
+import { Alert, Button, Grid, Space, Spin, Typography } from "antd";
 import {
   OpeningCategoryField,
   openingProfile,
@@ -510,7 +512,26 @@ export function AdminData({
         ? "未设上限"
         : money(row[key]);
     }
-    return cell(key, tradeFieldValue(spec.path, key, row));
+    const value = tradeFieldValue(spec.path, key, row);
+    if (
+      [
+        "storeId",
+        "skuId",
+        "merchantId",
+        "orderId",
+        "caseId",
+        "refundId",
+        "businessNo",
+      ].includes(key)
+    )
+      return <BusinessId value={value} />;
+    if (kind === "inventory" && key === "available" && value === 0)
+      return (
+        <span className="inventory-unavailable" title="当前无可售库存">
+          0
+        </span>
+      );
+    return cell(key, value);
   };
   function actions(r: Row) {
     const value = string(r[spec.id]);
@@ -671,9 +692,7 @@ export function AdminData({
     }
   }
   const detailTitle = detail
-    ? string(
-        detail.name || detail.title || detail.displayName || detailId,
-      )
+    ? string(detail.name || detail.title || detail.displayName || detailId)
     : spec.title;
   return (
     <Workbench>
@@ -789,7 +808,9 @@ export function AdminData({
           dataSource={rows}
           loading={resource.loading}
           pagination={false}
-          scroll={{ x: numberFields ? (kind === "refunds" ? 1150 : 1360) : 800 }}
+          scroll={{
+            x: numberFields ? (kind === "refunds" ? 1150 : 1360) : 800,
+          }}
           columns={[
             ...spec.columns
               .filter(
@@ -801,10 +822,15 @@ export function AdminData({
               .map(([key, label], index) => ({
                 title: label,
                 dataIndex: key,
-                className: numberFields?.[key] ? "trade-business-number-cell" : undefined,
-                ellipsis: !numberFields?.[key] && !((compact || compactStock) && index === 0),
+                className: numberFields?.[key]
+                  ? "trade-business-number-cell"
+                  : undefined,
+                ellipsis:
+                  !numberFields?.[key] &&
+                  !((compact || compactStock) && index === 0),
                 width:
-                  numberFields?.[key] || ((compact || compactStock) && index === 0)
+                  numberFields?.[key] ||
+                  ((compact || compactStock) && index === 0)
                     ? tradeNumberColumnWidth
                     : kind === "refunds" && key === "provider"
                       ? 118
@@ -834,21 +860,27 @@ export function AdminData({
                 render: (_: unknown, r: Row) =>
                   compactStock && index === 0 ? (
                     <div className="primary-cell">
-                      <strong>{string(r.skuId)}</strong>
+                      <BusinessId value={r.skuId} />
                       <StockCounts row={r} />
                     </div>
                   ) : compact && index === 0 ? (
                     <div className="trade-row-identity">
                       <Button type="link" onClick={() => setDetail(r)}>
-                        {rowCell(key, r)}
+                        {cell(key, tradeFieldValue(spec.path, key, r))}
                       </Button>
+                      <BusinessId
+                        value={tradeFieldValue(spec.path, key, r)}
+                        copyOnly
+                      />
                       <TradeRowFacts row={r} />
                     </div>
                   ) : index === 0 ? (
                     <PrimaryCell
                       title={rowCell(key, r)}
                       subtitle={
-                        key === spec.id ? undefined : string(r[spec.id])
+                        key === spec.id ? undefined : (
+                          <BusinessId value={r[spec.id]} />
+                        )
                       }
                       status={string(r.status)}
                     />
@@ -856,6 +888,22 @@ export function AdminData({
                     rowCell(key, r)
                   ),
               })),
+            ...(kind === "budgets"
+              ? [
+                  {
+                    title: "额度占用",
+                    key: "budgetUsage",
+                    width: 132,
+                    render: (_: unknown, row: Row) => (
+                      <BudgetUsage
+                        cap={row.cap}
+                        held={row.held}
+                        spent={row.spent}
+                      />
+                    ),
+                  },
+                ]
+              : []),
             {
               title: "操作",
               width: spec.actionWidth ?? 280,

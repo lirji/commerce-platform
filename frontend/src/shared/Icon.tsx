@@ -7,7 +7,11 @@ export type IconName =
   | "platform"
   | "bag"
   | "image"
-  | "arrow";
+  | "arrow"
+  | "columns"
+  | "density"
+  | "expand"
+  | "refresh";
 
 const paths: Record<IconName, string> = {
   overview: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
@@ -19,6 +23,10 @@ const paths: Record<IconName, string> = {
   platform: "M4 5h16v14H4zM4 9h16M8 5v4M8 13l2 2-2 2M13 17h3",
   bag: "M5 7h14l1 14H4L5 7ZM8 7V6a4 4 0 0 1 8 0v1",
   image: "M3 3h18v18H3zM3 16l5-5 4 4 3-3 6 6M16 7h.01",
+  columns: "M4 5h16v14H4zM9 5v14M15 5v14",
+  density: "M4 6h16M4 12h16M4 18h16",
+  expand: "M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4",
+  refresh: "M20 8a8 8 0 1 0 .4 7M20 4v5h-5",
   arrow: "M5 12h14M14 7l5 5-5 5",
 };
 

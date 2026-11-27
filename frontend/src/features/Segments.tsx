@@ -1,8 +1,9 @@
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
-import { Alert, Button, Form, Modal, Space, Table } from "antd";
+import { Alert, Button, Form, Modal, Space } from "antd";
 import { useState } from "react";
 import type { Rule } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";
@@ -229,7 +230,10 @@ export function Segments() {
           pagination={false}
           scroll={{ x: 850 }}
           columns={[
-            { title: "运行编号", render: (_, row) => row.businessNo ?? row.runId },
+            {
+              title: "运行编号",
+              render: (_, row) => row.businessNo ?? row.runId,
+            },
             { title: "受众版本", dataIndex: "snapshotVersion" },
             { title: "规则版本", dataIndex: "definitionVersion" },
             {

@@ -1,19 +1,10 @@
+import { Table } from "../shared/BusinessTable";
 import { formatField, workTypeLabel } from "../shared/ui";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { recoveryTarget, useRecoveryAudit } from "../shared/recoveryAudit";
 import { TradeLinks } from "../shared/workspaceLinks";
-import {
-  Alert,
-  Button,
-  Card,
-  Form,
-  Input,
-  Select,
-  Space,
-  Table,
-  Tag,
-} from "antd";
+import { Alert, Button, Card, Form, Input, Select, Space, Tag } from "antd";
 import { useRef, useState } from "react";
 import { useResource } from "../shared/api";
 import { ErrorNotice } from "../shared/ui";

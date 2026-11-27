@@ -1,9 +1,10 @@
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RecordModal, RowActions } from "../shared/interactions";
-import { Alert, Button, Card, Input, Space, Table, Typography } from "antd";
+import { Alert, Button, Card, Input, Space, Typography } from "antd";
 import { useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
 import {
@@ -236,7 +237,9 @@ export function CatalogJobs({ store }: { store: string }) {
               <>
                 {r.definition.name}
                 <br />
-                <Typography.Text copyable>{r.businessNo ?? r.definition.jobId}</Typography.Text>
+                <Typography.Text copyable>
+                  {r.businessNo ?? r.definition.jobId}
+                </Typography.Text>
                 <br />
                 <Typography.Text type="secondary">
                   {actions[r.definition.action]}

@@ -1,3 +1,5 @@
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { listGuardPath } from "../shared/listFilters";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
@@ -12,7 +14,6 @@ import {
   Input,
   InputNumber,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";
@@ -448,7 +449,7 @@ function CreateDefinition({
               label="开始时间"
               rules={[{ required: true, message: "请选择开始时间" }]}
             >
-              <Input type="datetime-local" disabled={busy || frozen} />
+              <DateTimeField disabled={busy || frozen} />
             </Form.Item>
             <Form.Item
               name="validTo"
@@ -467,7 +468,7 @@ function CreateDefinition({
                 },
               ]}
             >
-              <Input type="datetime-local" disabled={busy || frozen} />
+              <DateTimeField disabled={busy || frozen} />
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={busy}>
               {frozen ? "原样重试" : "确认创建权益定义"}

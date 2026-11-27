@@ -1,3 +1,4 @@
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useRouteState, useCursorState } from "../shared/routeState";
@@ -7,20 +8,12 @@ import {
   CatalogJobs,
   ChannelPrices,
 } from "./CatalogScheduling";
-import {
-  Alert,
-  Button,
-  Card,
-  Grid,
-  Space,
-  Table,
-  Tabs,
-  Typography,
-} from "antd";
+import { Alert, Button, Card, Grid, Space, Tabs, Typography } from "antd";
 import { Icon } from "../shared/Icon";
 import {
   BarcodeEditor,
   CatalogFilters,
+  catalogPageSize,
   CatalogStructure,
   ProductPresentation,
   VariantCreator,
@@ -165,7 +158,12 @@ export function ProductOperations({
                         rows={batch}
                         onDone={refresh}
                       />
-                      <Button onClick={refresh}>刷新</Button>
+                      <Button loading={skus.loading} onClick={refresh}>
+                        刷新
+                      </Button>
+                      {!!batch.length && (
+                        <span role="status">已选 {batch.length} 个规格</span>
+                      )}
                     </Space>
                     <CatalogFilters
                       query={filters}
@@ -179,11 +177,13 @@ export function ProductOperations({
                     />
                   </>
                 }
+                pageSize={catalogPageSize(filters)}
                 count={skus.data?.length ?? 0}
                 loading={skus.loading}
                 error={skus.error}
                 after={skuAfter}
                 cursorName={"skuAfter"}
+                onBack={() => setBatch([])}
                 onHome={() => changeSkuPage("")}
                 onNext={() => changeSkuPage(skus.data!.at(-1)!.skuId)}
                 homeLabel="回到首页"
@@ -218,7 +218,10 @@ export function ProductOperations({
                               <Icon name="image" />
                             )}
                           </span>
-                          <PrimaryCell title={r.title} subtitle={r.skuId} />
+                          <PrimaryCell
+                            title={r.title}
+                            subtitle={<BusinessId value={r.skuId} />}
+                          />
                         </div>
                       ),
                     },
@@ -353,7 +356,10 @@ export function ProductOperations({
                     {
                       title: "商品",
                       render: (_, r) => (
-                        <PrimaryCell title={r.title} subtitle={r.productId} />
+                        <PrimaryCell
+                          title={r.title}
+                          subtitle={<BusinessId value={r.productId} />}
+                        />
                       ),
                     },
                     { title: "分类", dataIndex: "category" },

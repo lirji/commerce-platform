@@ -1,9 +1,11 @@
+import { CouponIssueFacts } from "../shared/MetricShare";
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RecordModal, RowActions } from "../shared/interactions";
-import { Alert, Button, Space, Table } from "antd";
+import { Alert, Button, Space } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
 import {
@@ -235,9 +237,10 @@ export function CouponDeliveries({ store }: { store: string }) {
             {
               title: "发放结果",
               render: (_, r) => (
-                <PrimaryCell
-                  title={`已发放 ${r.issued} · 已跳过 ${r.skipped}`}
-                  subtitle={`已处理 ${r.processed}`}
+                <CouponIssueFacts
+                  processed={r.processed}
+                  issued={r.issued}
+                  skipped={r.skipped}
                 />
               ),
             },
@@ -352,7 +355,7 @@ export function CouponDeliveries({ store }: { store: string }) {
             initial={""}
             disabled={recipients.loading || !!recipients.error}
             count={recipients.data?.length}
-            pageSize={filters.limit}
+            pageSize={50}
           />
           <Button
             disabled={!recipientAfter}

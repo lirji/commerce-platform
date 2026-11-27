@@ -1,5 +1,12 @@
 # Codex Progress
 
+<!-- b-console-product-experience:start -->
+## 当前任务：交易中心 B 端产品体验全面升级
+
+- 权威计划与恢复状态见 [交付计划](docs/delivery/b-console-product-experience/DELIVERY_PLAN.md) 和 [交付状态](docs/delivery/b-console-product-experience/DELIVERY_STATUS.md)。
+- 验证和 Git/CI 回执保存在 `.local/b-console-product-experience/`。
+<!-- b-console-product-experience:end -->
+
 <!-- frontend-design-engineering-mvp:start -->
 ## 商品经营页设计工程试点归档
 

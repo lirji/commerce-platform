@@ -1,3 +1,4 @@
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal } from "../shared/interactions";
@@ -9,9 +10,9 @@ import {
   Descriptions,
   Form,
   Input,
+  Select,
   Space,
   Spin,
-  Table,
   Typography,
 } from "antd";
 import {
@@ -483,9 +484,13 @@ function Products({
   }
   const search = params.get("search") ?? "",
     selected = params.get("product");
+  const limitCandidate = Number(params.get("limit"));
+  const limit = [10, 25, 50, 100].includes(limitCandidate)
+    ? limitCandidate
+    : 25;
   const page = useCentral<Page>(
     context,
-    `?${new URLSearchParams({ search, cursor, limit: "25" })}`,
+    `?${new URLSearchParams({ search, cursor, limit: String(limit) })}`,
     revision,
   );
   return (
@@ -512,15 +517,21 @@ function Products({
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Space wrap>
             <Input.Search
+              key={search}
               aria-label="搜索商品"
               placeholder="搜索商品名称"
+              maxLength={100}
+              allowClear
               defaultValue={search}
               onSearch={(value) =>
                 navigate({ search: value, cursor: null, product: null })
               }
               style={{ width: 280 }}
             />
-            <Button onClick={() => guard(() => setRevision((v) => v + 1))}>
+            <Button
+              loading={page.loading}
+              onClick={() => guard(() => setRevision((v) => v + 1))}
+            >
               刷新商品
             </Button>
           </Space>
@@ -546,9 +557,7 @@ function Products({
                 render: (_, r) => (
                   <Space direction="vertical" size={0}>
                     <Typography.Text strong>{r.title}</Typography.Text>
-                    <Typography.Text type="secondary">
-                      {r.resourceId}
-                    </Typography.Text>
+                    <BusinessId value={r.resourceId} />
                   </Space>
                 ),
               },
@@ -576,7 +585,19 @@ function Products({
               onPrevious={(value) => navigate({ cursor: value, product: null })}
               disabled={page.loading || !!page.error}
               count={page.data?.items.length}
-              pageSize={25}
+              pageSize={limit}
+              total={page.error ? undefined : page.data?.total}
+            />
+            <Select
+              aria-label="每页条数"
+              value={limit}
+              options={[10, 25, 50, 100].map((value) => ({
+                label: `每页 ${value} 条`,
+                value,
+              }))}
+              onChange={(value) =>
+                navigate({ limit: String(value), cursor: null, product: null })
+              }
             />
             <Button
               disabled={!cursor || page.loading || !!page.error}

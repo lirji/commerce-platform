@@ -1,3 +1,4 @@
+import { Table } from "../shared/BusinessTable";
 import { Status } from "../shared/ui";
 import { listGuardPath } from "../shared/listFilters";
 import { useListFilters } from "../shared/listFilters";
@@ -13,7 +14,6 @@ import {
   Input,
   InputNumber,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";

@@ -1,11 +1,13 @@
+import { countText, MetricShare } from "../shared/MetricShare";
+import { Table } from "../shared/BusinessTable";
 import {
   Alert,
   Button,
   Card,
   Segmented,
+  Skeleton,
   Space,
   Spin,
-  Table,
   Typography,
 } from "antd";
 import { useRouteState } from "../shared/routeState";
@@ -120,6 +122,9 @@ export function Dashboard({
       {exceptions}
       <ErrorNotice error={data.error} onRetry={data.refresh} />
       <Spin spinning={data.loading}>
+        {data.loading && (
+          <Skeleton active title={{ width: "28%" }} paragraph={{ rows: 2 }} />
+        )}
         {summary && sums && (
           <>
             <div className="dashboard-intro">
@@ -142,6 +147,7 @@ export function Dashboard({
                   label: "净收金额",
                   value: money(sums.netReceipts),
                   note: "近30天 · 实收减已知成功退款",
+                  metric: "netReceipts" as const,
                   tone: "featured",
                   mark: "trade",
                 },
@@ -149,6 +155,7 @@ export function Dashboard({
                   label: "实收金额",
                   value: money(sums.received),
                   note: "已付订单 · 成交投影",
+                  metric: "received" as const,
                   tone: "blue",
                   mark: "trade",
                 },
@@ -156,26 +163,50 @@ export function Dashboard({
                   label: "成功退款",
                   value: money(sums.refunded),
                   note: "截至投影已知成功退款",
+                  metric: "refunded" as const,
                   tone: "teal",
                   mark: "trade",
                 },
                 {
                   label: "已付订单",
-                  value: sums.paidOrders.toLocaleString(),
+                  value: countText(sums.paidOrders),
                   note: "近30天 · 已投影订单",
                   tone: "purple",
                   mark: "trade",
                 },
-              ].map((k) => (
-                <Card key={k.label} className={`metric-card metric-${k.tone}`}>
-                  <span className="metric-label">
-                    {k.label}
-                    <Icon name={k.mark as IconName} />
-                  </span>
-                  <strong>{k.value}</strong>
-                  <span className="metric-note">{k.note}</span>
-                </Card>
-              ))}
+              ].map((k) => {
+                const selectedMetric = k.metric;
+                const content = (
+                  <>
+                    <span className="metric-label">
+                      {k.label}
+                      <Icon name={k.mark as IconName} />
+                    </span>
+                    <strong>{k.value}</strong>
+                    <span className="metric-note">{k.note}</span>
+                  </>
+                );
+                return (
+                  <Card
+                    key={k.label}
+                    className={`metric-card metric-${k.tone}`}
+                  >
+                    {selectedMetric ? (
+                      <button
+                        className="dashboard-metric-choice"
+                        type="button"
+                        aria-label={`查看${k.label}趋势`}
+                        aria-pressed={metric === selectedMetric}
+                        onClick={() => setMetric(selectedMetric)}
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      content
+                    )}
+                  </Card>
+                );
+              })}
             </div>
             <div className="dashboard-main-grid">
               <Card
@@ -211,7 +242,7 @@ export function Dashboard({
                     size="small"
                     rowKey="day"
                     dataSource={daily}
-                    pagination={{ pageSize: 7 }}
+                    pagination={{ defaultPageSize: 7 }}
                     scroll={{ x: 680 }}
                     columns={[
                       { title: "UTC日期", dataIndex: "day" },
@@ -240,27 +271,41 @@ export function Dashboard({
                   </Typography.Text>
                 </div>
                 <div className="state-total">
-                  {summary.members.active}
+                  {countText(summary.members.active)}
                   <small>可用会员</small>
                 </div>
-                <div className="state-track">
-                  <span
-                    style={{
-                      width: `${summary.members.total ? (summary.members.active / summary.members.total) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
+                <MetricShare
+                  total={summary.members.total}
+                  segments={[
+                    {
+                      label: "可用",
+                      value: summary.members.active,
+                      tone: "success",
+                    },
+                    {
+                      label: "冻结",
+                      value: summary.members.frozen,
+                      tone: "warning",
+                    },
+                    {
+                      label: "注销",
+                      value: summary.members.closed,
+                      tone: "muted",
+                    },
+                  ]}
+                  caption={`租户会员状态分布，可用 ${countText(summary.members.active)}，已冻结 ${countText(summary.members.frozen)}，已注销 ${countText(summary.members.closed)}`}
+                />
                 <div className="state-row">
                   <span>已冻结</span>
-                  <b>{summary.members.frozen}</b>
+                  <b>{countText(summary.members.frozen)}</b>
                 </div>
                 <div className="state-row">
                   <span>已注销</span>
-                  <b>{summary.members.closed}</b>
+                  <b>{countText(summary.members.closed)}</b>
                 </div>
                 <div className="state-row">
                   <span>会员总数</span>
-                  <b>{summary.members.total}</b>
+                  <b>{countText(summary.members.total)}</b>
                 </div>
                 <div className="state-divider" />
                 <div className="state-heading">
@@ -271,15 +316,36 @@ export function Dashboard({
                 </div>
                 <div className="state-row">
                   <span>在售规格</span>
-                  <b>{summary.catalog.active}</b>
+                  <b>{countText(summary.catalog.active)}</b>
                 </div>
                 <div className="state-row">
                   <span>下架规格</span>
-                  <b>{summary.catalog.frozen}</b>
+                  <b>{countText(summary.catalog.frozen)}</b>
                 </div>
+                <MetricShare
+                  total={summary.catalog.total}
+                  segments={[
+                    {
+                      label: "在售",
+                      value: summary.catalog.active,
+                      tone: "accent",
+                    },
+                    {
+                      label: "下架",
+                      value: summary.catalog.frozen,
+                      tone: "muted",
+                    },
+                  ]}
+                  caption={`当前门店规格状态分布，在售 ${countText(summary.catalog.active)}，下架 ${countText(summary.catalog.frozen)}`}
+                />
                 {canNavigate("members") && (
                   <Button block onClick={() => navigate("members")}>
                     查看会员档案
+                  </Button>
+                )}
+                {canNavigate("skus") && (
+                  <Button type="link" block onClick={() => navigate("skus")}>
+                    查看门店商品
                   </Button>
                 )}
               </Card>

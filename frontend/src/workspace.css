@@ -147,7 +147,7 @@
 }
 .admin-app .workspace {
   width: 100%;
-  max-width: 1600px;
+  max-width: 1920px;
   margin-inline: auto;
 }
 .admin-app .brand-mark {
@@ -726,12 +726,16 @@
   }
 }
 @media (max-width: 767px) {
+  .admin-app .metric-grid {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
   .admin-app .metric-card .ant-card-body {
-    padding: 20px 16px;
+    padding: 12px;
   }
   .admin-app .metric-card strong {
-    font-size: 30px;
-    margin-block: 14px 12px;
+    font-size: 26px;
+    margin-block: 4px;
   }
   .admin-app .metric-label {
     font-size: 12px;
@@ -1101,4 +1105,194 @@
   .admin-app .workspace {
     padding: 16px;
   }
+}
+
+/* 表格工具跟随业务内容，设置弹层与全屏保留 Ant 的焦点管理。 */
+.admin-app .page-head {
+  gap: 10px 16px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.admin-app .page-head h1 {
+  margin-bottom: 4px;
+}
+.admin-app .query-panel {
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.admin-app .query-form {
+  gap: 8px 12px;
+}
+.admin-app .query-summary {
+  margin-top: 6px;
+}
+.date-time-field {
+  width: 100%;
+  min-width: 0;
+}
+.query-form .ant-form-item:has(.date-time-field) {
+  min-width: 240px;
+  max-width: 100%;
+}
+.business-table {
+  min-width: 0;
+}
+.business-table-tools {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.list-panel .business-table-tools {
+  padding: 6px 8px 0;
+}
+.business-table-tools .ant-btn .ui-icon {
+  width: 15px;
+  height: 15px;
+}
+.business-table-columns {
+  display: grid;
+  gap: 6px;
+  min-width: 160px;
+  max-height: min(380px, 55vh);
+  overflow: auto;
+  padding: 2px;
+}
+.business-table-columns .ant-btn {
+  justify-self: start;
+}
+.business-table-compact .ant-table-tbody > tr > td.ant-table-cell {
+  padding-block: 4px;
+}
+.business-table-dialog .ant-modal-body {
+  height: min(78dvh, calc(100dvh - 140px));
+  min-height: 0;
+  overflow: auto;
+}
+.business-id {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.cursor-jump {
+  min-width: 112px;
+}
+@media (max-width: 640px) {
+  .admin-app .page-head {
+    margin-bottom: 12px;
+  }
+  .query-form .ant-form-item:has(.date-time-field) {
+    width: 100%;
+    min-width: 0;
+  }
+  .business-table-tools {
+    justify-content: flex-start;
+  }
+}
+
+.query-quick-states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.query-quick-states .ant-btn[aria-pressed="true"] {
+  color: var(--button-active);
+  background: var(--button-selectedBg);
+  border-color: var(--button-hoverBorder);
+}
+.trade-row-identity > .business-id {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.dashboard-metric-choice {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.metric-card:has(.dashboard-metric-choice[aria-pressed="true"]) {
+  border-color: var(--button-primary);
+  box-shadow: inset 0 -2px var(--button-primary);
+}
+.dashboard-metric-choice:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.metric-share-track {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--line);
+}
+.metric-share-track > span {
+  flex: 0 0 auto;
+}
+.metric-share-accent {
+  background: var(--button-primary);
+}
+.metric-share-success {
+  background: var(--ok);
+}
+.metric-share-warning {
+  background: var(--warn);
+}
+.metric-share-muted {
+  background: var(--idle);
+}
+.metric-share-cell {
+  display: grid;
+  gap: 4px;
+  min-width: 72px;
+  font-variant-numeric: tabular-nums;
+}
+.metric-share-exhausted,
+.inventory-unavailable {
+  color: var(--error);
+  font-weight: 650;
+}
+.coupon-issue-facts {
+  display: grid;
+  gap: 3px;
+  max-width: 220px;
+}
+.coupon-issue-facts > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.state-card .metric-share {
+  margin-block: 10px;
+}
+
+.order-number-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.order-number-cell > .ant-btn {
+  min-width: 0;
+  height: auto;
+  min-height: 32px;
+  padding-inline: 4px;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.order-number-cell > .ant-btn > span {
+  min-width: 0;
+}
+.order-number-cell .ant-typography-copy {
+  margin-inline-start: 0;
 }

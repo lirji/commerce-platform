@@ -1,8 +1,9 @@
+import { Table } from "../shared/BusinessTable";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RecordModal, RowActions } from "../shared/interactions";
-import { Button, Dropdown, Table } from "antd";
+import { Button, Dropdown } from "antd";
 import { MemberBehavior } from "./MemberBehavior";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";

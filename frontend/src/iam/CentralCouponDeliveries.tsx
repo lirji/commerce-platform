@@ -1,3 +1,6 @@
+import { CouponIssueFacts } from "../shared/MetricShare";
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { useListFilters } from "../shared/listFilters";
 import { useWorkspaceHref } from "../shared/workspaceLinks";
 import {
@@ -13,7 +16,6 @@ import {
   Select,
   Space,
   Spin,
-  Table,
   Tabs,
   Tag,
   Typography,
@@ -277,7 +279,13 @@ function BatchDetails({ value }: { value: DeliveryView }) {
           {
             key: "processed",
             label: "已处理 / 已发放 / 已跳过",
-            children: `${value.processed} / ${value.issued} / ${value.skipped}`,
+            children: (
+              <CouponIssueFacts
+                processed={value.processed}
+                issued={value.issued}
+                skipped={value.skipped}
+              />
+            ),
           },
           {
             key: "revoke",
@@ -518,11 +526,11 @@ function Directory({
                 title: "发放结果",
                 width: 180,
                 render: (_, value) => (
-                  <span>
-                    已发放 {value.issued} · 已跳过 {value.skipped}
-                    <br />
-                    已处理 {value.processed}
-                  </span>
+                  <CouponIssueFacts
+                    processed={value.processed}
+                    issued={value.issued}
+                    skipped={value.skipped}
+                  />
                 ),
               },
               {
@@ -981,7 +989,7 @@ function Operation({
                 ]}
                 extra="按当前设备时区输入。提交时由服务端核验来源有效期及券规则。"
               >
-                <Input type="datetime-local" />
+                <DateTimeField />
               </Form.Item>
               <Form.Item
                 name="minIntervalHours"

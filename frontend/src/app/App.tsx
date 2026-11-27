@@ -1,3 +1,4 @@
+import { BusinessTableScope } from "../shared/businessTableScope";
 import { RecordModal } from "../shared/interactions";
 import {
   Alert,
@@ -813,7 +814,9 @@ export function App() {
                 </div>
               }
             >
-              {content}
+              <BusinessTableScope.Provider value={admin}>
+                {content}
+              </BusinessTableScope.Provider>
             </Suspense>
           </div>
         </Layout.Content>

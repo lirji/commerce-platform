@@ -1,7 +1,8 @@
+import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
 import { useWorkspaceHref } from "../shared/workspaceLinks";
-import { Button, Form, Modal, Table } from "antd";
+import { Button, Form, Modal } from "antd";
 import { useState } from "react";
 import type { Campaign, Governed, Rule } from "../shared/contracts";
 import { encode, useCommand, useResource } from "../shared/api";

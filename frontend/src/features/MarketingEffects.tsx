@@ -1,7 +1,9 @@
+import { PaidOrderShare } from "../shared/MetricShare";
+import { Table } from "../shared/BusinessTable";
 import { CursorBack } from "../shared/pagination";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
-import { Alert, Button, Card, Form, Input, Space, Table, Tabs } from "antd";
+import { Alert, Button, Card, Form, Input, Space, Tabs } from "antd";
 import { LifecycleEffects } from "./LifecycleEffects";
 import { EffectScope, effectTimeBasis } from "../shared/EffectScope";
 import { useState } from "react";
@@ -149,11 +151,14 @@ export function MarketingEffects({ store }: { store: string }) {
                   scroll={{ x: 1400 }}
                   columns={[
                     {
-                      title: "活动 / 版本",
-                      render: (_, r) =>
-                        r.campaignId
-                          ? `${r.campaignId} / v${r.campaignVersion}`
-                          : "无活动",
+                      title: "活动编号",
+                      dataIndex: "campaignId",
+                      render: (value) => value ?? "无活动",
+                    },
+                    {
+                      title: "内容版本",
+                      dataIndex: "campaignVersion",
+                      render: (value) => value ?? "—",
                     },
                     {
                       title: "净收金额",
@@ -177,6 +182,17 @@ export function MarketingEffects({ store }: { store: string }) {
                     },
                     { title: "成交数", dataIndex: "paidOrders" },
                     { title: "下单数", dataIndex: "orders" },
+                    {
+                      title: "已付比例",
+                      key: "paidOrderShare",
+                      width: 110,
+                      render: (_, row) => (
+                        <PaidOrderShare
+                          paid={row.paidOrders}
+                          orders={row.orders}
+                        />
+                      ),
+                    },
                     { title: "成交实付", dataIndex: "received", render: money },
                     { title: "成功退款", dataIndex: "refunded", render: money },
                     { title: "最后核对", dataIndex: "updatedAt", render: time },

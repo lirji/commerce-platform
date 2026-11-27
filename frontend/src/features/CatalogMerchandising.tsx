@@ -1,3 +1,4 @@
+import { Table } from "../shared/BusinessTable";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
@@ -18,7 +19,6 @@ import {
   InputNumber,
   Select,
   Space,
-  Table,
   Tabs,
 } from "antd";
 import { useEffect, useState } from "react";
@@ -767,6 +767,13 @@ export function VariantCreator({
     </>
   );
 }
+const catalogPageSizes = [10, 25, 50, 100];
+
+export function catalogPageSize(query: string) {
+  const candidate = Number(new URLSearchParams(query).get("limit"));
+  return catalogPageSizes.includes(candidate) ? candidate : 50;
+}
+
 export function CatalogFilters({
   categories,
   onSearch,
@@ -796,8 +803,9 @@ export function CatalogFilters({
         ? Number(params.get("maximumPrice"))
         : undefined,
       status: params.get("status") ?? undefined,
+      limit: operations ? catalogPageSize(query) : undefined,
     });
-  }, [query, form]);
+  }, [query, form, operations]);
   return (
     <Form
       form={form}
@@ -824,6 +832,7 @@ export function CatalogFilters({
           <Select
             aria-label="筛选商品类目"
             placeholder="全部类目"
+            showSearch={{ optionFilterProp: "label" }}
             allowClear
             style={{ width: 180 }}
             options={categories.map((c) => ({
@@ -863,7 +872,32 @@ export function CatalogFilters({
           />
         </Form.Item>
       )}
-      <Button htmlType="submit">{shopMode ? "搜索" : "筛选商品"}</Button>
+      {operations && (
+        <Form.Item name="limit">
+          <Select
+            aria-label="规格每页条数"
+            style={{ width: 128 }}
+            options={catalogPageSizes.map((value) => ({
+              label: `每页 ${value} 条`,
+              value,
+            }))}
+          />
+        </Form.Item>
+      )}
+      <Button type={operations ? "primary" : "default"} htmlType="submit">
+        {shopMode ? "搜索" : "筛选商品"}
+      </Button>
+      {operations && (
+        <Button
+          onClick={() => {
+            form.resetFields();
+            form.setFieldValue("limit", 50);
+            onSearch("");
+          }}
+        >
+          重置条件
+        </Button>
+      )}
     </Form>
   );
 }

@@ -1,6 +1,7 @@
+import { Table } from "../shared/BusinessTable";
 import { CursorBack } from "../shared/pagination";
 import { PagerActions } from "../shared/interactions";
-import { Alert, Button, Card, Table, Tabs } from "antd";
+import { Alert, Button, Card, Tabs } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";
 import { ErrorNotice, money, time } from "../shared/ui";

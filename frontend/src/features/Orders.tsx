@@ -1,3 +1,5 @@
+import { tradeNumberColumnWidth } from "../shared/tradeNumbers";
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { TradeLinks } from "../shared/workspaceLinks";
 import { OrderEvidencePanel } from "./OrderEvidencePanel";
@@ -11,7 +13,6 @@ import {
   Spin,
   InputNumber,
   Space,
-  Table,
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
@@ -137,7 +138,7 @@ export function Orders({
               : "查看本人在各店铺的订单。支付结果以渠道核对为准。"
           }
           extra={
-            <Button onClick={resource.refresh}>
+            <Button loading={resource.loading} onClick={resource.refresh}>
               {admin ? "刷新队列" : "刷新订单"}
             </Button>
           }
@@ -173,20 +174,34 @@ export function Orders({
                 />
               ),
             }}
-            scroll={{ x: admin ? 1030 : 720 }}
+            scroll={{ x: admin ? 1280 : 720 }}
             columns={[
               {
                 title: "订单编号",
                 dataIndex: "orderId",
-                width: compact ? 218 : undefined,
-                render: (v: string, row) => (
-                  <div className={compact ? "trade-row-identity" : undefined}>
-                    <Button type="link" onClick={() => previewOrder(v)}>
-                      {row.businessNo ?? v}
-                    </Button>
-                    {compact && <TradeRowFacts row={row} />}
-                  </div>
-                ),
+                width: admin
+                  ? tradeNumberColumnWidth
+                  : compact
+                    ? 218
+                    : undefined,
+                render: (v: string, row) => {
+                  const number = row.businessNo ?? v;
+                  return (
+                    <div className={compact ? "trade-row-identity" : undefined}>
+                      <div className={admin ? "order-number-cell" : undefined}>
+                        <Button
+                          type="link"
+                          title={number}
+                          onClick={() => previewOrder(v)}
+                        >
+                          {number}
+                        </Button>
+                        {admin && <BusinessId value={number} copyOnly />}
+                      </div>
+                      {compact && <TradeRowFacts row={row} />}
+                    </div>
+                  );
+                },
               },
               ...(!compact
                 ? [
@@ -219,7 +234,8 @@ export function Orders({
               {
                 title: "操作",
                 className: "row-actions-cell",
-                width: 180,
+                width: admin && !compact ? 200 : 180,
+                fixed: admin && !compact ? "right" : undefined,
                 render: (_, r) => (
                   <RowActions>
                     <Button type="link" onClick={() => previewOrder(r.orderId)}>
@@ -310,7 +326,11 @@ function OrderDetails({
         <>
           <RecordHero
             eyebrow="交易记录"
-            title={<Typography.Text copyable>{value.businessNo ?? value.orderId}</Typography.Text>}
+            title={
+              <Typography.Text copyable>
+                {value.businessNo ?? value.orderId}
+              </Typography.Text>
+            }
             id={value.storeId}
             status={value.status}
             metrics={[
@@ -320,7 +340,9 @@ function OrderDetails({
             ]}
           />
           {value.businessNo && value.businessNo !== value.orderId && (
-            <Typography.Text type="secondary">原订单编号 {value.orderId}</Typography.Text>
+            <Typography.Text type="secondary">
+              原订单编号 {value.orderId}
+            </Typography.Text>
           )}
           <TradeLinks
             orderId={value.orderId}
@@ -348,6 +370,7 @@ function OrderDetails({
           />
           <Card size="small" title="商品明细" className="detail-block">
             <Table<QuoteLine>
+              tools={false}
               rowKey="skuId"
               dataSource={value.items}
               pagination={false}

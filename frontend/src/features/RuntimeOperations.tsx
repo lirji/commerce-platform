@@ -1,3 +1,5 @@
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { workTypeLabel } from "../shared/ui";
 import {
   Alert,
@@ -10,7 +12,6 @@ import {
   InputNumber,
   Select,
   Space,
-  Table,
   Tag,
   Tabs,
   Typography,
@@ -289,6 +290,8 @@ function Recovery() {
                   error={rows.error}
                   after={after}
                   cursorName={"after"}
+                  onBack={() => setSelected([])}
+                  paginationDisabled={command.pending || command.busy}
                   onHome={() => {
                     setAfter("");
                     setSelected([]);
@@ -846,14 +849,14 @@ function Replay() {
                       label="范围开始（本机时间）"
                       rules={[{ required: true, message: "请选择范围开始" }]}
                     >
-                      <Input type="datetime-local" />
+                      <DateTimeField />
                     </Form.Item>
                     <Form.Item
                       name="to"
                       label="范围结束（本机时间）"
                       rules={[{ required: true, message: "请选择范围结束" }]}
                     >
-                      <Input type="datetime-local" />
+                      <DateTimeField />
                     </Form.Item>
                     <Form.Item
                       name="mode"

@@ -1,3 +1,6 @@
+import { DateTimeField } from "../shared/DateTimeField";
+import { PaidOrderShare } from "../shared/MetricShare";
+import { Table } from "../shared/BusinessTable";
 import { RecordFields, formatField } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { Pager, Status } from "../shared/ui";
@@ -18,7 +21,6 @@ import {
   Select,
   Space,
   Spin,
-  Table,
   Tabs,
   Tag,
   Typography,
@@ -637,7 +639,9 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                     command.frozen
                   }
                   onClick={() =>
-                    begin("control", { instanceId: row.businessNo ?? row.instanceId })
+                    begin("control", {
+                      instanceId: row.businessNo ?? row.instanceId,
+                    })
                   }
                 >
                   取消 / 重试
@@ -736,72 +740,98 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
                     ]
                   : []),
               ]
-            : effectFields[series].map(([key, title, format]) => ({
-                title,
-                dataIndex: key,
-                render: (value: unknown) =>
-                  value == null
-                    ? "—"
-                    : format === "money"
-                      ? money(String(value))
-                      : format === "time"
-                        ? time(String(value))
-                        : String(value),
-              }));
+            : [
+                ...effectFields[series].map(([key, title, format]) => ({
+                  title,
+                  dataIndex: key,
+                  render: (value: unknown) =>
+                    value == null
+                      ? "—"
+                      : format === "money"
+                        ? money(String(value))
+                        : format === "time"
+                          ? time(String(value))
+                          : String(value),
+                })),
+                ...(series === "campaigns"
+                  ? [
+                      {
+                        title: "已付比例",
+                        key: "paidOrderShare",
+                        width: 112,
+                        render: (_: unknown, row: Row) => (
+                          <PaidOrderShare
+                            paid={row.paidOrders}
+                            orders={row.orders}
+                          />
+                        ),
+                      },
+                    ]
+                  : []),
+              ];
   const field = (
     name: string,
     label: string,
     number = false,
     optional = false,
-  ) => (
-    <Form.Item
-      key={name}
-      name={name}
-      label={label}
-      rules={
-        optional && name !== "at"
-          ? []
-          : number
-            ? [{ required: true, message: "请输入整数" }]
-            : ["from", "to", "validFrom", "validTo", "at"].includes(name)
-              ? [
-                  { required: !optional, message: "请输入带时区的时间" },
-                  {
-                    validator: (_: unknown, value: string) =>
-                      (!value && optional) ||
-                      (Number.isFinite(Date.parse(value)) &&
-                        /(Z|[+-][0-9]{2}:[0-9]{2})$/.test(value))
-                        ? Promise.resolve()
-                        : Promise.reject(new Error("时间必须含明确UTC或时区")),
-                  },
-                ]
-              : [
-                    "journeyId",
-                    "storeId",
-                    "store",
-                    "entry",
-                    "memberId",
-                    "eventKey",
-                    "instanceId",
-                    "orderId",
-                    "campaignId",
-                  ].includes(name)
-                ? idRules
-                : [{ required: true, message: "请输入" + label }]
-      }
-    >
-      {number ? (
-        <InputNumber
-          min={name === "expectedVersion" ? 0 : 1}
-          precision={0}
-          max={Number.MAX_SAFE_INTEGER}
-          style={{ width: "100%" }}
-        />
-      ) : (
-        <Input />
-      )}
-    </Form.Item>
-  );
+  ) => {
+    const dateField = ["from", "to", "validFrom", "validTo", "at"].includes(
+      name,
+    );
+    return (
+      <Form.Item
+        key={name}
+        name={name}
+        label={label}
+        rules={
+          optional && name !== "at"
+            ? []
+            : number
+              ? [{ required: true, message: "请输入整数" }]
+              : dateField
+                ? [
+                    { required: !optional, message: "请选择日期和时间" },
+                    {
+                      validator: (_: unknown, value: string) =>
+                        (!value && optional) ||
+                        (Number.isFinite(Date.parse(value)) &&
+                          /(Z|[+-][0-9]{2}:[0-9]{2})$/.test(value))
+                          ? Promise.resolve()
+                          : Promise.reject(
+                              new Error("时间必须含明确UTC或时区"),
+                            ),
+                    },
+                  ]
+                : [
+                      "journeyId",
+                      "storeId",
+                      "store",
+                      "entry",
+                      "memberId",
+                      "eventKey",
+                      "instanceId",
+                      "orderId",
+                      "campaignId",
+                    ].includes(name)
+                  ? idRules
+                  : [{ required: true, message: "请输入" + label }]
+        }
+      >
+        {number ? (
+          <InputNumber
+            min={name === "expectedVersion" ? 0 : 1}
+            precision={0}
+            max={Number.MAX_SAFE_INTEGER}
+            style={{ width: "100%" }}
+          />
+        ) : dateField ? (
+          <DateTimeField instant />
+        ) : (
+          <Input />
+        )}
+      </Form.Item>
+    );
+  };
   let fields: ReactNode;
   if (open === "create" || open === "validate")
     fields = (
@@ -825,8 +855,8 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
             ].map((value) => ({ value, label: value }))}
           />
         </Form.Item>
-        {field("validFrom", "入组窗口起点（含，带时区）")}
-        {field("validTo", "入组窗口终点（不含，带时区）")}
+        {field("validFrom", "入组窗口起点（含，本机时间）")}
+        {field("validTo", "入组窗口终点（不含，本机时间）")}
         {field("maxDurationSeconds", "实例最大执行秒数（1—2592000）", true)}
         {field("entry", "起始节点")}
         <Form.Item
@@ -852,7 +882,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
         {field("version", "固定内容版本", true)}
         {field("memberId", "会员编号")}
         {field("orderId", "来源订单编号", false, true)}
-        {field("at", "评估时间（带时区）", false, true)}
+        {field("at", "评估时间（本机时间）", false, true)}
         <Alert type="info" title="预览不发放，WAIT后的可变事实不能预测。" />
       </>
     );
@@ -1048,7 +1078,7 @@ function Workspace({ area, client }: { area: Area; client: typeof request }) {
           >
             <div className="central-journey-fields">
               {field("store", "实际门店编号")}
-              {field("from", `${effectTimeBasis[series]}起点（含，带时区）`)}
+              {field("from", `${effectTimeBasis[series]}起点（含，本机时间）`)}
               {field("to", "终点（不含，最多93天）")}
             </div>
             <Button htmlType="submit" type="primary">

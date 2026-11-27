@@ -1,3 +1,5 @@
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import {
@@ -11,7 +13,6 @@ import {
   InputNumber,
   Space,
   Spin,
-  Table,
   Tabs,
   Tag,
   Typography,
@@ -479,7 +480,7 @@ function CreateAudience({
               },
             ]}
           >
-            <Input type="datetime-local" disabled={busy || frozen} />
+            <DateTimeField disabled={busy || frozen} />
           </Form.Item>
           <Form.Item
             name="validUntil"
@@ -505,7 +506,7 @@ function CreateAudience({
               },
             ]}
           >
-            <Input type="datetime-local" disabled={busy || frozen} />
+            <DateTimeField disabled={busy || frozen} />
           </Form.Item>
           <Form.Item
             name="members"

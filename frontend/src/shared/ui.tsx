@@ -1,3 +1,4 @@
+import { DateTimeField } from "./DateTimeField";
 import { CursorBack } from "./pagination";
 import { useCursorState } from "./routeState";
 import {
@@ -227,9 +228,11 @@ export function PageHead({
         <Typography.Title level={1}>{title}</Typography.Title>
         <Typography.Text type="secondary">{description}</Typography.Text>
       </div>
-      <Space wrap className="page-head-actions">
-        {extra}
-      </Space>
+      {extra && (
+        <Space wrap className="page-head-actions">
+          {extra}
+        </Space>
+      )}
     </div>
   );
 }
@@ -722,6 +725,8 @@ export function Pager({
   after,
   count,
   pageSize = 50,
+  onBack,
+  paginationDisabled = false,
   onHome,
   onNext,
   homeLabel = "首页",
@@ -738,6 +743,8 @@ export function Pager({
   error?: Error;
   count: number;
   pageSize?: number;
+  onBack?: () => void;
+  paginationDisabled?: boolean;
   onHome: () => void;
   onNext: () => void;
   homeLabel?: string;
@@ -750,7 +757,7 @@ export function Pager({
   const atHome =
     after == null ||
     after === (typeof after === "number" ? numberInitial : stringInitial);
-  const blocked = loading || !!error;
+  const blocked = loading || !!error || paginationDisabled;
   return (
     <div className="pager">
       <span className="list-count">
@@ -767,7 +774,10 @@ export function Pager({
               name={cursorName}
               after={after}
               initial={numberInitial}
-              onPrevious={setNumber}
+              onPrevious={(cursor) => {
+                onBack?.();
+                setNumber(cursor);
+              }}
               disabled={blocked}
             />
           ) : (
@@ -775,7 +785,10 @@ export function Pager({
               name={cursorName}
               after={String(after ?? "")}
               initial={stringInitial}
-              onPrevious={setString}
+              onPrevious={(cursor) => {
+                onBack?.();
+                setString(cursor);
+              }}
               disabled={blocked}
             />
           )}
@@ -795,6 +808,8 @@ export function ListPanel({
   toolbar,
   count,
   after,
+  onBack,
+  paginationDisabled = false,
   onHome,
   onNext,
   pageSize,
@@ -811,6 +826,8 @@ export function ListPanel({
   cursorName?: string;
   loading?: boolean;
   error?: Error;
+  onBack?: () => void;
+  paginationDisabled?: boolean;
   onHome?: () => void;
   onNext?: () => void;
   pageSize?: number;
@@ -901,6 +918,8 @@ export function ListPanel({
           error={error}
           count={count}
           pageSize={pageSize}
+          onBack={onBack}
+          paginationDisabled={paginationDisabled}
           onHome={onHome}
           onNext={onNext}
           homeLabel={homeLabel}
@@ -962,11 +981,19 @@ export function Fields({ fields }: { fields: Field[] }) {
           ) : f.type === "money" ? (
             <Input inputMode="decimal" placeholder="0.00" />
           ) : f.type === "datetime" ? (
-            <Input type="datetime-local" />
+            <DateTimeField />
           ) : f.type === "textarea" ? (
             <Input.TextArea rows={3} />
           ) : f.type === "select" ? (
-            <Select options={f.options} />
+            <Select
+              options={f.options}
+              showSearch={
+                f.options && f.options.length > 6
+                  ? { optionFilterProp: "label" }
+                  : false
+              }
+              allowClear={f.required === false}
+            />
           ) : f.type === "switch" ? (
             <Switch />
           ) : f.type === "password" ? (

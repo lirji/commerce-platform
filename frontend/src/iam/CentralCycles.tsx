@@ -1,3 +1,5 @@
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { CursorBack } from "../shared/pagination";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import {
@@ -10,7 +12,6 @@ import {
   Input,
   InputNumber,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";
@@ -736,7 +737,7 @@ function CycleCommand({
         },
       ]}
     >
-      <Input type="datetime-local" disabled={disabled} />
+      <DateTimeField disabled={disabled} />
     </Form.Item>
   );
   return (

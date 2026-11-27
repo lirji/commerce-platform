@@ -1,3 +1,5 @@
+import { DateTimeField } from "../shared/DateTimeField";
+import { Table } from "../shared/BusinessTable";
 import {
   tradeFieldValue,
   tradeNumberColumnWidth,
@@ -23,7 +25,6 @@ import {
   Popover,
   Select,
   Space,
-  Table,
   Tag,
   Typography,
 } from "antd";
@@ -92,6 +93,7 @@ export function OperationDetails({
       />
       {lines.length > 0 && (
         <Table<OperationRow>
+          tools={false}
           size="small"
           rowKey={(r, i) => `${r.skuId}-${i}`}
           pagination={false}
@@ -190,7 +192,8 @@ export function OperationsList({
 }) {
   const related = tradeRelated[path as keyof typeof tradeRelated];
   const numberFields = tradeNumberFields[path];
-  const compact = Grid.useBreakpoint().md === false && !!related;
+  const screens = Grid.useBreakpoint();
+  const compact = screens.md === false && !!related;
   const [after, setAfter] = useCursorState("OperationsWorkspace.after", ""),
     [selected, setSelected] = useState<OperationRow>(),
     [detailId, setDetailId] = useState<string>();
@@ -207,16 +210,20 @@ export function OperationsList({
       detailId && detailPath ? detailPath(detailId) : null,
     );
   const record = detailPath ? detail.data : selected;
-  const detailRecord = record && numberFields
-    ? {
-        ...record,
-        ...Object.fromEntries(
-          Object.entries(numberFields)
-            .filter(([field]) => field !== idField)
-            .map(([field, numberField]) => [numberField, tradeFieldValue(path, field, record)]),
-        ),
-      }
-    : record;
+  const detailRecord =
+    record && numberFields
+      ? {
+          ...record,
+          ...Object.fromEntries(
+            Object.entries(numberFields)
+              .filter(([field]) => field !== idField)
+              .map(([field, numberField]) => [
+                numberField,
+                tradeFieldValue(path, field, record),
+              ]),
+          ),
+        }
+      : record;
   const preferences = useTradeListPreferences(path, columns);
   const openDetail = (row: OperationRow) => {
     setSelected(row);
@@ -244,7 +251,9 @@ export function OperationsList({
         key,
         title,
         dataIndex: key,
-        className: numberFields?.[key] ? "trade-business-number-cell" : undefined,
+        className: numberFields?.[key]
+          ? "trade-business-number-cell"
+          : undefined,
         ellipsis: !numberFields?.[key],
         width: numberFields?.[key]
           ? tradeNumberColumnWidth
@@ -257,15 +266,21 @@ export function OperationsList({
           key.toLowerCase().includes("amount") || key === "payable"
             ? "right"
             : "left",
-        render: (v, row) => key === "businessNo"
-          ? <Typography.Text copyable>{String(v ?? row[idField])}</Typography.Text>
-          : formatField(key, tradeFieldValue(path, key, row)),
+        render: (v, row) =>
+          key === "businessNo" ? (
+            <Typography.Text copyable>
+              {String(v ?? row[idField])}
+            </Typography.Text>
+          ) : (
+            formatField(key, tradeFieldValue(path, key, row))
+          ),
       };
     });
   table.push({
     title: "操作",
     width: 100,
     key: "details",
+    fixed: screens.md ? "right" : undefined,
     render: (_, r) => <Button onClick={() => openDetail(r)}>查看详情</Button>,
   });
   return (
@@ -342,6 +357,7 @@ export function OperationsList({
       )}
       <ErrorNotice error={list.error} onRetry={list.refresh} />
       <Table<OperationRow>
+        columnSettings={!preferences.ready || !preferences.optional.length}
         rowKey={(r) => String(r[idField])}
         dataSource={list.data}
         loading={list.loading}
@@ -615,11 +631,10 @@ export function OperationAction({
                       label: formatField("mode", value),
                     }))}
                   />
+                ) : f.kind === "time" ? (
+                  <DateTimeField />
                 ) : (
-                  <Input
-                    maxLength={f.kind === "id" ? 64 : 256}
-                    type={f.kind === "time" ? "datetime-local" : "text"}
-                  />
+                  <Input maxLength={f.kind === "id" ? 64 : 256} />
                 )}
               </Form.Item>
             ))}

@@ -96,10 +96,11 @@ export function useCursorState(
         : (query.get(name) ?? initial);
     let offset = Number(query.get(`${name}.offset`) ?? 0);
     if (!Number.isSafeInteger(offset) || offset < 0) offset = 0;
+    const visitedIndex = trail.lastIndexOf(next);
     if (next === initial) {
       trail = [];
       offset = 0;
-    } else if (next === trail.at(-1)) trail.pop();
+    } else if (visitedIndex >= 0) trail = trail.slice(0, visitedIndex);
     else if (next !== current) trail.push(current);
     // 分享链接有界；最多保留最近50个实际访问过的游标。
     if (trail.length > 50) {

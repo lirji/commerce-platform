@@ -1,4 +1,5 @@
-import { Alert, Button, Descriptions, Form, Table } from "antd";
+import { Table } from "../shared/BusinessTable";
+import { Alert, Button, Descriptions, Form } from "antd";
 import { useState } from "react";
 import type { Campaign } from "../shared/contracts";
 import { encode, useCommand } from "../shared/api";

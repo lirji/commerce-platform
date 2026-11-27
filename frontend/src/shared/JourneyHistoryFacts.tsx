@@ -1,4 +1,5 @@
-import { Descriptions, Table } from "antd";
+import { Table } from "./BusinessTable";
+import { Descriptions } from "antd";
 import type { Journey, JourneyInstance } from "./contracts";
 import { Status, time } from "./ui";
 
@@ -44,7 +45,8 @@ export function JourneyHistoryFacts({ history }: { history: JourneyHistory }) {
           {
             key: "instance",
             label: "实例编号",
-            children: history.instance.businessNo ?? history.instance.instanceId,
+            children:
+              history.instance.businessNo ?? history.instance.instanceId,
           },
           {
             key: "version",

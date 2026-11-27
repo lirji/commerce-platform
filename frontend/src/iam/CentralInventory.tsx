@@ -1,3 +1,4 @@
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
@@ -12,7 +13,6 @@ import {
   Input,
   InputNumber,
   Space,
-  Table,
   Typography,
 } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -328,7 +328,7 @@ function Inventory({
                 width: compact ? 192 : undefined,
                 render: (value, row) => (
                   <div className="primary-cell">
-                    <strong>{value}</strong>
+                    <BusinessId value={value} />
                     {compact && <StockCounts row={row} />}
                   </div>
                 ),
@@ -339,6 +339,17 @@ function Inventory({
                       title: "可售",
                       dataIndex: "available",
                       align: "right" as const,
+                      render: (value: number) =>
+                        value === 0 ? (
+                          <span
+                            className="inventory-unavailable"
+                            title="当前无可售库存"
+                          >
+                            0
+                          </span>
+                        ) : (
+                          value
+                        ),
                     },
                     {
                       title: "预占",

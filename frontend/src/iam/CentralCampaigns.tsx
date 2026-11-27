@@ -1,3 +1,6 @@
+import { BudgetUsage } from "../shared/MetricShare";
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { useListFilters } from "../shared/listFilters";
 import { useWorkspaceHref } from "../shared/workspaceLinks";
 import { CursorBack } from "../shared/pagination";
@@ -15,7 +18,6 @@ import {
   Select,
   Space,
   Spin,
-  Table,
   Tabs,
   Tag,
   Typography,
@@ -856,7 +858,7 @@ function Operations({
                 <Input maxLength={64} />
               </Form.Item>
               <Form.Item name="at" label="模拟时间（可选，浏览器时区）">
-                <Input type="datetime-local" />
+                <DateTimeField />
               </Form.Item>
               <Form.Item
                 name="includePublishedCompetition"
@@ -1099,11 +1101,17 @@ function Budgets() {
           loading={rows.loading}
           dataSource={rows.data ?? []}
           pagination={false}
-          scroll={{ x: 1040 }}
+          scroll={{ x: 1180 }}
           columns={[
-            { title: "预算编号", width: 300, render: (_, row) => (
-              <Typography.Text copyable>{row.businessNo ?? row.budgetId}</Typography.Text>
-            ) },
+            {
+              title: "预算编号",
+              width: 300,
+              render: (_, row) => (
+                <Typography.Text copyable>
+                  {row.businessNo ?? row.budgetId}
+                </Typography.Text>
+              ),
+            },
             { title: "活动", dataIndex: "campaignId", width: 220 },
             { title: "内容版本", dataIndex: "version", width: 100 },
             {
@@ -1134,6 +1142,14 @@ function Budgets() {
               align: "right",
               render: (value, row) =>
                 row.cap === null ? "未设上限" : money(value),
+            },
+            {
+              title: "额度占用",
+              key: "budgetUsage",
+              width: 132,
+              render: (_, row) => (
+                <BudgetUsage cap={row.cap} held={row.held} spent={row.spent} />
+              ),
             },
           ]}
         />

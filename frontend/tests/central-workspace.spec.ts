@@ -479,8 +479,21 @@ test("营销效果切换系列保留实际窗口并独立反馈读取权限", as
   });
   await page.goto(`${base}/operations/marketing-effects?tenant_id=${tenant}`);
   await page.getByLabel("实际门店编号", { exact: true }).fill("STORE-A");
-  await page.getByLabel("下单时间起点（含，带时区）").fill(start);
-  await page.getByLabel("终点（不含，最多93天）").fill(end);
+  const local = await page.evaluate(
+    (dates) =>
+      dates.map((iso) => {
+        const date = new Date(iso);
+        const display = new Date(
+          date.getTime() - date.getTimezoneOffset() * 60_000,
+        );
+        return display.toISOString().slice(0, 19).replace("T", " ");
+      }),
+    [start, end],
+  );
+  await page.getByLabel("下单时间起点（含，本机时间）").fill(local[0]);
+  const deadline = page.getByLabel("终点（不含，最多93天）");
+  await deadline.fill(local[1]);
+  await deadline.press("Tab");
   await page.getByRole("button", { name: "读取分析" }).click();
   await expect(page.getByText("下单选择范围", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "生命周期队列" }).click();

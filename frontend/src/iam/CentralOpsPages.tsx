@@ -1,3 +1,4 @@
+import { Table } from "../shared/BusinessTable";
 import { Status } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
@@ -13,7 +14,6 @@ import {
   Modal,
   Select,
   Space,
-  Table,
   Tag,
   Typography,
 } from "antd";

@@ -1,3 +1,4 @@
+import { DateTimeField } from "../shared/DateTimeField";
 import {
   Alert,
   Button,
@@ -239,7 +240,7 @@ export function CampaignDraftForm({
           label="开始时间"
           rules={[{ required: true }]}
         >
-          <Input type="datetime-local" />
+          <DateTimeField />
         </Form.Item>
         <Form.Item
           name="validTo"
@@ -257,7 +258,7 @@ export function CampaignDraftForm({
             },
           ]}
         >
-          <Input type="datetime-local" />
+          <DateTimeField />
         </Form.Item>
         <Form.Item
           name="minimumSpend"

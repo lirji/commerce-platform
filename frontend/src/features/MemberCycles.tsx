@@ -1,3 +1,4 @@
+import { Table } from "../shared/BusinessTable";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
@@ -12,7 +13,6 @@ import {
   Row,
   Space,
   Statistic,
-  Table,
 } from "antd";
 import { useState } from "react";
 import { encode, useResource } from "../shared/api";

@@ -1,17 +1,9 @@
+import { Table } from "../shared/BusinessTable";
 import { CursorBack } from "../shared/pagination";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
-import {
-  Alert,
-  Button,
-  Card,
-  Descriptions,
-  Input,
-  Space,
-  Table,
-  Tabs,
-} from "antd";
+import { Alert, Button, Card, Descriptions, Input, Space, Tabs } from "antd";
 import { MemberBehavior } from "./MemberBehavior";
 import { PointOffers } from "./PointOffers";
 import { MemberPoints } from "./MemberPoints";

@@ -1,17 +1,8 @@
+import { Table } from "../shared/BusinessTable";
 import { useCursorState } from "../shared/routeState";
 import { useListFilters } from "../shared/listFilters";
 import { RecordModal, RowActions } from "../shared/interactions";
-import {
-  Alert,
-  Button,
-  Card,
-  Form,
-  Input,
-  Select,
-  Space,
-  Table,
-  Tabs,
-} from "antd";
+import { Alert, Button, Card, Form, Input, Select, Space, Tabs } from "antd";
 import { useState } from "react";
 import type { Governed, PageDefinition, PageRender } from "../shared/contracts";
 // 已发布页面暂停后才允许回退，沿用既有治理状态码。

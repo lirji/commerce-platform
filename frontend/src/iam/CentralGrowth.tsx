@@ -1,3 +1,5 @@
+import { Table } from "../shared/BusinessTable";
+import { DateTimeField } from "../shared/DateTimeField";
 import { CursorBack } from "../shared/pagination";
 import { useRouteState, useCursorState } from "../shared/routeState";
 import {
@@ -10,7 +12,6 @@ import {
   Input,
   InputNumber,
   Space,
-  Table,
   Tabs,
   Typography,
 } from "antd";
@@ -509,7 +510,7 @@ function GrowthCommand({
                     },
                   ]}
                 >
-                  <Input type="datetime-local" disabled={busy || frozen} />
+                  <DateTimeField disabled={busy || frozen} />
                 </Form.Item>
                 <Form.Item
                   name="growthPerYuan"
