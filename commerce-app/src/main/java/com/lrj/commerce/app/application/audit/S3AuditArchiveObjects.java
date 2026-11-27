@@ -53,6 +53,34 @@ public class S3AuditArchiveObjects implements ArchiveObjectStore, AutoCloseable 
         return read(restore, key, version, exactBytes);
     }
 
+    @Override
+    public InventoryPage inventory(String prefix, String continuation, int limit) {
+        try {
+            var page = restore.listObjectsV2(request -> request.bucket(bucket).prefix(prefix)
+                    .continuationToken(continuation).maxKeys(limit));
+            if (Boolean.TRUE.equals(page.isTruncated()) && page.nextContinuationToken() == null) {
+                throw unavailable("对象存储未返回恢复清点游标");
+            }
+            return new InventoryPage(page.contents().stream()
+                    .map(software.amazon.awssdk.services.s3.model.S3Object::key).toList(), page.nextContinuationToken());
+        } catch (SdkException failure) {
+            throw unavailable("暂时无法清点外部恢复凭证");
+        }
+    }
+
+    @Override
+    public ObjectVersion currentVersion(String key) {
+        try {
+            var found = restore.headObject(request -> request.bucket(bucket).key(key));
+            return new ObjectVersion(found.versionId(), Math.toIntExact(found.contentLength()), found.metadata().get("sha256"));
+        } catch (S3Exception failure) {
+            if (failure.statusCode() == 404) return null;
+            throw unavailable("暂时无法核对恢复凭证版本");
+        } catch (SdkException failure) {
+            throw unavailable("暂时无法核对恢复凭证版本");
+        }
+    }
+
     private byte[] read(S3Client client, String key, String version, int exactBytes) {
         try (var input = client.getObject(request -> request.bucket(bucket).key(key).versionId(version))) {
             if (!version.equals(input.response().versionId()) || input.response().contentLength() != exactBytes) {

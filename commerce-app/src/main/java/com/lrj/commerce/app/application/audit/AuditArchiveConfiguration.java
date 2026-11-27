@@ -2,6 +2,9 @@ package com.lrj.commerce.app.application.audit;
 
 import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.runtime.audit.archive.ArchiveOnlineCutoverMapper;
+import com.lrj.commerce.runtime.audit.archive.ArchivePurgeRecoveryMapper;
+import com.lrj.commerce.runtime.audit.archive.AuditArchivePurgeRecovery;
+import com.lrj.commerce.runtime.serialization.JsonCodec;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveRetentionReview;
@@ -82,18 +85,25 @@ public class AuditArchiveConfiguration {
 
     @Bean
     AuditArchiveJob auditArchiveJob(AuditArchiveVerification verification, AuditArchiveMapper mapper,
-            ArchiveOnlineCutoverMapper cutoverMapper, PlatformTransactionManager manager, Clock clock,
+            ArchiveOnlineCutoverMapper cutoverMapper, ArchivePurgeRecoveryMapper recoveryMapper, S3AuditArchiveObjects objects,
+            PlatformTransactionManager manager, Clock clock,
             @Value("${commerce.audit-archive.online-cutover-enabled}") boolean cutoverEnabled,
+            @Value("${commerce.audit-archive.recovery-replay-enabled}") boolean replayEnabled,
             @Value("${commerce.audit-archive.scope}") String scope,
             @Value("${commerce.audit-archive.tenant}") String tenant) {
-        var review = new AuditArchiveRetentionReview(mapper, verification, new AuditArchiveMapper.Scope(scope, tenant), clock);
-        var cutover = cutoverEnabled ? new AuditArchiveOnlineCutover(review, mapper, cutoverMapper, manager) : null;
-        return new AuditArchiveJob(verification, review, cutover);
+        if (cutoverEnabled && replayEnabled) {
+            throw new IllegalArgumentException("归档原库切换与隔离恢复补放必须使用独立应用配置");
+        }
+        var authorized = new AuditArchiveMapper.Scope(scope, tenant);
+        var review = new AuditArchiveRetentionReview(mapper, verification, authorized, clock);
+        var recovery = new AuditArchivePurgeRecovery(authorized, mapper, cutoverMapper, recoveryMapper, verification, objects, manager);
+        var cutover = cutoverEnabled ? new AuditArchiveOnlineCutover(review, mapper, cutoverMapper, recovery, manager) : null;
+        return new AuditArchiveJob(verification, review, cutover, recovery, replayEnabled);
     }
 
     /** 由独立执行器处理；每轮最多一个批次，不从作业参数接受租户或截止时间。 */
     public record AuditArchiveJob(AuditArchiveVerification verification, AuditArchiveRetentionReview retention,
-            AuditArchiveOnlineCutover cutover) {
+            AuditArchiveOnlineCutover cutover, AuditArchivePurgeRecovery recovery, boolean replayEnabled) {
         @XxlJob("commerceAuditArchiveVerify")
         public void verify() {
             verification.tick();
@@ -111,7 +121,37 @@ public class AuditArchiveConfiguration {
         @XxlJob("commerceAuditArchiveOnlineCutover")
         public void cutoverOnline() {
             if (cutover == null) throw new IllegalStateException("在线审计档案切换未启用");
-            XxlJobHelper.log("在线切换结果 {}", cutover.move(XxlJobHelper.getJobParam()));
+            String batchId = XxlJobHelper.getJobParam();
+            var outcome = cutover.move(batchId);
+            XxlJobHelper.log("在线切换结果 {}", outcome);
+            if (outcome == AuditArchiveOnlineCutover.Outcome.MOVED || outcome == AuditArchiveOnlineCutover.Outcome.ALREADY_MOVED) {
+                XxlJobHelper.log("已核验外部恢复凭证 {}", JsonCodec.write(recovery.publish(batchId)));
+            }
+        }
+
+        /** 一次扫描一条未发回执，补上进程在数据库提交后中断的窗口。 */
+        @XxlJob("commerceAuditArchivePublishRecovery")
+        public void publishRecovery() {
+            var reference = recovery.publishNext();
+            if (reference != null) XxlJobHelper.log("已核验外部恢复凭证 {}", JsonCodec.write(reference));
+        }
+
+        /** 独立恢复配置查阅外部清理凭证，处理游标直到备份范围完整。 */
+        @XxlJob("commerceAuditArchiveRecoveryInventory")
+        public void recoveryInventory() {
+            if (!replayEnabled) throw new IllegalStateException("清理凭证清点未启用");
+            var cursor = XxlJobHelper.getJobParam();
+            var page = recovery.inventory(cursor == null || cursor.isBlank() ? null : cursor);
+            XxlJobHelper.log("外部恢复凭证清点 {}", JsonCodec.write(page));
+            if (!page.unresolved().isEmpty()) XxlJobHelper.handleFail("仍有清理准备记录等待核对");
+        }
+
+        /** 限于隔离恢复。凭证引用由已核验的恢复清单给出，业务入口无法调用。 */
+        @XxlJob("commerceAuditArchiveReplayRecovery")
+        public void replayRecovery() {
+            if (!replayEnabled) throw new IllegalStateException("清理凭证补放未启用");
+            var reference = JsonCodec.read(XxlJobHelper.getJobParam(), AuditArchivePurgeRecovery.Reference.class);
+            XxlJobHelper.log("清理凭证补放结果 {}", recovery.replay(reference));
         }
     }
 }

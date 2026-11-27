@@ -13,12 +13,14 @@ public class AuditArchiveOnlineCutover {
     private final AuditArchiveMapper archive;
     private final ArchiveOnlineCutoverMapper cutover;
     private final TransactionTemplate transaction;
+    private final AuditArchivePurgeRecovery recovery;
 
     public AuditArchiveOnlineCutover(AuditArchiveRetentionReview review, AuditArchiveMapper archive,
-            ArchiveOnlineCutoverMapper cutover, PlatformTransactionManager manager) {
+            ArchiveOnlineCutoverMapper cutover, AuditArchivePurgeRecovery recovery, PlatformTransactionManager manager) {
         this.review = review;
         this.archive = archive;
         this.cutover = cutover;
+        this.recovery = recovery;
         this.transaction = new TransactionTemplate(manager);
         transaction.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
         transaction.setTimeout(5);
@@ -30,6 +32,10 @@ public class AuditArchiveOnlineCutover {
         if ("ONLINE_PURGED".equals(proof.batch().state())) return Outcome.ALREADY_MOVED;
         if (proof.review().reason() != AuditArchiveRetentionReview.Reason.VERIFIED_FOR_REVIEW) return Outcome.INELIGIBLE;
         var scope = new Scope(proof.batch().scopeType(), proof.batch().tenantId());
+        if (cutover.lockGrant(batchId) == null) return Outcome.NOT_APPROVED;
+        if (cutover.hasActiveCommand(batchId)) return Outcome.COMMAND_ACTIVE;
+        // 外部准备标记先于数据库删除。若事务结果因灾难不可知，隔离恢复可以发现待核验的批次。
+        recovery.prepare(proof.batch());
         return transaction.execute(status -> {
             var current = cutover.lockBatch(batchId);
             if (current != null && "ONLINE_PURGED".equals(current.state())) return Outcome.ALREADY_MOVED;

@@ -7,6 +7,8 @@ import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.runtime.audit.archive.ArchiveObjectStore;
 import com.lrj.commerce.runtime.audit.archive.ArchiveOnlineCutoverMapper;
+import com.lrj.commerce.runtime.audit.archive.ArchivePurgeRecoveryMapper;
+import com.lrj.commerce.runtime.audit.archive.AuditArchivePurgeRecovery;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover.Outcome;
 import com.lrj.commerce.runtime.command.persistence.CommandMapper.Key;
@@ -57,12 +59,13 @@ class AuditArchiveMySqlObjectStoreTest {
     @Autowired ArchiveObjectStore objects;
     @Autowired AuditArchiveMapper mapper;
     @Autowired ArchiveOnlineCutoverMapper cutoverMapper;
+    @Autowired ArchivePurgeRecoveryMapper purgeRecoveryMapper;
     @Autowired OperationAudit audit;
     @Autowired PlatformTransactionManager tx;
     @Autowired JdbcTemplate jdbc;
 
     @Test
-    void reusesOneObjectVersionAndChecksRestoreTicketsBeforePublishing() {
+    void reusesOneObjectVersionAndChecksRestoreTicketsBeforePublishing() throws Exception {
         long original = oldAttempt("original");
         long replay = oldAttempt("replay");
         oldAttempt("still-awaiting");
@@ -157,8 +160,10 @@ class AuditArchiveMySqlObjectStoreTest {
     }
 
     private void checkOnlineCutover(AuditArchiveVerification archive, AuditArchiveRetentionReview review,
-            String batchId, long original, Actor actor) {
-        var cutover = new AuditArchiveOnlineCutover(review, mapper, cutoverMapper, tx);
+            String batchId, long original, Actor actor) throws Exception {
+        var scope = new AuditArchiveMapper.Scope("TENANT", TENANT);
+        var publish = new AuditArchivePurgeRecovery(scope, mapper, cutoverMapper, purgeRecoveryMapper, archive, objects, tx);
+        var cutover = new AuditArchiveOnlineCutover(review, mapper, cutoverMapper, publish, tx);
         assertEquals(Outcome.NOT_APPROVED, cutover.move(batchId));
         jdbc.update("""
             INSERT INTO audit_archive_cutover_grant(batch_id,approval_reference,approved_by,effective_at,expires_at)
@@ -178,10 +183,15 @@ class AuditArchiveMySqlObjectStoreTest {
             """, batchId);
         assertThrows(org.springframework.dao.DuplicateKeyException.class, () -> cutover.move(batchId));
         assertEquals("VERIFIED", mapper.batch(batchId).state());
+        assertEquals(java.util.List.of(batchId), publish.inventory(null).unresolved());
+        assertTrue(publish.inventory(null).committed().isEmpty());
         assertEquals(3, onlineCount());
         jdbc.update("DELETE FROM audit_archive_online_purge_receipt WHERE batch_id=? AND object_version='conflicting-fixture'", batchId);
+        // 在正式切换前把这一批的真实在线状态恢复到另一份 MySQL schema，后续补放不沿用清理后的源库。
+        var backup = restoreOlderBackup();
         assertEquals(Outcome.MOVED, cutover.move(batchId));
         assertEquals(Outcome.ALREADY_MOVED, cutover.move(batchId));
+        checkBackupRecovery(publish, archive, backup, batchId, original);
         assertEquals(1, onlineCount());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM audit_archive_effect_locator WHERE batch_id=?", Integer.class, batchId));
 
@@ -203,6 +213,99 @@ class AuditArchiveMySqlObjectStoreTest {
         assertTrue(restored.getFirst().lateEvidence().contains("EFFECT"));
         assertEquals(1, onlineCount());
     }
+
+    /** 按备份时点复制关键原始表，目标 schema 用同一套 Flyway 结构、独立事务管理和 Mapper。 */
+    private OlderBackup restoreOlderBackup() throws Exception {
+        String sourceUrl = System.getenv("COMMERCE_TEST_DB_URL");
+        String migrationUser = System.getenv("SPRING_FLYWAY_USER");
+        String migrationPassword = System.getenv("SPRING_FLYWAY_PASSWORD");
+        if (migrationUser == null || migrationPassword == null) {
+            throw new IllegalStateException("旧备份演练需要隔离库的迁移账号，以创建专用恢复 schema");
+        }
+        var source = new org.springframework.jdbc.datasource.DriverManagerDataSource(sourceUrl, migrationUser, migrationPassword);
+        String schema = "commerce_audit_backup_" + UUID.randomUUID().toString().replace("-", "");
+        var sourceJdbc = new JdbcTemplate(source);
+        sourceJdbc.execute("CREATE DATABASE " + schema + " CHARACTER SET utf8mb4 COLLATE utf8mb4_bin");
+        var target = new org.springframework.jdbc.datasource.DriverManagerDataSource(
+                sourceUrl.replace("/commerce_test_20260923?", "/" + schema + "?"), migrationUser, migrationPassword);
+        org.flywaydb.core.Flyway.configure().dataSource(target).locations("classpath:db/migration").load().migrate();
+        var restored = new JdbcTemplate(target);
+        restored.update("""
+            INSERT INTO audit_operation_attempt
+            SELECT * FROM commerce_test_20260923.audit_operation_attempt WHERE actor_tenant_id=?
+            """, TENANT);
+        restored.update("""
+            INSERT INTO platform_audit
+            SELECT * FROM commerce_test_20260923.platform_audit WHERE tenant_id=? AND audit_attempt_id IS NOT NULL
+            """, TENANT);
+        restored.update("""
+            INSERT INTO audit_attempt_outcome
+            SELECT o.* FROM commerce_test_20260923.audit_attempt_outcome o
+            JOIN audit_operation_attempt a ON a.id=o.attempt_id WHERE a.actor_tenant_id=?
+            """, TENANT);
+
+        var configuration = new org.apache.ibatis.session.Configuration();
+        configuration.setMapUnderscoreToCamelCase(true);
+        var factory = new org.mybatis.spring.SqlSessionFactoryBean();
+        factory.setConfiguration(configuration);
+        factory.setDataSource(target);
+        factory.setMapperLocations(new org.springframework.core.io.support.PathMatchingResourcePatternResolver()
+                .getResources("classpath*:mappers/runtime/*Archive*Mapper.xml"));
+        var session = new org.mybatis.spring.SqlSessionTemplate(java.util.Objects.requireNonNull(factory.getObject()));
+        return new OlderBackup(restored, session, new org.springframework.jdbc.datasource.DataSourceTransactionManager(target));
+    }
+
+    private void checkBackupRecovery(AuditArchivePurgeRecovery publish, AuditArchiveVerification archive,
+            OlderBackup backup, String batchId, long original) {
+        var scope = new AuditArchiveMapper.Scope("TENANT", TENANT);
+        var proof = publish.publishNext();
+        assertNotNull(proof);
+        assertEquals(batchId, proof.batchId());
+        assertEquals(proof, publish.publish(batchId));
+        assertNull(publish.publishNext());
+        var inventory = publish.inventory(null);
+        assertEquals(java.util.List.of(proof), inventory.committed());
+        assertTrue(inventory.unresolved().isEmpty());
+        assertNull(inventory.continuation());
+
+        var restore = new AuditArchivePurgeRecovery(scope, backup.session().getMapper(AuditArchiveMapper.class),
+                backup.session().getMapper(ArchiveOnlineCutoverMapper.class),
+                backup.session().getMapper(ArchivePurgeRecoveryMapper.class), archive, objects, backup.manager());
+        JdbcTemplate target = backup.jdbc();
+        assertEquals(0, target.queryForObject("SELECT COUNT(*) FROM audit_archive_batch", Integer.class));
+        assertEquals(3, backedUpAttempts(target));
+        int unrelated = target.queryForObject("SELECT COUNT(*) FROM audit_operation_attempt", Integer.class) - backedUpAttempts(target);
+        var modified = new AuditArchivePurgeRecovery.Reference(batchId, proof.version(), proof.byteCount(), "0".repeat(64));
+        assertThrows(DomainException.class, () -> restore.replay(modified));
+        target.update("UPDATE audit_operation_attempt SET resource_id='different-record' WHERE id=?", original);
+        assertThrows(DomainException.class, () -> restore.replay(proof));
+        assertEquals(0, target.queryForObject("SELECT COUNT(*) FROM audit_archive_batch", Integer.class));
+        assertEquals(3, backedUpAttempts(target));
+
+        target.update("UPDATE audit_operation_attempt SET resource_id='original' WHERE id=?", original);
+        assertEquals(new AuditArchivePurgeRecovery.ReplayResult(batchId, 2, false), restore.replay(proof));
+        assertEquals(new AuditArchivePurgeRecovery.ReplayResult(batchId, 0, true), restore.replay(proof));
+        target.update("""
+            UPDATE audit_archive_online_purge_receipt
+            SET recovery_version=NULL,recovery_sha256=NULL,recovery_bytes=NULL WHERE batch_id=?
+            """, batchId);
+        assertEquals(new AuditArchivePurgeRecovery.ReplayResult(batchId, 0, true), restore.replay(proof));
+        assertEquals(proof.version(), target.queryForObject(
+                "SELECT recovery_version FROM audit_archive_online_purge_receipt WHERE batch_id=?", String.class, batchId));
+        assertEquals(1, backedUpAttempts(target));
+        assertEquals(unrelated + 1, target.queryForObject("SELECT COUNT(*) FROM audit_operation_attempt", Integer.class));
+        assertEquals("still-awaiting", target.queryForObject(
+                "SELECT resource_id FROM audit_operation_attempt WHERE action_code='catalog.category.bind'", String.class));
+        assertEquals(1, target.queryForObject("SELECT COUNT(*) FROM audit_archive_effect_locator", Integer.class));
+        assertEquals("ONLINE_PURGED", target.queryForObject("SELECT state FROM audit_archive_batch WHERE batch_id=?", String.class, batchId));
+    }
+
+    private int backedUpAttempts(JdbcTemplate target) {
+        return target.queryForObject("SELECT COUNT(*) FROM audit_operation_attempt WHERE action_code='catalog.category.bind'", Integer.class);
+    }
+
+    private record OlderBackup(JdbcTemplate jdbc, org.mybatis.spring.SqlSessionTemplate session,
+                               PlatformTransactionManager manager) {}
 
     private long oldAttempt(String result) {
         String request = UUID.randomUUID().toString();
@@ -230,6 +333,16 @@ class AuditArchiveMySqlObjectStoreTest {
 
         private Faults(ArchiveObjectStore real) {
             this.real = real;
+        }
+
+        @Override
+        public InventoryPage inventory(String prefix, String continuation, int limit) {
+            return real.inventory(prefix, continuation, limit);
+        }
+
+        @Override
+        public ObjectVersion currentVersion(String key) {
+            return real.currentVersion(key);
         }
 
         @Override

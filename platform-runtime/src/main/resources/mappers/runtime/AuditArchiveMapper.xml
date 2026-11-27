@@ -59,8 +59,8 @@
     WHERE m.batch_id=#{id} ORDER BY a.occurred_at,a.id
   </select>
   <insert id="insertBatch">
-    INSERT INTO audit_archive_batch(batch_id,scope_type,tenant_id,state,older_than,object_key,sha256,row_count,payload_bytes)
-    VALUES(#{batchId},#{scopeType},#{tenantId},#{state},#{olderThan},#{objectKey},#{sha256},#{rowCount},#{payloadBytes})
+    INSERT INTO audit_archive_batch(batch_id,scope_type,tenant_id,state,older_than,object_key,object_version,sha256,row_count,payload_bytes)
+    VALUES(#{batchId},#{scopeType},#{tenantId},#{state},#{olderThan},#{objectKey},#{objectVersion},#{sha256},#{rowCount},#{payloadBytes})
   </insert>
   <insert id="insertMembers">
     INSERT INTO audit_archive_member(batch_id,attempt_id) VALUES

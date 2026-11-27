@@ -127,9 +127,14 @@ public class AuditArchiveVerification {
 
     /** 清理预检重新读取精确对象版本，并与当下仍在线的快照比对。 */
     List<Member> confirmedSnapshot(Batch batch) {
-        var rows = decode(batch, objects.readForVerification(batch.objectKey(), batch.objectVersion(), batch.payloadBytes())).rows();
+        var rows = archivedMembers(batch);
         if (!rows.equals(mapper.snapshot(batch.batchId()))) throw bad("档案与当前在线数据不一致");
         return rows;
+    }
+
+    /** 已切换的批次仍能由原版本取得成员，为外部清理回执导出提供证据。 */
+    List<Member> archivedMembers(Batch batch) {
+        return decode(batch, objects.readForVerification(batch.objectKey(), batch.objectVersion(), batch.payloadBytes())).rows();
     }
 
     private Batch reserve() {
@@ -213,7 +218,7 @@ public class AuditArchiveVerification {
         }
     }
 
-    private static String sha256(byte[] content) {
+    static String sha256(byte[] content) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
         } catch (NoSuchAlgorithmException impossible) {

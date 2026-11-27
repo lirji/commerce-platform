@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.runtime.audit.archive.ArchivePurgeRecoveryMapper">
+  <select id="nextPending" resultType="java.lang.String">
+    SELECT r.batch_id FROM audit_archive_online_purge_receipt r
+    JOIN audit_archive_batch b ON b.batch_id=r.batch_id
+    WHERE r.recovery_version IS NULL AND b.state='ONLINE_PURGED'
+      AND b.scope_type=#{scope.type} AND b.tenant_id=#{scope.tenant}
+    ORDER BY r.applied_at,r.batch_id LIMIT 1
+  </select>
+  <select id="receipt" resultType="com.lrj.commerce.runtime.audit.archive.ArchiveOnlineCutoverMapper$Receipt">
+    SELECT batch_id,object_version,sha256,approval_reference,attempt_count,effect_count,outcome_count
+    FROM audit_archive_online_purge_receipt WHERE batch_id=#{id}
+  </select>
+  <select id="reference" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchivePurgeRecovery$Reference">
+    SELECT batch_id,recovery_version AS version,recovery_bytes AS byte_count,recovery_sha256 AS sha256
+    FROM audit_archive_online_purge_receipt WHERE batch_id=#{id} AND recovery_version IS NOT NULL
+  </select>
+  <update id="sealReference">
+    UPDATE audit_archive_online_purge_receipt
+    SET recovery_version=#{version},recovery_sha256=#{sha256},recovery_bytes=#{byteCount}
+    WHERE batch_id=#{batchId} AND recovery_version IS NULL
+  </update>
+  <select id="lockExistingAttempts" resultType="long">
+    SELECT id FROM audit_operation_attempt WHERE id IN
+    <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    ORDER BY id FOR UPDATE
+  </select>
+  <select id="memberIds" resultType="long">
+    SELECT attempt_id FROM audit_archive_member WHERE batch_id=#{id} ORDER BY attempt_id
+  </select>
+  <select id="hasOnlineChildren" resultType="boolean">
+    SELECT EXISTS(
+      SELECT 1 FROM audit_archive_member m JOIN audit_attempt_outcome o ON o.attempt_id=m.attempt_id WHERE m.batch_id=#{id}
+      UNION ALL
+      SELECT 1 FROM audit_archive_member m JOIN platform_audit p ON p.audit_attempt_id=m.attempt_id WHERE m.batch_id=#{id}
+    )
+  </select>
+  <insert id="storeRecoveredLocators">
+    INSERT INTO audit_archive_effect_locator(effect_id,batch_id,attempt_id,action_code) VALUES
+    <foreach collection="effects" item="proof" separator=",">
+      (#{proof.effectId},#{id},#{proof.attemptId},#{proof.actionCode})
+    </foreach>
+  </insert>
+  <update id="markRecovered">
+    UPDATE audit_archive_batch SET state='ONLINE_PURGED',object_version=#{version},updated_at=UTC_TIMESTAMP(3)
+    WHERE batch_id=#{id} AND state IN ('CLAIMED','UPLOADED','VERIFIED')
+  </update>
+</mapper>

@@ -48,3 +48,11 @@ OA-00 本地基线为商城 `45bbb45`（V84）、交易 `b77245e`（V050）、�
 `commerceAuditArchiveOnlineCutover` 默认关闭。V90 增加批次独立批准、在线清理回执、原效果定位和晚到追加记录。执行任务输入一个当前来源范围内的批次编号。实际在线切换在锁内再次核对档案、策略、冻结、成员和活跃幂等命令，按实际条数提交批次、定位和回执。重复任务返回已移出。已在档案中的原证据继续通过授权工单按版本恢复，后到证据通过原尝试引用追加。
 
 对象到期销毁、旧备份恢复时重放删除状态和清理责任跨系统验收仍待实现和验证。启用在线切换需要所有实例先支持 V90 的原尝试行锁及晚到追加路径，并完成目标环境恢复与保留审批。
+
+### 从备份恢复后补放在线清理
+
+V91 把清理回执与数据库备份分开保全。在线切换先在版本化对象存储写入准备记录，再事务内提交删除与回执。正常切换结束后导出提交凭证。进程中断可由 `commerceAuditArchivePublishRecovery` 每轮补发一个未完成回执。凭证只保存审批、档案版本、计数和逐行指纹，按固定对象键写入，回读通过后保存对象版本及 SHA-256。
+
+恢复目标使用隔离库并单独开启 `COMMERCE_AUDIT_ARCHIVE_RECOVERY_REPLAY_ENABLED`。源库停止切换后，用 `commerceAuditArchiveRecoveryInventory` 按配置范围逐页清点，初始任务参数为空。后续页参数为上次返回的游标。恢复身份对清理凭证前缀需要 `s3:ListBucket`、`s3:GetObject` 和指定版本读取权限。对象存储使用支持列表分页及精确版本读取的版本化桶。 [S3 ListObjectsV2](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) · [S3 版本读取](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
+
+清点发现准备记录缺少提交凭证时，该页作业失败并记录未决批次。须对照源库或独立灾备记录厘清实际事务结果后继续；完成所有页之前保持恢复目标隔离。已确认的每份凭证以任务输出的 JSON 作为 `commerceAuditArchiveReplayRecovery` 参数。补放校验作用域、对象精确版本、长度、摘要、成员和仍在线的子证据，按事务移除匹配副本、恢复定位信息并记录已应用状态。冲突时保留整批，由恢复负责人核对仍活跃的原幂等命令或冻结。恢复完成后再开放业务读写。
