@@ -254,13 +254,26 @@ export function OpsPages({ store }: { store: string }) {
     `/admin/ops-pages?after=${encode(after)}&${filters.query}`,
   );
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<PageDefinition>();
   const [selected, setSelected] = useState<string>();
   const [preview, setPreview] = useState<PageRender>();
   const [form] = Form.useForm();
   const command = useCommand();
   const closing = useDirtyClose(form, command.busy, () => setEditing(false));
   const body = (v: Values) => ({ ...v, storeId: store }) as PageDefinition;
+  const openEditor = (draft?: PageDefinition) => {
+    // 先装载本次草稿并清理上次表单校验。字段可编辑时，普通重新渲染不会覆盖输入。
+    form.resetFields();
+    if (draft)
+      form.setFields(
+        Object.entries(draft).map(([name, value]) => ({
+          name,
+          value,
+          touched: false,
+        })),
+      );
+    setPreview(undefined);
+    setEditing(true);
+  };
   return (
     <>
       {closing.contextHolder}
@@ -274,11 +287,7 @@ export function OpsPages({ store }: { store: string }) {
             <Button
               type="primary"
               disabled={!store}
-              onClick={() => {
-                setDraft(undefined);
-                setPreview(undefined);
-                setEditing(true);
-              }}
+              onClick={() => openEditor()}
             >
               创建运营页面
             </Button>
@@ -335,14 +344,12 @@ export function OpsPages({ store }: { store: string }) {
                   </Button>
                   <Button
                     type="link"
-                    onClick={() => {
-                      setDraft({
+                    onClick={() =>
+                      openEditor({
                         ...row.content,
                         version: row.content.version + 1,
-                      });
-                      setPreview(undefined);
-                      setEditing(true);
-                    }}
+                      })
+                    }
                   >
                     创建新版本
                   </Button>
@@ -419,23 +426,19 @@ export function OpsPages({ store }: { store: string }) {
             </Button>
           </FormActions>
         }
-        destroyOnHidden
+        forceRender
       >
         <ErrorNotice error={command.error} />
-        {/* 关闭确认后卸载时清理旧草稿；打开后再重置会覆盖用户已经开始输入的内容。 */}
         <Form
           form={form}
-          clearOnDestroy
           layout="vertical"
-          initialValues={
-            draft ?? {
-              version: 1,
-              sections: [
-                { id: "campaigns", title: "营销活动", source: "CAMPAIGNS" },
-              ],
-              actions: [],
-            }
-          }
+          initialValues={{
+            version: 1,
+            sections: [
+              { id: "campaigns", title: "营销活动", source: "CAMPAIGNS" },
+            ],
+            actions: [],
+          }}
           onValuesChange={() => setPreview(undefined)}
           onFinish={async (v) => {
             if (

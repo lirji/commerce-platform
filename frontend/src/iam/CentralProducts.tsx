@@ -566,6 +566,7 @@ function Products({
           <Table<Product>
             rowKey="resourceId"
             loading={page.loading}
+            readError={page.error}
             dataSource={page.error ? [] : page.data?.items}
             pagination={false}
             scroll={{ x: 720 }}

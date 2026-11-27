@@ -5,7 +5,7 @@ import {
   tradeNumberColumnWidth,
   tradeNumberFields,
 } from "../shared/tradeNumbers";
-import { Pager, Status, formatField, TableReadHint } from "../shared/ui";
+import { Pager, Status, formatField } from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
 import { OrderEventLink, TradeLinks } from "../shared/workspaceLinks";
@@ -361,16 +361,16 @@ export function OperationsList({
         rowKey={(r) => String(r[idField])}
         dataSource={list.data}
         loading={list.loading}
+        readError={list.error}
         columns={table}
         scroll={{ x: Math.max(560, table.length * 150) }}
         pagination={false}
         locale={{
-          emptyText: list.error
-            ? "读取未完成，请根据错误重新核验"
+          emptyText: filters.active
+            ? "暂无符合筛选条件的记录"
             : "当前范围暂无记录",
         }}
       />
-      <TableReadHint />
       <Pager
         after={after}
         cursorName="OperationsWorkspace.after"

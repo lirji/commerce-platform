@@ -6,7 +6,7 @@ const percentageFormat = new Intl.NumberFormat("zh-CN", {
   maximumFractionDigits: 1,
 });
 
-export const countText = (value: number) => numberFormat.format(value);
+export const countText = (value: number | bigint) => numberFormat.format(value);
 
 type Segment = {
   label: string;

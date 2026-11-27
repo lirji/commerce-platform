@@ -15,7 +15,7 @@ import {
   Space,
   Typography,
 } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type {
   Order,
   Payment,
@@ -57,6 +57,9 @@ export function Orders({
   const [workspaceId, setWorkspaceId] = useState(workspaceOrder);
   const listRef = useRef<HTMLDivElement>(null);
   const lastOpener = useRef<HTMLElement | null>(null);
+  const detailHeading = useRef<HTMLDivElement>(null);
+  const listScroll = useRef({ windowTop: 0, tableTop: 0 });
+  const previousWorkspace = useRef<string | undefined>(undefined);
   useEffect(() => {
     const sync = () => {
       setWorkspaceId(workspaceOrder());
@@ -65,19 +68,43 @@ export function Orders({
     addEventListener("hashchange", sync);
     return () => removeEventListener("hashchange", sync);
   }, []);
-  const previewOrder = (id: string) => {
-    lastOpener.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+  useLayoutEffect(() => {
+    if (workspaceId === previousWorkspace.current) return;
+    previousWorkspace.current = workspaceId;
+    if (workspaceId) {
+      detailHeading.current?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: "instant" });
+      return;
+    }
+    const opener = lastOpener.current;
+    if (opener?.isConnected && opener.getClientRects().length) {
+      opener.focus({ preventScroll: true });
+      const { windowTop, tableTop } = listScroll.current;
+      // 隐藏列表时部分浏览器会清除表体的独立滚动位置。
+      const frame = requestAnimationFrame(() => {
+        const body = opener.closest<HTMLElement>(".ant-table-body");
+        if (body) body.scrollTop = tableTop;
+        window.scrollTo({ top: windowTop, behavior: "instant" });
+      });
+      return () => cancelAnimationFrame(frame);
+    } else if (listRef.current) {
+      listRef.current.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [workspaceId]);
+  const rememberOpener = (opener: HTMLElement) => {
+    lastOpener.current = opener;
+    listScroll.current = {
+      windowTop: window.scrollY,
+      tableTop: opener.closest(".ant-table-body")?.scrollTop ?? 0,
+    };
+  };
+  const previewOrder = (id: string, opener: HTMLElement) => {
+    rememberOpener(opener);
     setSelected(id);
   };
-  const openWorkspace = (id: string) => {
-    if (!selected)
-      lastOpener.current =
-        document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null;
+  const openWorkspace = (id: string, opener?: HTMLElement) => {
+    if (opener) rememberOpener(opener);
     setSelected(undefined);
     const query = new URLSearchParams(location.hash.split("?")[1]);
     query.set("order", id);
@@ -93,11 +120,6 @@ export function Orders({
     );
     setWorkspaceId(undefined);
     dispatchEvent(new Event("hashchange"));
-    requestAnimationFrame(() => {
-      const opener = lastOpener.current;
-      if (opener?.isConnected && opener.getClientRects().length) opener.focus();
-      else listRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    });
   };
   const filters = useListFilters(
     "Orders",
@@ -113,12 +135,19 @@ export function Orders({
     <Workbench>
       {workspaceId && (
         <div className="order-workspace">
-          <PageHead
-            eyebrow={admin ? "交易与交付 / 订单" : "我的订单"}
-            title="订单完整详情"
-            description="集中查看商品、支付和售后处理。"
-            extra={<Button onClick={returnToList}>返回订单列表</Button>}
-          />
+          <div
+            ref={detailHeading}
+            tabIndex={-1}
+            role="region"
+            aria-label="订单完整详情"
+          >
+            <PageHead
+              eyebrow={admin ? "交易与交付 / 订单" : "我的订单"}
+              title="订单完整详情"
+              description="集中查看商品、支付和售后处理。"
+              extra={<Button onClick={returnToList}>返回订单列表</Button>}
+            />
+          </div>
           <OrderDetails
             key={workspaceId}
             id={workspaceId}
@@ -128,7 +157,7 @@ export function Orders({
           />
         </div>
       )}
-      <div ref={listRef} hidden={!!workspaceId}>
+      <div ref={listRef} tabIndex={-1} hidden={!!workspaceId}>
         <PageHead
           eyebrow={admin ? "交易与交付" : undefined}
           title={admin ? "订单工作台" : "我的订单"}
@@ -193,13 +222,15 @@ export function Orders({
                         <Button
                           type="link"
                           title={number}
-                          onClick={() => previewOrder(v)}
+                          onClick={(event) =>
+                            previewOrder(v, event.currentTarget)
+                          }
                         >
                           {number}
                         </Button>
                         {admin && <BusinessId value={number} copyOnly />}
                       </div>
-                      {compact && <TradeRowFacts row={row} />}
+                      {compact && <TradeRowFacts row={row} workflow={admin} />}
                     </div>
                   );
                 },
@@ -223,12 +254,16 @@ export function Orders({
               { title: "创建时间", dataIndex: "createdAt", render: time },
               ...(admin
                 ? [
-                    {
-                      title: "支付方式",
-                      dataIndex: "paymentKind",
-                      render: (value: string) =>
-                        formatField("paymentKind", value),
-                    },
+                    ...(!compact
+                      ? [
+                          {
+                            title: "支付方式",
+                            dataIndex: "paymentKind",
+                            render: (value: string) =>
+                              formatField("paymentKind", value),
+                          },
+                        ]
+                      : []),
                     { title: "支付截止", dataIndex: "expiresAt", render: time },
                   ]
                 : []),
@@ -239,12 +274,19 @@ export function Orders({
                 fixed: admin && !compact ? "right" : undefined,
                 render: (_, r) => (
                   <RowActions>
-                    <Button type="link" onClick={() => previewOrder(r.orderId)}>
+                    <Button
+                      type="link"
+                      onClick={(event) =>
+                        previewOrder(r.orderId, event.currentTarget)
+                      }
+                    >
                       查看详情
                     </Button>
                     <Button
                       type="link"
-                      onClick={() => openWorkspace(r.orderId)}
+                      onClick={(event) =>
+                        openWorkspace(r.orderId, event.currentTarget)
+                      }
                     >
                       完整详情
                     </Button>

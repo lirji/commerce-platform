@@ -1,5 +1,6 @@
 import { Button, Empty, Slider } from "antd";
 import { useRef, useState, type KeyboardEvent } from "react";
+import { countText, PaidOrderShare } from "../shared/MetricShare";
 import { money } from "../shared/ui";
 
 export type Daily = {
@@ -14,11 +15,13 @@ export type Daily = {
   merchantFunding: string;
   updatedAt?: string;
 };
-export type TrendMetric = "netReceipts" | "received" | "refunded";
+export type TrendMetric =
+  "netReceipts" | "received" | "refunded" | "paidOrders";
 export const trendLabels: Record<TrendMetric, string> = {
   netReceipts: "净收",
   received: "实收",
   refunded: "退款",
+  paidOrders: "已付订单",
 };
 
 /** 金额字符串仍是展示权威；Number 只用于图形坐标，不用于账务计算。 */
@@ -35,6 +38,10 @@ export function DailyTrend({
   const selectedIndex =
     rememberedIndex >= 0 ? rememberedIndex : Math.max(0, daily.length - 1);
   const selected = daily[selectedIndex];
+  const showCount = metric === "paidOrders";
+  const format = (value: string | number) =>
+    showCount ? `${countText(Number(value))} 笔` : money(value);
+  const axis = (value: number) => format(showCount ? value : value.toFixed(2));
   const values = daily.map((day) => Number(day[metric]));
   const lower = Math.min(0, ...values);
   const highest = Math.max(0, ...values);
@@ -76,17 +83,32 @@ export function DailyTrend({
             {selected.day} <small>UTC</small>
           </span>
           <strong>
-            {money(selected[metric])}
+            {format(selected[metric])}
             <small>{trendLabels[metric]}</small>
           </strong>
         </div>
         <div className="trend-day-orders">
-          <b>{selected.paidOrders}</b>
-          <span>已付订单</span>
+          {showCount ? (
+            <>
+              <b>{countText(selected.orders)}</b>
+              <span>投影下单</span>
+              {selected.orders > 0 && (
+                <PaidOrderShare
+                  paid={selected.paidOrders}
+                  orders={selected.orders}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              <b>{countText(selected.paidOrders)}</b>
+              <span>已付订单</span>
+            </>
+          )}
         </div>
       </div>
       <div className="trend-scale">
-        <span>{money(upper.toFixed(2))}</span>
+        <span>{axis(upper)}</span>
         <div
           className="trend-plot"
           role="group"
@@ -110,7 +132,7 @@ export function DailyTrend({
                   className={`trend-column${index === selectedIndex ? " is-selected" : ""}`}
                   tabIndex={index === selectedIndex ? 0 : -1}
                   aria-pressed={index === selectedIndex}
-                  aria-label={`${day.day} UTC · ${trendLabels[metric]} ${money(day[metric])} · ${day.paidOrders}笔已付订单`}
+                  aria-label={`${day.day} UTC · ${trendLabels[metric]} ${format(day[metric])}${showCount ? ` / ${countText(day.orders)} 笔投影下单` : ` · ${countText(day.paidOrders)} 笔已付订单`}`}
                   onClick={() => select(index)}
                   onFocus={() => select(index)}
                   onKeyDown={(event) => keydown(event, index)}
@@ -135,7 +157,7 @@ export function DailyTrend({
             </div>
           )}
         </div>
-        <span>{money(lower.toFixed(2))}</span>
+        <span>{axis(lower)}</span>
       </div>
       <div className="trend-axis">
         <span>{daily[0]?.day}</span>
@@ -162,7 +184,7 @@ export function DailyTrend({
             ariaValueTextFormatterForHandle={(index) => {
               const day = daily[index];
               return day
-                ? `${day.day} UTC · ${trendLabels[metric]} ${money(day[metric])}`
+                ? `${day.day} UTC · ${trendLabels[metric]} ${format(day[metric])}`
                 : "";
             }}
             tooltip={{ formatter: (index) => daily[index ?? 0]?.day }}

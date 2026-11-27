@@ -380,6 +380,7 @@ function Recipients({ batchId }: { batchId: string }) {
           <Table<DeliveryRecipient>
             rowKey="memberId"
             loading={rows.loading}
+            readError={rows.error}
             dataSource={rows.data ?? []}
             pagination={false}
             scroll={{ x: 850 }}
@@ -500,6 +501,7 @@ function Directory({
             rowKey={(value) => value.content.batchId}
             dataSource={rows.data ?? []}
             loading={rows.loading}
+            readError={rows.error}
             pagination={false}
             scroll={{ x: 1150 }}
             columns={[

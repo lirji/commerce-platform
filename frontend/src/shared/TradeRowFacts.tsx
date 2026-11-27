@@ -1,4 +1,4 @@
-import { money, Status } from "./ui";
+import { formatField, money, Status } from "./ui";
 
 export const compactTradeFields = new Set([
   "storeId",
@@ -8,9 +8,18 @@ export const compactTradeFields = new Set([
   "refundAmount",
   "amount",
   "blocked",
+  "returnRequired",
+  "trackingNo",
+  "paymentKind",
 ]);
 
-export function TradeRowFacts({ row }: { row: Record<string, unknown> }) {
+export function TradeRowFacts({
+  row,
+  workflow = true,
+}: {
+  row: Record<string, unknown>;
+  workflow?: boolean;
+}) {
   const storeName = typeof row.storeName === "string" ? row.storeName : "";
   const storeId = typeof row.storeId === "string" ? row.storeId : "";
   const value = row.status;
@@ -37,6 +46,15 @@ export function TradeRowFacts({ row }: { row: Record<string, unknown> }) {
         <span>
           {row.payable != null ? "应付金额" : "退款金额"} {money(amount)}
         </span>
+      )}
+      {workflow && typeof row.returnRequired === "boolean" && (
+        <span>{row.returnRequired ? "需要退货" : "无需退货"}</span>
+      )}
+      {workflow && typeof row.paymentKind === "string" && (
+        <span>支付方式 {formatField("paymentKind", row.paymentKind)}</span>
+      )}
+      {workflow && typeof row.trackingNo === "string" && row.trackingNo && (
+        <span>运单 {row.trackingNo}</span>
       )}
     </div>
   );

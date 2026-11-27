@@ -15,7 +15,7 @@ import {
   Select,
   Space,
 } from "antd";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { Actor, Capabilities, Store } from "../shared/contracts";
 import { ApiError, request, setAccessToken, useResource } from "../shared/api";
 import {
@@ -192,6 +192,7 @@ export function App() {
   );
   const [actor, setActor] = useState<Actor>();
   const [locationState, setLocationState] = useState(route);
+  const recentQueries = useRef(new Map<string, string>());
   const [previousHash, setPreviousHash] = useState(location.hash);
   const [loginError, setLoginError] = useState<Error>();
   const [logging, setLogging] = useState(false);
@@ -235,6 +236,7 @@ export function App() {
   }, [restoreRevision]);
   useEffect(() => {
     const expired = () => {
+      recentQueries.current.clear();
       setActor(undefined);
       setRestoreError(undefined);
       setLoginError(new Error("登录已失效，请重新输入有效访问凭据"));
@@ -292,10 +294,27 @@ export function App() {
     setMenuOpen(false);
     const group = groups.find((g) => g.children.some(([key]) => key === page));
     if (group) setOpenGroups([group.key]);
-    const query =
-      page === locationState.page && store === locationState.store
-        ? new URLSearchParams(location.hash.split("?")[1])
-        : new URLSearchParams();
+    const current = route();
+    const source = new URLSearchParams(location.hash.split("?")[1]);
+    const samePage = page === current.page && store === current.store;
+    const queries = recentQueries.current;
+    const scope = (target: string, shop: string) =>
+      JSON.stringify([target, shop]);
+    if (actor && actor.role !== "MEMBER" && current.page && !samePage) {
+      // 只在当前会话恢复已应用条件。直接业务链接仍以自己携带的条件为准。
+      source.delete("order");
+      source.delete("category");
+      const key = scope(current.page, current.store);
+      queries.delete(key);
+      queries.set(key, source.toString());
+      const oldest = queries.keys().next().value;
+      if (queries.size > 50 && oldest !== undefined) queries.delete(oldest);
+    }
+    const query = samePage
+      ? source
+      : new URLSearchParams(
+          category ? undefined : queries.get(scope(page, store)),
+        );
     if (store) query.set("store", store);
     else query.delete("store");
     if (category) query.set("category", category);
@@ -333,6 +352,7 @@ export function App() {
       });
       return;
     }
+    recentQueries.current.clear();
     setAccessToken("");
     saveCredential("");
     setRestoreError(undefined);
@@ -751,6 +771,7 @@ export function App() {
               {admin && <span className="context-label">店铺</span>}
               <Select
                 aria-label="当前店铺"
+                showSearch={admin ? { optionFilterProp: "label" } : false}
                 value={store || undefined}
                 placeholder={admin ? "选择店铺" : "切换店铺"}
                 style={{ width: compact ? 170 : admin ? 210 : 200 }}

@@ -1,4 +1,4 @@
-import { countText, MetricShare } from "../shared/MetricShare";
+import { countText, MetricShare, PaidOrderShare } from "../shared/MetricShare";
 import { Table } from "../shared/BusinessTable";
 import {
   Alert,
@@ -16,7 +16,12 @@ import {
   compareProjectedAmounts,
   DashboardComparison,
 } from "./DashboardComparison";
-import { DailyTrend, type Daily, type TrendMetric } from "./DailyTrend";
+import {
+  DailyTrend,
+  trendLabels,
+  type Daily,
+  type TrendMetric,
+} from "./DailyTrend";
 import { encode, useResource } from "../shared/api";
 import { ErrorNotice, PageHead, money, time } from "../shared/ui";
 import { Icon, type IconName } from "../shared/Icon";
@@ -84,7 +89,9 @@ export function Dashboard({
   );
   const [metricQuery, setMetric] = useRouteState("metric", "netReceipts");
   const metric: TrendMetric =
-    metricQuery === "received" || metricQuery === "refunded"
+    metricQuery === "received" ||
+    metricQuery === "refunded" ||
+    metricQuery === "paidOrders"
       ? metricQuery
       : "netReceipts";
   const [days, setDays] = useRouteState("trendDays", 30);
@@ -96,6 +103,7 @@ export function Dashboard({
     data.error || data.data?.storeId !== store ? undefined : data.data;
   const daily = summary?.daily ?? [];
   const sums = summary?.totals;
+  const visibleDays = daily.slice(-trendDays);
   const projectionTime = daily.reduce<string | undefined>(
     (latest, day) =>
       day.updatedAt &&
@@ -177,6 +185,7 @@ export function Dashboard({
                   label: "已付订单",
                   value: countText(sums.paidOrders),
                   note: "近30天 · 已投影订单",
+                  metric: "paidOrders" as const,
                   tone: "purple",
                   mark: "trade",
                 },
@@ -215,36 +224,19 @@ export function Dashboard({
               })}
             </div>
             <div className="dashboard-main-grid">
-              <Card
-                className="trend-card"
-                title="成交与退款趋势"
-                extra={
+              <Card className="trend-card" title="成交与退款趋势">
+                <div className="trend-window">
                   <Segmented
                     aria-label="趋势指标"
                     value={metric}
-                    onChange={(v) => setMetric(String(v))}
-                    options={[
-                      { label: "净收", value: "netReceipts" },
-                      { label: "实收", value: "received" },
-                      { label: "退款", value: "refunded" },
-                    ]}
+                    onChange={setMetric}
+                    options={Object.entries(trendLabels).map(
+                      ([value, label]) => ({
+                        label,
+                        value,
+                      }),
+                    )}
                   />
-                }
-              >
-                <div className="trend-summary">
-                  <span>
-                    成交优惠 <b>{money(sums.discountGranted)}</b>
-                  </span>
-                </div>
-                <DashboardComparison
-                  daily={daily}
-                  end={summary.to}
-                  metric={metric}
-                />
-                <div className="trend-window">
-                  <Typography.Text type="secondary">
-                    每日趋势范围
-                  </Typography.Text>
                   <Segmented
                     aria-label="每日趋势范围"
                     value={trendDays}
@@ -255,7 +247,17 @@ export function Dashboard({
                     }))}
                   />
                 </div>
-                <DailyTrend daily={daily.slice(-trendDays)} metric={metric} />
+                <div className="trend-summary">
+                  <span>
+                    成交优惠 <b>{money(sums.discountGranted)}</b>
+                  </span>
+                </div>
+                <DashboardComparison
+                  daily={daily}
+                  end={summary.to}
+                  metric={metric}
+                />
+                <DailyTrend daily={visibleDays} metric={metric} />
                 <Button
                   type="link"
                   onClick={() => setTable(table ? "" : "open")}
@@ -264,9 +266,11 @@ export function Dashboard({
                 </Button>
                 {table && (
                   <Table<Daily>
+                    key={trendDays}
+                    tableId="dashboard-daily"
                     size="small"
                     rowKey="day"
-                    dataSource={daily}
+                    dataSource={visibleDays}
                     pagination={{ defaultPageSize: 7 }}
                     scroll={{ x: 680 }}
                     columns={[
@@ -276,13 +280,33 @@ export function Dashboard({
                         sorter: (a, b) => a.day.localeCompare(b.day),
                       },
                       {
+                        title: "投影下单",
+                        dataIndex: "orders",
+                        align: "right",
+                        render: countText,
+                      },
+                      {
                         title: "已付订单",
+
                         dataIndex: "paidOrders",
                         sorter: (a, b) => a.paidOrders - b.paidOrders,
+                        render: countText,
                         align: "right",
                       },
                       {
+                        title: "已付比例",
+                        key: "paidOrderShare",
+                        width: 104,
+                        render: (_, row) => (
+                          <PaidOrderShare
+                            paid={row.paidOrders}
+                            orders={row.orders}
+                          />
+                        ),
+                      },
+                      {
                         title: "实收",
+
                         dataIndex: "received",
                         render: money,
                         align: "right",

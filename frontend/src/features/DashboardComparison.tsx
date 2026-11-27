@@ -1,4 +1,5 @@
 import type { Daily, TrendMetric } from "./DailyTrend";
+import { countText } from "../shared/MetricShare";
 import { money } from "../shared/ui";
 
 const daysPerWindow = 7;
@@ -41,6 +42,9 @@ export function DashboardComparison({
 }) {
   const endDay = Date.parse(end.slice(0, 10));
   if (!Number.isFinite(endDay)) return null;
+  const count = metric === "paidOrders";
+  const format = (value: bigint) =>
+    count ? `${countText(value)} 笔` : amount(value);
   const values = new Map(daily.map((day) => [day.day, day[metric]]));
   const dates = Array.from({ length: 2 * daysPerWindow }, (_, index) =>
     new Date(endDay - (2 * daysPerWindow - index) * dayMilliseconds)
@@ -49,7 +53,12 @@ export function DashboardComparison({
   );
   const amounts = dates.map((date) => {
     const value = values.get(date);
-    return value === undefined ? undefined : minorUnits(value);
+    if (typeof value === "string") return minorUnits(value);
+    return typeof value === "number" &&
+      Number.isSafeInteger(value) &&
+      value >= 0
+      ? BigInt(value)
+      : undefined;
   });
   if (amounts.some((value) => value === undefined)) return null;
   const sum = (start: number) =>
@@ -73,14 +82,14 @@ export function DashboardComparison({
     <dl className="dashboard-comparison" aria-label="完整七日环比">
       <div>
         <dt>最近 7 个完整 UTC 日</dt>
-        <dd>{amount(current)}</dd>
+        <dd>{format(current)}</dd>
         <dd className="dashboard-comparison-caption">
           {dates[7]} 至 {dates[13]}
         </dd>
       </div>
       <div>
         <dt>前 7 个完整 UTC 日</dt>
-        <dd>{amount(previous)}</dd>
+        <dd>{format(previous)}</dd>
         <dd className="dashboard-comparison-caption">
           {dates[0]} 至 {dates[6]}
         </dd>
@@ -90,7 +99,7 @@ export function DashboardComparison({
         <dd>{changeLabel}</dd>
         <dd className="dashboard-comparison-caption">
           差额 {change > 0n ? "+" : ""}
-          {amount(change)}
+          {format(change)}
         </dd>
       </div>
     </dl>

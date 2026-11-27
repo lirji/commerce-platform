@@ -26,7 +26,8 @@ export {
   useDirtyClose,
   useRowAction,
 } from "./interactions";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
+import { ListTableScope } from "./businessTableScope";
 import { ApiError, useCommand } from "./api";
 import { HTTP } from "./http";
 export const time = (v: unknown) => {
@@ -837,82 +838,12 @@ export function ListPanel({
   homeLabel?: string;
   nextLabel?: string;
 }) {
-  const table = useRef<HTMLDivElement>(null);
-  const scrollTarget = useRef<HTMLElement | null>(null);
-  const [overflowing, setOverflowing] = useState(false);
-  const hintId = useId();
-  useEffect(() => {
-    const element = table.current;
-    if (!element) return;
-    // Ant Table 的横向滚动可能在自身内部；观察真实宽度，短表无需额外 Tab 停靠点。
-    const measure = () => {
-      const candidates = [
-        element,
-        ...element.querySelectorAll<HTMLElement>(
-          ".ant-table-content, .ant-table-body",
-        ),
-      ];
-      scrollTarget.current =
-        candidates.find(
-          (node) =>
-            node.clientWidth > 0 && node.scrollWidth > node.clientWidth + 1,
-        ) ?? null;
-      setOverflowing(!!scrollTarget.current);
-    };
-    const resize = new ResizeObserver(measure);
-    resize.observe(element);
-    const mutation = new MutationObserver(measure);
-    mutation.observe(element, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-    measure();
-    return () => {
-      resize.disconnect();
-      mutation.disconnect();
-    };
-  }, [children]);
   return (
     <Card className="list-panel">
       {toolbar && <div className="list-toolbar">{toolbar}</div>}
-      <div
-        ref={table}
-        className="list-table"
-        role={overflowing ? "region" : undefined}
-        aria-label={overflowing ? "列表完整字段" : undefined}
-        aria-describedby={overflowing ? hintId : undefined}
-        tabIndex={overflowing ? 0 : undefined}
-        onKeyDown={(event) => {
-          // 只处理表格容器本身，不能截获行操作或输入控件的方向键。
-          if (
-            event.target !== event.currentTarget ||
-            !scrollTarget.current ||
-            event.altKey ||
-            event.ctrlKey ||
-            event.metaKey ||
-            event.shiftKey
-          )
-            return;
-          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-          event.preventDefault();
-          scrollTarget.current.scrollBy({
-            left: event.key === "ArrowRight" ? 120 : -120,
-            behavior: "instant",
-          });
-        }}
-      >
+      <ListTableScope.Provider value={{ error }}>
         {children}
-      </div>
-      {overflowing && (
-        <Typography.Text
-          id={hintId}
-          type="secondary"
-          className="table-overflow-hint"
-        >
-          左右滑动查看完整字段和操作；键盘聚焦表格后可用左右方向键。
-        </Typography.Text>
-      )}
+      </ListTableScope.Provider>
       {onHome && onNext && count != null && (
         <Pager
           after={after}
@@ -930,13 +861,6 @@ export function ListPanel({
         />
       )}
     </Card>
-  );
-}
-export function TableReadHint() {
-  return (
-    <Typography.Text type="secondary" className="table-read-hint">
-      左右滑动表格可查看完整字段和操作
-    </Typography.Text>
   );
 }
 export type Field = {

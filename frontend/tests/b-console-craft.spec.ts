@@ -329,3 +329,28 @@ test("旅程关系图准确表达分支与汇合，节点可键盘核对且返�
   await expect(open).toBeFocused();
   expect(writes).toEqual([]);
 });
+
+test("已付指标联动数量轴及日明细，零分母没有百分比", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await openDashboard(page);
+  await page.getByRole("button", { name: "查看已付订单趋势" }).click();
+  const chart = page.getByRole("group", { name: /已付订单每日柱状图/ });
+  await expect(chart).toBeVisible();
+  await chart.getByRole("button", { pressed: true }).press("Home");
+  await expect(page.locator(".trend-readout")).toContainText("1 笔");
+  await expect(page.locator(".trend-readout")).toContainText("100%");
+  await chart.getByRole("button", { pressed: true }).press("ArrowRight");
+  await expect(page.locator(".trend-readout")).not.toContainText("%");
+  await page
+    .locator(".trend-window .ant-segmented-item")
+    .filter({ hasText: /^7 天$/ })
+    .click();
+  await page.getByRole("button", { name: "查看每日数据" }).click();
+  await expect(page.locator(".trend-card")).toContainText("共 7 条");
+  await expect(chart.getByRole("button")).toHaveCount(7);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBe(320);
+  await page.reload();
+  await expect(chart).toBeVisible();
+});

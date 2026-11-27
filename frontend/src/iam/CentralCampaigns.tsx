@@ -212,6 +212,7 @@ function Directory({
         <Table<CampaignView>
           rowKey={(row) => row.content.campaignId}
           loading={rows.loading}
+          readError={rows.error}
           dataSource={rows.data ?? []}
           pagination={false}
           scroll={{ x: 1280 }}
@@ -1105,6 +1106,7 @@ function Budgets() {
         <Table
           rowKey="budgetId"
           loading={rows.loading}
+          readError={rows.error}
           dataSource={rows.data ?? []}
           pagination={false}
           scroll={{ x: 1180 }}

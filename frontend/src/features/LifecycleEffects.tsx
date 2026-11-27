@@ -184,6 +184,7 @@ export function LifecycleEffects({
                 rowKey="seriesId"
                 dataSource={deliveries.data?.rows}
                 loading={deliveries.loading}
+                readError={deliveries.error}
                 pagination={false}
                 scroll={{ x: 1300 }}
                 columns={[

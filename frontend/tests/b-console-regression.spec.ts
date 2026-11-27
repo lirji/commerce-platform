@@ -299,12 +299,34 @@ test("规格表格列、行距、全屏与编号复制保留本页批选", async
   await expect(page.locator(".business-table-compact")).toBeVisible();
   await page.getByRole("button", { name: "调整表格密度", exact: true }).click();
 
+  await page.setViewportSize({ width: 390, height: 844 });
+  const region = page.getByRole("region", {
+    name: "列表完整字段",
+    exact: true,
+  });
+  const horizontal = (table: typeof region) =>
+    table.evaluate(
+      (node) =>
+        node.querySelector(".ant-table-content, .ant-table-body")?.scrollLeft ??
+        0,
+    );
+  await region.press("ArrowRight");
+  await expect.poll(() => horizontal(region)).toBe(120);
   const expand = page.getByRole("button", { name: "全屏查看", exact: true });
   await expand.click();
   const dialog = page.getByRole("dialog", {
     name: "表格全屏查看",
     exact: true,
   });
+  const fullRegion = dialog.getByRole("region", {
+    name: "列表完整字段",
+    exact: true,
+  });
+  await expect.poll(() => horizontal(fullRegion)).toBe(120);
+  await fullRegion.press("End");
+  await expect.poll(() => horizontal(fullRegion)).toBeGreaterThan(120);
+  await fullRegion.press("Home");
+  await expect.poll(() => horizontal(fullRegion)).toBe(0);
   await expect(
     dialog
       .getByRole("row")
@@ -314,6 +336,7 @@ test("规格表格列、行距、全屏与编号复制保留本页批选", async
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(expand).toBeFocused();
+  await expect.poll(() => horizontal(region)).toBe(0);
   await page.reload();
   await expect(
     page.getByRole("row").filter({ hasText: "批选表格商品" }),
@@ -407,4 +430,92 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
   await expect(
     states.getByRole("button", { name: "全部状态", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
+});
+
+test("订单完整详情回到原行和列表位置，失败重试保留游标条件", async ({
+  page,
+}) => {
+  let allowRead = false;
+  const orders = Array.from({ length: 18 }, (_, index) => ({
+    orderId: String(index + 1),
+    businessNo: `FOCUS-ORDER-${index + 1}`,
+    storeId: "store-1",
+    status: "PENDING_PAYMENT",
+    payable: "12.50",
+    createdAt: "2026-10-01T10:00:00Z",
+    items: [],
+  }));
+  await page.route(/\/v1\/admin\/orders\?/, (route) =>
+    allowRead
+      ? route.fulfill({ json: orders })
+      : route.fulfill({ status: 503, json: { message: "查询暂时不可用" } }),
+  );
+  await openAdmin(page, [], true);
+  await page.route("**/v1/admin/orders/18", (route) =>
+    route.fulfill({ json: orders.at(-1) }),
+  );
+  await page.evaluate(() => {
+    const query = new URLSearchParams({
+      store: "store-1",
+      after: "20",
+      "Orders.query": JSON.stringify({ status: "PENDING_PAYMENT", limit: 25 }),
+    });
+    location.hash = "orders?" + query;
+  });
+  await expect(page.getByText("列表未能加载，请重试读取")).toBeVisible();
+  await expect(page.getByText(/还没有订单|暂无符合筛选条件/)).toHaveCount(0);
+  allowRead = true;
+  await page.getByRole("button", { name: "重试加载", exact: true }).click();
+  const opener = page
+    .getByRole("row")
+    .filter({ hasText: "FOCUS-ORDER-18" })
+    .getByRole("button", { name: "完整详情", exact: true });
+  await opener.scrollIntoViewIfNeeded();
+  await opener.focus();
+  const y = await page.evaluate(() => window.scrollY);
+  expect(y).toBeGreaterThan(0);
+  await opener.press("Enter");
+  await expect(
+    page.getByRole("region", { name: "订单完整详情" }),
+  ).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.getByRole("button", { name: "返回订单列表" }).click();
+  await expect(opener).toBeFocused();
+  await expect
+    .poll(() =>
+      page.evaluate((original) => {
+        const maximum = document.documentElement.scrollHeight - innerHeight;
+        return Math.abs(window.scrollY - Math.min(original, maximum));
+      }, y),
+    )
+    .toBeLessThanOrEqual(1);
+  await expect(opener).toBeInViewport();
+  expect(page.url()).toContain("after=20");
+  await expect(
+    page.getByRole("button", { name: "待付款", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  const navigation = page.getByRole("menu", { name: "经营导航" });
+  await navigation
+    .getByRole("menuitem", { name: "经营总览", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { name: "经营总览" })).toBeVisible();
+  await navigation
+    .getByRole("menuitem", { name: "订单工作台", exact: true })
+    .click();
+  await expect(opener).toBeVisible();
+  expect(page.url()).toContain("after=20");
+  const preview = page.getByRole("button", {
+    name: "FOCUS-ORDER-18",
+    exact: true,
+  });
+  await preview.click();
+  await page
+    .getByRole("dialog", { name: "订单详情" })
+    .getByRole("button", { name: "打开完整详情" })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "订单完整详情" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "返回订单列表" }).click();
+  await expect(preview).toBeFocused();
 });

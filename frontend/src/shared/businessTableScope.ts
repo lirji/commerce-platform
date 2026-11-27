@@ -3,6 +3,10 @@ import { createContext } from "react";
 /** 用组织和登录主体隔离列表展示偏好，会员端继续使用原展示。 */
 export const BusinessTableScope = createContext<string | undefined>(undefined);
 
+export const ListTableScope = createContext<{ error?: Error } | undefined>(
+  undefined,
+);
+
 export function readDisplayPreference(key: string) {
   try {
     return localStorage.getItem(key);

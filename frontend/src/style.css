@@ -56,12 +56,12 @@ textarea {
   transform: none;
 }
 .workspace:focus-visible,
-.list-table:focus-visible {
+.table-viewport:focus-visible {
   outline-offset: -2px;
 }
 .table-overflow-hint {
   display: block;
-  margin-top: 10px;
+  margin: 4px 8px;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -388,7 +388,8 @@ textarea {
 .list-panel > .ant-card-body {
   padding: 0;
 }
-.list-table {
+.table-viewport {
+  min-width: 0;
   overflow: auto;
 }
 .list-panel .ant-table {
@@ -2099,8 +2100,7 @@ body .ant-modal-root .ant-modal {
 .pager > .pager-navigation {
   margin-top: 0;
 }
-.mobile-row-status,
-.table-read-hint {
+.mobile-row-status {
   display: none;
 }
 .pager {
@@ -2113,11 +2113,6 @@ body .ant-modal-root .ant-modal {
 @media (max-width: 640px) {
   .mobile-row-status {
     display: block;
-  }
-  .table-read-hint {
-    display: block;
-    margin-top: 8px;
-    font-size: 12px;
   }
   .query-panel {
     padding: 12px;

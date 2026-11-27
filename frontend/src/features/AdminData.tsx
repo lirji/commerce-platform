@@ -145,7 +145,6 @@ export const specs: Record<string, Spec> = {
     fields: [id("merchantId", "商家标识"), name],
     columns: [
       ["name", "商家"],
-      ["merchantId", "标识"],
       ["status", "状态"],
     ],
   },
@@ -156,7 +155,6 @@ export const specs: Record<string, Spec> = {
     id: "storeId",
     columns: [
       ["name", "店铺"],
-      ["storeId", "标识"],
       ["merchantId", "所属商家"],
       ["status", "状态"],
     ],
@@ -840,7 +838,10 @@ export function AdminData({
                     ? tradeNumberColumnWidth
                     : kind === "refunds" && key === "provider"
                       ? 118
-                      : undefined,
+                      : (kind === "stores" || kind === "merchants") &&
+                          index === 0
+                        ? 250
+                        : undefined,
                 align: [
                   "available",
                   "held",

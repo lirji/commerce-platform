@@ -147,6 +147,7 @@ export function MarketingEffects({ store }: { store: string }) {
                   rowKey="seriesId"
                   dataSource={report.data?.rows}
                   loading={report.loading}
+                  readError={report.error}
                   pagination={false}
                   scroll={{ x: 1400 }}
                   columns={[

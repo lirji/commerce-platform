@@ -142,6 +142,7 @@ function Directory() {
           rowKey="grantId"
           dataSource={rows.data ?? []}
           loading={rows.loading}
+          readError={rows.error}
           pagination={false}
           scroll={{ x: 2200 }}
           columns={[

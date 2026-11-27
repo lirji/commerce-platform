@@ -12,11 +12,15 @@ import {
   type TableColumnType,
   type TableProps,
 } from "antd";
-import { useContext, useLayoutEffect, useRef, useState } from "react";
+import { useContext, useState } from "react";
+import { ApiError } from "./api";
+import { HTTP } from "./http";
 import { Icon } from "./Icon";
+import { TableViewport } from "./TableViewport";
 
 import {
   BusinessTableScope,
+  ListTableScope,
   readDisplayPreference,
   writeDisplayPreference,
 } from "./businessTableScope";
@@ -82,6 +86,7 @@ type BusinessTableProps<Row> = TableProps<Row> & {
   tools?: boolean;
   columnSettings?: boolean;
   onRefresh?: () => void;
+  readError?: Error;
   tableId?: string;
   selectedUnit?: string;
 };
@@ -89,17 +94,46 @@ const tablePageSizes = [7, 10, 25, 50, 100];
 
 export function Table<Row extends object>(props: BusinessTableProps<Row>) {
   const owner = useContext(BusinessTableScope);
+  const panel = useContext(ListTableScope);
   const {
     tools = true,
     columnSettings = true,
     onRefresh,
+    readError,
     tableId,
     selectedUnit = "条",
     ...tableProps
   } = props;
   const columns = tableProps.columns ?? [];
+  if (!owner && !panel) return <AntTable<Row> {...tableProps} />;
+  const loading =
+    typeof tableProps.loading === "object"
+      ? tableProps.loading.spinning !== false
+      : !!tableProps.loading;
+  const error = readError ?? panel?.error;
+  const status = error instanceof ApiError ? error.status : undefined;
+  const failureText =
+    status === HTTP.FORBIDDEN
+      ? "当前身份无列表读取权限"
+      : status === HTTP.UNAUTHORIZED
+        ? "登录已失效，重新登录后可读取列表"
+        : "列表未能加载，请重试读取";
+  const locale = {
+    ...tableProps.locale,
+    emptyText: loading
+      ? "正在读取记录…"
+      : error
+        ? failureText
+        : (tableProps.locale?.emptyText ?? "当前条件下暂无记录"),
+  };
   if (!owner || !tools || columns.length < 2)
-    return <AntTable<Row> {...tableProps} />;
+    return (
+      <TableViewport inPanel={!!panel}>
+        <ListTableScope.Provider value={undefined}>
+          <AntTable<Row> {...tableProps} locale={locale} />
+        </ListTableScope.Provider>
+      </TableViewport>
+    );
 
   const route = location.hash.split("?")[0] || location.pathname;
   const key = JSON.stringify([
@@ -118,6 +152,9 @@ export function Table<Row extends object>(props: BusinessTableProps<Row>) {
       key={key}
       {...tableProps}
       preferenceKey={`commerce.table.${key}`}
+      locale={locale}
+      loadingRows={loading}
+      inPanel={!!panel}
       columnSettings={columnSettings}
       onRefresh={onRefresh}
       selectedUnit={selectedUnit}
@@ -133,12 +170,15 @@ function ManagedTable<Row extends object>({
   columns = [],
   pagination,
   sticky,
-  locale,
+  loadingRows,
+  inPanel,
   ...props
 }: TableProps<Row> & {
   preferenceKey: string;
   columnSettings: boolean;
   selectedUnit: string;
+  loadingRows: boolean;
+  inPanel: boolean;
   onRefresh?: () => void;
 }) {
   const screens = Grid.useBreakpoint();
@@ -177,18 +217,13 @@ function ManagedTable<Row extends object>({
   const effectivePageSize = pagination
     ? (pagination.pageSize ?? pageSize)
     : pageSize;
-  const body = useRef<HTMLDivElement>(null);
-  const scrollKey = `${preferenceKey}.scroll`;
-  const horizontal = useRef(Number(readScroll(scrollKey)) || 0);
-  useLayoutEffect(() => {
-    const node = body.current;
-    if (expanded || !node || !horizontal.current) return;
-    const scroller = node.querySelector<HTMLElement>(
-      ".ant-table-body, .ant-table-content",
-    );
-    if (scroller && scroller.scrollWidth > scroller.clientWidth)
-      scroller.scrollLeft = horizontal.current;
-  }, [expanded, props.dataSource]);
+  const [horizontal] = useState(() => {
+    const scrollKey = `${preferenceKey}.scroll`;
+    return {
+      position: Number(readScroll(scrollKey)) || 0,
+      save: (position: number) => saveScroll(scrollKey, String(position)),
+    };
+  });
   const options = columns.map((column, index) => ({
     id: String(
       column.key ??
@@ -280,21 +315,10 @@ function ManagedTable<Row extends object>({
           },
         }
       }
-      locale={{
-        emptyText: props.loading ? "正在读取记录…" : "当前条件下暂无记录",
-        ...locale,
-      }}
     />
   );
   return (
-    <div
-      className="business-table"
-      aria-busy={
-        typeof props.loading === "object"
-          ? Boolean(props.loading.spinning)
-          : Boolean(props.loading)
-      }
-    >
+    <div className="business-table" aria-busy={loadingRows}>
       <div className="business-table-tools" role="group" aria-label="表格工具">
         {!!props.rowSelection?.selectedRowKeys?.length && (
           <Typography.Text className="business-table-selection" role="status">
@@ -306,7 +330,7 @@ function ManagedTable<Row extends object>({
             <Button
               icon={<Icon name="refresh" />}
               aria-label="刷新列表"
-              loading={Boolean(props.loading)}
+              loading={loadingRows}
               onClick={onRefresh}
             />
           </Tooltip>
@@ -374,24 +398,11 @@ function ManagedTable<Row extends object>({
           全屏查看
         </Button>
       </div>
-      <div
-        ref={body}
-        hidden={expanded}
-        onScrollCapture={(event) => {
-          const target = event.target;
-          if (
-            !(target instanceof HTMLElement) ||
-            !target.matches(".ant-table-content, .ant-table-body") ||
-            target.scrollWidth <= target.clientWidth ||
-            target.scrollLeft === horizontal.current
-          )
-            return;
-          horizontal.current = target.scrollLeft;
-          saveScroll(scrollKey, String(target.scrollLeft));
-        }}
-      >
-        {renderTable(false)}
-      </div>
+      <TableViewport inPanel={inPanel} hidden={expanded} memory={horizontal}>
+        <ListTableScope.Provider value={undefined}>
+          {renderTable(false)}
+        </ListTableScope.Provider>
+      </TableViewport>
       <Modal
         open={expanded}
         title="表格全屏查看"
@@ -406,7 +417,13 @@ function ManagedTable<Row extends object>({
         destroyOnHidden
         wrapClassName="business-table-dialog"
       >
-        {expanded && renderTable(true)}
+        {expanded && (
+          <TableViewport memory={horizontal}>
+            <ListTableScope.Provider value={undefined}>
+              {renderTable(true)}
+            </ListTableScope.Provider>
+          </TableViewport>
+        )}
       </Modal>
     </div>
   );
