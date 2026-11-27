@@ -64,3 +64,7 @@ V92 增加独立的批次销毁审批和确认回执。默认关闭 `COMMERCE_AU
 销毁身份仅授予归档原件键匹配范围内的版本查看与删除权，排除恢复凭证前缀，不授予版本设置、绕过保全和修改对象权限。目标 MinIO 对指定版本的 DELETE 还须允许该原件范围的 `s3:DeleteObject`。应用在发出请求前强制要求原档案格式的键和非空的明确版本，从不发无版本 DELETE 请求，现有删除标记无法通过原件版本校验。仍须验收目标环境的版本配置与对象保全。 [MinIO 版本化行为](https://github.com/minio/minio/blob/master/docs/bucket/versioning/README.md) · [S3 DeleteObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html)
 
 先发布不可覆盖的准备凭证，再删除精确版本。只有该版本经存储确认已不存在，并且保全条件仍满足，才标为 `EXPIRED` 并发布独立提交凭证。授权变化、对象锁拒绝或回包不明时保留批次和准备记录供核对。确认后查询立即拒绝恢复，同批临时副本和晚到行按每轮各 200 条清理；已有批次重复执行可继续清理。恢复库应在原库停止相关任务后先清点并补放在线切换，再用 `commerceAuditArchiveExpiryInventory` 遍历销毁凭证，用 `commerceAuditArchiveReplayExpiry` 补放。若还存在准备记录未决、指纹不匹配或临时副本待处理，恢复目标继续保持隔离。任务可重复，待清理行较多时重复处理到返回的两个清理计数均为零。原档案提交凭证和销毁提交凭证保持独立授权。
+
+### 有界领取
+
+V93 为每个可信范围持久化 `cutoff_at`、`after_occurred_at` 和 `after_attempt_id`。每轮按固定截止时间检查至多 1,024 条索引位置，从中领取最多 200 条已确认且未归档的记录。游标与清单在同一事务推进。存储失败继续当前已领取批次，完整扫完后开启下一轮并重新检查较早收到新结果的尝试。现有归档对象与恢复接口沿用已有格式。

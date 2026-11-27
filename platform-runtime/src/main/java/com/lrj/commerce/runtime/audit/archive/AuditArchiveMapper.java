@@ -15,7 +15,19 @@ public interface AuditArchiveMapper {
     record RestoreGrant(String ticketId, String batchId, String requestedBy, String approvedBy, Instant expiresAt) {}
     record Restored(long attemptId, String payload, String lateEvidence) {}
 
-    List<Member> candidates(@Param("scope") Scope scope, @Param("olderThan") Instant olderThan, @Param("limit") int limit);
+    record ScanCursor(Instant cutoff, Instant afterOccurredAt, long afterAttemptId) {}
+
+    record ScanPosition(long attemptId, Instant occurredAt, boolean eligible) {}
+
+    void openScan(@Param("scope") Scope scope, @Param("cutoff") Instant cutoff);
+
+    ScanCursor lockScan(@Param("scope") Scope scope);
+
+    List<ScanPosition> scanWindow(@Param("scope") Scope scope, @Param("cursor") ScanCursor cursor, @Param("limit") int limit);
+
+    int advanceScan(@Param("scope") Scope scope, @Param("cursor") ScanCursor cursor);
+
+    List<Member> candidates(@Param("scope") Scope scope, @Param("ids") List<Long> ids);
 
     Batch pending(@Param("scope") Scope scope);
 

@@ -43,6 +43,8 @@ jobs:
           git -C .local/auth-sdk-source checkout --detach FETCH_HEAD
       - name: Create isolated CI resources
         run: python3 scripts/ci-configure.py
+      - name: Create isolated versioned archive storage
+        run: python3 scripts/ci-audit-archive.py
       - name: Verify shared menu declaration and exporter
         run: node --test frontend/scripts/catalog-source.test.mjs
       - name: Build and verify real MySQL semantics
@@ -86,4 +88,10 @@ jobs:
         run: |
           if [[ -n "${COMMERCE_MYSQL_CONTAINER:-}" && "$COMMERCE_MYSQL_CONTAINER" == commerce-ci-mysql-* ]]; then
             docker rm -f "$COMMERCE_MYSQL_CONTAINER"
+          fi
+      - name: Stop the ephemeral archive storage
+        if: always()
+        run: |
+          if [[ "${AUDIT_ARCHIVE_CI_CONTAINER:-}" == "commerce-ci-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" ]]; then
+            docker rm -f "$AUDIT_ARCHIVE_CI_CONTAINER"
           fi

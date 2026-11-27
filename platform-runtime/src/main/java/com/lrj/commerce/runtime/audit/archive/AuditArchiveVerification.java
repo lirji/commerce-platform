@@ -32,6 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class AuditArchiveVerification {
     private static final int FORMAT_VERSION = 1;
     private static final int MAX_ROWS = 200;
+    private static final int SCAN_WINDOW_ROWS = 1_024;
     private static final int MAX_COMPRESSED = 8 * 1024 * 1024;
     private static final int MAX_EXPANDED = 32 * 1024 * 1024;
     private static final int PAGE_SIZE = 50;
@@ -140,14 +141,26 @@ public class AuditArchiveVerification {
     private Batch reserve() {
         try {
             return transaction.execute(status -> {
+                var cutoff = clock.instant().minus(minimumAge).truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+                mapper.openScan(scope, cutoff);
+                var cursor = mapper.lockScan(scope);
                 var existing = mapper.pending(scope);
                 if (existing != null) return existing;
-                var cutoff = clock.instant().minus(minimumAge);
-                var rows = mapper.candidates(scope, cutoff, MAX_ROWS);
-                if (rows.isEmpty()) return null;
+                var window = mapper.scanWindow(scope, cursor, SCAN_WINDOW_ROWS);
+                if (window.isEmpty()) {
+                    // 完整扫描结束后开启下一轮，重新复核之前缺少终态的记录。
+                    mapper.advanceScan(scope, new AuditArchiveMapper.ScanCursor(cutoff, null, 0));
+                    return null;
+                }
+                var eligible = window.stream().filter(AuditArchiveMapper.ScanPosition::eligible).limit(MAX_ROWS).toList();
+                var last = eligible.size() == MAX_ROWS ? eligible.getLast() : window.getLast();
+                mapper.advanceScan(scope, new AuditArchiveMapper.ScanCursor(cursor.cutoff(), last.occurredAt(), last.attemptId()));
+                if (eligible.isEmpty()) return null;
+                var rows = mapper.candidates(scope, eligible.stream().map(AuditArchiveMapper.ScanPosition::attemptId).toList());
+                if (rows.size() != eligible.size()) throw bad("归档领取时原始范围已经变化");
                 String id = UUID.randomUUID().toString();
                 byte[] bytes = encode(id, rows);
-                var batch = new Batch(id, scope.type(), scope.tenant(), State.CLAIMED.name(), cutoff,
+                var batch = new Batch(id, scope.type(), scope.tenant(), State.CLAIMED.name(), cursor.cutoff(),
                         "commerce/operation-audit/v1/" + id + ".ndjson.gz", null, sha256(bytes), rows.size(), bytes.length);
                 mapper.insertBatch(batch);
                 if (mapper.insertMembers(id, rows) != rows.size()) throw bad("未能完整冻结批次成员");

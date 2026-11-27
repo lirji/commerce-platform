@@ -139,6 +139,41 @@ class AuditArchiveMySqlObjectStoreTest {
         checkOnlineCutover(verification, eligible, claimed.batchId(), original, actor);
     }
 
+    /** 大段未终态流水只消费一个窗口，并在新扫描轮次中拾取早期晚到结果。 */
+    @Test
+    void scanResumesAfterUnknownWindowAndRevisitsLateTerminals() {
+        String tenant = TENANT + "-window";
+        jdbc.update("""
+                INSERT INTO audit_operation_attempt(source_system,request_id,scope_type,actor_tenant_id,actor_id,action_code,
+                    resource_id,occurred_at,policy_code,policy_version,schema_version)
+                WITH digit(n) AS (SELECT 0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+                    UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9),
+                seq AS (SELECT a.n+10*b.n+100*c.n+1000*d.n AS n FROM digit a CROSS JOIN digit b CROSS JOIN digit c CROSS JOIN digit d)
+                SELECT 'COMMERCE',UUID(),'TENANT',?,'operator','catalog.category.bind',CONCAT('window-',n),
+                    UTC_TIMESTAMP(3)-INTERVAL 2 DAY,'BUSINESS',1,1 FROM seq WHERE n<1025
+                """, tenant);
+        long first = jdbc.queryForObject("SELECT MIN(id) FROM audit_operation_attempt WHERE actor_tenant_id=?", Long.class, tenant);
+        long last = jdbc.queryForObject("SELECT MAX(id) FROM audit_operation_attempt WHERE actor_tenant_id=?", Long.class, tenant);
+        long endOfWindow = jdbc.queryForObject("""
+                SELECT id FROM audit_operation_attempt WHERE actor_tenant_id=? ORDER BY occurred_at,id LIMIT 1 OFFSET 1023
+                """, Long.class, tenant);
+        jdbc.update("INSERT INTO audit_attempt_outcome(attempt_id,event_ref,result_code) VALUES(?,?,'SUCCEEDED')", last, last + ":result");
+        var scope = new AuditArchiveMapper.Scope("TENANT", tenant);
+        var worker = new AuditArchiveVerification(mapper, objects, audit, scope, Duration.ofDays(1), Clock.systemUTC(), tx);
+        assertNull(worker.tick());
+        assertEquals(endOfWindow, jdbc.queryForObject(
+                "SELECT after_attempt_id FROM audit_archive_scan_cursor WHERE scope_type='TENANT' AND tenant_id=?",
+                Long.class, tenant));
+        String firstBatch = worker.tick();
+        assertNotNull(firstBatch);
+        assertEquals(java.util.List.of(last), mapper.snapshot(firstBatch).stream().map(AuditArchiveMapper.Member::attemptId).toList());
+        assertNull(worker.tick());
+        jdbc.update("INSERT INTO audit_attempt_outcome(attempt_id,event_ref,result_code) VALUES(?,?,'SUCCEEDED')", first, first + ":result");
+        String secondBatch = worker.tick();
+        assertNotEquals(firstBatch, secondBatch);
+        assertEquals(java.util.List.of(first), mapper.snapshot(secondBatch).stream().map(AuditArchiveMapper.Member::attemptId).toList());
+    }
+
     private AuditArchiveRetentionReview checkRetention(AuditArchiveMapper.Scope scope, AuditArchiveVerification verification, String batchId) {
         var review = new AuditArchiveRetentionReview(mapper, verification, scope, Clock.systemUTC());
         assertEquals(Reason.NO_POLICY, review.assess(batchId).reason());

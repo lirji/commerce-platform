@@ -15,15 +15,49 @@
      FROM audit_attempt_outcome o WHERE o.attempt_id=a.id ORDER BY o.id DESC LIMIT 1) AS outcome
   </sql>
   <sql id="batchFields">batch_id,scope_type,tenant_id,state,older_than,object_key,object_version,sha256,row_count,payload_bytes</sql>
+  <insert id="openScan">
+    INSERT INTO audit_archive_scan_cursor(scope_type,tenant_id,cutoff_at)
+    VALUES(#{scope.type},#{scope.tenant},#{cutoff})
+    ON DUPLICATE KEY UPDATE scope_type=audit_archive_scan_cursor.scope_type
+  </insert>
+  <select id="lockScan" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$ScanCursor" useCache="false">
+    SELECT cutoff_at AS cutoff,after_occurred_at,after_attempt_id FROM audit_archive_scan_cursor
+    WHERE scope_type=#{scope.type} AND tenant_id=#{scope.tenant} FOR UPDATE
+  </select>
+  <!-- LIMIT 位于候选判断的内层，即使整窗未核实或已归档也只检查固定数量。 -->
+  <select id="scanWindow" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$ScanPosition" useCache="false">
+    SELECT window_rows.id AS attempt_id,window_rows.occurred_at,
+      (m.attempt_id IS NULL AND (p.id IS NOT NULL OR EXISTS(
+        SELECT 1 FROM audit_attempt_outcome o WHERE o.attempt_id=window_rows.id
+      ))) AS eligible
+    FROM (
+      SELECT a.id,a.occurred_at FROM audit_operation_attempt a FORCE INDEX(ix_audit_archive_candidate)
+      WHERE a.scope_type=#{scope.type} AND a.actor_tenant_id=#{scope.tenant} AND a.occurred_at&lt;#{cursor.cutoff}
+      <if test="cursor.afterOccurredAt != null">
+        AND (a.occurred_at&gt;#{cursor.afterOccurredAt}
+          OR (a.occurred_at=#{cursor.afterOccurredAt} AND a.id&gt;#{cursor.afterAttemptId}))
+      </if>
+      ORDER BY a.occurred_at,a.id LIMIT #{limit}
+    ) window_rows
+    LEFT JOIN audit_archive_member m ON m.attempt_id=window_rows.id
+    LEFT JOIN platform_audit p ON p.audit_attempt_id=window_rows.id
+    ORDER BY window_rows.occurred_at,window_rows.id
+  </select>
+  <update id="advanceScan">
+    UPDATE audit_archive_scan_cursor SET cutoff_at=#{cursor.cutoff},
+      after_occurred_at=#{cursor.afterOccurredAt},after_attempt_id=#{cursor.afterAttemptId}
+    WHERE scope_type=#{scope.type} AND tenant_id=#{scope.tenant}
+  </update>
   <select id="candidates" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$Member">
     SELECT <include refid="snapshotFields"/>
-    FROM audit_operation_attempt a FORCE INDEX (ix_audit_archive_candidate)
+    FROM audit_operation_attempt a
     LEFT JOIN platform_audit p ON p.audit_attempt_id=a.id
     LEFT JOIN audit_archive_member m ON m.attempt_id=a.id
-    WHERE a.scope_type=#{scope.type} AND a.actor_tenant_id=#{scope.tenant} AND a.occurred_at &lt; #{olderThan}
+    WHERE a.scope_type=#{scope.type} AND a.actor_tenant_id=#{scope.tenant}
+      AND a.id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
       AND (p.id IS NOT NULL OR EXISTS (SELECT 1 FROM audit_attempt_outcome o WHERE o.attempt_id=a.id))
       AND m.attempt_id IS NULL
-    ORDER BY a.occurred_at,a.id LIMIT #{limit}
+    ORDER BY a.occurred_at,a.id
   </select>
   <select id="pending" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$Batch">
     SELECT <include refid="batchFields"/> FROM audit_archive_batch
