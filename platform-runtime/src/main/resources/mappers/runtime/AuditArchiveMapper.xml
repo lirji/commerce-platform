@@ -78,7 +78,7 @@
     SELECT g.ticket_id,g.batch_id,g.requested_by,g.approved_by,g.expires_at
     FROM audit_archive_restore_grant g JOIN audit_archive_batch b ON b.batch_id=g.batch_id
     WHERE g.ticket_id=#{ticket} AND g.requested_by=#{actorId} AND b.tenant_id=#{tenantId} AND b.scope_type=#{scopeType}
-      AND g.revoked_at IS NULL AND g.expires_at&gt;UTC_TIMESTAMP(3) AND b.state='VERIFIED'
+      AND g.revoked_at IS NULL AND g.expires_at&gt;UTC_TIMESTAMP(3) AND b.state IN ('VERIFIED','ONLINE_PURGED')
     <if test="lock">FOR UPDATE</if>
   </select>
   <insert id="restore">
@@ -89,7 +89,10 @@
     ON DUPLICATE KEY UPDATE expires_at=audit_archive_restored.expires_at
   </insert>
   <select id="restoredPage" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$Restored">
-    SELECT r.attempt_id,r.payload
+    SELECT r.attempt_id,r.payload,
+      (SELECT JSON_ARRAYAGG(JSON_OBJECT('id',l.id,'kind',l.kind,'payload',l.payload,
+        'recordedAt',DATE_FORMAT(l.recorded_at,'%Y-%m-%dT%H:%i:%s.%fZ')))
+       FROM audit_archive_late_evidence l WHERE l.batch_id=r.batch_id AND l.attempt_id=r.attempt_id) AS late_evidence
     FROM audit_archive_restored r JOIN audit_archive_restore_grant g ON g.ticket_id=r.ticket_id
     JOIN audit_archive_batch b ON b.batch_id=g.batch_id
     WHERE r.ticket_id=#{ticket} AND g.requested_by=#{actorId} AND b.tenant_id=#{tenantId} AND b.scope_type=#{scopeType}

@@ -157,7 +157,11 @@ public class OperationAudit {
 		Evidence safe = new Evidence(evidence.resourceId(), evidence.beforeVersion(), evidence.afterVersion(),
 				safeText(evidence.reason()), evidence.changes(), evidence.actionCode());
 		try {
-			checked(mapper.insertEffect(key, attemptId, safe, changes));
+			if (mapper.lockLiveAttempt(attemptId) == null) {
+				lateEvidence(attemptId, "EFFECT", JsonCodec.write(safe));
+			} else {
+				checked(mapper.insertEffect(key, attemptId, safe, changes));
+			}
 		}
 		catch (DataAccessException failure) {
 			throw unavailable(attemptId, failure);
@@ -167,7 +171,11 @@ public class OperationAudit {
 	/** 重试关联已有命令证据，当前尝试本身不产生新的业务效果。 */
 	public void replay(Key key, long attemptId) {
 		try {
-			checked(mapper.insertReplay(key, attemptId));
+			if (mapper.lockLiveAttempt(attemptId) == null) {
+				lateEvidence(attemptId, "OUTCOME", JsonCodec.write(new LateResult(Result.REPLAYED.name(), null)));
+			} else {
+				checked(mapper.insertReplay(key, attemptId));
+			}
 		}
 		catch (DataAccessException failure) {
 			throw unavailable(attemptId, failure);
@@ -276,12 +284,28 @@ public class OperationAudit {
 
 	private void finish(long id, Result result, String error) {
 		try {
-			independent.executeWithoutResult(status -> checked(mapper.insertOutcome(id, result.name(), error)));
+			independent.executeWithoutResult(status -> {
+				if (mapper.lockLiveAttempt(id) == null) {
+					lateEvidence(id, "OUTCOME", JsonCodec.write(new LateResult(result.name(), error)));
+				} else {
+					checked(mapper.insertOutcome(id, result.name(), error));
+				}
+			});
 		}
 		catch (DataAccessException failure) {
 			throw unavailable(id, failure);
 		}
 	}
+
+	private void lateEvidence(long attemptId, String kind, String payload) {
+		String key = JsonCodec.hash(kind + "|" + payload);
+		mapper.insertLateEvidence(attemptId, key, kind, payload);
+		if (mapper.findLateEvidence(attemptId, key) == null) {
+			throw new DomainException(DomainException.Code.UNAVAILABLE, UNAVAILABLE);
+		}
+	}
+
+	private record LateResult(String result, String errorCode) {}
 
 	private static DomainException unavailable(long id, DataAccessException failure) {
 		LOG.error("审计证据写入失败 attemptId={} errorType={}", id, failure.getClass().getSimpleName());

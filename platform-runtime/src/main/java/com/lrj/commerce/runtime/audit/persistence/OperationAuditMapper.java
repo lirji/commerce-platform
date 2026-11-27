@@ -29,6 +29,14 @@ public interface OperationAuditMapper {
 	/** 用请求唯一键绑定后续写入。 */
 	long findAttempt(@Param("source") String source, @Param("requestId") String requestId);
 
+	/** 和归档清理共用原尝试锁，确认后到的事实是否需要追加到归档引用。 */
+	Long lockLiveAttempt(@Param("id") long id);
+
+	/** 内容摘要为幂等键，稳定引用通过原档案成员解析。 */
+	int insertLateEvidence(@Param("id") long id, @Param("key") String key, @Param("kind") String kind, @Param("payload") String payload);
+
+	Long findLateEvidence(@Param("id") long id, @Param("key") String key);
+
 	/** 直接追加独立确认的请求结果。 */
 	int insertOutcome(@Param("attemptId") long attemptId, @Param("result") String result,
 			@Param("errorCode") String errorCode);

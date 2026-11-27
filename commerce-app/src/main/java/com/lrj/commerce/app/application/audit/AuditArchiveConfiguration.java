@@ -1,7 +1,9 @@
 package com.lrj.commerce.app.application.audit;
 
 import com.lrj.commerce.runtime.audit.OperationAudit;
+import com.lrj.commerce.runtime.audit.archive.ArchiveOnlineCutoverMapper;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper;
+import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveRetentionReview;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveVerification;
@@ -79,15 +81,19 @@ public class AuditArchiveConfiguration {
     }
 
     @Bean
-    AuditArchiveJob auditArchiveJob(AuditArchiveVerification verification, AuditArchiveMapper mapper, Clock clock,
+    AuditArchiveJob auditArchiveJob(AuditArchiveVerification verification, AuditArchiveMapper mapper,
+            ArchiveOnlineCutoverMapper cutoverMapper, PlatformTransactionManager manager, Clock clock,
+            @Value("${commerce.audit-archive.online-cutover-enabled}") boolean cutoverEnabled,
             @Value("${commerce.audit-archive.scope}") String scope,
             @Value("${commerce.audit-archive.tenant}") String tenant) {
-        return new AuditArchiveJob(verification, new AuditArchiveRetentionReview(mapper, verification,
-                new AuditArchiveMapper.Scope(scope, tenant), clock));
+        var review = new AuditArchiveRetentionReview(mapper, verification, new AuditArchiveMapper.Scope(scope, tenant), clock);
+        var cutover = cutoverEnabled ? new AuditArchiveOnlineCutover(review, mapper, cutoverMapper, manager) : null;
+        return new AuditArchiveJob(verification, review, cutover);
     }
 
     /** 由独立执行器处理；每轮最多一个批次，不从作业参数接受租户或截止时间。 */
-    public record AuditArchiveJob(AuditArchiveVerification verification, AuditArchiveRetentionReview retention) {
+    public record AuditArchiveJob(AuditArchiveVerification verification, AuditArchiveRetentionReview retention,
+            AuditArchiveOnlineCutover cutover) {
         @XxlJob("commerceAuditArchiveVerify")
         public void verify() {
             verification.tick();
@@ -99,6 +105,13 @@ public class AuditArchiveConfiguration {
             var result = retention.assess(XxlJobHelper.getJobParam());
             XxlJobHelper.log("批次 {} 复核结果 {}，最早在线清理 {}，最早档案到期 {}",
                     result.batchId(), result.reason(), result.onlineAfter(), result.archiveAfter());
+        }
+
+        /** 唯一允许移除在线源记录的任务，仍须独立开关和该批次签收。 */
+        @XxlJob("commerceAuditArchiveOnlineCutover")
+        public void cutoverOnline() {
+            if (cutover == null) throw new IllegalStateException("在线审计档案切换未启用");
+            XxlJobHelper.log("在线切换结果 {}", cutover.move(XxlJobHelper.getJobParam()));
         }
     }
 }

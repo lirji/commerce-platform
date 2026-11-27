@@ -10,6 +10,19 @@
   <select id="findAttempt" resultType="long">
     SELECT id FROM audit_operation_attempt WHERE source_system=#{source} AND request_id=#{requestId}
   </select>
+  <select id="lockLiveAttempt" resultType="java.lang.Long">
+    SELECT id FROM audit_operation_attempt WHERE id=#{id} FOR UPDATE
+  </select>
+  <insert id="insertLateEvidence">
+    INSERT INTO audit_archive_late_evidence(batch_id,attempt_id,evidence_key,kind,payload)
+    SELECT m.batch_id,m.attempt_id,#{key},#{kind},#{payload}
+    FROM audit_archive_member m JOIN audit_archive_batch b ON b.batch_id=m.batch_id
+    WHERE m.attempt_id=#{id} AND b.state='ONLINE_PURGED'
+    ON DUPLICATE KEY UPDATE id=audit_archive_late_evidence.id
+  </insert>
+  <select id="findLateEvidence" resultType="java.lang.Long">
+    SELECT id FROM audit_archive_late_evidence WHERE attempt_id=#{id} AND evidence_key=#{key} FOR SHARE
+  </select>
   <insert id="insertOutcome">
     INSERT INTO audit_attempt_outcome(attempt_id,event_ref,result_code,error_code)
     VALUES(#{attemptId},CONCAT(#{attemptId},':result'),#{result},#{errorCode})
@@ -26,12 +39,12 @@
       (SELECT id FROM platform_audit WHERE tenant_id=#{key.tenantId} AND actor_id=#{key.actorId}
        AND operation=#{key.operation} AND command_key=#{key.commandKey} ORDER BY id DESC LIMIT 1))
   </insert>
-  <sql id="effectiveAction">COALESCE(p.audit_action_code,original.audit_action_code,a.action_code)</sql>
+  <sql id="effectiveAction">COALESCE(p.audit_action_code,original.audit_action_code,archived.action_code,a.action_code)</sql>
   <sql id="rows">
     SELECT a.id,a.source_system,a.request_id,a.trace_id,<include refid="effectiveAction"/> AS action,a.actor_id,
       COALESCE(p.audit_resource_id,a.resource_id) AS resource_id,a.occurred_at,
       CASE WHEN p.id IS NOT NULL THEN 'SUCCEEDED' ELSE COALESCE(o.result_code,'UNKNOWN') END AS result,
-      o.error_code,COALESCE(p.id,o.effect_id) AS effect_id,original.audit_attempt_id AS original_attempt_id,
+      o.error_code,COALESCE(p.id,o.effect_id) AS effect_id,COALESCE(original.audit_attempt_id,archived.attempt_id) AS original_attempt_id,
       p.audit_before_version AS before_version,p.audit_after_version AS after_version,p.audit_reason AS reason,
       p.audit_changes_json AS changes_json
     FROM audit_operation_attempt a
@@ -40,6 +53,7 @@
       SELECT last.id FROM audit_attempt_outcome last WHERE last.attempt_id=a.id ORDER BY last.id DESC LIMIT 1
     )
     LEFT JOIN platform_audit original ON original.id=o.effect_id
+    LEFT JOIN audit_archive_effect_locator archived ON archived.effect_id=o.effect_id
   </sql>
   <select id="list" resultType="com.lrj.commerce.runtime.audit.persistence.OperationAuditMapper$Row">
     <include refid="rows"/>

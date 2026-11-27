@@ -22,6 +22,7 @@ commerce:
       commerce-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_COMMERCE_TENANT:}
       bearer-token: ${COMMERCE_MARKETING_MEMBER_PROFILE_BEARER_TOKEN:}
   audit-archive:
+    online-cutover-enabled: ${COMMERCE_AUDIT_ARCHIVE_ONLINE_CUTOVER_ENABLED:false}
     enabled: ${COMMERCE_AUDIT_ARCHIVE_ENABLED:false}
     scope: ${COMMERCE_AUDIT_ARCHIVE_SCOPE:}
     tenant: ${COMMERCE_AUDIT_ARCHIVE_TENANT:}

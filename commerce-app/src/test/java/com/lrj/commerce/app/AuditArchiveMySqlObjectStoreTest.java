@@ -6,6 +6,10 @@ import com.lrj.commerce.kernel.DomainException;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.runtime.audit.archive.ArchiveObjectStore;
+import com.lrj.commerce.runtime.audit.archive.ArchiveOnlineCutoverMapper;
+import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover;
+import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover.Outcome;
+import com.lrj.commerce.runtime.command.persistence.CommandMapper.Key;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveVerification;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveRetentionReview;
@@ -52,6 +56,7 @@ class AuditArchiveMySqlObjectStoreTest {
 
     @Autowired ArchiveObjectStore objects;
     @Autowired AuditArchiveMapper mapper;
+    @Autowired ArchiveOnlineCutoverMapper cutoverMapper;
     @Autowired OperationAudit audit;
     @Autowired PlatformTransactionManager tx;
     @Autowired JdbcTemplate jdbc;
@@ -115,10 +120,11 @@ class AuditArchiveMySqlObjectStoreTest {
         assertDenied(() -> verification.restored(actor, ticket, 0, null));
         assertDenied(() -> verification.restore(actor, ticket, null));
         assertEquals(3, onlineCount());
-        checkRetention(scope, verification, claimed.batchId());
+        var eligible = checkRetention(scope, verification, claimed.batchId());
+        checkOnlineCutover(verification, eligible, claimed.batchId(), original, actor);
     }
 
-    private void checkRetention(AuditArchiveMapper.Scope scope, AuditArchiveVerification verification, String batchId) {
+    private AuditArchiveRetentionReview checkRetention(AuditArchiveMapper.Scope scope, AuditArchiveVerification verification, String batchId) {
         var review = new AuditArchiveRetentionReview(mapper, verification, scope, Clock.systemUTC());
         assertEquals(Reason.NO_POLICY, review.assess(batchId).reason());
         jdbc.update("""
@@ -146,6 +152,56 @@ class AuditArchiveMySqlObjectStoreTest {
             """, TENANT);
         assertEquals(Reason.NO_POLICY, afterRetention.assess(batchId).reason());
         assertEquals(3, onlineCount());
+        jdbc.update("UPDATE audit_archive_retention_policy SET revoked_at=NULL WHERE tenant_id=?", TENANT);
+        return afterRetention;
+    }
+
+    private void checkOnlineCutover(AuditArchiveVerification archive, AuditArchiveRetentionReview review,
+            String batchId, long original, Actor actor) {
+        var cutover = new AuditArchiveOnlineCutover(review, mapper, cutoverMapper, tx);
+        assertEquals(Outcome.NOT_APPROVED, cutover.move(batchId));
+        jdbc.update("""
+            INSERT INTO audit_archive_cutover_grant(batch_id,approval_reference,approved_by,effective_at,expires_at)
+            VALUES(?, 'isolated-cutover','isolated-reviewer',UTC_TIMESTAMP(3)-INTERVAL 1 MINUTE,UTC_TIMESTAMP(3)+INTERVAL 1 HOUR)
+            """, batchId);
+        jdbc.update("""
+            INSERT INTO platform_command(tenant_id,actor_id,operation,command_key,request_hash,response_json)
+            VALUES(?,'operator','catalog.category.bind','archive-fixture',REPEAT('0',64),'{}')
+            """, TENANT);
+        assertEquals(Outcome.COMMAND_ACTIVE, cutover.move(batchId));
+        assertEquals(3, onlineCount());
+        // 清除特意添加的合成命令，仅为验证真实在线清理不会改动仍在使用的幂等证据。
+        jdbc.update("DELETE FROM platform_command WHERE tenant_id=? AND command_key='archive-fixture'", TENANT);
+        jdbc.update("""
+            INSERT INTO audit_archive_online_purge_receipt(batch_id,object_version,sha256,approval_reference,attempt_count,effect_count,outcome_count)
+            VALUES(?,'conflicting-fixture',REPEAT('0',64),'isolated-cutover',2,1,1)
+            """, batchId);
+        assertThrows(org.springframework.dao.DuplicateKeyException.class, () -> cutover.move(batchId));
+        assertEquals("VERIFIED", mapper.batch(batchId).state());
+        assertEquals(3, onlineCount());
+        jdbc.update("DELETE FROM audit_archive_online_purge_receipt WHERE batch_id=? AND object_version='conflicting-fixture'", batchId);
+        assertEquals(Outcome.MOVED, cutover.move(batchId));
+        assertEquals(Outcome.ALREADY_MOVED, cutover.move(batchId));
+        assertEquals(1, onlineCount());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM audit_archive_effect_locator WHERE batch_id=?", Integer.class, batchId));
+
+        var command = new Key(TENANT, "operator", "catalog.category.bind", "archive-fixture");
+        var evidence = new OperationAudit.Evidence("catalog-1", 1L, 2, "核对迟到记录", java.util.List.of(), "catalog.category.bind");
+        new org.springframework.transaction.support.TransactionTemplate(tx).executeWithoutResult(status -> {
+            audit.effect(command, original, evidence);
+            audit.effect(command, original, evidence);
+        });
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM audit_archive_late_evidence WHERE batch_id=?", Integer.class, batchId));
+        String another = "case-" + UUID.randomUUID();
+        jdbc.update("""
+            INSERT INTO audit_archive_restore_grant(ticket_id,batch_id,requested_by,approved_by,expires_at)
+            VALUES(?,?,'recoverer','separate-approver',UTC_TIMESTAMP(3)+INTERVAL 1 HOUR)
+            """, another, batchId);
+        assertEquals(2, archive.restore(actor, another, null));
+        var restored = archive.restored(actor, another, 0, null).items();
+        assertEquals(2, restored.size());
+        assertTrue(restored.getFirst().lateEvidence().contains("EFFECT"));
+        assertEquals(1, onlineCount());
     }
 
     private long oldAttempt(String result) {

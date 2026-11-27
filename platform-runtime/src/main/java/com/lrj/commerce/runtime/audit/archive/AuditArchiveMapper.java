@@ -13,7 +13,7 @@ public interface AuditArchiveMapper {
     record Batch(String batchId, String scopeType, String tenantId, String state, Instant olderThan, String objectKey,
             String objectVersion, String sha256, int rowCount, int payloadBytes) {}
     record RestoreGrant(String ticketId, String batchId, String requestedBy, String approvedBy, Instant expiresAt) {}
-    record Restored(long attemptId, String payload) {}
+    record Restored(long attemptId, String payload, String lateEvidence) {}
 
     List<Member> candidates(@Param("scope") Scope scope, @Param("olderThan") Instant olderThan, @Param("limit") int limit);
 

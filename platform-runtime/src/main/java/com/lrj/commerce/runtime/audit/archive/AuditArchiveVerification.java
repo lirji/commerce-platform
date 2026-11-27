@@ -102,7 +102,7 @@ public class AuditArchiveVerification {
                 var content = decode(batch, objects.readForRestore(batch.objectKey(), batch.objectVersion(), batch.payloadBytes()));
                 return transaction.execute(status -> {
                     if (!grant.equals(grant(actor, ticket, true))) throw bad("恢复授权已经变化");
-                    var rows = content.rows().stream().map(row -> new Restored(row.attemptId(), JsonCodec.write(row))).toList();
+                    var rows = content.rows().stream().map(row -> new Restored(row.attemptId(), JsonCodec.write(row), null)).toList();
                     mapper.restore(grant, rows);
                     return rows.size();
                 });

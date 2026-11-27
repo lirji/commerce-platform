@@ -32,6 +32,11 @@ public class AuditArchiveRetentionReview {
 
     /** 两次复核清单归属、批准策略及冻结，让慢速对象存储不会掩盖复核期间的变化。 */
     public Review assess(String batchId) {
+        return proof(batchId).review();
+    }
+
+    /** 只在同一来源把政策、对象验证和在线成员绑定为一份事务复核材料。 */
+    Proof proof(String batchId) {
         if (batchId == null || !batchId.matches("[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}")) {
             throw new DomainException(DomainException.Code.INVALID_INPUT, "归档清单编号无效");
         }
@@ -39,15 +44,21 @@ public class AuditArchiveRetentionReview {
         if (batch == null || !scope.type().equals(batch.scopeType()) || !scope.tenant().equals(batch.tenantId())) {
             throw new DomainException(DomainException.Code.NOT_FOUND, "当前配置范围内没有此归档清单");
         }
-        if (!"VERIFIED".equals(batch.state())) return Review.blocked(batchId, Reason.NOT_VERIFIED);
-        if (mapper.activeHold(batchId)) return Review.blocked(batchId, Reason.HELD);
+        if (!"VERIFIED".equals(batch.state())) return Proof.blocked(batch, Reason.NOT_VERIFIED);
+        if (mapper.activeHold(batchId)) return Proof.blocked(batch, Reason.HELD);
         List<Policy> policies = mapper.policies(scope);
         var signed = policies.stream().collect(Collectors.toUnmodifiableMap(Policy::key, Function.identity()));
-        if (signed.isEmpty()) return Review.blocked(batchId, Reason.NO_POLICY);
+        if (signed.isEmpty()) return Proof.blocked(batch, Reason.NO_POLICY);
         List<Member> verified = archive.confirmedSnapshot(batch);
-        if (mapper.activeHold(batchId)) return Review.blocked(batchId, Reason.HELD);
-        if (!policies.equals(mapper.policies(scope))) return Review.blocked(batchId, Reason.POLICY_CHANGED);
-        return periods(batchId, verified, signed);
+        if (mapper.activeHold(batchId)) return Proof.blocked(batch, Reason.HELD);
+        if (!policies.equals(mapper.policies(scope))) return Proof.blocked(batch, Reason.POLICY_CHANGED);
+        return new Proof(periods(batchId, verified, signed), batch, policies, verified);
+    }
+
+    record Proof(Review review, Batch batch, List<Policy> policies, List<Member> members) {
+        static Proof blocked(Batch batch, Reason reason) {
+            return new Proof(Review.blocked(batch.batchId(), reason), batch, List.of(), List.of());
+        }
     }
 
     private Review periods(String batchId, List<Member> members, Map<Key, Policy> policies) {
