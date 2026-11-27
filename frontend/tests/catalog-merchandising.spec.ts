@@ -92,7 +92,8 @@ test("商品经营：类目模板、固定规格、展示图片条码及会员�
   await page.getByRole("button", { name: "保存销售规格", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const sku = page.getByRole("row").filter({ hasText: "ui-light-coffee" });
-  await sku.getByRole("button", { name: "条码资料", exact: true }).click();
+  await sku.getByRole("button", { name: "更多规格操作", exact: true }).click();
+  await page.getByRole("menuitem", { name: "条码资料", exact: true }).click();
   await page.getByRole("button", { name: "维护条码", exact: true }).click();
   await page.getByLabel("经营条码", { exact: true }).fill("FILTER-042");
   await page.getByLabel("条码变更原因", { exact: true }).fill("新品条码");

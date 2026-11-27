@@ -36,16 +36,16 @@ export function TradeRowFacts({
           )}
         </div>
       )}
-      {(status || row.blocked === true) && (
+      {(status || row.blocked === true || amount != null) && (
         <div className="trade-row-state">
           {status && <Status value={status} />}
+          {amount != null && (
+            <span className="trade-inline-amount">
+              {row.payable != null ? "应付金额" : "退款金额"} {money(amount)}
+            </span>
+          )}
           {row.blocked === true && <span>售后阻拦</span>}
         </div>
-      )}
-      {amount != null && (
-        <span>
-          {row.payable != null ? "应付金额" : "退款金额"} {money(amount)}
-        </span>
       )}
       {workflow && typeof row.returnRequired === "boolean" && (
         <span>{row.returnRequired ? "需要退货" : "无需退货"}</span>

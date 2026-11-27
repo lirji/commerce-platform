@@ -1,6 +1,7 @@
 import { DateTimeField, dateRangePresets } from "./DateTimeField";
 import { Button, Form, Input, Select, Space, Tag, Typography } from "antd";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useId, useState } from "react";
+import { BusinessTableScope } from "./businessTableScope";
 import { useRouteState } from "./routeState";
 import { formatField, statusText, localDateTime, time } from "./ui";
 
@@ -410,7 +411,10 @@ function ListFilters({
   };
   const [form] = Form.useForm<FormValues>();
   const [advanced, setAdvanced] = useState(false);
-  const hasSecondary = compact && (spec.time || Boolean(spec.exact?.length));
+  const inWorkspace = useContext(BusinessTableScope) !== undefined;
+  const secondaryId = useId();
+  const hasSecondary =
+    (inWorkspace || compact) && (spec.time || Boolean(spec.exact?.length));
   const hideSecondary = hasSecondary && !advanced;
   const draft = Form.useWatch<FormValues>([], form);
   const formValues = {
@@ -505,6 +509,82 @@ function ListFilters({
             : (v ?? "");
       return normalize(draft[key]) !== normalize(formValues[key]);
     });
+  const additionalFields = (
+    <>
+      {spec.exact?.map((key) => (
+        <Form.Item
+          key={key}
+          name={key}
+          label={exactLabels[key]}
+          rules={[{ pattern: identifier, message: "请输入有效的业务编号" }]}
+        >
+          <Input
+            allowClear
+            maxLength={64}
+            placeholder={
+              key === "orderId"
+                ? "按完整订单编号查询"
+                : `按完整${exactLabels[key]}查询`
+            }
+          />
+        </Form.Item>
+      ))}
+      {spec.time && (
+        <>
+          <Form.Item name="from" label="创建起点" className="query-wide">
+            <DateTimeField />
+          </Form.Item>
+          <Form.Item
+            name="to"
+            label="创建终点"
+            className="query-wide"
+            dependencies={["from"]}
+            rules={[
+              ({ getFieldValue }) => ({
+                validator: (_, v) =>
+                  !v ||
+                  !getFieldValue("from") ||
+                  Date.parse(getFieldValue("from")) < Date.parse(v)
+                    ? Promise.resolve()
+                    : Promise.reject(new Error("结束时间须晚于开始时间")),
+              }),
+            ]}
+          >
+            <DateTimeField />
+          </Form.Item>
+        </>
+      )}
+      {spec.time && (
+        <Form.Item label="快捷时间" className="query-date-presets">
+          <Select
+            aria-label="快捷时间"
+            virtual={false}
+            placeholder="选择时间范围"
+            value={null}
+            options={dateRangePresets.map(({ label }) => ({
+              label,
+              value: label,
+            }))}
+            onChange={(label) => {
+              const preset = dateRangePresets.find(
+                (item) => item.label === label,
+              );
+              if (preset) form.setFieldsValue(preset.range());
+            }}
+          />
+        </Form.Item>
+      )}
+      <Form.Item name="limit" label="每页">
+        <Select
+          virtual={false}
+          options={[10, 25, 50, 100].map((value) => ({
+            value,
+            label: `${value}条`,
+          }))}
+        />
+      </Form.Item>
+    </>
+  );
   return (
     <div className="query-panel">
       {spec.quickStates && (
@@ -540,183 +620,124 @@ function ListFilters({
         initialValues={formValues}
         className="query-form"
       >
-        <Form.Item name="q" label="关键词" className="query-wide">
-          <Input allowClear maxLength={64} placeholder={spec.hint} />
-        </Form.Item>
-        {spec.states && (
-          <Form.Item name="status" label="状态">
-            <Select
-              allowClear
-              placeholder="全部状态"
-              options={spec.states.map((value) => ({
-                value,
-                label: statusText(value),
-              }))}
-            />
-          </Form.Item>
-        )}
-        {spec.enabled && (
-          <Form.Item name="enabled" label="启用状态">
-            <Select
-              allowClear
-              placeholder="全部"
-              options={[
-                { value: "true", label: "已启用" },
-                { value: "false", label: "已停用" },
-              ]}
-            />
-          </Form.Item>
-        )}
-        {spec.exact?.map((key) => (
-          <Form.Item
-            key={key}
-            name={key}
-            label={exactLabels[key]}
-            hidden={hideSecondary}
-            rules={[{ pattern: identifier, message: "请输入有效的业务编号" }]}
-          >
+        <div className="query-fields">
+          <Form.Item name="q" label="关键词" className="query-wide">
             <Input
               allowClear
               maxLength={64}
-              placeholder={
-                key === "orderId"
-                  ? "按完整订单编号查询"
-                  : `按完整${exactLabels[key]}查询`
-              }
+              placeholder={spec.hint}
+              title={spec.hint}
             />
           </Form.Item>
-        ))}
-        {spec.failureClass && (
-          <Form.Item name="failureClass" label="最新事件失败分类">
-            <Select
-              allowClear
-              placeholder="全部分类"
-              options={eventFailureClasses.map((value) => ({
-                value,
-                label: formatField("failureClass", value),
-              }))}
-            />
-          </Form.Item>
-        )}
-        {spec.blocked && (
-          <Form.Item name="blocked" label="售后阻拦">
-            <Select
-              allowClear
-              placeholder="全部"
-              options={[
-                { value: "true", label: "已阻拦" },
-                { value: "false", label: "未阻拦" },
-              ]}
-            />
-          </Form.Item>
-        )}
-        {spec.time && (
-          <>
-            <Form.Item
-              name="from"
-              label="创建起点"
-              className="query-wide"
-              hidden={hideSecondary}
-            >
-              <DateTimeField />
+          {spec.states && (
+            <Form.Item name="status" label="状态">
+              <Select
+                allowClear
+                placeholder="全部状态"
+                options={spec.states.map((value) => ({
+                  value,
+                  label: statusText(value),
+                }))}
+              />
             </Form.Item>
-            <Form.Item
-              name="to"
-              label="创建终点"
-              className="query-wide"
-              hidden={hideSecondary}
-              dependencies={["from"]}
-              rules={[
-                ({ getFieldValue }) => ({
-                  validator: (_, v) =>
-                    !v ||
-                    !getFieldValue("from") ||
-                    Date.parse(getFieldValue("from")) < Date.parse(v)
-                      ? Promise.resolve()
-                      : Promise.reject(new Error("结束时间须晚于开始时间")),
-                }),
-              ]}
-            >
-              <DateTimeField />
+          )}
+          {spec.enabled && (
+            <Form.Item name="enabled" label="启用状态">
+              <Select
+                allowClear
+                placeholder="全部"
+                options={[
+                  { value: "true", label: "已启用" },
+                  { value: "false", label: "已停用" },
+                ]}
+              />
             </Form.Item>
-          </>
-        )}
-        {spec.time && !hideSecondary && (
-          <Form.Item label="快捷时间" className="query-date-presets">
-            <Select
-              aria-label="快捷时间"
-              virtual={false}
-              placeholder="选择时间范围"
-              value={null}
-              options={dateRangePresets.map(({ label }) => ({
-                label,
-                value: label,
-              }))}
-              onChange={(label) => {
-                const preset = dateRangePresets.find(
-                  (item) => item.label === label,
-                );
-                if (preset) form.setFieldsValue(preset.range());
-              }}
-            />
-          </Form.Item>
-        )}
-        <Form.Item name="limit" label="每页" hidden={hideSecondary}>
-          <Select
-            virtual={false}
-            options={[10, 25, 50, 100].map((value) => ({
-              value,
-              label: `${value}条`,
-            }))}
-          />
-        </Form.Item>
-        <Form.Item className="query-wide">
-          <Space wrap>
-            <Button type="primary" htmlType="submit">
-              查询
-            </Button>
-            <Button onClick={() => applyValues({})}>重置筛选</Button>
-            {hasSecondary && (
-              <Button
-                aria-expanded={advanced}
-                onClick={() => setAdvanced(!advanced)}
-              >
-                {advanced ? "收起高级筛选" : "高级筛选"}
+          )}
+          {spec.failureClass && (
+            <Form.Item name="failureClass" label="最新事件失败分类">
+              <Select
+                allowClear
+                placeholder="全部分类"
+                options={eventFailureClasses.map((value) => ({
+                  value,
+                  label: formatField("failureClass", value),
+                }))}
+              />
+            </Form.Item>
+          )}
+          {spec.blocked && (
+            <Form.Item name="blocked" label="售后阻拦">
+              <Select
+                allowClear
+                placeholder="全部"
+                options={[
+                  { value: "true", label: "已阻拦" },
+                  { value: "false", label: "未阻拦" },
+                ]}
+              />
+            </Form.Item>
+          )}
+          {!hasSecondary && additionalFields}
+          <Form.Item className="query-wide query-actions">
+            <Space wrap>
+              <Button type="primary" htmlType="submit">
+                查询
               </Button>
-            )}
-          </Space>
-        </Form.Item>
+              <Button onClick={() => applyValues({})}>重置筛选</Button>
+              {hasSecondary && (
+                <Button
+                  aria-expanded={advanced}
+                  aria-controls={secondaryId}
+                  onClick={() => setAdvanced(!advanced)}
+                >
+                  {advanced ? "收起高级筛选" : "高级筛选"}
+                </Button>
+              )}
+            </Space>
+          </Form.Item>
+        </div>
+        {hasSecondary && (
+          <div
+            id={secondaryId}
+            className="query-fields query-secondary"
+            hidden={hideSecondary}
+          >
+            {additionalFields}
+          </div>
+        )}
       </Form>
-      <div className="query-scope">{spec.hint}</div>
+      {!inWorkspace && <div className="query-scope">{spec.hint}</div>}
       <div className="query-pending" role="status" aria-live="polite">
         {pending && "筛选已修改，点击查询后生效"}
       </div>
-      <div className="query-summary">
-        <Typography.Text type="secondary">
-          {active.length ? "已应用" : "当前范围内的全部记录"}
-        </Typography.Text>
-        {active.map((item) => (
-          <Tag
-            key={item.key}
-            closable
-            closeIcon={
-              <button
-                type="button"
-                className="filter-clear"
-                aria-label={`清除${item.label}筛选`}
-              >
-                ×
-              </button>
-            }
-            onClose={(event) => {
-              event.preventDefault();
-              applyValues({ ...values, [item.key]: undefined });
-            }}
-          >
-            {item.label}：{item.text}
-          </Tag>
-        ))}
-      </div>
+      {(!inWorkspace || active.length > 0) && (
+        <div className="query-summary">
+          <Typography.Text type="secondary">
+            {active.length ? "已应用" : "当前范围内的全部记录"}
+          </Typography.Text>
+          {active.map((item) => (
+            <Tag
+              key={item.key}
+              closable
+              closeIcon={
+                <button
+                  type="button"
+                  className="filter-clear"
+                  aria-label={`清除${item.label}筛选`}
+                >
+                  ×
+                </button>
+              }
+              onClose={(event) => {
+                event.preventDefault();
+                applyValues({ ...values, [item.key]: undefined });
+              }}
+            >
+              {item.label}：{item.text}
+            </Tag>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

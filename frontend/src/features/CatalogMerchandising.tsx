@@ -21,13 +21,14 @@ import {
   Space,
   Tabs,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
 import { ResourceAuditHistory } from "./OperationAudits";
 import {
   CommandModal,
   ErrorNotice,
   Fields,
+  money,
   Status,
   type Values,
 } from "../shared/ui";
@@ -790,6 +791,32 @@ export function CatalogFilters({
   query?: string;
 }) {
   const [form] = Form.useForm();
+  const [priceOpen, setPriceOpen] = useState(false);
+  const priceId = useId();
+  const current = new URLSearchParams(query);
+  const min = current.get("minimumPrice");
+  const max = current.get("maximumPrice");
+  const priceFields = (
+    <>
+      <Form.Item name="minimumPrice">
+        <InputNumber
+          aria-label="最低售价"
+          placeholder="最低价"
+          min={0}
+          precision={2}
+        />
+      </Form.Item>
+      <Form.Item name="maximumPrice">
+        <InputNumber
+          aria-label="最高售价"
+          placeholder="最高价"
+          min={0}
+          precision={2}
+        />
+      </Form.Item>
+    </>
+  );
+
   useEffect(() => {
     if (query === undefined) return;
     const params = new URLSearchParams(query);
@@ -817,7 +844,8 @@ export function CatalogFilters({
             params.set(key, String(value));
         onSearch(params.toString());
       }}
-      className={"catalog-filters" + (className ? " " + className : "")}
+      onFinishFailed={() => operations && setPriceOpen(true)}
+      className={["catalog-filters", className].filter(Boolean).join(" ")}
     >
       <Form.Item name="q">
         <Input
@@ -842,22 +870,7 @@ export function CatalogFilters({
           />
         </Form.Item>
       )}
-      <Form.Item name="minimumPrice">
-        <InputNumber
-          aria-label="最低售价"
-          placeholder="最低价"
-          min={0}
-          precision={2}
-        />
-      </Form.Item>
-      <Form.Item name="maximumPrice">
-        <InputNumber
-          aria-label="最高售价"
-          placeholder="最高价"
-          min={0}
-          precision={2}
-        />
-      </Form.Item>
+      {!operations && priceFields}
       {operations && (
         <Form.Item name="status">
           <Select
@@ -888,15 +901,38 @@ export function CatalogFilters({
         {shopMode ? "搜索" : "筛选商品"}
       </Button>
       {operations && (
-        <Button
-          onClick={() => {
-            form.resetFields();
-            form.setFieldValue("limit", 50);
-            onSearch("");
-          }}
-        >
-          重置条件
-        </Button>
+        <>
+          <Button
+            onClick={() => {
+              form.resetFields();
+              form.setFieldValue("limit", 50);
+              onSearch("");
+            }}
+          >
+            重置条件
+          </Button>
+          <Button
+            aria-expanded={priceOpen}
+            aria-controls={priceId}
+            onClick={() => setPriceOpen((open) => !open)}
+          >
+            {priceOpen ? "收起价格筛选" : "价格筛选"}
+          </Button>
+          <div
+            id={priceId}
+            className="query-fields query-secondary catalog-price-fields"
+            hidden={!priceOpen}
+          >
+            {priceFields}
+          </div>
+          {(min != null || max != null) && (
+            <span className="catalog-applied-price" role="status">
+              已应用售价
+              {min != null && ` ≥ ${money(min)}`}
+              {max != null && ` ≤ ${money(max)}`}
+            </span>
+          )}
+        </>
       )}
     </Form>
   );

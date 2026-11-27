@@ -8,7 +8,16 @@ import {
   CatalogJobs,
   ChannelPrices,
 } from "./CatalogScheduling";
-import { Alert, Button, Card, Grid, Space, Tabs, Typography } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Dropdown,
+  Grid,
+  Space,
+  Tabs,
+  Typography,
+} from "antd";
 import { Icon } from "../shared/Icon";
 import {
   BarcodeEditor,
@@ -204,7 +213,8 @@ export function ProductOperations({
                       render: (_, r) => (
                         <div className="catalog-identity">
                           <span className="catalog-thumbnail">
-                            {r.images?.[0] ? (
+                            <Icon name="image" />
+                            {r.images?.[0] && (
                               <img
                                 src={r.images[0].url}
                                 alt={r.images[0].alt || r.title}
@@ -213,8 +223,6 @@ export function ProductOperations({
                                   event.currentTarget.hidden = true;
                                 }}
                               />
-                            ) : (
-                              <Icon name="image" />
                             )}
                           </span>
                           <PrimaryCell
@@ -254,7 +262,7 @@ export function ProductOperations({
                     { title: "版本", dataIndex: "revision", width: 64 },
                     {
                       title: "操作",
-                      width: 230,
+                      width: 172,
                       fixed: compact ? undefined : "right",
                       className: "row-actions-cell",
                       render: (_, r) => (
@@ -289,21 +297,44 @@ export function ProductOperations({
                             })}
                             onDone={refresh}
                           />
-                          <Button type="link" onClick={() => setChannelSku(r)}>
-                            渠道价
-                          </Button>
-                          <Button type="link" onClick={() => setBarcode(r)}>
-                            条码资料
-                          </Button>
-                          <Button
-                            type="link"
-                            onClick={() => {
-                              setHistoryAfter(0);
-                              setSelected(r);
+                          <Dropdown
+                            trigger={["click"]}
+                            autoFocus
+                            menu={{
+                              items: [
+                                {
+                                  key: "channel-price",
+                                  label: "渠道价",
+                                  onClick: () => setChannelSku(r),
+                                },
+                                {
+                                  key: "barcode",
+                                  label: "条码资料",
+                                  onClick: () => setBarcode(r),
+                                },
+                                {
+                                  key: "revision-history",
+                                  label: "修订记录",
+                                  onClick: () => {
+                                    setHistoryAfter(0);
+                                    setSelected(r);
+                                  },
+                                },
+                              ],
                             }}
                           >
-                            修订记录
-                          </Button>
+                            <Button
+                              type="link"
+                              aria-label="更多规格操作"
+                              onClick={(event) =>
+                                event.currentTarget.focus({
+                                  preventScroll: true,
+                                })
+                              }
+                            >
+                              更多
+                            </Button>
+                          </Dropdown>
                         </RowActions>
                       ),
                     },

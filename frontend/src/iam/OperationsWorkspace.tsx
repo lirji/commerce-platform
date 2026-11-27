@@ -5,7 +5,13 @@ import {
   tradeNumberColumnWidth,
   tradeNumberFields,
 } from "../shared/tradeNumbers";
-import { Pager, Status, formatField } from "../shared/ui";
+import {
+  ListPanel,
+  RecordModal,
+  RowActions,
+  Status,
+  formatField,
+} from "../shared/ui";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
 import { OrderEventLink, TradeLinks } from "../shared/workspaceLinks";
@@ -82,7 +88,7 @@ export function OperationDetails({
   return (
     <>
       <Descriptions
-        column={1}
+        column={{ xs: 1, sm: 2 }}
         bordered
         size="small"
         items={fields.map(([key, label]) => ({
@@ -229,8 +235,13 @@ export function OperationsList({
     setSelected(row);
     setDetailId(String(row[idField]));
   };
-  const table: ColumnsType<OperationRow> = preferences.columns
+  // 以同视口下的默认列作为偏好标识，开关可选列时保留已打开的设置面板。
+  const layoutColumnKeys = columns
     .filter(([key]) => !compact || !compactTradeFields.has(key))
+    .map(([key]) => key)
+    .concat("details");
+  const table: ColumnsType<OperationRow> = preferences.columns
+    .filter(([key]) => layoutColumnKeys.includes(key))
     .map(([key, title]) => {
       if (compact && key === idField) {
         return {
@@ -281,82 +292,108 @@ export function OperationsList({
     width: 100,
     key: "details",
     fixed: screens.md ? "right" : undefined,
-    render: (_, r) => <Button onClick={() => openDetail(r)}>查看详情</Button>,
+    className: "row-actions-cell",
+    render: (_, r) => (
+      <RowActions>
+        <Button type="link" onClick={() => openDetail(r)}>
+          查看详情
+        </Button>
+      </RowActions>
+    ),
   });
   return (
-    <Card
-      title="当前授权范围内记录"
-      extra={
-        <Button loading={list.loading} onClick={list.refresh}>
-          刷新列表
-        </Button>
-      }
-    >
-      {filters.toolbar}
-      {preferences.ready && (
-        <Space wrap style={{ marginBlock: 8 }}>
-          {preferences.optional.length > 0 && (
-            <Popover
-              trigger="click"
-              title="可选列"
-              content={
-                <Space orientation="vertical" size="small">
-                  {preferences.optional.map(([id, label]) => (
-                    <Checkbox
-                      key={id}
-                      checked={!preferences.hidden.includes(id)}
-                      onChange={(event) =>
-                        preferences.save({
-                          hidden: event.target.checked
-                            ? preferences.hidden.filter((field) => field !== id)
-                            : [...preferences.hidden, id],
-                        })
-                      }
-                    >
-                      {label}
-                    </Checkbox>
-                  ))}
-                  <Button onClick={() => preferences.save({ hidden: [] })}>
-                    恢复全部列
-                  </Button>
-                </Space>
-              }
-            >
-              <Button>表格列</Button>
-            </Popover>
-          )}
-          <Popover
-            content="保存已应用的状态、售后阻拦和每页条数，仅在当前浏览器使用。"
-            trigger={["hover", "focus"]}
-          >
-            <Button
-              onClick={() => preferences.save({ preset: filters.preset })}
-            >
-              保存状态筛选
+    <ListPanel
+      toolbar={
+        <>
+          <div className="list-toolbar-head">
+            <h2>当前授权范围内记录</h2>
+            <Button loading={list.loading} onClick={list.refresh}>
+              刷新列表
             </Button>
-          </Popover>
-          {preferences.preset && (
-            <>
-              <Button onClick={() => filters.applyPreset(preferences.preset!)}>
-                应用已保存筛选
-              </Button>
-              <Button
-                type="link"
-                onClick={() => preferences.save({ preset: undefined })}
-              >
-                清除已保存筛选
-              </Button>
-            </>
-          )}
-          {preferences.failure && (
-            <Typography.Text type="warning" role="status">
-              {preferences.failure}
-            </Typography.Text>
-          )}
-        </Space>
-      )}
-      <ErrorNotice error={list.error} onRetry={list.refresh} />
+          </div>
+          <ErrorNotice error={list.error} onRetry={list.refresh} />
+          {filters.toolbar}
+        </>
+      }
+      after={after}
+      cursorName="OperationsWorkspace.after"
+      count={list.data?.length ?? 0}
+      pageSize={filters.limit}
+      loading={list.loading}
+      error={list.error}
+      onHome={() => setAfter("")}
+      onNext={() => setAfter(String(list.data?.at(-1)?.[idField] ?? ""))}
+    >
       <Table<OperationRow>
+        tableId={layoutColumnKeys}
+        toolbarActions={
+          preferences.ready && (
+            <Space wrap>
+              {preferences.optional.length > 0 && (
+                <Popover
+                  trigger="click"
+                  title="可选列"
+                  content={
+                    <Space orientation="vertical" size="small">
+                      {preferences.optional.map(([id, label]) => (
+                        <Checkbox
+                          key={id}
+                          checked={!preferences.hidden.includes(id)}
+                          onChange={(event) =>
+                            preferences.save({
+                              hidden: event.target.checked
+                                ? preferences.hidden.filter(
+                                    (field) => field !== id,
+                                  )
+                                : [...preferences.hidden, id],
+                            })
+                          }
+                        >
+                          {label}
+                        </Checkbox>
+                      ))}
+                      <Button onClick={() => preferences.save({ hidden: [] })}>
+                        恢复全部列
+                      </Button>
+                    </Space>
+                  }
+                >
+                  <Button>表格列</Button>
+                </Popover>
+              )}
+              <Popover
+                content="保存已应用的状态、售后阻拦和每页条数，仅在当前浏览器使用。"
+                trigger={["hover", "focus"]}
+              >
+                <Button
+                  onClick={() => preferences.save({ preset: filters.preset })}
+                >
+                  保存状态筛选
+                </Button>
+              </Popover>
+              {preferences.preset && (
+                <>
+                  <Button
+                    onClick={() => filters.applyPreset(preferences.preset!)}
+                  >
+                    应用已保存筛选
+                  </Button>
+                  <Button
+                    type="link"
+                    onClick={() => preferences.save({ preset: undefined })}
+                  >
+                    清除已保存筛选
+                  </Button>
+                </>
+              )}
+              {preferences.failure && (
+                <Typography.Text type="warning" role="status">
+                  {preferences.failure}
+                </Typography.Text>
+              )}
+            </Space>
+          )
+        }
         columnSettings={!preferences.ready || !preferences.optional.length}
         rowKey={(r) => String(r[idField])}
         dataSource={list.data}
@@ -371,37 +408,15 @@ export function OperationsList({
             : "当前范围暂无记录",
         }}
       />
-      <Pager
-        after={after}
-        cursorName="OperationsWorkspace.after"
-        count={list.data?.length ?? 0}
-        pageSize={filters.limit}
-        loading={list.loading}
-        error={list.error}
-        onHome={() => setAfter("")}
-        onNext={() => setAfter(String(list.data?.at(-1)?.[idField] ?? ""))}
-      />
-      <Modal
+      <RecordModal
         className="operations-modal"
         open={!!selected}
         title="业务详情"
-        centered
-        width={600}
-        styles={{ body: { maxHeight: "68vh", overflowY: "auto" } }}
+        width={640}
         onCancel={() => {
           setSelected(undefined);
           setDetailId(undefined);
         }}
-        footer={
-          <Button
-            onClick={() => {
-              setSelected(undefined);
-              setDetailId(undefined);
-            }}
-          >
-            返回列表
-          </Button>
-        }
       >
         <ErrorNotice error={detail.error} onRetry={detail.refresh} />
         {detailPath && detail.loading ? (
@@ -425,8 +440,8 @@ export function OperationsList({
             </Space>
           )
         )}
-      </Modal>
-    </Card>
+      </RecordModal>
+    </ListPanel>
   );
 }
 /** 独立动作资格只决定入口提示，提交仍重验实际对象、原键、CAS及资金事实。 */

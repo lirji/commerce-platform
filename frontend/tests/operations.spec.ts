@@ -135,7 +135,8 @@ test("门店运营：商品规格、调价上下架与当前会话即时撤权",
   await page.getByLabel("修订原因", { exact: true }).fill("新品首发价格");
   await submit(page);
   await expect(row).toContainText("49.00");
-  await row.getByRole("button", { name: "修订记录", exact: true }).click();
+  await row.getByRole("button", { name: "更多规格操作", exact: true }).click();
+  await page.getByRole("menuitem", { name: "修订记录", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("新品首发价格");
   await page.screenshot({
     path: `${evidence}/operations-product-history.png`,

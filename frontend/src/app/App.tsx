@@ -27,7 +27,8 @@ import { hasUnconfirmedCommand } from "../shared/useIntent";
 import { ErrorNotice } from "../shared/ui";
 import { Icon, type IconName } from "../shared/Icon";
 import {
-  WorkspaceBrand,
+  WorkspaceLocation,
+  WorkspaceSidebar,
   WorkspaceSearch,
   WorkspaceSkipLink,
 } from "../shared/WorkspaceChrome";
@@ -650,17 +651,9 @@ export function App() {
     <Layout className={admin ? "app admin-app" : "app member-app"}>
       <WorkspaceSkipLink />
       {admin && !compact && (
-        <Layout.Sider width={236} theme="light" className="sidebar">
-          <WorkspaceBrand />
-          <div className="nav-caption">
-            {platform
-              ? categoryWorkspace || auditWorkspace
-                ? "平台工具"
-                : "运行健康工作空间"
-              : operator
-                ? "门店经营工作空间"
-                : "经营工作空间"}
-          </div>
+        <WorkspaceSidebar
+          label={platform ? "平台工具" : operator ? "门店经营" : "运营管理"}
+        >
           <Menu
             aria-label="经营导航"
             mode="inline"
@@ -670,26 +663,7 @@ export function App() {
             items={menu}
             onClick={({ key }) => navigate(key)}
           />
-          {!auditWorkspace && (
-            <div className="sidebar-note">
-              {platform
-                ? categoryWorkspace
-                  ? "开店 · 商品"
-                  : "跨租户聚合 · 只读指标"
-                : operator
-                  ? "门店商品 · 授权经营"
-                  : "会员 · 商品 · 营销"}
-              <br />
-              {platform
-                ? categoryWorkspace
-                  ? "共享平台类目"
-                  : "从运行事实发现问题"
-                : operator
-                  ? "操作范围由业务权限核验"
-                  : "让每一次经营都有据可循"}
-            </div>
-          )}
-        </Layout.Sider>
+        </WorkspaceSidebar>
       )}
       {admin && compact && (
         <RecordModal
@@ -718,29 +692,29 @@ export function App() {
             </Button>
           )}
           {admin && (
-            <div className="workspace-location">
-              <span>
-                {platform
-                  ? auditWorkspace
-                    ? "平台工具"
-                    : "平台运维"
+            <WorkspaceLocation
+              group={
+                platform
+                  ? "平台工具"
                   : operator
                     ? "商品与门店"
-                    : (groups.find((g) =>
+                    : groups.find((g) =>
                         g.children.some(([key]) => key === page),
-                      )?.label ?? "经营工作台")}
-              </span>
-              <strong>
-                {platform
+                      )?.label
+              }
+              page={
+                platform
                   ? categoryWorkspace
                     ? "平台分类字典"
                     : auditWorkspace
                       ? "操作日志"
                       : "运行健康"
-                  : (adminPages.find(([key]) => key === page)?.[1] ??
-                    "商品经营")}
-              </strong>
-            </div>
+                  : page === "dashboard"
+                    ? "经营总览"
+                    : (adminPages.find(([key]) => key === page)?.[1] ??
+                      "商品经营")
+              }
+            />
           )}
           {admin && !operator && !platform && (
             <WorkspaceSearch
@@ -774,7 +748,8 @@ export function App() {
                 showSearch={admin ? { optionFilterProp: "label" } : false}
                 value={store || undefined}
                 placeholder={admin ? "选择店铺" : "切换店铺"}
-                style={{ width: compact ? 170 : admin ? 210 : 200 }}
+                className={admin ? "workspace-store-select" : undefined}
+                style={admin ? undefined : { width: compact ? 170 : 200 }}
                 options={stores.data?.map((s) => ({
                   value: s.storeId,
                   label: s.name,
@@ -786,7 +761,6 @@ export function App() {
             </Space>
           )}
           {page === "orders" && sandboxBadge}
-          {platform && <span className="context-label">{platformContext}</span>}
           <Space className="account-context">
             <Avatar
               size="small"
@@ -794,7 +768,9 @@ export function App() {
             >
               {actor.actorId.slice(0, 1).toUpperCase()}
             </Avatar>
-            <span className="actor-name">{actor.actorId}</span>
+            <span className="actor-name" title={actor.actorId}>
+              {actor.actorId}
+            </span>
             <Button type="text" onClick={logout}>
               退出
             </Button>

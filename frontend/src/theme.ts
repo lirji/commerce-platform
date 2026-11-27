@@ -41,11 +41,11 @@ for (const [name, value] of Object.entries(buttonPalette))
   document.documentElement.style.setProperty(`--button-${name}`, value);
 // 经营框架与会员页面共用组件体系，但导航/画布只在 B 端作用域使用。
 export const workspacePalette = {
-  canvas: "#F3F5F2",
-  spine: "#18313D",
-  spineHover: "#254450",
-  spineText: "#C3D1D8",
-  spineActive: "#F3F6F8",
+  canvas: "#F4F6FA",
+  spine: "#11253C",
+  spineHover: "#203B57",
+  spineText: "#C9D5E6",
+  spineActive: "#254D78",
   signal: "#BDEACF",
 };
 for (const [name, value] of Object.entries(workspacePalette))

@@ -194,6 +194,32 @@ test("商品经营切页和筛选后不保留旧批量选择，刷新后编辑�
   await expect(first).toContainText("¥27.00");
   await first.getByRole("button", { name: "调价 / 上下架" }).click();
   await expect(page.getByLabel("售价（元）")).toHaveValue("27.00");
+  await page.getByRole("dialog").getByRole("button", { name: "取消" }).click();
+  const more = first.getByRole("button", { name: "更多规格操作" });
+  await more.press("Enter");
+  await page.getByRole("menuitem", { name: "修订记录" }).click();
+  const history = page.getByRole("dialog", { name: /修订记录/ });
+  await expect(history).toBeVisible();
+  await history.getByRole("button", { name: "返回列表" }).click();
+  await expect(more).toBeFocused();
+
+  const price = page.getByRole("button", { name: "价格筛选", exact: true });
+  await expect(page.getByLabel("最低售价")).toBeHidden();
+  await price.click();
+  await page.getByLabel("最低售价").fill("20.50");
+  await page.getByRole("button", { name: "收起价格筛选" }).click();
+  const priced = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      url.pathname === "/v1/operations/catalog-search" &&
+      url.searchParams.get("minimumPrice") === "20.5"
+    );
+  });
+  await page.getByRole("button", { name: "筛选商品" }).click();
+  await priced;
+  await expect(page.getByText("已应用售价 ≥ ¥20.50")).toBeVisible();
+  await page.getByRole("button", { name: "重置条件" }).click();
+  await expect(page.getByText("已应用售价", { exact: false })).toBeHidden();
 });
 
 test("旅程超过五十条时可以访问下一页", async ({ page }) => {
@@ -387,6 +413,13 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
   ).toHaveAttribute("aria-pressed", "true");
 
   const filter = page.locator(".query-panel");
+  const advanced = filter.getByRole("button", {
+    name: "高级筛选",
+    exact: true,
+  });
+  await expect(advanced).toHaveAttribute("aria-expanded", "false");
+  await expect(filter.getByLabel(/创建起点/)).toBeHidden();
+  await advanced.click();
   await filter.getByRole("combobox", { name: "快捷时间" }).click();
   await page.getByRole("option", { name: "近7天", exact: true }).click();
   await expect(filter.getByLabel(/创建起点/)).not.toHaveValue("");
@@ -405,6 +438,10 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
     Date.parse(selectedRange.get("to")!) -
       Date.parse(selectedRange.get("from")!),
   ).toBeGreaterThanOrEqual(6 * 86_400_000);
+  await filter.getByRole("button", { name: "收起高级筛选" }).click();
+  await expect(
+    filter.getByRole("button", { name: "清除创建起点筛选" }),
+  ).toBeVisible();
 
   const next = page.getByRole("button", { name: "下一页", exact: true });
   await next.click();
@@ -435,6 +472,7 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
 test("订单完整详情回到原行和列表位置，失败重试保留游标条件", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1440, height: 680 });
   let allowRead = false;
   const orders = Array.from({ length: 18 }, (_, index) => ({
     orderId: String(index + 1),
@@ -471,6 +509,7 @@ test("订单完整详情回到原行和列表位置，失败重试保留游标�
     .filter({ hasText: "FOCUS-ORDER-18" })
     .getByRole("button", { name: "完整详情", exact: true });
   await opener.scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await opener.focus();
   const y = await page.evaluate(() => window.scrollY);
   expect(y).toBeGreaterThan(0);

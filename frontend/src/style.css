@@ -499,6 +499,13 @@ textarea {
   flex-wrap: wrap;
   gap: 4px;
 }
+.trade-inline-amount {
+  font-weight: 600;
+  color: var(--ink);
+}
+.trade-row-state .ant-tag {
+  margin-inline-end: 0;
+}
 .effect-scope {
   margin-bottom: 16px;
   overflow-wrap: anywhere;
@@ -2055,9 +2062,18 @@ body .ant-modal-root .ant-modal {
   background: var(--raised);
 }
 .query-form {
+  display: block;
+}
+.query-fields:not([hidden]) {
   display: flex;
-  gap: 12px 16px;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 12px;
+}
+.query-secondary:not([hidden]) {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 .query-form .ant-form-item {
   margin: 0;
@@ -2117,10 +2133,8 @@ body .ant-modal-root .ant-modal {
   .query-panel {
     padding: 12px;
   }
-  .query-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+  .query-fields {
+    gap: 8px 12px;
   }
   .query-form .ant-form-item {
     margin: 0;

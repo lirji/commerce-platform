@@ -26,8 +26,8 @@ export {
   useDirtyClose,
   useRowAction,
 } from "./interactions";
-import { useId, useState, type ReactNode } from "react";
-import { ListTableScope } from "./businessTableScope";
+import { useContext, useId, useState, type ReactNode } from "react";
+import { BusinessTableScope, ListTableScope } from "./businessTableScope";
 import { ApiError, useCommand } from "./api";
 import { HTTP } from "./http";
 export const time = (v: unknown) => {
@@ -223,7 +223,7 @@ export function PageHead({
   eyebrow?: string;
 }) {
   return (
-    <div className="page-head">
+    <header className="page-head">
       <div>
         {eyebrow && <div className="page-eyebrow">{eyebrow}</div>}
         <Typography.Title level={1}>{title}</Typography.Title>
@@ -234,7 +234,7 @@ export function PageHead({
           {extra}
         </Space>
       )}
-    </div>
+    </header>
   );
 }
 export function Blank({ text = "暂无记录" }: { text?: string }) {
@@ -890,6 +890,9 @@ export function Fields({ fields }: { fields: Field[] }) {
           key={f.name}
           name={f.name}
           label={f.label}
+          className={
+            f.type === "textarea" || f.help ? "form-field-full" : undefined
+          }
           rules={
             f.required === false
               ? []
@@ -964,6 +967,8 @@ export function CommandModal({
 }) {
   const formId = useId();
   const rowAction = useRowAction();
+  const inWorkspace = useContext(BusinessTableScope) !== undefined;
+  const pairedFields = inWorkspace && fields.length >= 3;
   const [innerOpen, setInnerOpen] = useState(false);
   const [form] = Form.useForm();
   const command = useCommand();
@@ -994,7 +999,10 @@ export function CommandModal({
         afterOpenChange={(next) => {
           if (next) command.clear();
         }}
-        className="command-modal"
+        className={
+          inWorkspace ? "command-modal workspace-command" : "command-modal"
+        }
+        width={pairedFields ? 620 : undefined}
         afterClose={() => form.resetFields()}
         onCancel={closing.requestClose}
         keyboard={!command.busy}
@@ -1049,7 +1057,13 @@ export function CommandModal({
             }
           }}
         >
-          <Fields fields={fields} />
+          {pairedFields ? (
+            <div className="command-fields">
+              <Fields fields={fields} />
+            </div>
+          ) : (
+            <Fields fields={fields} />
+          )}
           {children}
         </Form>
       </Modal>

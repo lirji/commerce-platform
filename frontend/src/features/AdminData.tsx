@@ -338,12 +338,12 @@ export const specs: Record<string, Spec> = {
     id: "caseId",
     columns: [
       ["caseId", "售后编号"],
+      ["status", "状态"],
+      ["refundAmount", "退款金额"],
       ["orderId", "订单"],
       ["memberId", "会员"],
-      ["refundAmount", "退款金额"],
       ["refundId", "退款编号"],
       ["returnRequired", "需退货"],
-      ["status", "状态"],
     ],
   },
   refunds: {
@@ -354,11 +354,11 @@ export const specs: Record<string, Spec> = {
     actionWidth: 180,
     columns: [
       ["refundId", "退款编号"],
+      ["status", "状态"],
+      ["amount", "金额"],
       ["orderId", "订单"],
       ["caseId", "售后编号"],
-      ["amount", "金额"],
       ["provider", "渠道"],
-      ["status", "状态"],
     ],
   },
   events: {

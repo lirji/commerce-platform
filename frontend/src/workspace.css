@@ -2,59 +2,58 @@
 .admin-app {
   min-height: 100vh;
   --canvas: var(--workspace-canvas);
+  --workspace-inset: clamp(20px, 2vw, 32px);
 }
 .admin-app .sidebar {
   border: 0;
   background: var(--workspace-spine);
+  scrollbar-width: thin;
+  scrollbar-color: var(--workspace-spineActive) transparent;
 }
 .admin-app .sidebar .brand {
-  padding: 30px 22px 32px;
-  color: #fff;
+  padding: 20px 18px;
+  color: var(--surface);
+  border-bottom: 1px solid var(--workspace-spineHover);
+  margin-bottom: 12px;
 }
 .admin-app .sidebar .brand-sub {
   color: var(--workspace-spineText);
-  font-size: 9px;
-  letter-spacing: 1.1px;
-}
-.admin-app .sidebar .nav-caption {
-  color: var(--workspace-spineText);
-  padding-inline: 24px;
   font-size: 11px;
+  letter-spacing: 0;
 }
 .admin-app .sidebar .ant-menu {
   background: transparent;
   color: var(--workspace-spineText);
+  padding-inline: 8px;
 }
 .admin-app .sidebar .ant-menu-item,
 .admin-app .sidebar .ant-menu-submenu-title {
   border-radius: 6px;
+  height: 38px;
+  line-height: 38px;
   color: var(--workspace-spineText);
 }
-.admin-app .sidebar .ant-menu-submenu-open > .ant-menu-submenu-title {
-  color: #fff;
+.admin-app .sidebar .ant-menu-submenu-open > .ant-menu-submenu-title,
+.admin-app .sidebar .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: var(--surface);
 }
 .admin-app .sidebar .ant-menu-item:not(.ant-menu-item-selected):hover,
 .admin-app .sidebar .ant-menu-submenu-title:hover {
   background: var(--workspace-spineHover);
-  color: #fff;
+  color: var(--surface);
 }
-.admin-app .sidebar .ant-menu-item-selected {
+.admin-app .sidebar .ant-menu-item-selected,
+.admin-app .sidebar .ant-menu-item-selected:hover {
   background: var(--workspace-spineActive);
-  color: var(--ink);
+  color: var(--surface);
   font-weight: 600;
-}
-.admin-app .sidebar .sidebar-note {
-  border-color: #38505b;
-  color: var(--workspace-spineText);
-  font-size: 12px;
-  margin-top: 36px;
 }
 .admin-app .sidebar a {
   color: inherit;
 }
 .workspace-brand .brand-mark svg {
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
 }
 .workspace-search {
   position: relative;
@@ -63,7 +62,7 @@
 .workspace-search kbd {
   position: absolute;
   right: 25px;
-  top: 12px;
+  top: 10px;
   color: var(--muted);
   font-size: 10px;
   pointer-events: none;
@@ -76,40 +75,41 @@
   padding-right: 62px;
 }
 .admin-app .topbar {
+  height: 56px;
   background: var(--surface);
-  padding-inline: 28px;
+  padding-inline: var(--workspace-inset);
+  gap: 16px;
 }
 .admin-app .workspace {
-  padding: 36px 32px;
+  padding: 22px var(--workspace-inset);
+  width: 100%;
+  max-width: 1920px;
+  margin-inline: auto;
+}
+.admin-app .workbench,
+.admin-app .dashboard {
+  max-width: none;
 }
 .admin-app .workspace .ant-card {
   border-color: var(--line);
 }
 .admin-app .workspace .ant-tabs-tab {
-  padding-block: 14px;
+  padding-block: 11px;
 }
 .admin-app .page-head .ant-typography-secondary {
-  font-size: 14px;
+  font-size: 13px;
   max-width: 760px;
   display: block;
 }
-.admin-app .page-head h1 {
-  font-size: 30px !important;
-  letter-spacing: -1px;
+.admin-app .topbar .store-context,
+.admin-app .topbar .account-context {
+  flex-shrink: 0;
 }
-.admin-app .page-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.workspace-store-select {
+  width: clamp(145px, 14vw, 208px);
 }
-.admin-app .page-eyebrow::before {
-  content: "";
-  width: 16px;
-  height: 2px;
-  background: var(--accent);
-}
-.admin-app .list-panel {
-  box-shadow: 0 2px 6px #18313d03;
+.admin-app .page-head .page-eyebrow {
+  display: none;
 }
 .admin-app .list-panel .ant-table-tbody > tr > td {
   background: var(--surface);
@@ -145,35 +145,39 @@
 .admin-app > .ant-layout {
   background: var(--canvas);
 }
-.admin-app .workspace {
-  width: 100%;
-  max-width: 1920px;
-  margin-inline: auto;
-}
 .admin-app .brand-mark {
-  border-radius: 8px;
-  width: 40px;
-  height: 40px;
+  border-radius: 7px;
+  width: 36px;
+  height: 36px;
   background: var(--accent);
 }
 .admin-app .page-head {
-  align-items: flex-start;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--line);
+  align-items: center;
+  gap: 10px 20px;
+  margin-bottom: 16px;
+}
+.admin-app .page-head > :first-child {
+  min-width: 0;
+}
+.admin-app .page-head-actions {
+  flex-shrink: 1;
+  max-width: 65%;
+}
+.admin-app .page-head-actions > .ant-space-item {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .admin-app .page-head h1 {
-  margin: 0 0 9px;
-  font-size: 26px;
-  line-height: 1.35;
-  letter-spacing: -0.7px;
+  margin: 0 0 4px !important;
+  font-size: 25px !important;
+  line-height: 1.3;
+  letter-spacing: 0;
   font-weight: 650;
-}
-.admin-app .page-eyebrow {
-  font-size: 12px;
-  letter-spacing: 0.2px;
 }
 .workspace-location {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -186,7 +190,7 @@
 .workspace-location span::after {
   content: "/";
   padding-left: 10px;
-  color: var(--line);
+  color: var(--muted);
 }
 .workspace-location strong {
   font-weight: 550;
@@ -196,18 +200,15 @@
 .admin-app .nav-search {
   width: 230px;
 }
-.admin-app .topbar {
-  gap: 16px;
-}
 .admin-app .ant-tabs-top > .ant-tabs-nav {
   margin-bottom: 24px;
 }
 .admin-app .list-panel {
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 .admin-app .list-panel .ant-table-thead > tr > th {
-  height: 46px;
+  height: 40px;
   font-size: 12px;
   letter-spacing: 0.1px;
 }
@@ -232,12 +233,9 @@
 }
 .organization-context {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 18px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  margin-bottom: 14px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -308,6 +306,36 @@
   gap: 0 24px;
   max-width: 1000px;
 }
+.command-fields > .form-field-full {
+  grid-column: 1 / -1;
+}
+.workspace-command .ant-modal-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+.workspace-command .ant-form-item {
+  margin-bottom: 16px;
+}
+.workspace-command .ant-modal-footer {
+  margin-top: 8px;
+  padding-top: 12px;
+}
+.order-operating-facts {
+  margin-top: 14px;
+}
+.order-related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  color: var(--muted);
+}
+.admin-app .order-workspace > .record-hero .record-metric {
+  border: 0;
+  background: var(--raised);
+  border-radius: 6px;
+}
 .command-result {
   margin-top: 24px;
   display: grid;
@@ -366,46 +394,51 @@
   height: 100%;
   object-fit: contain;
 }
+.catalog-thumbnail > * {
+  grid-area: 1 / 1;
+}
 .operation-panel .ant-alert + .ant-alert {
   margin-top: 12px;
 }
 @media (max-width: 1200px) {
-  .admin-app .workspace-location {
+  .workspace-location span {
     display: none;
   }
   .admin-app .nav-search {
-    width: 210px;
-  }
-}
-@media (max-width: 767px) {
-  .admin-app .topbar {
-    padding-inline: 16px;
-    gap: 8px;
-    flex-wrap: wrap;
-    height: auto;
-    min-height: 64px;
-    padding-block: 12px;
-  }
-  .admin-app .workspace {
-    padding: 24px 16px;
-  }
-  .admin-app .page-head {
-    gap: 16px;
-    padding-bottom: 20px;
-  }
-  .admin-app .page-head h1 {
-    font-size: 24px;
-  }
-  .admin-app .nav-search {
-    width: 160px;
+    width: clamp(138px, 18vw, 210px);
   }
   .workspace-search kbd {
     display: none;
   }
-  .admin-app .page-head h1 {
-    font-size: 26px !important;
+  .workspace-search .ant-select-input {
+    padding-right: 0;
+  }
+}
+@media (max-width: 767px) {
+  .admin-app {
+    --workspace-inset: 12px;
+  }
+  .admin-app .topbar {
+    padding: 8px var(--workspace-inset);
+    gap: 6px 8px;
+    height: auto;
+    min-height: 48px;
+  }
+  .admin-app .workspace {
+    padding-block: 16px;
+  }
+  .admin-app .page-head {
+    align-items: flex-start;
+  }
+  .admin-app .workspace-search {
+    order: 2;
+    flex: 1 1 110px;
+  }
+  .admin-app .nav-search {
+    width: 100%;
   }
   .admin-app .page-head-actions {
+    max-width: 100%;
     justify-content: flex-start;
   }
   .command-fields {
@@ -1065,7 +1098,7 @@
   .operations-workspace .ant-form-inline {
     display: block;
   }
-  .operations-workspace .ant-form-inline .ant-form-item {
+  .operations-workspace .ant-form-inline:not(.query-form) .ant-form-item {
     margin: 0 0 16px;
   }
   .operations-workspace .ant-form-inline .ant-form-item-control,
@@ -1079,49 +1112,55 @@
   }
 }
 
-/* 经营页把更多空间留给真实筛选和列表，标题仍保持清晰。 */
-.admin-app .workspace {
-  padding: 24px;
-}
-.admin-app .page-head {
-  margin-bottom: 20px;
-}
-.admin-app .page-head h1 {
-  font-size: 24px !important;
-  letter-spacing: 0;
-}
-.central-products .page-head h1,
-.central-shell .page-head h1 {
-  font-size: 24px !important;
-}
-@media (max-width: 640px) {
-  .admin-app .workspace {
-    padding: 16px;
-  }
-}
-
 /* 表格工具跟随业务内容，设置弹层与全屏保留 Ant 的焦点管理。 */
-.admin-app .page-head {
-  gap: 10px 16px;
-  padding-bottom: 12px;
-  margin-bottom: 14px;
-}
-.admin-app .page-head h1 {
-  margin-bottom: 4px;
-}
 .admin-app .query-panel {
-  padding: 10px 12px;
   margin-bottom: 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 .admin-app .list-panel .list-toolbar {
   padding: 12px 16px;
+}
+.list-toolbar-head {
+  display: flex;
+  flex: 1 0 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.list-toolbar-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.catalog-price-fields,
+.catalog-applied-price {
+  flex-basis: 100%;
+}
+.catalog-price-fields.query-secondary:not([hidden]) {
+  margin-top: 0;
+}
+.catalog-applied-price {
+  color: var(--muted);
+  font-size: 12px;
 }
 .admin-app .list-toolbar > .query-panel {
   flex: 1 1 100%;
   margin-bottom: 0;
 }
-.admin-app .query-form {
-  gap: 8px 12px;
+.admin-app .query-actions {
+  margin-inline-start: auto;
+}
+.admin-app .list-panel .ant-table-tbody > tr > td {
+  padding: 9px 12px;
+}
+.admin-app .row-actions {
+  gap: 2px;
+}
+.admin-app .trade-amount {
+  font-weight: 600;
 }
 .admin-app .query-summary {
   margin-top: 6px;
@@ -1145,7 +1184,16 @@
   margin: 0 0 8px;
 }
 .list-panel .business-table-tools {
-  padding: 6px 8px 0;
+  align-items: center;
+  padding: 6px 12px;
+  margin-bottom: 0;
+}
+.admin-app .list-panel .pager {
+  padding: 10px 12px;
+}
+.business-table-context {
+  min-width: 0;
+  margin-inline-end: auto;
 }
 .business-table-tools .ant-btn .ui-icon {
   width: 15px;
@@ -1174,6 +1222,10 @@
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
+.admin-app .primary-cell .muted .business-id {
+  color: inherit;
+  font-size: inherit;
+}
 .cursor-jump {
   min-width: 112px;
 }
@@ -1184,9 +1236,15 @@
   .admin-app .page-head {
     margin-bottom: 12px;
   }
+  .admin-app .page-head h1 {
+    font-size: 22px !important;
+  }
   .query-form .ant-form-item:has(.date-time-field) {
     width: 100%;
     min-width: 0;
+  }
+  .admin-app .query-actions {
+    margin-inline-start: 0;
   }
   .business-table-tools {
     justify-content: flex-start;

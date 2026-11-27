@@ -215,6 +215,7 @@ test("中央订单直接展示经营字段，时间筛选发送真实UTC条件",
   await expect(page.getByText("¥12,345.67", { exact: true })).toBeVisible();
   await expect(page.getByText("已付款", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("渠道支付", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "高级筛选", exact: true }).click();
   await page.getByLabel("创建起点", { exact: true }).fill("2026-10-01 00:00");
   await page.getByLabel("创建终点", { exact: true }).fill("2026-10-02 00:00");
   await page.getByRole("button", { name: "查询", exact: true }).click();
@@ -225,6 +226,10 @@ test("中央订单直接展示经营字段，时间筛选发送真实UTC条件",
     .poll(() => requests.at(-1)?.searchParams.get("from"))
     .toBe(start);
   await page.reload();
+  await expect(
+    page.getByRole("button", { name: "清除创建起点筛选" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "高级筛选", exact: true }).click();
   await expect(page.getByLabel("创建起点", { exact: true })).toHaveValue(
     "2026-10-01 00:00",
   );

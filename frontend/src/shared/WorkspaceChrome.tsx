@@ -1,23 +1,49 @@
-import { Select, type RefSelectProps } from "antd";
-import { useEffect, useRef } from "react";
+import { Layout, Select, type RefSelectProps } from "antd";
+import { useEffect, useRef, type ReactNode } from "react";
 
-export function WorkspaceBrand() {
+export function WorkspaceSidebar({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="brand workspace-brand">
-      <span className="brand-mark">
-        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <path
-            d="M5 5h14v14H5zM13 13h14v14H13z"
-            stroke="currentColor"
-            strokeWidth="1.7"
-          />
-          <path d="M13 19h6v-6" stroke="currentColor" strokeWidth="1.7" />
-        </svg>
-      </span>
-      <span>
-        日常经营<span className="brand-sub">COMMERCE / OPERATIONS</span>
-      </span>
-    </div>
+    <Layout.Sider width={216} theme="light" className="sidebar">
+      <div className="brand workspace-brand">
+        <span className="brand-mark">
+          <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <path
+              d="M5 5h14v14H5zM13 13h14v14H13z"
+              stroke="currentColor"
+              strokeWidth="1.7"
+            />
+            <path d="M13 19h6v-6" stroke="currentColor" strokeWidth="1.7" />
+          </svg>
+        </span>
+        <span>
+          交易中心<span className="brand-sub">{label}</span>
+        </span>
+      </div>
+      <nav aria-label={label}>{children}</nav>
+    </Layout.Sider>
+  );
+}
+
+export function WorkspaceLocation({
+  group,
+  page,
+}: {
+  group?: string;
+  page: string;
+}) {
+  return (
+    <nav className="workspace-location" aria-label="当前位置">
+      {group && group !== page && <span>{group}</span>}
+      <strong aria-current="page" title={page}>
+        {page}
+      </strong>
+    </nav>
   );
 }
 

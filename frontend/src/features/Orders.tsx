@@ -30,6 +30,7 @@ import {
   ErrorNotice,
   ListPanel,
   PageHead,
+  PrimaryCell,
   RecordHero,
   RecordModal,
   RowActions,
@@ -204,7 +205,7 @@ export function Orders({
                 />
               ),
             }}
-            scroll={{ x: admin ? 1280 : 720 }}
+            scroll={{ x: admin ? (compact ? 680 : 1160) : 720 }}
             columns={[
               {
                 title: "订单编号",
@@ -237,21 +238,52 @@ export function Orders({
               },
               ...(!compact
                 ? [
-                    { title: "店铺编号", dataIndex: "storeId" },
-                    {
-                      title: "店铺名称",
-                      dataIndex: "storeName",
-                      render: (name: string | undefined) => name ?? "—",
-                    },
-                    { title: "应付金额", dataIndex: "payable", render: money },
                     {
                       title: "订单状态",
                       dataIndex: "status",
+                      width: admin ? 112 : undefined,
                       render: (v: string) => <Status value={v} />,
                     },
+                    {
+                      title: "应付金额",
+                      dataIndex: "payable",
+                      align: "right" as const,
+                      width: admin ? 108 : undefined,
+                      className: "trade-amount",
+                      render: money,
+                    },
+                    ...(admin
+                      ? [
+                          {
+                            title: "店铺",
+                            dataIndex: "storeId",
+                            render: (id: string, row: Order) =>
+                              row.storeName ? (
+                                <PrimaryCell
+                                  title={row.storeName}
+                                  subtitle={<BusinessId value={id} />}
+                                />
+                              ) : (
+                                <BusinessId value={id} />
+                              ),
+                          },
+                        ]
+                      : [
+                          { title: "店铺编号", dataIndex: "storeId" },
+                          {
+                            title: "店铺名称",
+                            dataIndex: "storeName",
+                            render: (name: string | undefined) => name ?? "—",
+                          },
+                        ]),
                   ]
                 : []),
-              { title: "创建时间", dataIndex: "createdAt", render: time },
+              {
+                title: "创建时间",
+                dataIndex: "createdAt",
+                width: admin ? 136 : undefined,
+                render: time,
+              },
               ...(admin
                 ? [
                     ...(!compact
@@ -259,18 +291,24 @@ export function Orders({
                           {
                             title: "支付方式",
                             dataIndex: "paymentKind",
+                            width: 104,
                             render: (value: string) =>
                               formatField("paymentKind", value),
                           },
                         ]
                       : []),
-                    { title: "支付截止", dataIndex: "expiresAt", render: time },
+                    {
+                      title: "支付截止",
+                      dataIndex: "expiresAt",
+                      width: 136,
+                      render: time,
+                    },
                   ]
                 : []),
               {
                 title: "操作",
                 className: "row-actions-cell",
-                width: admin && !compact ? 200 : 180,
+                width: admin && !compact ? 184 : 180,
                 fixed: admin && !compact ? "right" : undefined,
                 render: (_, r) => (
                   <RowActions>
@@ -374,7 +412,7 @@ function OrderDetails({
                 {value.businessNo ?? value.orderId}
               </Typography.Text>
             }
-            id={value.storeId}
+            id={admin ? (value.storeName ?? value.storeId) : value.storeId}
             status={value.status}
             metrics={[
               { label: "应付金额", value: money(value.payable) },
@@ -382,21 +420,36 @@ function OrderDetails({
               { label: "创建时间", value: time(value.createdAt) },
             ]}
           />
-          {value.businessNo && value.businessNo !== value.orderId && (
-            <Typography.Text type="secondary">
-              原订单编号 {value.orderId}
-            </Typography.Text>
-          )}
-          <TradeLinks
-            orderId={value.orderId}
-            member={!admin}
-            pages={
-              admin ? ["fulfillments", "aftersales", "refunds"] : ["aftersales"]
-            }
-          />
+          <div className="order-related">
+            {value.businessNo && value.businessNo !== value.orderId && (
+              <span>
+                原订单编号 <BusinessId value={value.orderId} />
+              </span>
+            )}
+            <TradeLinks
+              orderId={value.orderId}
+              member={!admin}
+              pages={
+                admin
+                  ? ["fulfillments", "aftersales", "refunds"]
+                  : ["aftersales"]
+              }
+            />
+          </div>
           <Descriptions
+            className={admin ? "order-operating-facts" : undefined}
+            title={admin ? "交易信息" : undefined}
             column={2}
             items={[
+              ...(admin && value.storeName
+                ? [
+                    {
+                      key: "storeId",
+                      label: "店铺编号",
+                      children: <BusinessId value={value.storeId} />,
+                    },
+                  ]
+                : []),
               {
                 key: "kind",
                 label: "支付方式",
@@ -420,16 +473,23 @@ function OrderDetails({
               scroll={{ x: 560 }}
               columns={[
                 { title: "商品", dataIndex: "title" },
-                { title: "数量", dataIndex: "quantity" },
-                { title: "行实付", dataIndex: "payable", render: money },
+                { title: "数量", dataIndex: "quantity", align: "right" },
+                {
+                  title: "行实付",
+                  dataIndex: "payable",
+                  align: "right",
+                  render: money,
+                },
                 {
                   title: "抵扣积分",
                   dataIndex: "points",
+                  align: "right",
                   render: (v) => v ?? 0,
                 },
                 {
                   title: "积分抵扣额",
                   dataIndex: "pointDiscount",
+                  align: "right",
                   render: (v) => money(v ?? "0.00"),
                 },
               ]}

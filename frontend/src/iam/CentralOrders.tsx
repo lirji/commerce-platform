@@ -58,12 +58,12 @@ export default function CentralOrders(props: OperationsProps) {
             idField="orderId"
             columns={[
               ["businessNo", "订单号"],
-              ["orderId", "原订单编号"],
-              ["storeId", "门店编号"],
-              ["storeName", "门店名称"],
               ["status", "状态"],
               ["payable", "应付金额"],
+              ["storeName", "门店名称"],
               ["createdAt", "创建时间"],
+              ["storeId", "门店编号"],
+              ["orderId", "原订单编号"],
               ["memberId", "会员编号"],
               ["merchantId", "商家编号"],
               ["paymentKind", "付款方式"],

@@ -41,7 +41,8 @@ test("经营计划：固定版本调价、逐项回执和渠道价历史", async
     .click();
   await page.getByRole("button", { name: "刷新", exact: true }).click();
   await expect(sku).toContainText("¥27.00");
-  await sku.getByRole("button", { name: "渠道价", exact: true }).click();
+  await sku.getByRole("button", { name: "更多规格操作", exact: true }).click();
+  await page.getByRole("menuitem", { name: "渠道价", exact: true }).click();
   await page.getByRole("button", { name: "设置小程序价", exact: true }).click();
   await page.getByLabel("渠道售价（元）", { exact: true }).fill("19.00");
   await page.getByLabel("变更原因", { exact: true }).fill("小程序会员专享价格");

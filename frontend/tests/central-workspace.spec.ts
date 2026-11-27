@@ -577,6 +577,7 @@ test("营销执行用精确订单筛选并按原活动读取权益与事件事�
   await page.goto(
     `${base}/operations/marketing-executions?tenant_id=${tenant}`,
   );
+  await page.getByRole("button", { name: "高级筛选", exact: true }).click();
   await page.getByLabel("精确订单编号", { exact: true }).fill(row.orderId);
   await page.getByRole("combobox", { name: "最新事件失败分类" }).click();
   await page.getByText("暂时故障", { exact: true }).click();
@@ -641,6 +642,7 @@ test("事件按精确业务编号查询，仅已知订单事件链接原订单",
     return route.fulfill({ status: 403, json: {} });
   });
   await page.goto(`${base}/operations/events?tenant_id=${tenant}`);
+  await page.getByRole("button", { name: "高级筛选", exact: true }).click();
   await page.getByLabel("精确业务编号", { exact: true }).fill(aggregateId);
   await page.getByRole("button", { name: "查询", exact: true }).click();
   const row = (id: string) =>

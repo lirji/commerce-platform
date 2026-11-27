@@ -12,7 +12,7 @@ import {
   type TableColumnType,
   type TableProps,
 } from "antd";
-import { useContext, useState } from "react";
+import { useContext, useState, type ReactNode } from "react";
 import { ApiError } from "./api";
 import { HTTP } from "./http";
 import { Icon } from "./Icon";
@@ -87,8 +87,9 @@ type BusinessTableProps<Row> = TableProps<Row> & {
   columnSettings?: boolean;
   onRefresh?: () => void;
   readError?: Error;
-  tableId?: string;
+  tableId?: string | readonly string[];
   selectedUnit?: string;
+  toolbarActions?: ReactNode;
 };
 const tablePageSizes = [7, 10, 25, 50, 100];
 
@@ -102,6 +103,7 @@ export function Table<Row extends object>(props: BusinessTableProps<Row>) {
     readError,
     tableId,
     selectedUnit = "条",
+    toolbarActions,
     ...tableProps
   } = props;
   const columns = tableProps.columns ?? [];
@@ -158,6 +160,7 @@ export function Table<Row extends object>(props: BusinessTableProps<Row>) {
       columnSettings={columnSettings}
       onRefresh={onRefresh}
       selectedUnit={selectedUnit}
+      toolbarActions={toolbarActions}
     />
   );
 }
@@ -167,6 +170,7 @@ function ManagedTable<Row extends object>({
   columnSettings,
   onRefresh,
   selectedUnit,
+  toolbarActions,
   columns = [],
   pagination,
   sticky,
@@ -180,6 +184,7 @@ function ManagedTable<Row extends object>({
   loadingRows: boolean;
   inPanel: boolean;
   onRefresh?: () => void;
+  toolbarActions?: ReactNode;
 }) {
   const screens = Grid.useBreakpoint();
   const [density, setDensity] = useState(() =>
@@ -320,6 +325,9 @@ function ManagedTable<Row extends object>({
   return (
     <div className="business-table" aria-busy={loadingRows}>
       <div className="business-table-tools" role="group" aria-label="表格工具">
+        {toolbarActions && (
+          <div className="business-table-context">{toolbarActions}</div>
+        )}
         {!!props.rowSelection?.selectedRowKeys?.length && (
           <Typography.Text className="business-table-selection" role="status">
             已选 {props.rowSelection.selectedRowKeys.length} {selectedUnit}

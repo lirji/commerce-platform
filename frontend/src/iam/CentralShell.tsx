@@ -4,7 +4,8 @@ import { Avatar, Button, Grid, Layout, Menu, Space, Typography } from "antd";
 import { useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../shared/Icon";
 import {
-  WorkspaceBrand,
+  WorkspaceLocation,
+  WorkspaceSidebar,
   WorkspaceSearch,
   WorkspaceSkipLink,
 } from "../shared/WorkspaceChrome";
@@ -64,16 +65,7 @@ export function CentralShell({
     <Layout className="app admin-app central-app">
       <WorkspaceSkipLink />
       {!compact && (
-        <Layout.Sider width={236} theme="light" className="sidebar">
-          <WorkspaceBrand />
-          <div className="nav-caption">企业经营工作空间</div>
-          <nav aria-label="中央经营导航">{navigation}</nav>
-          <div className="sidebar-note">
-            当前成员可用页面
-            <br />
-            按本次权限结果显示
-          </div>
-        </Layout.Sider>
+        <WorkspaceSidebar label="中央经营导航">{navigation}</WorkspaceSidebar>
       )}
       <Layout>
         <Layout.Header className="topbar">
@@ -82,12 +74,10 @@ export function CentralShell({
               菜单
             </Button>
           )}
-          <div className="workspace-location">
-            <span>{collaboration ? "门店协作" : active?.label}</span>
-            <strong>
-              {model.routes.get(location.pathname) ?? "授权工作区"}
-            </strong>
-          </div>
+          <WorkspaceLocation
+            group={collaboration ? "门店协作" : active?.label}
+            page={model.routes.get(location.pathname) ?? "授权工作区"}
+          />
           {model.routes.size > 0 && (
             <WorkspaceSearch
               label="搜索中央功能"
@@ -101,7 +91,6 @@ export function CentralShell({
             />
           )}
           <Space className="account-context">
-            <span className="environment-badge">企业身份</span>
             <Avatar size="small">{subject.slice(0, 1).toUpperCase()}</Avatar>
             <span className="actor-name" title={subject}>
               {subject}
@@ -143,7 +132,7 @@ export function CentralShell({
         open={open}
         onCancel={() => setOpen(false)}
       >
-        {navigation}
+        <nav aria-label="中央经营导航">{navigation}</nav>
       </RecordModal>
     </Layout>
   );
