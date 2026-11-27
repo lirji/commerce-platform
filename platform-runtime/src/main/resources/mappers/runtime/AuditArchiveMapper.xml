@@ -9,7 +9,7 @@
       'policyVersion',a.policy_version,'schemaVersion',a.schema_version) AS attempt,
     IF(p.id IS NULL,NULL,JSON_OBJECT('id',p.id,'action',p.audit_action_code,'resourceId',p.audit_resource_id,
       'beforeVersion',p.audit_before_version,'afterVersion',p.audit_after_version,'reason',p.audit_reason,
-      'changes',p.audit_changes_json)) AS effect,
+      'changes',p.audit_changes_json,'recordedAt',DATE_FORMAT(p.created_at,'%Y-%m-%dT%H:%i:%s.%fZ'))) AS effect,
     (SELECT JSON_OBJECT('id',o.id,'eventRef',o.event_ref,'result',o.result_code,'errorCode',o.error_code,'effectId',o.effect_id,
       'recordedAt',DATE_FORMAT(o.recorded_at,'%Y-%m-%dT%H:%i:%s.%fZ'))
      FROM audit_attempt_outcome o WHERE o.attempt_id=a.id ORDER BY o.id DESC LIMIT 1) AS outcome
@@ -17,11 +17,12 @@
   <sql id="batchFields">batch_id,scope_type,tenant_id,state,older_than,object_key,object_version,sha256,row_count,payload_bytes</sql>
   <select id="candidates" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$Member">
     SELECT <include refid="snapshotFields"/>
-    FROM audit_operation_attempt a
+    FROM audit_operation_attempt a FORCE INDEX (ix_audit_archive_candidate)
     LEFT JOIN platform_audit p ON p.audit_attempt_id=a.id
+    LEFT JOIN audit_archive_member m ON m.attempt_id=a.id
     WHERE a.scope_type=#{scope.type} AND a.actor_tenant_id=#{scope.tenant} AND a.occurred_at &lt; #{olderThan}
       AND (p.id IS NOT NULL OR EXISTS (SELECT 1 FROM audit_attempt_outcome o WHERE o.attempt_id=a.id))
-      AND NOT EXISTS (SELECT 1 FROM audit_archive_member m WHERE m.attempt_id=a.id)
+      AND m.attempt_id IS NULL
     ORDER BY a.occurred_at,a.id LIMIT #{limit}
   </select>
   <select id="pending" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$Batch">
@@ -31,6 +32,24 @@
   </select>
   <select id="batch" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$Batch">
     SELECT <include refid="batchFields"/> FROM audit_archive_batch WHERE batch_id=#{id}
+  </select>
+  <select id="policies" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveRetentionReview$Policy">
+    SELECT policy_code,policy_version,online_days,total_days,approval_reference
+    FROM audit_archive_retention_policy
+    WHERE scope_type=#{scope.type} AND tenant_id=#{scope.tenant} AND revoked_at IS NULL AND approved_at&lt;=UTC_TIMESTAMP(3)
+    ORDER BY policy_code,policy_version
+  </select>
+  <select id="activeHold" resultType="boolean">
+    SELECT EXISTS(
+      SELECT 1 FROM audit_archive_batch b JOIN audit_archive_hold h ON h.scope_type=b.scope_type AND h.tenant_id=b.tenant_id
+      WHERE b.batch_id=#{id} AND h.released_at IS NULL AND (
+        h.resource_id IS NULL OR EXISTS (
+          SELECT 1 FROM audit_archive_member m JOIN audit_operation_attempt a ON a.id=m.attempt_id
+          LEFT JOIN platform_audit p ON p.audit_attempt_id=a.id
+          WHERE m.batch_id=b.batch_id AND h.resource_id IN (a.resource_id,p.audit_resource_id)
+        )
+      )
+    )
   </select>
   <select id="snapshot" resultType="com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper$Member">
     SELECT <include refid="snapshotFields"/>

@@ -125,6 +125,13 @@ public class AuditArchiveVerification {
         });
     }
 
+    /** 清理预检重新读取精确对象版本，并与当下仍在线的快照比对。 */
+    List<Member> confirmedSnapshot(Batch batch) {
+        var rows = decode(batch, objects.readForVerification(batch.objectKey(), batch.objectVersion(), batch.payloadBytes())).rows();
+        if (!rows.equals(mapper.snapshot(batch.batchId()))) throw bad("档案与当前在线数据不一致");
+        return rows;
+    }
+
     private Batch reserve() {
         try {
             return transaction.execute(status -> {

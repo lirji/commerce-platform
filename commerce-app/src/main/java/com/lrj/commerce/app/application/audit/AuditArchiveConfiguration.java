@@ -2,6 +2,8 @@ package com.lrj.commerce.app.application.audit;
 
 import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper;
+import com.lrj.commerce.runtime.audit.archive.AuditArchiveRetentionReview;
+import com.xxl.job.core.context.XxlJobHelper;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveVerification;
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -77,15 +79,26 @@ public class AuditArchiveConfiguration {
     }
 
     @Bean
-    AuditArchiveJob auditArchiveJob(AuditArchiveVerification verification) {
-        return new AuditArchiveJob(verification);
+    AuditArchiveJob auditArchiveJob(AuditArchiveVerification verification, AuditArchiveMapper mapper, Clock clock,
+            @Value("${commerce.audit-archive.scope}") String scope,
+            @Value("${commerce.audit-archive.tenant}") String tenant) {
+        return new AuditArchiveJob(verification, new AuditArchiveRetentionReview(mapper, verification,
+                new AuditArchiveMapper.Scope(scope, tenant), clock));
     }
 
     /** 由独立执行器处理；每轮最多一个批次，不从作业参数接受租户或截止时间。 */
-    public record AuditArchiveJob(AuditArchiveVerification verification) {
+    public record AuditArchiveJob(AuditArchiveVerification verification, AuditArchiveRetentionReview retention) {
         @XxlJob("commerceAuditArchiveVerify")
         public void verify() {
             verification.tick();
+        }
+
+        /** 在签收配置的范围内复核一个指定批次，无删除副作用。 */
+        @XxlJob("commerceAuditArchiveRetentionReview")
+        public void checkRetention() {
+            var result = retention.assess(XxlJobHelper.getJobParam());
+            XxlJobHelper.log("批次 {} 复核结果 {}，最早在线清理 {}，最早档案到期 {}",
+                    result.batchId(), result.reason(), result.onlineAfter(), result.archiveAfter());
         }
     }
 }

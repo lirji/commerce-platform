@@ -21,6 +21,10 @@ public interface AuditArchiveMapper {
 
     Batch batch(@Param("id") String id);
 
+    List<AuditArchiveRetentionReview.Policy> policies(@Param("scope") Scope scope);
+
+    boolean activeHold(@Param("id") String id);
+
     List<Member> snapshot(@Param("id") String id);
 
     int insertBatch(Batch batch);

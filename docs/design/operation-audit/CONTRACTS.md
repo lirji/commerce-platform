@@ -38,3 +38,7 @@ OA-00 本地基线为商城 `45bbb45`（V84）、交易 `b77245e`（V050）、�
 - 档案为带格式版本和批次号的 `NDJSON.gz`，通过条件写保护单批对象键。保存精确对象版本、压缩后 SHA-256、字节数和条数，回读交叉比对快照与关联。验证路径使用单独的凭据并保留在线内容，恢复使用只有版本读取权限的独立凭据。
 - 平台人员从 `/v1/platform/audit-archive/restorations/{ticket}` 查询，租户管理员从 `/v1/admin/audit-archive/restorations/{ticket}` 查询。对同一路径追加 `/restore` 并用 POST 恢复。当前操作者、租户、授权范围、已验证批次、授权期限和工单撤销状态必须同时匹配。允许身份与不同的审批身份由既有工单授权流程登记到 `audit_archive_restore_grant`，应用恢复接口只消费已批准的记录。
 - 默认关闭归档和调度。配置 `COMMERCE_AUDIT_ARCHIVE_*` 时，写入身份仅获桶版本状态及归档前缀的读写，恢复身份仅获该前缀的已有版本读取。归档最低年龄只控制验证范围。正式保留周期和销毁开关在后续生命周期签收。条件写与指定版本读取采用 S3 客户端公开契约。 [条件写](https://docs.aws.amazon.com/java/api/latest/software/amazon/awssdk/services/s3/model/PutObjectRequest.html#ifNoneMatch()) · [指定版本读取](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
+
+## OA-09 清理前复核
+
+`commerceAuditArchiveRetentionReview` 按单一批次读取持久策略和案件冻结。V89 按范围、租户、策略类型和写入时版本保存签收记录。线上与总保存时间由最近一次已确认事实时间推导，未核实记录保持不具备清理资格。范围冻结可跨多个批次，单个业务对象也可单独冻结。复核通过须再次精确回读已核验的对象并与在线行比对。作业返回状态与最早日期供后续审批与清理事务使用。

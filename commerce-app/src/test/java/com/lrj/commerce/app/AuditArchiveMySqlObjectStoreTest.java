@@ -8,6 +8,8 @@ import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.runtime.audit.archive.ArchiveObjectStore;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveMapper;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveVerification;
+import com.lrj.commerce.runtime.audit.archive.AuditArchiveRetentionReview;
+import com.lrj.commerce.runtime.audit.archive.AuditArchiveRetentionReview.Reason;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
 import tools.jackson.databind.JsonNode;
 import java.time.Clock;
@@ -112,6 +114,37 @@ class AuditArchiveMySqlObjectStoreTest {
         jdbc.update("UPDATE audit_archive_restore_grant SET revoked_at=UTC_TIMESTAMP(3) WHERE ticket_id=?", ticket);
         assertDenied(() -> verification.restored(actor, ticket, 0, null));
         assertDenied(() -> verification.restore(actor, ticket, null));
+        assertEquals(3, onlineCount());
+        checkRetention(scope, verification, claimed.batchId());
+    }
+
+    private void checkRetention(AuditArchiveMapper.Scope scope, AuditArchiveVerification verification, String batchId) {
+        var review = new AuditArchiveRetentionReview(mapper, verification, scope, Clock.systemUTC());
+        assertEquals(Reason.NO_POLICY, review.assess(batchId).reason());
+        jdbc.update("""
+            INSERT INTO audit_archive_retention_policy(scope_type,tenant_id,policy_code,policy_version,
+                online_days,total_days,approval_reference,approved_at)
+            VALUES('TENANT',?,'BUSINESS',1,1,3,'isolated-policy-review',UTC_TIMESTAMP(3))
+            """, TENANT);
+        assertEquals(Reason.STILL_ONLINE, review.assess(batchId).reason());
+        var afterRetention = new AuditArchiveRetentionReview(mapper, verification, scope,
+                Clock.offset(Clock.systemUTC(), Duration.ofDays(2)));
+        assertEquals(Reason.VERIFIED_FOR_REVIEW, afterRetention.assess(batchId).reason());
+        jdbc.update("""
+            INSERT INTO audit_archive_hold(scope_type,tenant_id,resource_id,case_reference,created_by)
+            VALUES('TENANT',?,'catalog-1','isolated-hold','investigator')
+            """, TENANT);
+        assertEquals(Reason.HELD, afterRetention.assess(batchId).reason());
+        jdbc.update("""
+            UPDATE audit_archive_hold SET released_by='independent-reviewer',released_at=UTC_TIMESTAMP(3)
+            WHERE tenant_id=? AND case_reference='isolated-hold'
+            """, TENANT);
+        assertEquals(Reason.VERIFIED_FOR_REVIEW, afterRetention.assess(batchId).reason());
+        jdbc.update("""
+            UPDATE audit_archive_retention_policy SET revoked_at=UTC_TIMESTAMP(3)
+            WHERE tenant_id=? AND policy_code='BUSINESS'
+            """, TENANT);
+        assertEquals(Reason.NO_POLICY, afterRetention.assess(batchId).reason());
         assertEquals(3, onlineCount());
     }
 
