@@ -96,6 +96,7 @@
     FROM audit_archive_restored r JOIN audit_archive_restore_grant g ON g.ticket_id=r.ticket_id
     JOIN audit_archive_batch b ON b.batch_id=g.batch_id
     WHERE r.ticket_id=#{ticket} AND g.requested_by=#{actorId} AND b.tenant_id=#{tenantId} AND b.scope_type=#{scopeType}
+      AND b.state IN ('VERIFIED','ONLINE_PURGED')
       AND g.revoked_at IS NULL AND LEAST(r.expires_at,g.expires_at)&gt;UTC_TIMESTAMP(3)
       AND r.attempt_id&gt;#{after}
     ORDER BY r.attempt_id LIMIT #{limit}

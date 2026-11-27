@@ -22,6 +22,9 @@ commerce:
       commerce-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_COMMERCE_TENANT:}
       bearer-token: ${COMMERCE_MARKETING_MEMBER_PROFILE_BEARER_TOKEN:}
   audit-archive:
+    expiry-enabled: ${COMMERCE_AUDIT_ARCHIVE_EXPIRY_ENABLED:false}
+    expiry-key: ${COMMERCE_AUDIT_ARCHIVE_EXPIRY_KEY:}
+    expiry-secret: ${COMMERCE_AUDIT_ARCHIVE_EXPIRY_SECRET:}
     recovery-replay-enabled: ${COMMERCE_AUDIT_ARCHIVE_RECOVERY_REPLAY_ENABLED:false}
     online-cutover-enabled: ${COMMERCE_AUDIT_ARCHIVE_ONLINE_CUTOVER_ENABLED:false}
     enabled: ${COMMERCE_AUDIT_ARCHIVE_ENABLED:false}

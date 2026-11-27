@@ -298,6 +298,10 @@ public class OperationAudit {
 	}
 
 	private void lateEvidence(long attemptId, String kind, String payload) {
+		// 批次行锁与对象到期共用，阻止计算完最后追加时间之后再写入同一批次。
+		if (!"ONLINE_PURGED".equals(mapper.lockArchivedBatchForAppend(attemptId))) {
+			throw new DomainException(DomainException.Code.UNAVAILABLE, UNAVAILABLE);
+		}
 		String key = JsonCodec.hash(kind + "|" + payload);
 		mapper.insertLateEvidence(attemptId, key, kind, payload);
 		if (mapper.findLateEvidence(attemptId, key) == null) {

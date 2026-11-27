@@ -8,6 +8,9 @@ import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.runtime.audit.archive.ArchiveObjectStore;
 import com.lrj.commerce.runtime.audit.archive.ArchiveOnlineCutoverMapper;
 import com.lrj.commerce.runtime.audit.archive.ArchivePurgeRecoveryMapper;
+import com.lrj.commerce.runtime.audit.archive.ArchiveExpiryMapper;
+import com.lrj.commerce.runtime.audit.archive.ArchiveVersionDisposal;
+import com.lrj.commerce.runtime.audit.archive.AuditArchiveObjectExpiry;
 import com.lrj.commerce.runtime.audit.archive.AuditArchivePurgeRecovery;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover;
 import com.lrj.commerce.runtime.audit.archive.AuditArchiveOnlineCutover.Outcome;
@@ -35,6 +38,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AuditArchiveMySqlObjectStoreTest {
     private static final String TENANT = "archive-test-" + UUID.randomUUID();
+    private static final String STANDARD_BUCKET = "commerce-audit-verification";
+    private static final String LOCK_BUCKET = "commerce-audit-lock-verification";
+    private static final String BUCKET = LOCK_BUCKET.equals(System.getenv("ARCHIVE_TEST_BUCKET"))
+            ? LOCK_BUCKET : STANDARD_BUCKET;
 
     @DynamicPropertySource
     static void environment(DynamicPropertyRegistry registry) {
@@ -49,17 +56,22 @@ class AuditArchiveMySqlObjectStoreTest {
         registry.add("commerce.audit-archive.tenant", () -> TENANT);
         registry.add("commerce.audit-archive.minimum-age", () -> "P1D");
         registry.add("commerce.audit-archive.endpoint", () -> System.getenv("ARCHIVE_TEST_ENDPOINT"));
-        registry.add("commerce.audit-archive.bucket", () -> "commerce-audit-verification");
+        registry.add("commerce.audit-archive.bucket", () -> BUCKET);
         registry.add("commerce.audit-archive.write-key", () -> System.getenv("ARCHIVE_WRITE_KEY"));
         registry.add("commerce.audit-archive.write-secret", () -> System.getenv("ARCHIVE_WRITE_SECRET"));
         registry.add("commerce.audit-archive.restore-key", () -> System.getenv("ARCHIVE_RESTORE_KEY"));
         registry.add("commerce.audit-archive.restore-secret", () -> System.getenv("ARCHIVE_RESTORE_SECRET"));
+        registry.add("commerce.audit-archive.expiry-enabled", () -> System.getenv("ARCHIVE_EXPIRY_KEY") != null);
+        registry.add("commerce.audit-archive.expiry-key", () -> System.getenv("ARCHIVE_EXPIRY_KEY"));
+        registry.add("commerce.audit-archive.expiry-secret", () -> System.getenv("ARCHIVE_EXPIRY_SECRET"));
     }
 
     @Autowired ArchiveObjectStore objects;
     @Autowired AuditArchiveMapper mapper;
     @Autowired ArchiveOnlineCutoverMapper cutoverMapper;
     @Autowired ArchivePurgeRecoveryMapper purgeRecoveryMapper;
+    @Autowired ArchiveExpiryMapper expiryMapper;
+    @Autowired(required = false) ArchiveVersionDisposal versionDisposal;
     @Autowired OperationAudit audit;
     @Autowired PlatformTransactionManager tx;
     @Autowired JdbcTemplate jdbc;
@@ -162,7 +174,7 @@ class AuditArchiveMySqlObjectStoreTest {
     private void checkOnlineCutover(AuditArchiveVerification archive, AuditArchiveRetentionReview review,
             String batchId, long original, Actor actor) throws Exception {
         var scope = new AuditArchiveMapper.Scope("TENANT", TENANT);
-        var publish = new AuditArchivePurgeRecovery(scope, mapper, cutoverMapper, purgeRecoveryMapper, archive, objects, tx);
+        var publish = new AuditArchivePurgeRecovery(scope, mapper, cutoverMapper, purgeRecoveryMapper, expiryMapper, archive, objects, tx);
         var cutover = new AuditArchiveOnlineCutover(review, mapper, cutoverMapper, publish, tx);
         assertEquals(Outcome.NOT_APPROVED, cutover.move(batchId));
         jdbc.update("""
@@ -191,7 +203,7 @@ class AuditArchiveMySqlObjectStoreTest {
         var backup = restoreOlderBackup();
         assertEquals(Outcome.MOVED, cutover.move(batchId));
         assertEquals(Outcome.ALREADY_MOVED, cutover.move(batchId));
-        checkBackupRecovery(publish, archive, backup, batchId, original);
+        var oldRecovery = checkBackupRecovery(publish, archive, backup, batchId, original);
         assertEquals(1, onlineCount());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM audit_archive_effect_locator WHERE batch_id=?", Integer.class, batchId));
 
@@ -212,6 +224,7 @@ class AuditArchiveMySqlObjectStoreTest {
         assertEquals(2, restored.size());
         assertTrue(restored.getFirst().lateEvidence().contains("EFFECT"));
         assertEquals(1, onlineCount());
+        if (versionDisposal != null) checkExpiry(archive, publish, backup, oldRecovery, batchId, another);
     }
 
     /** 按备份时点复制关键原始表，目标 schema 用同一套 Flyway 结构、独立事务管理和 Mapper。 */
@@ -255,7 +268,7 @@ class AuditArchiveMySqlObjectStoreTest {
         return new OlderBackup(restored, session, new org.springframework.jdbc.datasource.DataSourceTransactionManager(target));
     }
 
-    private void checkBackupRecovery(AuditArchivePurgeRecovery publish, AuditArchiveVerification archive,
+    private AuditArchivePurgeRecovery checkBackupRecovery(AuditArchivePurgeRecovery publish, AuditArchiveVerification archive,
             OlderBackup backup, String batchId, long original) {
         var scope = new AuditArchiveMapper.Scope("TENANT", TENANT);
         var proof = publish.publishNext();
@@ -270,7 +283,8 @@ class AuditArchiveMySqlObjectStoreTest {
 
         var restore = new AuditArchivePurgeRecovery(scope, backup.session().getMapper(AuditArchiveMapper.class),
                 backup.session().getMapper(ArchiveOnlineCutoverMapper.class),
-                backup.session().getMapper(ArchivePurgeRecoveryMapper.class), archive, objects, backup.manager());
+                backup.session().getMapper(ArchivePurgeRecoveryMapper.class),
+                backup.session().getMapper(ArchiveExpiryMapper.class), archive, objects, backup.manager());
         JdbcTemplate target = backup.jdbc();
         assertEquals(0, target.queryForObject("SELECT COUNT(*) FROM audit_archive_batch", Integer.class));
         assertEquals(3, backedUpAttempts(target));
@@ -298,6 +312,128 @@ class AuditArchiveMySqlObjectStoreTest {
                 "SELECT resource_id FROM audit_operation_attempt WHERE action_code='catalog.category.bind'", String.class));
         assertEquals(1, target.queryForObject("SELECT COUNT(*) FROM audit_archive_effect_locator", Integer.class));
         assertEquals("ONLINE_PURGED", target.queryForObject("SELECT state FROM audit_archive_batch WHERE batch_id=?", String.class, batchId));
+        return restore;
+    }
+
+    /** 使用隔离销毁身份真正删除合成档案版本，验证另一版本及外部凭证不受影响。 */
+    private void checkExpiry(AuditArchiveVerification archive, AuditArchivePurgeRecovery recovery, OlderBackup backup,
+            AuditArchivePurgeRecovery oldRecovery, String batchId, String restoreTicket) {
+        var batch = mapper.batch(batchId);
+        var scope = new AuditArchiveMapper.Scope("TENANT", TENANT);
+        var clock = Clock.offset(Clock.systemUTC(), Duration.ofDays(5));
+        var retention = new AuditArchiveRetentionReview(mapper, archive, scope, clock);
+        var disposal = new ArchiveVersionDisposal() {
+            @Override
+            public boolean exists(String key, String version) {
+                return versionDisposal.exists(key, version);
+            }
+
+            @Override
+            public void delete(String key, String version) {
+                versionDisposal.delete(key, version);
+                throw new DomainException(DomainException.Code.UNAVAILABLE, "存储已删除版本但响应丢失");
+            }
+        };
+        var workflow = new AuditArchiveObjectExpiry(scope, mapper, cutoverMapper, purgeRecoveryMapper, expiryMapper,
+                archive, retention, recovery, disposal, clock, tx);
+        assertEquals(AuditArchiveObjectExpiry.Outcome.INELIGIBLE, workflow.expire(batchId).outcome());
+        jdbc.update("""
+            INSERT INTO audit_archive_expiry_grant(batch_id,approval_reference,approved_by,effective_at,expires_at)
+            VALUES(?, 'isolated-expiry','isolated-expiry-reviewer',UTC_TIMESTAMP(3)-INTERVAL 1 MINUTE,UTC_TIMESTAMP(3)+INTERVAL 1 HOUR)
+            """, batchId);
+        assertEquals(AuditArchiveObjectExpiry.Outcome.HELD, workflow.expire(batchId).outcome());
+        jdbc.update("UPDATE audit_archive_restore_grant SET revoked_at=UTC_TIMESTAMP(3) WHERE ticket_id=?", restoreTicket);
+        jdbc.update("""
+            INSERT INTO audit_archive_hold(scope_type,tenant_id,resource_id,case_reference,created_by)
+            VALUES('TENANT',?,'catalog-1','isolated-expiry-hold','investigator')
+            """, TENANT);
+        assertEquals(AuditArchiveObjectExpiry.Outcome.HELD, workflow.expire(batchId).outcome());
+        jdbc.update("""
+            UPDATE audit_archive_hold SET released_by='independent-reviewer',released_at=UTC_TIMESTAMP(3)
+            WHERE tenant_id=? AND case_reference='isolated-expiry-hold'
+            """, TENANT);
+        String remainingVersion = storeFixtureVersion(batch.objectKey());
+        assertNotEquals(batch.objectVersion(), remainingVersion);
+        assertTrue(versionDisposal.exists(batch.objectKey(), batch.objectVersion()));
+        backup.jdbc().update("""
+            INSERT INTO audit_archive_late_evidence
+            SELECT * FROM commerce_test_20260923.audit_archive_late_evidence WHERE batch_id=?
+            """, batchId);
+
+        if (LOCK_BUCKET.equals(BUCKET)) {
+            fixtureLegalHold(batch.objectKey(), batch.objectVersion(), true);
+            assertEquals("对象版本销毁暂无法确认",
+                    assertThrows(DomainException.class, () -> workflow.expire(batchId)).getMessage());
+            assertTrue(versionDisposal.exists(batch.objectKey(), batch.objectVersion()));
+            assertEquals(java.util.List.of(batchId), recovery.expiryInventory(null).unresolved());
+            fixtureLegalHold(batch.objectKey(), batch.objectVersion(), false);
+        }
+
+        assertEquals("存储已删除版本但响应丢失",
+                assertThrows(DomainException.class, () -> workflow.expire(batchId)).getMessage());
+        assertFalse(versionDisposal.exists(batch.objectKey(), batch.objectVersion()));
+        assertTrue(versionDisposal.exists(batch.objectKey(), remainingVersion));
+        assertEquals("ONLINE_PURGED", mapper.batch(batchId).state());
+        assertEquals(java.util.List.of(batchId), recovery.expiryInventory(null).unresolved());
+        var result = workflow.expire(batchId);
+        assertEquals(AuditArchiveObjectExpiry.Outcome.EXPIRED, result.outcome());
+        assertEquals(4, result.removedCopies());
+        assertEquals(1, result.removedLateRows());
+        assertEquals(new AuditArchiveObjectExpiry.Result(AuditArchiveObjectExpiry.Outcome.ALREADY_EXPIRED, 0, 0), workflow.expire(batchId));
+        assertEquals("EXPIRED", mapper.batch(batchId).state());
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM audit_archive_restored WHERE batch_id=?", Integer.class, batchId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM audit_archive_late_evidence WHERE batch_id=?", Integer.class, batchId));
+        var expired = recovery.expiryInventory(null).committed().getFirst();
+        backup.jdbc().update("""
+            INSERT INTO audit_archive_restore_grant(ticket_id,batch_id,requested_by,approved_by,expires_at)
+            VALUES('copied-ticket',?,'old-user','old-reviewer',UTC_TIMESTAMP(3)+INTERVAL 1 HOUR)
+            """, batchId);
+        backup.jdbc().update("""
+            INSERT INTO audit_archive_restored(ticket_id,batch_id,attempt_id,payload,expires_at)
+            SELECT 'copied-ticket',batch_id,attempt_id,JSON_OBJECT('fixture','old query copy'),UTC_TIMESTAMP(3)+INTERVAL 1 HOUR
+            FROM audit_archive_member WHERE batch_id=?
+            """, batchId);
+        String originalLate = backup.jdbc().queryForObject(
+                "SELECT payload FROM audit_archive_late_evidence WHERE batch_id=?", String.class, batchId);
+        backup.jdbc().update("UPDATE audit_archive_late_evidence SET payload=JSON_OBJECT('fixture','different evidence') WHERE batch_id=?", batchId);
+        assertThrows(DomainException.class, () -> oldRecovery.replayExpiry(expired));
+        assertEquals(2, backup.jdbc().queryForObject("SELECT COUNT(*) FROM audit_archive_restored WHERE batch_id=?", Integer.class, batchId));
+        assertEquals("ONLINE_PURGED", backup.jdbc().queryForObject(
+                "SELECT state FROM audit_archive_batch WHERE batch_id=?", String.class, batchId));
+        backup.jdbc().update("UPDATE audit_archive_late_evidence SET payload=? WHERE batch_id=?", originalLate, batchId);
+        assertEquals(new AuditArchivePurgeRecovery.ExpiryReplay(batchId, 2, 1), oldRecovery.replayExpiry(expired));
+        assertEquals(new AuditArchivePurgeRecovery.ExpiryReplay(batchId, 0, 0), oldRecovery.replayExpiry(expired));
+        assertEquals("EXPIRED", backup.jdbc().queryForObject(
+                "SELECT state FROM audit_archive_batch WHERE batch_id=?", String.class, batchId));
+        assertTrue(versionDisposal.exists(batch.objectKey(), remainingVersion));
+        assertEquals(1, onlineCount());
+    }
+
+    private String storeFixtureVersion(String key) {
+        try (var client = fixtureClient()) {
+            return client.putObject(request -> request.bucket(BUCKET).key(key),
+                    software.amazon.awssdk.core.sync.RequestBody.fromString("new isolated fixture version")).versionId();
+        }
+    }
+
+    /** 用测试桶管理员模拟真实保全，销毁执行器始终使用权限独立的应用身份。 */
+    private void fixtureLegalHold(String key, String version, boolean enabled) {
+        try (var client = fixtureClient()) {
+            var status = enabled ? software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus.ON
+                    : software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus.OFF;
+            client.putObjectLegalHold(request -> request.bucket(BUCKET).key(key).versionId(version)
+                    .legalHold(hold -> hold.status(status)));
+        }
+    }
+
+    private software.amazon.awssdk.services.s3.S3Client fixtureClient() {
+        var credentials = software.amazon.awssdk.auth.credentials.AwsBasicCredentials.create(
+                System.getenv("MINIO_ROOT_USER"), System.getenv("MINIO_ROOT_PASSWORD"));
+        return software.amazon.awssdk.services.s3.S3Client.builder()
+                .endpointOverride(java.net.URI.create(System.getenv("ARCHIVE_TEST_ENDPOINT")))
+                .region(software.amazon.awssdk.regions.Region.US_EAST_1).forcePathStyle(true)
+                .requestChecksumCalculation(software.amazon.awssdk.core.checksums.RequestChecksumCalculation.WHEN_REQUIRED)
+                .credentialsProvider(software.amazon.awssdk.auth.credentials.StaticCredentialsProvider.create(credentials)).build();
     }
 
     private int backedUpAttempts(JdbcTemplate target) {

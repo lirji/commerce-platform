@@ -61,6 +61,12 @@ public class AuditArchiveRetentionReview {
         }
     }
 
+    /** 对已切换批次沿用相同的实际事实与签收策略计算归档期限。 */
+    Instant archivalPeriod(String batchId, List<Member> members, List<Policy> policies) {
+        var signed = policies.stream().collect(Collectors.toUnmodifiableMap(Policy::key, Function.identity()));
+        return periods(batchId, members, signed).archiveAfter();
+    }
+
     private Review periods(String batchId, List<Member> members, Map<Key, Policy> policies) {
         List<Instant> online = new ArrayList<>();
         List<Instant> archival = new ArrayList<>();

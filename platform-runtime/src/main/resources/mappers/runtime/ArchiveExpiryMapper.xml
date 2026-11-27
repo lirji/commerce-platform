@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.runtime.audit.archive.ArchiveExpiryMapper">
+  <select id="lockGrant" resultType="com.lrj.commerce.runtime.audit.archive.ArchiveExpiryMapper$Grant">
+    SELECT approval_reference FROM audit_archive_expiry_grant
+    WHERE batch_id=#{id} AND revoked_at IS NULL AND effective_at&lt;=UTC_TIMESTAMP(3)
+      AND expires_at&gt;UTC_TIMESTAMP(3) FOR UPDATE
+  </select>
+  <select id="receipt" resultType="com.lrj.commerce.runtime.audit.archive.ArchiveExpiryMapper$Receipt">
+    SELECT batch_id,archive_version,archive_sha256,approval_reference,policies_sha256,resource_ids,
+      eligible_at,latest_late_id,late_fingerprints,confirmed_at FROM audit_archive_expiry_receipt WHERE batch_id=#{id}
+  </select>
+  <insert id="reserve">
+    INSERT INTO audit_archive_expiry_receipt(batch_id,archive_version,archive_sha256,approval_reference,
+      policies_sha256,resource_ids,eligible_at,latest_late_id,late_fingerprints,confirmed_at)
+    VALUES(#{batchId},#{archiveVersion},#{archiveSha256},#{approvalReference},
+      #{policiesSha256},#{resourceIds},#{eligibleAt},#{latestLateId},#{lateFingerprints},#{confirmedAt})
+  </insert>
+  <select id="lockMatchingHolds" resultType="long">
+    SELECT hold_id FROM audit_archive_hold
+    WHERE scope_type=#{scope.type} AND tenant_id=#{scope.tenant} AND released_at IS NULL
+      AND (resource_id IS NULL OR JSON_CONTAINS(#{resources}, JSON_QUOTE(resource_id))) FOR UPDATE
+  </select>
+  <select id="lockActiveRestoreGrants" resultType="java.lang.String">
+    SELECT ticket_id FROM audit_archive_restore_grant
+    WHERE batch_id=#{id} AND revoked_at IS NULL AND expires_at&gt;UTC_TIMESTAMP(3) FOR UPDATE
+  </select>
+  <select id="latePage" resultType="com.lrj.commerce.runtime.audit.archive.ArchiveExpiryMapper$Late">
+    SELECT id,attempt_id,recorded_at,NULLIF(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.resourceId')),'null') AS resource_id,
+      evidence_key,payload
+    FROM audit_archive_late_evidence WHERE batch_id=#{id} ORDER BY id DESC LIMIT #{limit}
+  </select>
+  <delete id="removeRestoreCopies">
+    DELETE FROM audit_archive_restored WHERE batch_id=#{id} LIMIT 200
+  </delete>
+  <delete id="removeLateEvidence">
+    DELETE FROM audit_archive_late_evidence WHERE batch_id=#{id} AND id&lt;=#{lastId} LIMIT 200
+  </delete>
+  <update id="confirm">
+    UPDATE audit_archive_expiry_receipt SET confirmed_at=UTC_TIMESTAMP(3) WHERE batch_id=#{id} AND confirmed_at IS NULL
+  </update>
+  <update id="restoreConfirmation">
+    UPDATE audit_archive_expiry_receipt SET confirmed_at=#{confirmedAt}
+    WHERE batch_id=#{id} AND confirmed_at IS NULL
+  </update>
+  <update id="markExpired">
+    UPDATE audit_archive_batch SET state='EXPIRED',updated_at=UTC_TIMESTAMP(3) WHERE batch_id=#{id} AND state='ONLINE_PURGED'
+  </update>
+</mapper>

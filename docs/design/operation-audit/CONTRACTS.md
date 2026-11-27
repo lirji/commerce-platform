@@ -47,7 +47,7 @@ OA-00 本地基线为商城 `45bbb45`（V84）、交易 `b77245e`（V050）、�
 
 `commerceAuditArchiveOnlineCutover` 默认关闭。V90 增加批次独立批准、在线清理回执、原效果定位和晚到追加记录。执行任务输入一个当前来源范围内的批次编号。实际在线切换在锁内再次核对档案、策略、冻结、成员和活跃幂等命令，按实际条数提交批次、定位和回执。重复任务返回已移出。已在档案中的原证据继续通过授权工单按版本恢复，后到证据通过原尝试引用追加。
 
-对象到期销毁、旧备份恢复时重放删除状态和清理责任跨系统验收仍待实现和验证。启用在线切换需要所有实例先支持 V90 的原尝试行锁及晚到追加路径，并完成目标环境恢复与保留审批。
+启用在线切换需要所有实例先支持原尝试行锁及晚到追加路径，并完成目标环境恢复与保留审批。交易和营销档案使用各自的授权、迁移和签收记录。
 
 ### 从备份恢复后补放在线清理
 
@@ -56,3 +56,11 @@ V91 把清理回执与数据库备份分开保全。在线切换先在版本化�
 恢复目标使用隔离库并单独开启 `COMMERCE_AUDIT_ARCHIVE_RECOVERY_REPLAY_ENABLED`。源库停止切换后，用 `commerceAuditArchiveRecoveryInventory` 按配置范围逐页清点，初始任务参数为空。后续页参数为上次返回的游标。恢复身份对清理凭证前缀需要 `s3:ListBucket`、`s3:GetObject` 和指定版本读取权限。对象存储使用支持列表分页及精确版本读取的版本化桶。 [S3 ListObjectsV2](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) · [S3 版本读取](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
 
 清点发现准备记录缺少提交凭证时，该页作业失败并记录未决批次。须对照源库或独立灾备记录厘清实际事务结果后继续；完成所有页之前保持恢复目标隔离。已确认的每份凭证以任务输出的 JSON 作为 `commerceAuditArchiveReplayRecovery` 参数。补放校验作用域、对象精确版本、长度、摘要、成员和仍在线的子证据，按事务移除匹配副本、恢复定位信息并记录已应用状态。冲突时保留整批，由恢复负责人核对仍活跃的原幂等命令或冻结。恢复完成后再开放业务读写。
+
+### 精确对象版本到期销毁
+
+V92 增加独立的批次销毁审批和确认回执。默认关闭 `COMMERCE_AUDIT_ARCHIVE_EXPIRY_ENABLED`。启用后以 `COMMERCE_AUDIT_ARCHIVE_EXPIRY_KEY` 和 `COMMERCE_AUDIT_ARCHIVE_EXPIRY_SECRET` 配置第三套身份。调度 `commerceAuditArchiveExpireObject` 一次传一个本范围批次号。已核验在线切换、独立审批、有效保留策略、最后事实日期、案件冻结和活跃恢复工单均在处理前复核。最多分析 2,000 条晚到记录，超出预算的批次需独立复核。晚到事实参与计算最早可销毁时间，回执只保存对应指纹。
+
+销毁身份仅授予归档原件键匹配范围内的版本查看与删除权，排除恢复凭证前缀，不授予版本设置、绕过保全和修改对象权限。目标 MinIO 对指定版本的 DELETE 还须允许该原件范围的 `s3:DeleteObject`。应用在发出请求前强制要求原档案格式的键和非空的明确版本，从不发无版本 DELETE 请求，现有删除标记无法通过原件版本校验。仍须验收目标环境的版本配置与对象保全。 [MinIO 版本化行为](https://github.com/minio/minio/blob/master/docs/bucket/versioning/README.md) · [S3 DeleteObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html)
+
+先发布不可覆盖的准备凭证，再删除精确版本。只有该版本经存储确认已不存在，并且保全条件仍满足，才标为 `EXPIRED` 并发布独立提交凭证。授权变化、对象锁拒绝或回包不明时保留批次和准备记录供核对。确认后查询立即拒绝恢复，同批临时副本和晚到行按每轮各 200 条清理；已有批次重复执行可继续清理。恢复库应在原库停止相关任务后先清点并补放在线切换，再用 `commerceAuditArchiveExpiryInventory` 遍历销毁凭证，用 `commerceAuditArchiveReplayExpiry` 补放。若还存在准备记录未决、指纹不匹配或临时副本待处理，恢复目标继续保持隔离。任务可重复，待清理行较多时重复处理到返回的两个清理计数均为零。原档案提交凭证和销毁提交凭证保持独立授权。

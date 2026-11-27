@@ -24,24 +24,26 @@ public final class AuditArchivePurgeRecovery {
     private static final int FORMAT = 1;
     private static final int MAX_ROWS = 200;
     private static final int INVENTORY_PAGE_SIZE = 20;
-    private static final int MAX_BYTES = 128 * 1024;
+    private static final int MAX_BYTES = 512 * 1024;
     private static final String ONLINE_PURGED = "ONLINE_PURGED";
     private static final String JOURNAL_PREFIX = "commerce/operation-audit/v1/recovery/";
     private final Scope scope;
     private final AuditArchiveMapper archive;
     private final ArchiveOnlineCutoverMapper cutover;
     private final ArchivePurgeRecoveryMapper recovery;
+    private final ArchiveExpiryMapper expiry;
     private final AuditArchiveVerification verification;
     private final ArchiveObjectStore objects;
     private final TransactionTemplate transaction;
 
     public AuditArchivePurgeRecovery(Scope scope, AuditArchiveMapper archive, ArchiveOnlineCutoverMapper cutover,
-            ArchivePurgeRecoveryMapper recovery, AuditArchiveVerification verification, ArchiveObjectStore objects,
+            ArchivePurgeRecoveryMapper recovery, ArchiveExpiryMapper expiry, AuditArchiveVerification verification, ArchiveObjectStore objects,
             PlatformTransactionManager manager) {
         this.scope = scope;
         this.archive = archive;
         this.cutover = cutover;
         this.recovery = recovery;
+        this.expiry = expiry;
         this.verification = verification;
         this.objects = objects;
         transaction = new TransactionTemplate(manager);
@@ -65,15 +67,24 @@ public final class AuditArchivePurgeRecovery {
 
     /** 逐页检查备份域以外的准备记录，未确认的批次须先核验再放行恢复服务。 */
     public Inventory inventory(String continuation) {
+        return inventory(preparedPrefix(), scopePrefix() + "committed/", continuation);
+    }
+
+    /** 销毁凭证按独立目录清点，清理补放完成后继续回放销毁结果。 */
+    public Inventory expiryInventory(String continuation) {
+        return inventory(scopePrefix() + "expiry-prepared/", scopePrefix() + "expiry-committed/", continuation);
+    }
+
+    private Inventory inventory(String pendingPrefix, String committedPrefix, String continuation) {
         if (continuation != null && continuation.length() > 4096) throw mismatch();
-        var prepared = objects.inventory(preparedPrefix(), continuation, INVENTORY_PAGE_SIZE);
+        var prepared = objects.inventory(pendingPrefix, continuation, INVENTORY_PAGE_SIZE);
         var committed = new ArrayList<Reference>();
         var unresolved = new ArrayList<String>();
         for (String objectKey : prepared.keys()) {
-            if (!objectKey.startsWith(preparedPrefix()) || !objectKey.endsWith(".json")) throw mismatch();
-            String id = objectKey.substring(preparedPrefix().length(), objectKey.length() - 5);
+            if (!objectKey.startsWith(pendingPrefix) || !objectKey.endsWith(".json")) throw mismatch();
+            String id = objectKey.substring(pendingPrefix.length(), objectKey.length() - 5);
             requireBatchId(id);
-            String committedKey = key(id);
+            String committedKey = committedPrefix + id + ".json";
             var visible = objects.inventory(committedKey, null, 1);
             if (!visible.keys().contains(committedKey)) {
                 unresolved.add(id);
@@ -108,6 +119,21 @@ public final class AuditArchivePurgeRecovery {
         return reference;
     }
 
+    /** 销毁发送前在备份域外留意图；所含的对象版本与原切换凭证相同。 */
+    void prepareExpiry(Batch batch, ArchiveExpiryMapper.Receipt receipt) {
+        if (!sameScope(batch) || !Objects.equals(batch.objectVersion(), receipt.archiveVersion())) throw mismatch();
+        writeOnce(batch.batchId(), scopePrefix() + "expiry-prepared/" + batch.batchId() + ".json",
+                JsonCodec.write(new ExpiryJournal(FORMAT, batch.scopeType(), batch.tenantId(), receipt)));
+    }
+
+    /** 外部凭证证明存储已核实精确版本消失，供恢复库单独传播最终状态。 */
+    Reference publishExpiry(Batch batch, ArchiveExpiryMapper.Receipt receipt) {
+        if (!sameScope(batch) || !"EXPIRED".equals(batch.state()) || receipt.confirmedAt() == null
+                || !Objects.equals(batch.objectVersion(), receipt.archiveVersion())) throw mismatch();
+        return writeOnce(batch.batchId(), scopePrefix() + "expiry-committed/" + batch.batchId() + ".json",
+                JsonCodec.write(new ExpiryJournal(FORMAT, batch.scopeType(), batch.tenantId(), receipt)));
+    }
+
     private Reference writeOnce(String batchId, String key, String json) {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         if (bytes.length > MAX_BYTES) throw mismatch();
@@ -128,6 +154,55 @@ public final class AuditArchivePurgeRecovery {
         return transaction.execute(status -> apply(document, reference));
     }
 
+    /** 旧备份先补放在线切换，再传播已核实的销毁状态并按批清洁临时恢复区。 */
+    public ExpiryReplay replayExpiry(Reference reference) {
+        requireReference(reference);
+        String key = scopePrefix() + "expiry-committed/" + reference.batchId() + ".json";
+        var bytes = objects.readForRestore(key, reference.version(), reference.byteCount());
+        if (bytes.length != reference.byteCount() || !AuditArchiveVerification.sha256(bytes).equals(reference.sha256())) throw mismatch();
+        var proof = JsonCodec.read(new String(bytes, StandardCharsets.UTF_8), ExpiryJournal.class);
+        if (proof == null || proof.format() != FORMAT || !scope.type().equals(proof.scopeType())
+                || !scope.tenant().equals(proof.tenantId()) || proof.receipt() == null
+                || proof.receipt().confirmedAt() == null || !reference.batchId().equals(proof.receipt().batchId())) throw mismatch();
+        return transaction.execute(status -> applyExpiry(proof.receipt()));
+    }
+
+    private ExpiryReplay applyExpiry(ArchiveExpiryMapper.Receipt expected) {
+        String id = expected.batchId();
+        var batch = cutover.lockBatch(id);
+        if (batch == null || !sameScope(batch) || !expected.archiveVersion().equals(batch.objectVersion())
+                || !expected.archiveSha256().equals(batch.sha256()) || recovery.reference(id) == null
+                || !(ONLINE_PURGED.equals(batch.state()) || "EXPIRED".equals(batch.state()))) throw mismatch();
+        var late = expiry.latePage(id, AuditArchiveObjectExpiry.MAX_LATE_ROWS + 1);
+        var fingerprints = JsonCodec.read(expected.lateFingerprints(), JsonNode.class);
+        // 旧备份可以缺少后续流水，但所有仍存在的行都必须由确认回执逐条覆盖。
+        if (late.size() > AuditArchiveObjectExpiry.MAX_LATE_ROWS || !fingerprints.isObject()) throw mismatch();
+        for (var row : late) {
+            if (row.id() > expected.latestLateId() || !AuditArchiveObjectExpiry.fingerprint(row)
+                    .equals(fingerprints.path(Long.toString(row.id())).asString())) throw mismatch();
+        }
+        var current = expiry.receipt(id);
+        if (current == null) {
+            if (expiry.reserve(expected) != 1) throw mismatch();
+        } else if (current.confirmedAt() == null) {
+            var pending = new ArchiveExpiryMapper.Receipt(id, expected.archiveVersion(), expected.archiveSha256(),
+                    expected.approvalReference(), expected.policiesSha256(), expected.resourceIds(),
+                    expected.eligibleAt(), expected.latestLateId(), expected.lateFingerprints(), null);
+            if (!pending.equals(current) || expiry.restoreConfirmation(id, expected.confirmedAt()) != 1) throw mismatch();
+        } else if (!expected.equals(current)) {
+            throw mismatch();
+        }
+        if (ONLINE_PURGED.equals(batch.state()) && expiry.markExpired(id) != 1) throw mismatch();
+        return cleanupExpired(id, expected.latestLateId());
+    }
+
+    /** 清理分批执行，已销毁状态在后续批次运行期间持续阻止读取临时副本。 */
+    ExpiryReplay cleanupExpired(String batchId, long lastLateId) {
+        int copies = expiry.removeRestoreCopies(batchId);
+        int late = expiry.removeLateEvidence(batchId, lastLateId);
+        return new ExpiryReplay(batchId, copies, late);
+    }
+
     private ReplayResult apply(Journal document, Reference reference) {
         var expected = document.batch();
         String id = expected.batchId();
@@ -144,7 +219,7 @@ public final class AuditArchivePurgeRecovery {
         var committed = recovery.receipt(id);
         if (committed != null) {
             if (!document.receipt().equals(committed) || !existingIds.isEmpty() || recovery.hasOnlineChildren(id)
-                    || !ONLINE_PURGED.equals(locked.state())) throw mismatch();
+                    || !(ONLINE_PURGED.equals(locked.state()) || "EXPIRED".equals(locked.state()))) throw mismatch();
             // 备份可能已经包含在线切换事务，但早于外部凭证回写；允许补上相同的精确版本。
             if (recovery.reference(id) == null) recovery.sealReference(reference);
             if (!reference.equals(recovery.reference(id))) throw mismatch();
@@ -221,7 +296,7 @@ public final class AuditArchivePurgeRecovery {
         }
     }
 
-    private static void requireBatchId(String id) {
+    static void requireBatchId(String id) {
         if (id == null || !id.matches("[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}")) {
             throw new DomainException(DomainException.Code.INVALID_INPUT, "归档批次编号无效");
         }
@@ -241,7 +316,11 @@ public final class AuditArchivePurgeRecovery {
     /** 页结束与整次清点放行独立，翻完所有页并解决所有差异才满足恢复条件。 */
     public record Inventory(List<Reference> committed, List<String> unresolved, String continuation) {}
 
+    public record ExpiryReplay(String batchId, int removedCopies, int removedLateRows) {}
+
     public record ReplayResult(String batchId, int removedAttempts, boolean alreadyApplied) {}
+
+    record ExpiryJournal(int format, String scopeType, String tenantId, ArchiveExpiryMapper.Receipt receipt) {}
 
     private record Prepared(int format, String batchId, String archiveVersion, String archiveSha256) {}
 

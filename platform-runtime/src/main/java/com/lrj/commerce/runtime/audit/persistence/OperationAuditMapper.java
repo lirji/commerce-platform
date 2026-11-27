@@ -33,6 +33,8 @@ public interface OperationAuditMapper {
 	Long lockLiveAttempt(@Param("id") long id);
 
 	/** 内容摘要为幂等键，稳定引用通过原档案成员解析。 */
+	String lockArchivedBatchForAppend(@Param("id") long id);
+
 	int insertLateEvidence(@Param("id") long id, @Param("key") String key, @Param("kind") String kind, @Param("payload") String payload);
 
 	Long findLateEvidence(@Param("id") long id, @Param("key") String key);
