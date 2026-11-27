@@ -10,7 +10,7 @@
 
 ## 本地使用
 
-本地 Docker 同源前后端入口为 **http://127.0.0.1:8602**，当前镜像为 `commerce-platform:rev-2851fc1`，实际部署和验收见 [部署记录](docs/delivery/frontend-task-usability/DEPLOYMENT_RESULT.md)。隔离验收使用 **http://127.0.0.1:8604** 与测试库。新版演示身份在 `.local/member-suite-access.json`：`adminToken` 为管理员、`memberToken` 为周期权益会员，其他专项身份见运营手册；文件不入库，令牌不写聊天或文档。原 `.local/demo-access.json` 对应另一隔离租户，数据不能混用。
+本地 Docker 同源前后端入口为 **http://127.0.0.1:8602**，当前镜像为 `commerce-platform:rev-478ce42e2206`，实际部署和验收见 [部署记录](docs/delivery/b-console-product-experience/DEPLOYMENT_RESULT.md)。隔离验收使用 **http://127.0.0.1:8604** 与测试库。新版演示身份在 `.local/member-suite-access.json`：`adminToken` 为管理员、`memberToken` 为周期权益会员，其他专项身份见运营手册；文件不入库，令牌不写聊天或文档。原 `.local/demo-access.json` 对应另一隔离租户，数据不能混用。
 
 需要 Java 21、Maven 3.9、Node 24、Docker Compose，以及已授权的独立 MySQL schema。当前复用 `dev-infra`，不启动第二套公共组件。新机器需先按 [运行手册](deploy/README.md) 配置数据库和私密环境文件。健康、同源制品和部署后浏览器验证已通过。
 
@@ -41,7 +41,7 @@ COMMERCE_UI_URL=http://127.0.0.1:8602 COMMERCE_EVIDENCE_DIR=../.local/operations
 
 ## 文档
 
-- [当前前端优化与验证](docs/delivery/frontend-task-usability/IMPLEMENTATION_EVIDENCE.md)（按Claude当前个人技能实施；[本机8602部署已完成](docs/delivery/frontend-task-usability/DEPLOYMENT_RESULT.md)）
+- [B 端体验升级与验证](docs/delivery/b-console-product-experience/DELIVERY_REPORT.md) · [本机 Docker 部署](docs/delivery/b-console-product-experience/DEPLOYMENT_RESULT.md)
 - [商品经营页前端设计 A/B 试点](docs/delivery/frontend-design-engineering-mvp/TEST_RESULT.md)（历史隔离实验，正式接入待评审）
 - [文档地图与契约入口](docs/doc-map.md)
 - [后端架构与数据所有权](docs/design/unified-commerce/BACKEND_ARCHITECTURE.md)
