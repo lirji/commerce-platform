@@ -1,7 +1,14 @@
 # Codex Progress
 
+<!-- b-console-experience-refinement:start -->
+## 当前任务：交易中心 B 端体验再升级
+
+- [设计与逐路由基线](docs/design/b-console-experience-refinement/FRONTEND_ARCHITECTURE.md)和[最新验证与交付状态](docs/delivery/b-console-experience-refinement/DELIVERY_STATUS.md)为恢复入口。
+- 本轮运行证据位于 `.local/b-console-experience-refinement/`。
+<!-- b-console-experience-refinement:end -->
+
 <!-- b-console-experience-round-two:start -->
-## 当前任务：交易中心 B 端第二轮体验优化
+## 第二轮：交易中心 B 端体验优化
 
 - [交付计划](docs/delivery/b-console-experience-round-two/DELIVERY_PLAN.md) 和 [交付状态](docs/delivery/b-console-experience-round-two/DELIVERY_STATUS.md) 为恢复入口。
 - 本轮验证和交付回执位于 `.local/b-console-experience-round-two/`。
