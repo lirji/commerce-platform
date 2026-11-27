@@ -95,5 +95,7 @@ values = {"ARCHIVE_TEST_ENDPOINT": endpoint, "ARCHIVE_TEST_BUCKET": bucket,
 
 with open(os.environ["GITHUB_ENV"], "a") as output:
     for name, value in values.items():
+        if name.endswith(("_KEY", "_SECRET", "_PASSWORD", "_USER")):
+            print(f"::add-mask::{value}", flush=True)
         output.write(f"{name}={value}\n")
 print("CI 版本化归档夹具和独立角色已就绪。")
