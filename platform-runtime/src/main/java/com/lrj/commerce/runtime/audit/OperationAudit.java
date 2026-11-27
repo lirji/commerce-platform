@@ -61,6 +61,8 @@ public class OperationAudit {
 		CATALOG_CHANGE("catalog.category.change", "BUSINESS", true),
 		CATALOG_AUDIT_LIST("catalog.category.audit.list", "HIGH_RISK", true),
 		ORDER_EVIDENCE_READ("order.evidence.read", "HIGH_RISK", true),
+		ARCHIVE_RESTORE("audit.archive.restore", "HIGH_RISK", true),
+		ARCHIVE_RESTORED_READ("audit.archive.restore.read", "HIGH_RISK", true),
 		AUDIT_LIST("platform.audit.list", "HIGH_RISK"),
 		AUDIT_READ("platform.audit.read", "HIGH_RISK");
 
@@ -226,6 +228,17 @@ public class OperationAudit {
 			T result = read.get();
 			finish(attempt, Result.SUCCEEDED, null);
 			return result;
+		});
+	}
+
+	/** 档案恢复与受控查看单独留痕，不把审计查询效果递归写入档案来源。 */
+	public <T> T archiveRestoreRead(Actor actor, String ticketId, String traceId, boolean restore,
+			java.util.function.Supplier<T> perform) {
+		Action action = restore ? Action.ARCHIVE_RESTORE : Action.ARCHIVE_RESTORED_READ;
+		return capture(action, actor, ticketId, traceId, attempt -> {
+			T value = perform.get();
+			finish(attempt, Result.SUCCEEDED, null);
+			return value;
 		});
 	}
 
