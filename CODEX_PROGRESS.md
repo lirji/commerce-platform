@@ -1,5 +1,12 @@
 # Codex Progress
 
+<!-- b-console-workspace-system:start -->
+## 当前任务：交易中心工作台统一改造
+
+- [设计和验收条件](docs/design/b-console-workspace-system/FRONTEND_ARCHITECTURE.md)与[实施及验证状态](docs/delivery/b-console-workspace-system/DELIVERY_STATUS.md)为恢复入口。
+- 浏览器及交付证据位于 `.local/b-console-workspace-system/`。
+<!-- b-console-workspace-system:end -->
+
 <!-- b-console-experience-refinement:start -->
 ## 当前任务：交易中心 B 端体验再升级
 
