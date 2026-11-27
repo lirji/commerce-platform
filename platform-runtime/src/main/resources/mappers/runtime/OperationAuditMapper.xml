@@ -16,9 +16,9 @@
   </insert>
   <insert id="insertEffect">
     INSERT INTO platform_audit(tenant_id,actor_id,operation,command_key,audit_attempt_id,audit_resource_id,
-        audit_before_version,audit_after_version,audit_reason,audit_changes_json)
+        audit_before_version,audit_after_version,audit_reason,audit_changes_json,audit_action_code)
     VALUES(#{key.tenantId},#{key.actorId},#{key.operation},#{key.commandKey},#{attemptId},#{evidence.resourceId},
-        #{evidence.beforeVersion},#{evidence.afterVersion},#{evidence.reason},#{changes})
+        #{evidence.beforeVersion},#{evidence.afterVersion},#{evidence.reason},#{changes},#{evidence.actionCode})
   </insert>
   <insert id="insertReplay">
     INSERT INTO audit_attempt_outcome(attempt_id,event_ref,result_code,effect_id)
@@ -26,8 +26,9 @@
       (SELECT id FROM platform_audit WHERE tenant_id=#{key.tenantId} AND actor_id=#{key.actorId}
        AND operation=#{key.operation} AND command_key=#{key.commandKey} ORDER BY id DESC LIMIT 1))
   </insert>
+  <sql id="effectiveAction">COALESCE(p.audit_action_code,original.audit_action_code,a.action_code)</sql>
   <sql id="rows">
-    SELECT a.id,a.source_system,a.request_id,a.trace_id,a.action_code AS action,a.actor_id,
+    SELECT a.id,a.source_system,a.request_id,a.trace_id,<include refid="effectiveAction"/> AS action,a.actor_id,
       COALESCE(p.audit_resource_id,a.resource_id) AS resource_id,a.occurred_at,
       CASE WHEN p.id IS NOT NULL THEN 'SUCCEEDED' ELSE COALESCE(o.result_code,'UNKNOWN') END AS result,
       o.error_code,COALESCE(p.id,o.effect_id) AS effect_id,original.audit_attempt_id AS original_attempt_id,
@@ -42,10 +43,19 @@
   </sql>
   <select id="list" resultType="com.lrj.commerce.runtime.audit.persistence.OperationAuditMapper$Row">
     <include refid="rows"/>
-    WHERE a.scope_type='PLATFORM' AND a.occurred_at &gt;= #{from} AND a.occurred_at &lt; #{to}
+    WHERE a.occurred_at &gt;= #{from} AND a.occurred_at &lt; #{to}
     <choose>
-      <when test="action != null">AND a.action_code=#{action}</when>
-      <otherwise>AND a.action_code NOT IN ('platform.audit.list','platform.audit.read')</otherwise>
+      <when test="openingTenant != null">
+        AND a.scope_type='TENANT' AND a.actor_tenant_id=#{openingTenant}
+        AND a.action_code IN ('store.opening.draft','store.opening.revise','store.opening.open')
+      </when>
+      <otherwise>
+        AND a.scope_type='PLATFORM'
+        <choose>
+          <when test="action != null">AND <include refid="effectiveAction"/>=#{action}</when>
+          <otherwise>AND a.action_code NOT IN ('platform.audit.list','platform.audit.read')</otherwise>
+        </choose>
+      </otherwise>
     </choose>
     <if test="actorId != null">AND a.actor_id=#{actorId}</if>
     <if test="resourceId != null">AND a.resource_id=#{resourceId}</if>

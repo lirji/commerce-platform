@@ -11,6 +11,7 @@ import { useRef, useState } from "react";
 import { ApiError, encode, useResource } from "../shared/api";
 import { HTTP } from "../shared/http";
 import { RecordModal, useRowAction } from "../shared/interactions";
+import { OpeningAuditHistory } from "./OperationAudits";
 import {
   CommandModal,
   ErrorNotice,
@@ -166,6 +167,11 @@ export function StoreOpeningActions({
                     ]
                   : []),
               ]}
+            />
+            <OpeningAuditHistory
+              key={opening.version}
+              path={path}
+              subjectLabels={openingSubjects}
             />
             {pending && (
               <Space wrap>

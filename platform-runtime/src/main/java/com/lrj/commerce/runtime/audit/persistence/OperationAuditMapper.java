@@ -19,7 +19,7 @@ public interface OperationAuditMapper {
 			Long originalAttemptId, Long beforeVersion, Long afterVersion, String reason, String changesJson) {
 	}
 
-	record Query(Instant from, Instant to, String actorId, String resourceId, String action, String result,
+	record Query(String openingTenant, Instant from, Instant to, String actorId, String resourceId, String action, String result,
 			Instant cursorTime, Long cursorId, int limit) {
 	}
 

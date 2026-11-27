@@ -67,7 +67,7 @@ class OperationAuditMySqlTest {
 		assertEquals(403, call("POST", CATEGORIES + "/" + category, admin, "forbidden", payload).status());
 		assertEquals(403, call("GET", AUDITS, admin, null, null).status());
 
-		var page = call("GET", AUDITS + "?resourceId=" + category, reader, null, null);
+		var page = call("GET", disableHistory(category), reader, null, null);
 		assertEquals(200, page.status(), page.body().toString());
 		var results = new java.util.HashMap<String, JsonNode>();
 		page.body().path("items").forEach(record -> results.put(record.path("result").asText(), record));
@@ -84,7 +84,7 @@ class OperationAuditMySqlTest {
 		assertFalse(state.path("after").asBoolean());
 		assertEquals(committed.path("id"), results.get("REPLAYED").path("originalAttemptId"));
 		assertEquals(committed.path("effectId"), results.get("REPLAYED").path("effectId"));
-		assertEquals(1, count("SELECT COUNT(*) FROM platform_audit WHERE audit_resource_id=?", category));
+		assertEquals(1, count(CATEGORY_EFFECTS, category));
 
 		String detailPath = AUDITS + "/" + committed.path("id").asText();
 		assertEquals(200, call("GET", detailPath, reader, null, null).status());
@@ -95,7 +95,7 @@ class OperationAuditMySqlTest {
 		Set<String> seen = new HashSet<>();
 		String next = "";
 		do {
-			var slice = call("GET", AUDITS + "?resourceId=" + category + "&limit=1" + next, reader, null, null);
+			var slice = call("GET", disableHistory(category) + "&limit=1" + next, reader, null, null);
 			assertEquals(200, slice.status(), slice.body().toString());
 			assertEquals(1, slice.body().path("items").size());
 			assertTrue(seen.add(slice.body().path("items").path(0).path("id").asText()));
@@ -117,8 +117,8 @@ class OperationAuditMySqlTest {
 		String category = category(curator);
 		String reason = "联络账号 security-test@example.invalid";
 		// 仅拒绝本次生成的受控类目编码，其他事务可照常通过。
-		jdbc.execute("ALTER TABLE platform_audit ADD CONSTRAINT ck_oa_test_effect CHECK (audit_resource_id <> '"
-				+ category + "')");
+		jdbc.execute("ALTER TABLE platform_audit ADD CONSTRAINT ck_oa_test_effect CHECK ("
+				+ "operation <> 'platform.category.change' OR audit_resource_id <> '" + category + "')");
 		try {
 			assertEquals(503, call("POST", CATEGORIES + "/" + category, curator, "disable", payload(category, reason)).status());
 			assertEquals(0, jdbc.queryForObject("SELECT version FROM store_opening_category WHERE category_code=?",
@@ -132,8 +132,8 @@ class OperationAuditMySqlTest {
 			jdbc.execute("ALTER TABLE platform_audit DROP CHECK ck_oa_test_effect");
 		}
 		assertEquals(200, call("POST", CATEGORIES + "/" + category, curator, "disable", payload(category, reason)).status());
-		assertEquals("已脱敏", jdbc.queryForObject("SELECT audit_reason FROM platform_audit WHERE audit_resource_id=?",
-				String.class, category));
+		assertEquals("已脱敏", jdbc.queryForObject("SELECT audit_reason FROM platform_audit WHERE audit_resource_id=? "
+				+ "AND operation='platform.category.change'", String.class, category));
 	}
 
 	@Test
@@ -153,16 +153,40 @@ class OperationAuditMySqlTest {
 			socket.getOutputStream().write(body);
 			socket.shutdownOutput(); // 发送完整请求后主动关闭，不读取服务端响应。
 		}
-		String effects = "SELECT COUNT(*) FROM platform_audit WHERE audit_resource_id=?";
-		for (int i = 0; i < 60 && count(effects, category) == 0; i++)
+		for (int i = 0; i < 60 && count(CATEGORY_EFFECTS, category) == 0; i++)
 			Thread.sleep(50);
-		assertEquals(1, count(effects, category));
+		assertEquals(1, count(CATEGORY_EFFECTS, category));
 		assertEquals(200, call("POST", path, curator, "disconnect", payload).status());
-		var page = call("GET", AUDITS + "?resourceId=" + category, curator, null, null).body().path("items");
+		var page = call("GET", disableHistory(category), curator, null, null).body().path("items");
 		assertEquals(2, page.size());
 		assertEquals("REPLAYED", page.path(0).path("result").asText());
 		assertEquals("SUCCEEDED", page.path(1).path("result").asText());
 		assertEquals(page.path(1).path("id"), page.path(0).path("originalAttemptId"));
+	}
+
+	@Test
+	void changingNameAndSortProducesOneSuccessfulEffectWithBothFields() throws Exception {
+		String tenant = "audit-" + UUID.randomUUID();
+		String curator = credential(tenant, "audit-edit-category", "PLATFORM_OPERATOR");
+		jdbc.update("INSERT INTO platform_category_curator(tenant_id,actor_id) VALUES(?,?)", tenant, "audit-edit-category");
+		String category = category(curator);
+		String edit = CATEGORIES + "/" + category;
+		var payload = Map.of("expectedVersion", 0, "name", category + "改名", "sortOrder", 12, "enabled", true,
+				"reason", "同一次编辑名称和排序");
+		assertEquals(200, call("POST", edit, curator, "edit", payload).status());
+		var rows = call("GET", AUDITS + "?resourceId=" + category + "&action=platform.category.rename",
+				curator, null, null).body().path("items");
+		assertEquals(1, rows.size());
+		assertEquals(2, rows.path(0).path("changes").size());
+		assertEquals("SUCCEEDED", rows.path(0).path("result").asText());
+		assertEquals(1, count(CATEGORY_EFFECTS, category));
+	}
+
+	private static final String CATEGORY_EFFECTS = "SELECT COUNT(*) FROM platform_audit WHERE audit_resource_id=? "
+			+ "AND operation='platform.category.change'";
+
+	private static String disableHistory(String category) {
+		return AUDITS + "?resourceId=" + category + "&action=platform.category.disable";
 	}
 
 	private String category(String curator) throws Exception {

@@ -14,11 +14,15 @@ import { useState } from "react";
 import type { Dayjs } from "dayjs";
 import { useResource } from "../shared/api";
 import { RecordModal } from "../shared/interactions";
-import { ErrorNotice, PageHead, Workbench, time } from "../shared/ui";
+import { ErrorNotice, PageHead, Status, Workbench, time } from "../shared/ui";
 
 const path = "/platform/operation-audits";
 const actions: Record<string, string> = {
+  "platform.category.create": "新增类目",
   "platform.category.disable": "停用类目",
+  "platform.category.enable": "恢复类目",
+  "platform.category.rename": "类目改名",
+  "platform.category.reorder": "调整类目排序",
   "platform.category.change": "变更类目",
   "platform.audit.list": "查询操作日志",
   "platform.audit.read": "查看审计详情",
@@ -36,6 +40,10 @@ const fields: Record<string, string> = {
   name: "名称",
   sortOrder: "排序",
   enabled: "启停状态",
+  status: "店铺状态",
+  subjectType: "经营主体",
+  categoryCode: "经营类目编号",
+  reviewReference: "审核记录编号",
 };
 
 type Change = {
@@ -78,6 +86,125 @@ function resultTag(result: string) {
 function value(raw: Change["before"]) {
   if (typeof raw === "boolean") return raw ? "启用" : "停用";
   return raw ?? "—";
+}
+
+const openingActions: Record<string, string> = {
+  "store.opening.draft": "保存草稿",
+  "store.opening.revise": "修改开店资料",
+  "store.opening.open": "确认开店",
+};
+
+/** 在开店资料的授权范围内查看单店历次操作。 */
+export function OpeningAuditHistory({
+  path,
+  subjectLabels,
+}: {
+  path: string;
+  subjectLabels: ReadonlyArray<{ value: string; label: string }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [cursors, setCursors] = useState([""]);
+  const cursor = cursors[cursors.length - 1];
+  const list = useResource<Page>(
+    open
+      ? path +
+          "/operation-audits" +
+          (cursor ? "?cursor=" + encodeURIComponent(cursor) : "")
+      : null,
+  );
+  function openingValue(raw: Change["before"], change: Change) {
+    if (typeof raw === "string" && change.field === "status")
+      return <Status value={raw} />;
+    if (typeof raw === "string" && change.field === "subjectType")
+      return (
+        subjectLabels.find((subject) => subject.value === raw)?.label ?? raw
+      );
+    return value(raw);
+  }
+  return (
+    <Space orientation="vertical" style={{ width: "100%" }}>
+      <Button onClick={() => setOpen(!open)} aria-expanded={open}>
+        {open ? "收起开店操作记录" : "查看开店操作记录"}
+      </Button>
+      {open && (
+        <>
+          <ErrorNotice error={list.error} onRetry={list.refresh} />
+          {list.error === undefined && (
+            <Table<Audit>
+              rowKey="id"
+              size="small"
+              loading={list.loading}
+              dataSource={list.data?.items ?? []}
+              pagination={false}
+              locale={{ emptyText: "最近 31 天没有开店操作记录" }}
+              expandable={{
+                rowExpandable: (item) => item.changes.length > 0,
+                expandedRowRender: (item) => (
+                  <Table<Change>
+                    size="small"
+                    rowKey="field"
+                    pagination={false}
+                    dataSource={item.changes}
+                    columns={[
+                      {
+                        title: "变更字段",
+                        dataIndex: "field",
+                        render: (field: string) => fields[field] ?? field,
+                      },
+                      {
+                        title: "变更前",
+                        dataIndex: "before",
+                        render: openingValue,
+                      },
+                      {
+                        title: "变更后",
+                        dataIndex: "after",
+                        render: openingValue,
+                      },
+                    ]}
+                  />
+                ),
+              }}
+              columns={[
+                {
+                  title: "时间",
+                  dataIndex: "occurredAt",
+                  render: time,
+                  responsive: ["sm"],
+                },
+                {
+                  title: "动作",
+                  dataIndex: "action",
+                  render: (action: string) => openingActions[action] ?? action,
+                },
+                { title: "操作者", dataIndex: "actorId", ellipsis: true },
+                { title: "结果", dataIndex: "result", render: resultTag },
+              ]}
+            />
+          )}
+          {(cursors.length > 1 || list.data?.nextCursor) && (
+            <Space>
+              <Button
+                disabled={cursors.length === 1 || list.loading}
+                onClick={() => setCursors(cursors.slice(0, -1))}
+              >
+                上一页
+              </Button>
+              <Button
+                disabled={!list.data?.nextCursor || list.loading}
+                onClick={() => {
+                  const next = list.data?.nextCursor;
+                  if (next) setCursors([...cursors, next]);
+                }}
+              >
+                下一页
+              </Button>
+            </Space>
+          )}
+        </>
+      )}
+    </Space>
+  );
 }
 
 function query(filter: Filter, cursor: string) {

@@ -33,8 +33,9 @@ public class PlatformCategoryController {
 	/** 创建分组或末级类目。 */
 	@PostMapping
 	public PlatformCategoryApi.Node create(@AuthenticationPrincipal Actor actor,
-			@RequestHeader("Idempotency-Key") String key, @RequestBody PlatformCategoryApi.Create input) {
-		return categories.create(actor, key, input);
+			@RequestHeader("Idempotency-Key") String key, @RequestBody PlatformCategoryApi.Create input,
+			HttpServletRequest request) {
+		return categories.create(actor, key, input, SecurityConfiguration.trace(request));
 	}
 
 	/** 改名、排序与启停使用一致的版本和幂等协议。 */

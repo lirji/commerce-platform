@@ -110,6 +110,14 @@ class StoreOpeningMySqlTest {
 				"name", "不可修改", "subjectType", "ENTERPRISE", "category", "家居")).status());
 		assertEquals("fresh-store", get("/v1/stores", member).body().path(0).path("storeId").asText());
 		assertEquals(200, get("/v1/catalog?storeId=fresh-store", member).status());
+		var history = get(STORE_PATH + "/operation-audits", admin);
+		assertEquals(200, history.status(), history.body().toString());
+		assertTrue(history.body().path("items").toString().contains("store.opening.draft"));
+		assertTrue(history.body().path("items").toString().contains("store.opening.revise"));
+		assertTrue(history.body().path("items").toString().contains("store.opening.open"));
+		assertTrue(history.body().path("items").toString().contains("HOME_STORAGE"));
+		assertEquals(404, get(STORE_PATH + "/operation-audits", otherAdmin).status());
+		assertEquals(403, get(STORE_PATH + "/operation-audits", member).status());
 	}
 
 	@Test

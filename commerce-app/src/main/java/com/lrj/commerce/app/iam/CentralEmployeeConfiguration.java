@@ -49,7 +49,7 @@ public class CentralEmployeeConfiguration {
             if ("POST".equals(r.getMethod())) return EmployeeAccess.Capability.STORE_CREATE;
         }
         if (("GET".equals(r.getMethod()) && ("/v1/admin/store-opening-categories".equals(path)
-                    || path.matches("/v1/admin/store-openings/[^/]+")))
+                    || path.matches("/v1/admin/store-openings/[^/]+(/operation-audits)?")))
                 || ("POST".equals(r.getMethod()) && ("/v1/admin/store-openings".equals(path)
                     || path.matches("/v1/admin/store-openings/[^/]+/(revise|open)")))) {
             return EmployeeAccess.Capability.STORE_CREATE;

@@ -42,6 +42,9 @@ public interface PlatformCategoryApi {
 	/** 创建分组或末级，不改变已有类目的父级与编码。 */
 	Node create(Actor actor, String key, Create input);
 
+	/** 记录创建请求的可信来源标识。 */
+	Node create(Actor actor, String key, Create input, String traceId);
+
 	/** 同版本修改名称、排序与启停，历史快照与写入一起提交。 */
 	Node change(Actor actor, String key, String code, Change input);
 

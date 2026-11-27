@@ -4,6 +4,7 @@ import com.lrj.commerce.kernel.DomainException;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.Inputs;
 import com.lrj.commerce.runtime.audit.OperationAudit;
+import com.lrj.commerce.runtime.audit.OperationAudit.Action;
 import com.lrj.commerce.runtime.audit.OperationAudit.Committed;
 import com.lrj.commerce.runtime.audit.OperationAudit.Evidence;
 import com.lrj.commerce.runtime.command.Commands;
@@ -51,12 +52,25 @@ public class PlatformCategoryService implements PlatformCategoryApi {
 	/** 锁定有效分组及上级后计算深度，避免同停用操作并发时越界。 */
 	@Override
 	public Node create(Actor actor, String key, Create input) {
+		return create(actor, key, input, null);
+	}
+
+	/** 先记录请求，再校验和锁定受影响类目。 */
+	@Override
+	public Node create(Actor actor, String key, Create input, String traceId) {
 		requirePlatform(actor);
+		String reference = input != null && input.code() != null && input.code().matches(CATEGORY_CODE)
+				? input.code() : null;
+		return audit.capture(Action.CATEGORY_CREATE, actor, reference, traceId,
+				attempt -> createAudited(actor, key, input, attempt));
+	}
+
+	private Node createAudited(Actor actor, String key, Create input, long attemptId) {
 		Inputs.require(input != null && input.kind() != null, "请选择类目类型");
 		var request = new Create(code(input.code()), input.parentCode() == null ? null : code(input.parentCode()),
 				Inputs.text(input.name(), 56).strip(), input.kind(), sort(input.sortOrder()),
 				Inputs.text(input.reason(), 256).strip());
-		return commands.runGuarded(actor, CREATE, key, request, Node.class, () -> lockCurator(actor), () -> {
+		return commands.runAudited(actor, CREATE, key, request, Node.class, () -> lockCurator(actor), attemptId, () -> {
 			int depth = 1;
 			if (request.parentCode() != null) {
 				var parent = mapper.parentForCreate(request.parentCode());
@@ -67,47 +81,42 @@ public class PlatformCategoryService implements PlatformCategoryApi {
 			Inputs.require(depth != 1 || request.kind() == Kind.BRANCH, "一级类目必须是分组");
 			Inputs.require(depth != MAX_DEPTH || request.kind() == Kind.LEAF, "第三级必须是末级类目");
 			mapper.insert(request, depth);
-			return audited(actor, request.code(), request.reason());
+			Node after = audited(actor, request.code(), request.reason());
+			var changes = List.of(new OperationAudit.Change("name", null, OperationAudit.safeText(after.name())),
+					new OperationAudit.Change("sortOrder", null, after.sortOrder()),
+					new OperationAudit.Change("enabled", null, after.enabled()));
+			return new Committed<>(after, new Evidence(after.code(), null, after.version(), request.reason(), changes,
+					Action.CATEGORY_CREATE.code()));
 		});
 	}
 
 	/** 原地停用保留引用，祖先停用时整个分支会从新选择目录隐藏。 */
 	@Override
 	public Node change(Actor actor, String key, String id, Change input) {
-		return change(actor, key, id, input, (String) null);
+		return change(actor, key, id, input, null);
 	}
 
 	/** 保持原幂等命令键；只有获平台目录读取权限的请求能记录合法格式的类目号。 */
 	@Override
 	public Node change(Actor actor, String key, String id, Change input, String traceId) {
-		if (actor != null && input != null && Boolean.FALSE.equals(input.enabled())) {
-			String reference = actor.role() == Actor.Role.PLATFORM_OPERATOR && id != null && id.matches(CATEGORY_CODE)
-					? id : null;
-			return audit.capture(OperationAudit.Action.CATEGORY_DISABLE, actor, reference, traceId,
-					attempt -> change(actor, key, id, input, attempt));
-		}
-		return change(actor, key, id, input, (Long) null);
+		requirePlatform(actor);
+		String reference = id != null && id.matches(CATEGORY_CODE) ? id : null;
+		Action action = input != null && Boolean.FALSE.equals(input.enabled()) ? Action.CATEGORY_DISABLE
+				: Action.CATEGORY_CHANGE;
+		return audit.capture(action, actor, reference, traceId, attempt -> changeAudited(actor, key, id, input, attempt));
 	}
 
-	private Node change(Actor actor, String key, String id, Change input, Long attemptId) {
-		requirePlatform(actor);
+	private Node changeAudited(Actor actor, String key, String id, Change input, long attemptId) {
 		String categoryCode = code(id);
 		Inputs.require(input != null && input.expectedVersion() != null && input.expectedVersion() >= 0
 				&& input.enabled() != null, "类目状态或版本无效");
 		var request = new Change(input.expectedVersion(), Inputs.text(input.name(), 56).strip(),
 				sort(input.sortOrder()), input.enabled(), Inputs.text(input.reason(), 256).strip());
-		if (attemptId != null) {
-			return commands.runAudited(actor, CHANGE, key, new Object[] { categoryCode, request }, Node.class,
-					() -> lockCurator(actor), attemptId, () -> {
-						Node before = Inputs.found(mapper.lock(categoryCode));
-						Node after = applyChange(actor, categoryCode, request);
-						return new Committed<>(after, evidence(before, after, request.reason()));
-					});
-		}
-		return commands.runGuarded(actor, CHANGE, key, new Object[] { categoryCode, request }, Node.class,
-				() -> lockCurator(actor), () -> {
-					Inputs.found(mapper.find(categoryCode));
-					return applyChange(actor, categoryCode, request);
+		return commands.runAudited(actor, CHANGE, key, new Object[] { categoryCode, request }, Node.class,
+				() -> lockCurator(actor), attemptId, () -> {
+					Node before = Inputs.found(mapper.lock(categoryCode));
+					Node after = applyChange(actor, categoryCode, request);
+					return new Committed<>(after, evidence(before, after, request.reason()));
 				});
 	}
 
@@ -119,14 +128,24 @@ public class PlatformCategoryService implements PlatformCategoryApi {
 
 	private static Evidence evidence(Node before, Node after, String reason) {
 		var changes = new ArrayList<OperationAudit.Change>(3);
-		if (!Objects.equals(before.name(), after.name()))
+		boolean renamed = !Objects.equals(before.name(), after.name());
+		boolean reordered = before.sortOrder() != after.sortOrder();
+		boolean toggled = before.enabled() != after.enabled();
+		if (renamed)
 			changes.add(new OperationAudit.Change("name", OperationAudit.safeText(before.name()),
 					OperationAudit.safeText(after.name())));
-		if (before.sortOrder() != after.sortOrder())
+		if (reordered)
 			changes.add(new OperationAudit.Change("sortOrder", before.sortOrder(), after.sortOrder()));
-		if (before.enabled() != after.enabled())
+		if (toggled)
 			changes.add(new OperationAudit.Change("enabled", before.enabled(), after.enabled()));
-		return new Evidence(after.code(), before.version(), after.version(), reason, changes);
+		Action primary = Action.CATEGORY_CHANGE;
+		if (toggled)
+			primary = after.enabled() ? Action.CATEGORY_ENABLE : Action.CATEGORY_DISABLE;
+		else if (renamed)
+			primary = Action.CATEGORY_RENAME;
+		else if (reordered)
+			primary = Action.CATEGORY_REORDER;
+		return new Evidence(after.code(), before.version(), after.version(), reason, changes, primary.code());
 	}
 
 	/** 已受信的平台后台可以复核版本、操作者和变更原因。 */

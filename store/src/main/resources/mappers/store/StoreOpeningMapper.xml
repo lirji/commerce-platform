@@ -5,11 +5,17 @@
     INSERT INTO store_record(tenant_id,store_id,merchant_id,name,status,version,opening_subject_type,opening_category,opening_category_code)
     VALUES(#{tenant},#{input.storeId},#{input.merchantId},#{input.name},'PENDING_OPEN',0,#{input.subjectType},#{category},#{input.categoryCode})
   </insert>
-  <select id="find" resultType="com.lrj.commerce.store.management.api.StoreOpeningApi$Opening">
+  <sql id="opening">
     SELECT store_id,merchant_id,name,status,version,opening_subject_type AS subject_type,opening_category AS category,
            opening_review_ref AS review_reference,opened_by,opened_at,opening_category_code AS category_code
     FROM store_record
     WHERE tenant_id=#{tenant} AND store_id=#{id} AND opening_subject_type IS NOT NULL
+  </sql>
+  <select id="find" resultType="com.lrj.commerce.store.management.api.StoreOpeningApi$Opening">
+    <include refid="opening"/>
+  </select>
+  <select id="lock" resultType="com.lrj.commerce.store.management.api.StoreOpeningApi$Opening">
+    <include refid="opening"/> FOR UPDATE
   </select>
   <update id="revise">
     UPDATE store_record

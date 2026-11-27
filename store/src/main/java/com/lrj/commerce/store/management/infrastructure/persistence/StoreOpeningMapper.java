@@ -14,6 +14,9 @@ public interface StoreOpeningMapper {
 
 	StoreOpeningApi.Opening find(@Param("tenant") String tenant, @Param("id") String id);
 
+	/** 锁住当前版本，避免把并发更新之前的快照当作本次变更前值。 */
+	StoreOpeningApi.Opening lock(@Param("tenant") String tenant, @Param("id") String id);
+
 	int revise(@Param("tenant") String tenant, @Param("id") String id,
 			@Param("input") StoreOpeningApi.Revision input, @Param("category") String category);
 

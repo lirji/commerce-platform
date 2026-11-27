@@ -33,6 +33,7 @@ public class OperationAudit {
 	private static final Logger LOG = LoggerFactory.getLogger(OperationAudit.class);
 	private static final String SOURCE = "COMMERCE";
 	private static final String PLATFORM = "PLATFORM";
+	private static final String TENANT = "TENANT";
 	private static final String SECURITY = "SECURITY";
 	private static final String UNAVAILABLE = "操作日志暂不可用";
 	private static final String INVALID_FILTER = "操作日志筛选条件无效";
@@ -44,17 +45,37 @@ public class OperationAudit {
 					+ "|[\\w.+-]+@[\\w.-]+\\.[a-z]{2,}|[0-9][0-9 ()+.-]{8,}[0-9]");
 
 	public enum Action {
+		CATEGORY_CREATE("platform.category.create", "BUSINESS"),
+		CATEGORY_CHANGE("platform.category.change", "BUSINESS"),
 		CATEGORY_DISABLE("platform.category.disable", "BUSINESS"),
+		CATEGORY_RENAME("platform.category.rename", "BUSINESS"),
+		CATEGORY_REORDER("platform.category.reorder", "BUSINESS"),
+		CATEGORY_ENABLE("platform.category.enable", "BUSINESS"),
 		CATEGORY_CHANGE_DENIED("platform.category.change", "SECURITY"),
+		STORE_OPENING_DRAFT("store.opening.draft", "BUSINESS", true),
+		STORE_OPENING_REVISE("store.opening.revise", "BUSINESS", true),
+		STORE_OPENING_OPEN("store.opening.open", "BUSINESS", true),
+		STORE_OPENING_AUDIT_LIST("store.opening.audit.list", "HIGH_RISK", true),
 		AUDIT_LIST("platform.audit.list", "HIGH_RISK"),
 		AUDIT_READ("platform.audit.read", "HIGH_RISK");
 
 		private final String code;
 		private final String policy;
+		private final boolean tenantScoped;
 
 		Action(String code, String policy) {
+			this(code, policy, false);
+		}
+
+		Action(String code, String policy, boolean tenantScoped) {
 			this.code = code;
 			this.policy = policy;
+			this.tenantScoped = tenantScoped;
+		}
+
+		/** 稳定编码用于在事务里补充实际生效的动作。 */
+		public String code() {
+			return code;
 		}
 	}
 
@@ -65,8 +86,8 @@ public class OperationAudit {
 	}
 
 	/** 保存提交前后版本和实际差异，不依赖请求提供的变更快照。 */
-	public record Evidence(String resourceId, long beforeVersion, long afterVersion, String reason,
-			List<Change> changes) {
+	public record Evidence(String resourceId, Long beforeVersion, long afterVersion, String reason,
+			List<Change> changes, String actionCode) {
 	}
 
 	/** 提交证据和业务返回值由同一个用例计算。 */
@@ -121,7 +142,7 @@ public class OperationAudit {
 	public void effect(Key key, long attemptId, Evidence evidence) {
 		String changes = JsonCodec.write(evidence.changes());
 		Evidence safe = new Evidence(evidence.resourceId(), evidence.beforeVersion(), evidence.afterVersion(),
-				safeText(evidence.reason()), evidence.changes());
+				safeText(evidence.reason()), evidence.changes(), evidence.actionCode());
 		try {
 			checked(mapper.insertEffect(key, attemptId, safe, changes));
 		}
@@ -154,12 +175,27 @@ public class OperationAudit {
 			if (result != null)
 				Inputs.require(Arrays.stream(Result.values()).anyMatch(value -> value.name().equals(result)), INVALID_FILTER);
 			Cursor position = parseCursor(cursor, start, end);
-			var rows = mapper.list(new Query(start, end, identifier(actorId, 64), identifier(resourceId, 96), action,
+			var rows = mapper.list(new Query(null, start, end, identifier(actorId, 64), identifier(resourceId, 96), action,
 					result, position.time(), position.id(), limit + 1));
 			var items = rows.stream().limit(limit).map(OperationAudit::item).toList();
 			String next = rows.size() > limit ? items.getLast().occurredAt() + "," + items.getLast().id() : null;
 			finish(id, Result.SUCCEEDED, null);
 			return new Page(items, next);
+		});
+	}
+
+	/** 仅由已经验证开店资料权限的用例按单店调用，数据库再次限定可信租户和店铺。 */
+	public Page openingHistory(Actor actor, String storeId, String traceId, String cursor) {
+		return capture(Action.STORE_OPENING_AUDIT_LIST, actor, storeId, traceId, id -> {
+			Instant end = Instant.now();
+			Instant start = end.minus(MAX_WINDOW);
+			Cursor position = parseCursor(cursor, start, end);
+			int pageSize = 20;
+			var records = mapper.list(new Query(actor.tenantId(), start, end, null, storeId, null, null,
+					position.time(), position.id(), pageSize + 1));
+			var items = records.stream().limit(pageSize).map(OperationAudit::item).toList();
+			finish(id, Result.SUCCEEDED, null);
+			return new Page(items, records.size() > pageSize ? items.getLast().occurredAt() + "," + items.getLast().id() : null);
 		});
 	}
 
@@ -180,7 +216,7 @@ public class OperationAudit {
 
 	private long begin(Action action, Actor actor, String resourceId, String traceId) {
 		String requestId = UUID.randomUUID().toString();
-		String scope = actor.role() == Actor.Role.PLATFORM_OPERATOR ? PLATFORM : SECURITY;
+		String scope = action.tenantScoped ? TENANT : actor.role() == Actor.Role.PLATFORM_OPERATOR ? PLATFORM : SECURITY;
 		var attempt = new Attempt(SOURCE, requestId, traceId, scope, actor.tenantId(), actor.actorId(), action.code,
 				resourceId, action.policy);
 		try {

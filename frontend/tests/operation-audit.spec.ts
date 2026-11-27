@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { randomUUID } from "node:crypto";
+import { navigate } from "./navigation";
 
 const token = process.env.COMMERCE_AUDIT_E2E_TOKEN;
 const evidence = process.env.COMMERCE_EVIDENCE_DIR;
+const adminToken = process.env.COMMERCE_AUDIT_E2E_ADMIN;
 
 test("类目停用可在操作日志查看并回到原类目", async ({ page, request }) => {
   test.skip(!token, "需要隔离数据库签发的类目专岗凭据");
@@ -45,7 +47,9 @@ test("类目停用可在操作日志查看并回到原类目", async ({ page, re
     page.getByRole("button", { name: "查询", exact: true }).click(),
   ]);
   expect(filtered.ok()).toBeTruthy();
-  const audit = page.getByRole("row", { name: new RegExp(code) });
+  const audit = page
+    .getByRole("row", { name: new RegExp(code) })
+    .filter({ hasText: "停用类目" });
   await expect(audit.getByText("成功", { exact: true })).toBeVisible();
   if (evidence)
     await page.screenshot({ path: evidence + "/oa01-audit-desktop.png" });
@@ -75,4 +79,69 @@ test("类目停用可在操作日志查看并回到原类目", async ({ page, re
   await expect(
     category.getByRole("cell", { name: "已停用", exact: true }),
   ).toBeVisible();
+});
+
+test("开店资料显示本店草稿和补正记录", async ({ page, request }) => {
+  test.skip(!adminToken, "需要隔离数据库签发的店铺运营凭据");
+  const suffix = randomUUID().slice(0, 8);
+  const storeId = "oa-store-" + suffix;
+  const merchantId = "oa-merchant-" + suffix;
+  const post = async (route: string, data: unknown) => {
+    const response = await request.post(route, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        "Idempotency-Key": randomUUID(),
+      },
+      data,
+    });
+    expect(response.ok(), await response.text()).toBeTruthy();
+  };
+  await post("/v1/admin/merchants", { merchantId, name: "审计验收商家" });
+  await post("/v1/admin/store-openings", {
+    storeId,
+    merchantId,
+    name: "审计验收店铺",
+    subjectType: "INDIVIDUAL",
+    categoryCode: "HOME_STORAGE",
+  });
+  await post(`/v1/admin/store-openings/${storeId}/revise`, {
+    expectedVersion: 0,
+    name: "审计验收店铺补正",
+    subjectType: "ENTERPRISE",
+    categoryCode: "HOME_STORAGE",
+  });
+
+  await page.goto("/");
+  await page.getByLabel("访问凭据", { exact: true }).fill(adminToken!);
+  await page.getByRole("button", { name: "进入平台", exact: true }).click();
+  await navigate(page, "店铺管理");
+  const store = page.getByRole("row", { name: new RegExp(storeId) });
+  await store.getByRole("button", { name: "继续开店", exact: true }).click();
+  const detail = page.getByRole("dialog", { name: "开店资料", exact: true });
+  await detail
+    .getByRole("button", { name: "查看开店操作记录", exact: true })
+    .click();
+  await expect(
+    detail.getByRole("cell", { name: "保存草稿", exact: true }),
+  ).toBeVisible();
+  await expect(
+    detail.getByRole("cell", { name: "修改开店资料", exact: true }),
+  ).toBeVisible();
+  const revised = detail.getByRole("row").filter({ hasText: "修改开店资料" });
+  await revised.getByRole("button").first().click();
+  await expect(
+    detail.getByRole("cell", { name: "企业", exact: true }),
+  ).toBeVisible();
+  if (evidence)
+    await page.screenshot({
+      path: evidence + "/oa02-opening-audit-desktop.png",
+    });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    detail.getByRole("cell", { name: "企业", exact: true }),
+  ).toBeVisible();
+  if (evidence)
+    await page.screenshot({
+      path: evidence + "/oa02-opening-audit-narrow.png",
+    });
 });
