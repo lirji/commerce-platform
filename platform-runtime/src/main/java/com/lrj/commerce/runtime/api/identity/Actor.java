@@ -34,7 +34,7 @@ public record Actor(String tenantId, String actorId, Role role, Channel channel,
 	 */
 	public enum Capability {
 
-		EVENT_RUNTIME_METRICS_READ, RUNTIME_RECOVERY_READ, RUNTIME_RECOVERY_EXECUTE, RUNTIME_REPLAY_EXECUTE,
+		EVENT_RUNTIME_METRICS_READ, OPERATION_AUDIT_READ, RUNTIME_RECOVERY_READ, RUNTIME_RECOVERY_EXECUTE, RUNTIME_REPLAY_EXECUTE,
 		MARKETING_ACTIVITY_READ, MARKETING_DRAFT_EDIT, MARKETING_REVIEW, MARKETING_PUBLISH, MARKETING_PAUSE,
 		MARKETING_PREVIEW, MARKETING_EXECUTION_READ
 
@@ -53,7 +53,7 @@ public record Actor(String tenantId, String actorId, Role role, Channel channel,
 	/** 只有平台运维角色拥有平台能力；租户管理员只拥有本租户运行时恢复与重放能力；门店运营与会员没有运行时能力。 */
 	public java.util.Set<Capability> capabilities() {
 		return switch (role) {
-			case PLATFORM_OPERATOR -> java.util.EnumSet.of(Capability.EVENT_RUNTIME_METRICS_READ);
+			case PLATFORM_OPERATOR -> java.util.EnumSet.of(Capability.EVENT_RUNTIME_METRICS_READ, Capability.OPERATION_AUDIT_READ);
 			case ADMIN -> java.util.EnumSet.of(Capability.RUNTIME_RECOVERY_READ, Capability.RUNTIME_RECOVERY_EXECUTE,
 					Capability.RUNTIME_REPLAY_EXECUTE, Capability.MARKETING_ACTIVITY_READ, Capability.MARKETING_DRAFT_EDIT,
 					Capability.MARKETING_REVIEW, Capability.MARKETING_PUBLISH, Capability.MARKETING_PAUSE,

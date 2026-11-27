@@ -3,6 +3,8 @@ package com.lrj.commerce.runtime.command;
 import com.lrj.commerce.kernel.DomainException;
 import com.lrj.commerce.kernel.Identifiers;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.audit.OperationAudit;
+import com.lrj.commerce.runtime.audit.OperationAudit.Committed;
 import com.lrj.commerce.runtime.command.persistence.CommandMapper;
 import java.util.function.Supplier;
 import org.springframework.stereotype.Component;
@@ -15,11 +17,13 @@ import com.lrj.commerce.runtime.serialization.JsonCodec;
 public class Commands {
 
 	private final CommandMapper mapper;
+	private final OperationAudit audit;
 
 	private final TransactionTemplate transaction;
 
-	public Commands(CommandMapper mapper, PlatformTransactionManager manager) {
+	public Commands(CommandMapper mapper, PlatformTransactionManager manager, OperationAudit audit) {
 		this.mapper = mapper;
+		this.audit = audit;
 		this.transaction = new TransactionTemplate(manager);
 		this.transaction.setTimeout(10);
 	}
@@ -50,6 +54,18 @@ public class Commands {
 	/** 持久任务回执仍关联原来源，返回旧任务前由Owner核对来源，不能以新引用复活旧任务。 */
 	public <T> T runGuarded(Actor actor, String operation, String commandKey, Object input, Class<T> type,
 			Runnable guard, java.util.function.Consumer<T> receiptGuard, Supplier<T> action) {
+		return run(actor, operation, commandKey, input, type, guard, receiptGuard, null,
+				() -> new Committed<>(action.get(), null));
+	}
+
+	/** 请求已独立留痕，业务差异由当前本地事务和命令回执共同提交。 */
+	public <T> T runAudited(Actor actor, String operation, String commandKey, Object input, Class<T> type,
+			Runnable guard, long attemptId, Supplier<Committed<T>> action) {
+		return run(actor, operation, commandKey, input, type, guard, result -> {}, attemptId, action);
+	}
+
+	private <T> T run(Actor actor, String operation, String commandKey, Object input, Class<T> type, Runnable guard,
+			java.util.function.Consumer<T> receiptGuard, Long attemptId, Supplier<Committed<T>> action) {
 		Identifiers.require(commandKey);
 		Identifiers.require(operation);
 		var key = new CommandMapper.Key(actor.tenantId(), actor.actorId(), operation, commandKey);
@@ -64,12 +80,18 @@ public class Commands {
 			if (previous.responseJson() != null) {
 				T result = JsonCodec.read(previous.responseJson(), type);
 				receiptGuard.accept(result);
+				if (attemptId != null)
+					audit.replay(key, attemptId);
 				return result;
 			}
-			T result = action.get();
+			var committed = action.get();
+			T result = committed.value();
 			if (mapper.complete(key, JsonCodec.write(result)) != 1)
 				throw new IllegalStateException("命令结果写入失败");
-			mapper.audit(key);
+			if (attemptId == null)
+				mapper.audit(key);
+			else
+				audit.effect(key, attemptId, committed.evidence());
 			return result;
 		});
 	}

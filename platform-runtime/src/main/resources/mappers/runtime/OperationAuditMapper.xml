@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lrj.commerce.runtime.audit.persistence.OperationAuditMapper">
+  <insert id="insertAttempt">
+    INSERT INTO audit_operation_attempt(source_system,request_id,trace_id,scope_type,actor_tenant_id,actor_id,
+        action_code,resource_id,policy_code,policy_version,schema_version)
+    VALUES(#{sourceSystem},#{requestId},#{traceId},#{scopeType},#{tenantId},#{actorId},#{action},#{resourceId},
+        #{policy},1,1)
+  </insert>
+  <select id="findAttempt" resultType="long">
+    SELECT id FROM audit_operation_attempt WHERE source_system=#{source} AND request_id=#{requestId}
+  </select>
+  <insert id="insertOutcome">
+    INSERT INTO audit_attempt_outcome(attempt_id,event_ref,result_code,error_code)
+    VALUES(#{attemptId},CONCAT(#{attemptId},':result'),#{result},#{errorCode})
+  </insert>
+  <insert id="insertEffect">
+    INSERT INTO platform_audit(tenant_id,actor_id,operation,command_key,audit_attempt_id,audit_resource_id,
+        audit_before_version,audit_after_version,audit_reason,audit_changes_json)
+    VALUES(#{key.tenantId},#{key.actorId},#{key.operation},#{key.commandKey},#{attemptId},#{evidence.resourceId},
+        #{evidence.beforeVersion},#{evidence.afterVersion},#{evidence.reason},#{changes})
+  </insert>
+  <insert id="insertReplay">
+    INSERT INTO audit_attempt_outcome(attempt_id,event_ref,result_code,effect_id)
+    VALUES(#{attemptId},CONCAT(#{attemptId},':result'),'REPLAYED',
+      (SELECT id FROM platform_audit WHERE tenant_id=#{key.tenantId} AND actor_id=#{key.actorId}
+       AND operation=#{key.operation} AND command_key=#{key.commandKey} ORDER BY id DESC LIMIT 1))
+  </insert>
+  <sql id="rows">
+    SELECT a.id,a.source_system,a.request_id,a.trace_id,a.action_code AS action,a.actor_id,
+      COALESCE(p.audit_resource_id,a.resource_id) AS resource_id,a.occurred_at,
+      CASE WHEN p.id IS NOT NULL THEN 'SUCCEEDED' ELSE COALESCE(o.result_code,'UNKNOWN') END AS result,
+      o.error_code,COALESCE(p.id,o.effect_id) AS effect_id,original.audit_attempt_id AS original_attempt_id,
+      p.audit_before_version AS before_version,p.audit_after_version AS after_version,p.audit_reason AS reason,
+      p.audit_changes_json AS changes_json
+    FROM audit_operation_attempt a
+    LEFT JOIN platform_audit p ON p.audit_attempt_id=a.id
+    LEFT JOIN audit_attempt_outcome o ON o.id=(
+      SELECT last.id FROM audit_attempt_outcome last WHERE last.attempt_id=a.id ORDER BY last.id DESC LIMIT 1
+    )
+    LEFT JOIN platform_audit original ON original.id=o.effect_id
+  </sql>
+  <select id="list" resultType="com.lrj.commerce.runtime.audit.persistence.OperationAuditMapper$Row">
+    <include refid="rows"/>
+    WHERE a.scope_type='PLATFORM' AND a.occurred_at &gt;= #{from} AND a.occurred_at &lt; #{to}
+    <choose>
+      <when test="action != null">AND a.action_code=#{action}</when>
+      <otherwise>AND a.action_code NOT IN ('platform.audit.list','platform.audit.read')</otherwise>
+    </choose>
+    <if test="actorId != null">AND a.actor_id=#{actorId}</if>
+    <if test="resourceId != null">AND a.resource_id=#{resourceId}</if>
+    <if test="result != null">
+      AND (CASE WHEN p.id IS NOT NULL THEN 'SUCCEEDED' ELSE COALESCE(o.result_code,'UNKNOWN') END)=#{result}
+    </if>
+    <if test="cursorId != null">
+      AND (a.occurred_at &lt; #{cursorTime} OR (a.occurred_at=#{cursorTime} AND a.id &lt; #{cursorId}))
+    </if>
+    ORDER BY a.occurred_at DESC,a.id DESC LIMIT #{limit}
+  </select>
+  <select id="detail" resultType="com.lrj.commerce.runtime.audit.persistence.OperationAuditMapper$Row">
+    <include refid="rows"/>
+    WHERE a.scope_type='PLATFORM' AND a.id=#{id}
+  </select>
+</mapper>

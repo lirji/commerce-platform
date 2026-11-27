@@ -127,11 +127,15 @@ function CreateCategory({
 }
 
 /** 平台分类管理复用真实字典，类目操作按服务器返回的专岗许可显示。 */
-export function PlatformCategories() {
+export function PlatformCategories({
+  initialQuery = "",
+}: {
+  initialQuery?: string;
+}) {
   const directory = useResource<{ canEdit: boolean; items: Category[] }>(
     DIRECTORY,
   );
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [historyCode, setHistoryCode] = useState<string>();
   const history = useResource<History[]>(
     historyCode ? `${DIRECTORY}/${encode(historyCode)}/history` : null,

@@ -9,6 +9,9 @@
   <select id="find" resultType="com.lrj.commerce.store.management.api.PlatformCategoryApi$Node">
     SELECT <include refid="node"/> FROM store_opening_category c WHERE c.category_code=#{code}
   </select>
+  <select id="lock" resultType="com.lrj.commerce.store.management.api.PlatformCategoryApi$Node">
+    SELECT <include refid="node"/> FROM store_opening_category c WHERE c.category_code=#{code} FOR UPDATE
+  </select>
   <select id="parentForCreate" resultType="com.lrj.commerce.store.management.api.PlatformCategoryApi$Node">
     SELECT <include refid="node"/>
     FROM store_opening_category c LEFT JOIN store_opening_category p ON p.category_code=c.parent_code

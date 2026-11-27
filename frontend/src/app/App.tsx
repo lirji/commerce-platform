@@ -99,6 +99,12 @@ const PlatformCategories = lazy(() =>
   })),
 );
 const PLATFORM_CATEGORIES_PAGE = "platform-categories";
+const PLATFORM_AUDIT_PAGE = "platform-operation-audits";
+const OperationAudits = lazy(() =>
+  import("../features/OperationAudits").then((m) => ({
+    default: m.OperationAudits,
+  })),
+);
 
 const groups = [
   {
@@ -166,9 +172,11 @@ const adminPages = [
 ];
 function route() {
   const [page, query] = location.hash.slice(1).split("?");
+  const params = new URLSearchParams(query);
   return {
     page: page || "",
-    store: new URLSearchParams(query).get("store") ?? "",
+    store: params.get("store") ?? "",
+    category: params.get("category") ?? "",
   };
 }
 export function App() {
@@ -266,7 +274,11 @@ export function App() {
       ? "/runtime-capabilities"
       : null,
   );
-  const navigate = (page: string, store = locationState.store) => {
+  const navigate = (
+    page: string,
+    store = locationState.store,
+    category?: string,
+  ) => {
     if (hasUnconfirmedCommand()) {
       modal.warning({
         title: "请先确认当前操作结果",
@@ -285,6 +297,7 @@ export function App() {
         : new URLSearchParams();
     if (store) query.set("store", store);
     else query.delete("store");
+    if (category) query.set("category", category);
     location.hash = page + (query.size ? "?" + query : "");
   };
   useEffect(() => {
@@ -409,6 +422,7 @@ export function App() {
                         ? [
                             "platform-runtime",
                             PLATFORM_CATEGORIES_PAGE,
+                            PLATFORM_AUDIT_PAGE,
                           ].includes(requested.page)
                         : actorIdentity.role === "ADMIN"
                           ? adminPages.some(([key]) => key === requested.page)
@@ -489,9 +503,12 @@ export function App() {
           : "shop");
   const store = locationState.store;
   const categoryWorkspace = platform && page === PLATFORM_CATEGORIES_PAGE;
+  const auditWorkspace = platform && page === PLATFORM_AUDIT_PAGE;
   const platformContext = categoryWorkspace
     ? "平台工具 · 分类字典"
-    : "平台运维 · 只读聚合";
+    : auditWorkspace
+      ? "平台工具 · 操作日志"
+      : "平台运维 · 只读聚合";
   const caps = capabilities.data ?? {
     sandboxEnabled: false,
     workersEnabled: false,
@@ -510,6 +527,11 @@ export function App() {
           key: PLATFORM_CATEGORIES_PAGE,
           label: "平台分类字典",
           icon: <Icon name="catalog" />,
+        },
+        {
+          key: PLATFORM_AUDIT_PAGE,
+          label: "操作日志",
+          icon: <Icon name="platform" />,
         },
       ]
     : operator
@@ -541,7 +563,14 @@ export function App() {
   if (platform)
     content =
       page === PLATFORM_CATEGORIES_PAGE ? (
-        <PlatformCategories />
+        <PlatformCategories
+          key={locationState.category}
+          initialQuery={locationState.category}
+        />
+      ) : page === PLATFORM_AUDIT_PAGE ? (
+        <OperationAudits
+          openCategory={(code) => navigate(PLATFORM_CATEGORIES_PAGE, "", code)}
+        />
       ) : page === "platform-runtime" ? (
         <PlatformRuntime />
       ) : (
@@ -604,7 +633,7 @@ export function App() {
           <WorkspaceBrand />
           <div className="nav-caption">
             {platform
-              ? categoryWorkspace
+              ? categoryWorkspace || auditWorkspace
                 ? "平台工具"
                 : "运行健康工作空间"
               : operator
@@ -620,23 +649,25 @@ export function App() {
             items={menu}
             onClick={({ key }) => navigate(key)}
           />
-          <div className="sidebar-note">
-            {platform
-              ? categoryWorkspace
-                ? "开店 · 商品"
-                : "跨租户聚合 · 只读指标"
-              : operator
-                ? "门店商品 · 授权经营"
-                : "会员 · 商品 · 营销"}
-            <br />
-            {platform
-              ? categoryWorkspace
-                ? "共享平台类目"
-                : "从运行事实发现问题"
-              : operator
-                ? "操作范围由业务权限核验"
-                : "让每一次经营都有据可循"}
-          </div>
+          {!auditWorkspace && (
+            <div className="sidebar-note">
+              {platform
+                ? categoryWorkspace
+                  ? "开店 · 商品"
+                  : "跨租户聚合 · 只读指标"
+                : operator
+                  ? "门店商品 · 授权经营"
+                  : "会员 · 商品 · 营销"}
+              <br />
+              {platform
+                ? categoryWorkspace
+                  ? "共享平台类目"
+                  : "从运行事实发现问题"
+                : operator
+                  ? "操作范围由业务权限核验"
+                  : "让每一次经营都有据可循"}
+            </div>
+          )}
         </Layout.Sider>
       )}
       {admin && compact && (
@@ -669,7 +700,9 @@ export function App() {
             <div className="workspace-location">
               <span>
                 {platform
-                  ? "平台运维"
+                  ? auditWorkspace
+                    ? "平台工具"
+                    : "平台运维"
                   : operator
                     ? "商品与门店"
                     : (groups.find((g) =>
@@ -680,7 +713,9 @@ export function App() {
                 {platform
                   ? categoryWorkspace
                     ? "平台分类字典"
-                    : "运行健康"
+                    : auditWorkspace
+                      ? "操作日志"
+                      : "运行健康"
                   : (adminPages.find(([key]) => key === page)?.[1] ??
                     "商品经营")}
               </strong>

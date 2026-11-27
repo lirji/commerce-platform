@@ -1,6 +1,8 @@
 package com.lrj.commerce.app.configuration.security;
 
 import com.lrj.commerce.app.http.store.CentralPageController;
+import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
 import com.lrj.commerce.runtime.identity.persistence.CredentialMapper;
 import jakarta.servlet.*;
@@ -28,7 +30,7 @@ public class SecurityConfiguration {
 			"/v1/orders/**", "/v1/point-offers/**", "/v1/point-redemptions", "/v1/quotes/**", "/v1/stores" };
 
 	@Bean
-	SecurityFilterChain security(HttpSecurity http, CredentialMapper credentials) throws Exception {
+	SecurityFilterChain security(HttpSecurity http, CredentialMapper credentials, OperationAudit audit) throws Exception {
 		return http.csrf(c -> c.disable())
 			.sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(
@@ -53,7 +55,14 @@ public class SecurityConfiguration {
 			.exceptionHandling(c -> c
 				.authenticationEntryPoint(
 						(req, res, error) -> error(res, 401, "UNAUTHENTICATED", "需要有效访问凭据", trace(req)))
-				.accessDeniedHandler((req, res, error) -> error(res, 403, "FORBIDDEN", "没有操作权限", trace(req))))
+				.accessDeniedHandler((req, res, error) -> {
+					var authentication = SecurityContextHolder.getContext().getAuthentication();
+					if ("POST".equals(req.getMethod()) && req.getRequestURI().substring(req.getContextPath().length())
+							.matches("/v1/platform/commerce-categories/[^/]+") && authentication != null
+							&& authentication.getPrincipal() instanceof Actor actor)
+						audit.deniedCategoryChange(actor, trace(req));
+					error(res, 403, "FORBIDDEN", "没有操作权限", trace(req));
+				}))
 			.addFilterBefore(new TokenFilter(credentials), AnonymousAuthenticationFilter.class)
 			.build();
 	}

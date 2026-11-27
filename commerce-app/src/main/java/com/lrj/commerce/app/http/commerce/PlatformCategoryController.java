@@ -1,7 +1,9 @@
 package com.lrj.commerce.app.http.commerce;
 
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.app.configuration.security.SecurityConfiguration;
 import com.lrj.commerce.store.management.api.PlatformCategoryApi;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,8 +41,8 @@ public class PlatformCategoryController {
 	@PostMapping("/{code}")
 	public PlatformCategoryApi.Node change(@AuthenticationPrincipal Actor actor,
 			@RequestHeader("Idempotency-Key") String key, @PathVariable String code,
-			@RequestBody PlatformCategoryApi.Change input) {
-		return categories.change(actor, key, code, input);
+			@RequestBody PlatformCategoryApi.Change input, HttpServletRequest request) {
+		return categories.change(actor, key, code, input, SecurityConfiguration.trace(request));
 	}
 
 	/** 读取某个节点的最近变更。 */

@@ -45,6 +45,9 @@ public interface PlatformCategoryApi {
 	/** 同版本修改名称、排序与启停，历史快照与写入一起提交。 */
 	Node change(Actor actor, String key, String code, Change input);
 
+	/** HTTP 入口提供服务端追踪标识供强制审计记录使用。 */
+	Node change(Actor actor, String key, String code, Change input, String traceId);
+
 	/** 列出该类目最近的维护记录。 */
 	List<History> history(Actor actor, String code);
 

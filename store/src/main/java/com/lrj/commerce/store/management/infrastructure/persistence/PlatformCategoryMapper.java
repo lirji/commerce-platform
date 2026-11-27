@@ -13,6 +13,9 @@ public interface PlatformCategoryMapper {
 
 	PlatformCategoryApi.Node find(@Param("code") String code);
 
+	/** 同一次事务锁定并读取准确前值，避免并发修改导致差异错配。 */
+	PlatformCategoryApi.Node lock(@Param("code") String code);
+
 	PlatformCategoryApi.Node parentForCreate(@Param("code") String code);
 
 	void insert(@Param("input") PlatformCategoryApi.Create input, @Param("depth") int depth);
