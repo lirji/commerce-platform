@@ -1,5 +1,5 @@
 import { Alert, Card, Empty } from "antd";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   JourneyNodeKind,
   type Journey,
@@ -100,6 +100,7 @@ function caption(node: JourneyNode) {
 export function JourneyMap({ journey }: { journey: Journey }) {
   const [selected, setSelected] = useState(journey.entry);
   const marker = useId();
+  const detail = useRef<HTMLDivElement>(null);
   const layout = arrange(journey.nodes);
   const current =
     journey.nodes.find((node) => node.id === selected) ?? journey.nodes[0];
@@ -191,7 +192,18 @@ export function JourneyMap({ journey }: { journey: Journey }) {
                 key={node.id}
                 className={`journey-map-node${current.id === node.id ? " is-selected" : ""}${node.kind === JourneyNodeKind.END ? " is-end" : ""}`}
                 style={{ left: x, top: y }}
-                onClick={() => setSelected(node.id)}
+                onClick={(event) => {
+                  setSelected(node.id);
+                  // 键盘激活时让用户看到当前节点配置，保留在图中继续导航的焦点。
+                  if (event.detail === 0)
+                    requestAnimationFrame(() =>
+                      detail.current?.scrollIntoView({
+                        block: "nearest",
+                        inline: "nearest",
+                        behavior: "instant",
+                      }),
+                    );
+                }}
                 aria-pressed={current.id === node.id}
                 aria-label={`${nodeKinds[node.kind].label} ${node.id}${journey.entry === node.id ? "（入口）" : ""}，${
                   outgoing(node)
@@ -213,6 +225,7 @@ export function JourneyMap({ journey }: { journey: Journey }) {
           </div>
         </div>
         <Card
+          ref={detail}
           className="journey-node-detail"
           title={`${current.id} · ${nodeKinds[current.kind].label}`}
           size="small"

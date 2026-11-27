@@ -2,21 +2,24 @@ import { expect, type Page } from "@playwright/test";
 
 /** 比较真实渲染尺寸，覆盖页面入口、表格操作和通过 Portal 渲染的弹层按钮。 */
 export async function assertButtonSizes(page: Page) {
-  const buttons = await page
-    .locator(".ant-btn:visible")
-    .evaluateAll((elements) =>
-      elements.map((element) => {
-        const style = getComputedStyle(element);
-        return {
+  const buttons = await page.locator(".ant-btn").evaluateAll((elements) =>
+    elements.flatMap((element) => {
+      // 在同一次浏览器布局读取中判定可见，避免响应式页签切换期间测到刚隐藏的节点。
+      const style = getComputedStyle(element);
+      if (!element.getClientRects().length || style.visibility === "hidden")
+        return [];
+      return [
+        {
           text: element.textContent?.trim(),
           height: element.getBoundingClientRect().height,
           font: style.fontSize,
           radius: style.borderRadius,
           padding: style.paddingInlineStart,
           icon: element.classList.contains("ant-btn-icon-only"),
-        };
-      }),
-    );
+        },
+      ];
+    }),
+  );
   expect(buttons.length).toBeGreaterThan(0);
   for (const button of buttons) {
     expect(button.height, button.text).toBe(32);
