@@ -1,7 +1,10 @@
 package com.lrj.commerce.app.http.catalog.merchandising;
 
+import com.lrj.commerce.app.configuration.security.SecurityConfiguration;
 import com.lrj.commerce.catalog.merchandising.api.CatalogMerchandisingApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.audit.OperationAudit;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,15 +22,22 @@ public class CatalogMerchandisingController {
 	/** 结构化类目创建。 */
 	@PostMapping("/operations/catalog-categories")
 	public Object createCategory(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
-			@RequestBody CatalogMerchandisingApi.CategoryInput input) {
-		return catalog.createCategory(actor, key, input);
+			@RequestBody CatalogMerchandisingApi.CategoryInput input, HttpServletRequest request) {
+		return catalog.createCategory(actor, key, input, SecurityConfiguration.trace(request));
 	}
 
 	/** 类目名称及停启用采用乐观版本。 */
 	@PostMapping("/operations/catalog-categories/{id}")
 	public Object categoryChange(@AuthenticationPrincipal Actor actor, @RequestHeader("Idempotency-Key") String key,
-			@PathVariable String id, @RequestBody CatalogMerchandisingApi.CategoryChange input) {
-		return catalog.changeCategory(actor, key, id, input);
+			@PathVariable String id, @RequestBody CatalogMerchandisingApi.CategoryChange input, HttpServletRequest request) {
+		return catalog.changeCategory(actor, key, id, input, SecurityConfiguration.trace(request));
+	}
+
+	/** 查询该门店分类的操作日志，不扩大原商品类目权限。 */
+	@GetMapping("/operations/catalog-categories/{id}/operation-audits")
+	public OperationAudit.Page categoryHistory(@AuthenticationPrincipal Actor actor, @PathVariable String id,
+			@RequestParam String storeId, @RequestParam(required = false) String cursor, HttpServletRequest request) {
+		return catalog.categoryHistory(actor, storeId, id, SecurityConfiguration.trace(request), cursor);
 	}
 
 	/** 管理类目目录含停用项。 */

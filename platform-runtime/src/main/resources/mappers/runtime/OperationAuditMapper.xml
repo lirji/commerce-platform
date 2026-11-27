@@ -2,9 +2,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.lrj.commerce.runtime.audit.persistence.OperationAuditMapper">
   <insert id="insertAttempt">
-    INSERT INTO audit_operation_attempt(source_system,request_id,trace_id,scope_type,actor_tenant_id,actor_id,
+    INSERT INTO audit_operation_attempt(source_system,request_id,trace_id,scope_type,actor_tenant_id,actor_id,store_id,
         action_code,resource_id,policy_code,policy_version,schema_version)
-    VALUES(#{sourceSystem},#{requestId},#{traceId},#{scopeType},#{tenantId},#{actorId},#{action},#{resourceId},
+    VALUES(#{sourceSystem},#{requestId},#{traceId},#{scopeType},#{tenantId},#{actorId},#{storeId},#{action},#{resourceId},
         #{policy},1,1)
   </insert>
   <select id="findAttempt" resultType="long">
@@ -45,9 +45,15 @@
     <include refid="rows"/>
     WHERE a.occurred_at &gt;= #{from} AND a.occurred_at &lt; #{to}
     <choose>
-      <when test="openingTenant != null">
-        AND a.scope_type='TENANT' AND a.actor_tenant_id=#{openingTenant}
-        AND a.action_code IN ('store.opening.draft','store.opening.revise','store.opening.open')
+      <when test="tenantId != null">
+        AND a.scope_type='TENANT' AND a.actor_tenant_id=#{tenantId}
+        <choose>
+          <when test="storeId != null">
+            AND a.store_id=#{storeId}
+            AND a.action_code IN ('catalog.category.bind','catalog.category.unbind','catalog.category.change')
+          </when>
+          <otherwise>AND a.action_code IN ('store.opening.draft','store.opening.revise','store.opening.open')</otherwise>
+        </choose>
       </when>
       <otherwise>
         AND a.scope_type='PLATFORM'

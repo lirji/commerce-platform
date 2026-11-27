@@ -3,6 +3,9 @@
 <mapper namespace="com.lrj.commerce.catalog.merchandising.infrastructure.persistence.MerchandisingMapper">
   <sql id="categoryColumns">category_id,store_id,parent_id,name,depth,status,version,platform_category_code</sql>
   <select id="categoryLock" resultType="com.lrj.commerce.catalog.merchandising.api.CatalogMerchandisingApi$Category">SELECT <include refid="categoryColumns"/> FROM catalog_category WHERE tenant_id=#{tenant} AND store_id=#{store} AND category_id=#{id} FOR UPDATE</select>
+  <select id="category" resultType="com.lrj.commerce.catalog.merchandising.api.CatalogMerchandisingApi$Category">
+    SELECT <include refid="categoryColumns"/> FROM catalog_category WHERE tenant_id=#{tenant} AND store_id=#{store} AND category_id=#{id}
+  </select>
   <insert id="categoryInsert">INSERT INTO catalog_category(tenant_id,store_id,category_id,parent_id,name,depth,platform_category_code) VALUES(#{tenant},#{input.storeId},#{input.categoryId},#{input.parentId},#{input.name},#{depth},#{input.platformCategoryCode})</insert>
   <update id="categoryChange">UPDATE catalog_category SET name=#{input.name},status=#{input.status},platform_category_code=#{platformCategoryCode},version=version+1 WHERE tenant_id=#{tenant} AND store_id=#{input.storeId} AND category_id=#{id} AND version=#{input.expectedVersion}</update>
   <select id="categoryUsed" resultType="boolean">SELECT EXISTS(SELECT 1 FROM catalog_category WHERE tenant_id=#{tenant} AND store_id=#{store} AND parent_id=#{id} AND status='ACTIVE' FOR UPDATE) OR EXISTS(SELECT 1 FROM catalog_product_profile WHERE tenant_id=#{tenant} AND store_id=#{store} AND category_id=#{id} FOR UPDATE)</select>

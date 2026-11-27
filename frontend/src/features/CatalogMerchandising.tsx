@@ -23,6 +23,7 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import { encode, useCommand, useResource } from "../shared/api";
+import { ResourceAuditHistory } from "./OperationAudits";
 import {
   CommandModal,
   ErrorNotice,
@@ -90,6 +91,10 @@ function attributes(value: unknown) {
 }
 /** 类目与模板使用真实可分页目录，创建新版本不会修改旧绑定。 */
 export function CatalogStructure({ store }: { store: string }) {
+  const [auditCategory, setAuditCategory] = useState<{
+    store: string;
+    category: string;
+  }>();
   const [categoryAfter, setCategoryAfter] = useCursorState(
     "CatalogMerchandising.categoryAfter",
     "",
@@ -236,6 +241,14 @@ export function CatalogStructure({ store }: { store: string }) {
                         >
                           {platformField}
                         </CommandModal>
+                        <Button
+                          type="link"
+                          onClick={() =>
+                            setAuditCategory({ store, category: r.categoryId })
+                          }
+                        >
+                          绑定记录
+                        </Button>
                       </RowActions>
                     ),
                   },
@@ -270,6 +283,21 @@ export function CatalogStructure({ store }: { store: string }) {
                   下一批类目
                 </Button>
               </PagerActions>
+              <RecordModal
+                title="类目绑定记录"
+                open={auditCategory?.store === store}
+                onCancel={() => setAuditCategory(undefined)}
+                footer={null}
+                expandable={false}
+              >
+                {auditCategory?.store === store && (
+                  <ResourceAuditHistory
+                    key={auditCategory.category}
+                    kind="catalog"
+                    path={`/operations/catalog-categories/${encode(auditCategory.category)}/operation-audits?storeId=${encode(store)}`}
+                  />
+                )}
+              </RecordModal>
             </Card>
           ),
         },

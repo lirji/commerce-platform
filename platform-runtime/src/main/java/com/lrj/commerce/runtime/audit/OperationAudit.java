@@ -56,6 +56,10 @@ public class OperationAudit {
 		STORE_OPENING_REVISE("store.opening.revise", "BUSINESS", true),
 		STORE_OPENING_OPEN("store.opening.open", "BUSINESS", true),
 		STORE_OPENING_AUDIT_LIST("store.opening.audit.list", "HIGH_RISK", true),
+		CATALOG_BIND("catalog.category.bind", "BUSINESS", true),
+		CATALOG_UNBIND("catalog.category.unbind", "BUSINESS", true),
+		CATALOG_CHANGE("catalog.category.change", "BUSINESS", true),
+		CATALOG_AUDIT_LIST("catalog.category.audit.list", "HIGH_RISK", true),
 		AUDIT_LIST("platform.audit.list", "HIGH_RISK"),
 		AUDIT_READ("platform.audit.read", "HIGH_RISK");
 
@@ -117,7 +121,13 @@ public class OperationAudit {
 
 	/** 尝试先持久化，只有业务事务才有权写成功变更。 */
 	public <T> T capture(Action action, Actor actor, String resourceId, String traceId, LongFunction<T> operation) {
-		long id = begin(action, actor, resourceId, traceId);
+		return captureForStore(action, actor, null, resourceId, traceId, operation);
+	}
+
+	/** 只有资源用例完成门店授权后，才能将目标门店写入范围条件。 */
+	public <T> T captureForStore(Action action, Actor actor, String storeId, String resourceId, String traceId,
+			LongFunction<T> operation) {
+		long id = begin(action, actor, storeId, resourceId, traceId);
 		try {
 			return operation.apply(id);
 		}
@@ -130,7 +140,7 @@ public class OperationAudit {
 	/** 平台边界拒绝只保留已认证身份，避免把未授权请求对象记作事实。 */
 	public void deniedCategoryChange(Actor actor, String traceId) {
 		try {
-			long id = begin(Action.CATEGORY_CHANGE_DENIED, actor, null, traceId);
+			long id = begin(Action.CATEGORY_CHANGE_DENIED, actor, null, null, traceId);
 			finish(id, Result.DENIED, DomainException.Code.FORBIDDEN.name());
 		}
 		catch (RuntimeException failure) {
@@ -175,7 +185,7 @@ public class OperationAudit {
 			if (result != null)
 				Inputs.require(Arrays.stream(Result.values()).anyMatch(value -> value.name().equals(result)), INVALID_FILTER);
 			Cursor position = parseCursor(cursor, start, end);
-			var rows = mapper.list(new Query(null, start, end, identifier(actorId, 64), identifier(resourceId, 96), action,
+			var rows = mapper.list(new Query(null, null, start, end, identifier(actorId, 64), identifier(resourceId, 96), action,
 					result, position.time(), position.id(), limit + 1));
 			var items = rows.stream().limit(limit).map(OperationAudit::item).toList();
 			String next = rows.size() > limit ? items.getLast().occurredAt() + "," + items.getLast().id() : null;
@@ -186,12 +196,22 @@ public class OperationAudit {
 
 	/** 仅由已经验证开店资料权限的用例按单店调用，数据库再次限定可信租户和店铺。 */
 	public Page openingHistory(Actor actor, String storeId, String traceId, String cursor) {
-		return capture(Action.STORE_OPENING_AUDIT_LIST, actor, storeId, traceId, id -> {
+		return resourceHistory(Action.STORE_OPENING_AUDIT_LIST, actor, null, storeId, traceId, cursor);
+	}
+
+	/** 分类 Owner 权限核验后读取受限门店和分类对象。 */
+	public Page catalogHistory(Actor actor, String storeId, String categoryId, String traceId, String cursor) {
+		return resourceHistory(Action.CATALOG_AUDIT_LIST, actor, storeId, categoryId, traceId, cursor);
+	}
+
+	private Page resourceHistory(Action action, Actor actor, String storeId, String resourceId, String traceId,
+			String cursor) {
+		return captureForStore(action, actor, storeId, resourceId, traceId, id -> {
 			Instant end = Instant.now();
 			Instant start = end.minus(MAX_WINDOW);
 			Cursor position = parseCursor(cursor, start, end);
 			int pageSize = 20;
-			var records = mapper.list(new Query(actor.tenantId(), start, end, null, storeId, null, null,
+			var records = mapper.list(new Query(actor.tenantId(), storeId, start, end, null, resourceId, null, null,
 					position.time(), position.id(), pageSize + 1));
 			var items = records.stream().limit(pageSize).map(OperationAudit::item).toList();
 			finish(id, Result.SUCCEEDED, null);
@@ -214,11 +234,11 @@ public class OperationAudit {
 		return value != null && SENSITIVE.matcher(value).find() ? "已脱敏" : value;
 	}
 
-	private long begin(Action action, Actor actor, String resourceId, String traceId) {
+	private long begin(Action action, Actor actor, String storeId, String resourceId, String traceId) {
 		String requestId = UUID.randomUUID().toString();
 		String scope = action.tenantScoped ? TENANT : actor.role() == Actor.Role.PLATFORM_OPERATOR ? PLATFORM : SECURITY;
-		var attempt = new Attempt(SOURCE, requestId, traceId, scope, actor.tenantId(), actor.actorId(), action.code,
-				resourceId, action.policy);
+		var attempt = new Attempt(SOURCE, requestId, traceId, scope, actor.tenantId(), actor.actorId(), storeId,
+				action.code, resourceId, action.policy);
 		try {
 			return independent.execute(status -> {
 				checked(mapper.insertAttempt(attempt));

@@ -145,3 +145,63 @@ test("开店资料显示本店草稿和补正记录", async ({ page, request }) 
       path: evidence + "/oa02-opening-audit-narrow.png",
     });
 });
+
+test("商品类目可查询关联与解绑记录", async ({ page, request }) => {
+  test.skip(!adminToken, "需要隔离数据库签发的商品经营凭据");
+  const suffix = randomUUID().slice(0, 8);
+  const storeId = "catalog-oa-" + suffix;
+  const merchantId = "merchant-oa-" + suffix;
+  const categoryId = "nav-oa-" + suffix;
+  const post = async (path: string, data: unknown) => {
+    const response = await request.post(path, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        "Idempotency-Key": randomUUID(),
+      },
+      data,
+    });
+    expect(response.ok(), await response.text()).toBeTruthy();
+  };
+  await post("/v1/admin/merchants", { merchantId, name: "绑定审计商家" });
+  await post("/v1/admin/stores", { merchantId, storeId, name: "绑定审计店铺" });
+  const categories = "/v1/operations/catalog-categories";
+  await post(categories, {
+    storeId,
+    categoryId,
+    name: "收纳导航",
+    platformCategoryCode: "HOME_STORAGE",
+  });
+  await post(categories + "/" + categoryId, {
+    storeId,
+    expectedVersion: 0,
+    name: "收纳导航",
+    status: "ACTIVE",
+    clearPlatformCategory: true,
+    reason: "取消类目关联",
+  });
+
+  await page.goto(`/#skus?store=${storeId}`);
+  await page.getByLabel("访问凭据", { exact: true }).fill(adminToken!);
+  await page.getByRole("button", { name: "进入平台", exact: true }).click();
+  await page.getByRole("tab", { name: "类目与模板", exact: true }).click();
+  await page
+    .getByRole("row")
+    .filter({ hasText: categoryId })
+    .getByRole("button", { name: "绑定记录", exact: true })
+    .click();
+  const log = page.getByRole("dialog", { name: "类目绑定记录", exact: true });
+  await expect(
+    log.getByRole("cell", { name: "关联平台类目", exact: true }),
+  ).toBeVisible();
+  await log
+    .getByRole("row")
+    .filter({ hasText: "解除平台关联" })
+    .getByRole("button")
+    .first()
+    .click();
+  await expect(
+    log.getByRole("cell", { name: "HOME_STORAGE", exact: true }),
+  ).toBeVisible();
+  if (evidence)
+    await page.screenshot({ path: evidence + "/oa03-catalog-audit.png" });
+});

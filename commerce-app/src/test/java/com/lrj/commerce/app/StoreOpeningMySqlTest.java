@@ -174,6 +174,21 @@ class StoreOpeningMySqlTest {
 		assertEquals(400, post(localPath, "new-disabled-binding", Map.of("storeId", "fresh-store", "categoryId", "another",
 				"name", "新的导航", "platformCategoryCode", leaf)).status());
 		assertEquals(leaf, get(localPath + "?storeId=fresh-store", admin).body().path(0).path("platformCategoryCode").asText());
+		var unbind = Map.of("storeId", "fresh-store", "expectedVersion", 0, "name", "店铺导航", "status", "ACTIVE",
+				"reason", "解除已有平台引用", "clearPlatformCategory", true);
+		assertEquals(200, post(localPath + "/local-category", "unbind", unbind).status());
+		assertEquals(200, post(localPath + "/local-category", "unbind", unbind).status());
+		String bindingHistory = localPath + "/local-category/operation-audits?storeId=fresh-store";
+		var bindingAttempts = get(bindingHistory, admin);
+		assertEquals(200, bindingAttempts.status(), bindingAttempts.body().toString());
+		var bindingItems = bindingAttempts.body().path("items");
+		assertEquals(3, bindingItems.size(), bindingItems.toString());
+		assertEquals("REPLAYED", bindingItems.path(0).path("result").asText());
+		assertEquals("catalog.category.unbind", bindingItems.path(1).path("action").asText());
+		assertEquals(leaf, bindingItems.path(1).path("changes").path(0).path("before").asText());
+		assertEquals("catalog.category.bind", bindingItems.path(2).path("action").asText());
+		assertEquals(404, get(bindingHistory, otherAdmin).status());
+		assertEquals(403, get(bindingHistory, member).status());
 		assertEquals(root + " / 二级分组 / 三级细类", get(STORE_PATH, admin).body().path("category").asText());
 		var history = get(platform + "/" + group + "/history", curator).body();
 		assertEquals(2, history.size());

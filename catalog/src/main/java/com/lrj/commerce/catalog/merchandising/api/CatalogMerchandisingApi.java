@@ -2,6 +2,7 @@ package com.lrj.commerce.catalog.merchandising.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.lrj.commerce.runtime.api.identity.Actor;
+import com.lrj.commerce.runtime.audit.OperationAudit;
 import com.lrj.commerce.store.management.api.StoreOpeningApi;
 import java.util.List;
 import com.lrj.commerce.catalog.product.api.ProductOperationsApi;
@@ -62,7 +63,16 @@ public interface CatalogMerchandisingApi {
 
 	Category createCategory(Actor actor, String key, CategoryInput input);
 
+	/** 记录包含平台类目绑定的创建请求来源。 */
+	Category createCategory(Actor actor, String key, CategoryInput input, String traceId);
+
 	Category changeCategory(Actor actor, String key, String id, CategoryChange input);
+
+	/** 记录绑定或解绑的请求来源。 */
+	Category changeCategory(Actor actor, String key, String id, CategoryChange input, String traceId);
+
+	/** 按当前门店业务授权复核指定类目的操作。 */
+	OperationAudit.Page categoryHistory(Actor actor, String storeId, String categoryId, String traceId, String cursor);
 
 	List<Category> categories(Actor actor, String store, String after, int limit, boolean publicOnly);
 

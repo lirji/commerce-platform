@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface OperationAuditMapper {
 	record Attempt(String sourceSystem, String requestId, String traceId, String scopeType, String tenantId,
-			String actorId, String action, String resourceId, String policy) {
+			String actorId, String storeId, String action, String resourceId, String policy) {
 	}
 
 	record Row(long id, String sourceSystem, String requestId, String traceId, String action, String actorId,
@@ -19,7 +19,7 @@ public interface OperationAuditMapper {
 			Long originalAttemptId, Long beforeVersion, Long afterVersion, String reason, String changesJson) {
 	}
 
-	record Query(String openingTenant, Instant from, Instant to, String actorId, String resourceId, String action, String result,
+	record Query(String tenantId, String storeId, Instant from, Instant to, String actorId, String resourceId, String action, String result,
 			Instant cursorTime, Long cursorId, int limit) {
 	}
 

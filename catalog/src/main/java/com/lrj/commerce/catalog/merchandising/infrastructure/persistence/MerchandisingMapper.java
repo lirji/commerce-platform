@@ -19,6 +19,9 @@ public interface MerchandisingMapper {
 
 	Category categoryLock(String tenant, String store, String id);
 
+	/** 审计查询读取真实分类归属，无须占用业务写锁。 */
+	Category category(String tenant, String store, String id);
+
 	void categoryInsert(String tenant, CategoryInput input, int depth);
 
 	int categoryChange(String tenant, String id, CategoryChange input, String platformCategoryCode);

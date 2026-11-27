@@ -43,6 +43,7 @@ const fields: Record<string, string> = {
   status: "店铺状态",
   subjectType: "经营主体",
   categoryCode: "经营类目编号",
+  platformCategoryCode: "平台类目编号",
   reviewReference: "审核记录编号",
 };
 
@@ -94,22 +95,35 @@ const openingActions: Record<string, string> = {
   "store.opening.open": "确认开店",
 };
 
-/** 在开店资料的授权范围内查看单店历次操作。 */
-export function OpeningAuditHistory({
+const catalogActions: Record<string, string> = {
+  "catalog.category.bind": "关联平台类目",
+  "catalog.category.unbind": "解除平台关联",
+  "catalog.category.change": "更新类目",
+};
+
+/** 在业务资源自身的授权范围内展示对应操作记录。 */
+export function ResourceAuditHistory({
   path,
-  subjectLabels,
+  subjectLabels = [],
+  kind,
 }: {
   path: string;
-  subjectLabels: ReadonlyArray<{ value: string; label: string }>;
+  subjectLabels?: ReadonlyArray<{ value: string; label: string }>;
+  kind: "opening" | "catalog";
 }) {
-  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const open = kind === "catalog" || expanded;
+  const labels = kind === "catalog" ? catalogActions : openingActions;
   const [cursors, setCursors] = useState([""]);
   const cursor = cursors[cursors.length - 1];
   const list = useResource<Page>(
     open
       ? path +
-          "/operation-audits" +
-          (cursor ? "?cursor=" + encodeURIComponent(cursor) : "")
+          (cursor
+            ? (path.includes("?") ? "&" : "?") +
+              "cursor=" +
+              encodeURIComponent(cursor)
+            : "")
       : null,
   );
   function openingValue(raw: Change["before"], change: Change) {
@@ -123,9 +137,11 @@ export function OpeningAuditHistory({
   }
   return (
     <Space orientation="vertical" style={{ width: "100%" }}>
-      <Button onClick={() => setOpen(!open)} aria-expanded={open}>
-        {open ? "收起开店操作记录" : "查看开店操作记录"}
-      </Button>
+      {kind === "opening" && (
+        <Button onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>
+          {expanded ? "收起开店操作记录" : "查看开店操作记录"}
+        </Button>
+      )}
       {open && (
         <>
           <ErrorNotice error={list.error} onRetry={list.refresh} />
@@ -136,7 +152,7 @@ export function OpeningAuditHistory({
               loading={list.loading}
               dataSource={list.data?.items ?? []}
               pagination={false}
-              locale={{ emptyText: "最近 31 天没有开店操作记录" }}
+              locale={{ emptyText: "最近 31 天没有操作记录" }}
               expandable={{
                 rowExpandable: (item) => item.changes.length > 0,
                 expandedRowRender: (item) => (
@@ -175,7 +191,7 @@ export function OpeningAuditHistory({
                 {
                   title: "动作",
                   dataIndex: "action",
-                  render: (action: string) => openingActions[action] ?? action,
+                  render: (action: string) => labels[action] ?? action,
                 },
                 { title: "操作者", dataIndex: "actorId", ellipsis: true },
                 { title: "结果", dataIndex: "result", render: resultTag },

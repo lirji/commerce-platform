@@ -15,7 +15,12 @@ import com.lrj.commerce.store.management.api.StoreApi;
 import com.lrj.commerce.store.management.api.StoreOpeningApi;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.runtime.api.validation.Inputs;
+import com.lrj.commerce.runtime.audit.OperationAudit;
+import com.lrj.commerce.runtime.audit.OperationAudit.Action;
+import com.lrj.commerce.runtime.audit.OperationAudit.Committed;
+import com.lrj.commerce.runtime.audit.OperationAudit.Evidence;
 import com.lrj.commerce.runtime.command.Commands;
+import java.util.function.LongFunction;
 import com.lrj.commerce.runtime.serialization.JsonCodec;
 
 /** 商品锁串行化模板绑定与规格创建，元资料不改变历史成交快照。 */
@@ -34,9 +39,12 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 
 	private final Commands commands;
 	private final PlatformCategoryApi platformCategories;
+	private final OperationAudit audit;
+	private static final String CATEGORY_CREATE = "catalog.category.create";
 
 	public CatalogMerchandisingService(MerchandisingMapper mapper, ProductMapper products, StoreAccessApi access,
-			StoreApi stores, Commands commands, java.time.Clock clock, PlatformCategoryApi platformCategories) {
+			StoreApi stores, Commands commands, java.time.Clock clock, PlatformCategoryApi platformCategories,
+			OperationAudit audit) {
 		this.clock = clock;
 		this.mapper = mapper;
 		this.products = products;
@@ -44,32 +52,55 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 		this.stores = stores;
 		this.commands = commands;
 		this.platformCategories = platformCategories;
+		this.audit = audit;
 	}
 
 	/** 父节点锁使新建子类目与停用互斥，层级不会在并发下越界。 */
+	@Override
 	public Category createCategory(Actor actor, String key, CategoryInput input) {
+		return createCategory(actor, key, input, null);
+	}
+
+	/** 同一次创建若含平台关联，在类目事务中写入绑定证据。 */
+	@Override
+	public Category createCategory(Actor actor, String key, CategoryInput input, String traceId) {
 		Inputs.require(input != null, "类目不能为空");
 		Identifiers.require(input.categoryId());
 		Inputs.text(input.name(), 64);
 		optionalId(input.parentId());
-		access.requireCatalog(actor, input.storeId());
-		return commands.run(actor, "catalog.category.create", key, input, Category.class, () -> {
+		if (input.platformCategoryCode() == null) {
 			access.requireCatalog(actor, input.storeId());
-			int depth = 1;
-			if (input.parentId() != null) {
-				var parent = activeCategory(actor.tenantId(), input.storeId(), input.parentId());
-				depth = parent.depth() + 1;
-			}
-			Inputs.require(depth <= 3, "类目最多三级");
-			if (input.platformCategoryCode() != null)
-				platformCategories.requireAssignable(input.platformCategoryCode());
-			mapper.categoryInsert(actor.tenantId(), input, depth);
-			return mapper.categoryLock(actor.tenantId(), input.storeId(), input.categoryId());
-		});
+			return commands.runGuarded(actor, CATEGORY_CREATE, key, input, Category.class,
+					() -> access.requireCatalog(actor, input.storeId()), () -> insertCategory(actor, input));
+		}
+		return captureBinding(Action.CATALOG_BIND, actor, input.storeId(), input.categoryId(), traceId,
+				attempt -> commands.runAudited(actor, CATEGORY_CREATE, key, input, Category.class,
+						() -> access.requireCatalog(actor, input.storeId()), attempt,
+						() -> bindingEvidence(null, insertCategory(actor, input), null)));
+	}
+
+	private Category insertCategory(Actor actor, CategoryInput input) {
+		int depth = 1;
+		if (input.parentId() != null) {
+			var parent = activeCategory(actor.tenantId(), input.storeId(), input.parentId());
+			depth = parent.depth() + 1;
+		}
+		Inputs.require(depth <= 3, "类目最多三级");
+		if (input.platformCategoryCode() != null)
+			platformCategories.requireAssignable(input.platformCategoryCode());
+		mapper.categoryInsert(actor.tenantId(), input, depth);
+		return mapper.categoryLock(actor.tenantId(), input.storeId(), input.categoryId());
 	}
 
 	/** 不删除使用中的类目，停用后也不能再创建子节点或绑定商品。 */
+	@Override
 	public Category changeCategory(Actor actor, String key, String id, CategoryChange input) {
+		return changeCategory(actor, key, id, input, null);
+	}
+
+	/** 绑定和解除使用原命令键，旧客户端未带绑定字段时沿用既有行为。 */
+	@Override
+	public Category changeCategory(Actor actor, String key, String id, CategoryChange input, String traceId) {
 		Identifiers.require(id);
 		Inputs.require(input != null && input.expectedVersion() >= 0, "类目版本无效");
 		Inputs.text(input.name(), 64);
@@ -77,18 +108,71 @@ public class CatalogMerchandisingService implements CatalogMerchandisingApi {
 		Inputs.require("ACTIVE".equals(input.status()) || "RETIRED".equals(input.status()), "类目状态无效");
 		Inputs.require(input.platformCategoryCode() == null || !Boolean.TRUE.equals(input.clearPlatformCategory()),
 				"绑定与清除平台类目只能选一个");
-		access.requireCatalog(actor, input.storeId());
-		return commands.run(actor, "catalog.category.change", key, new Object[] { id, input }, Category.class, () -> {
+		var command = new Object[] { id, input };
+		if (input.platformCategoryCode() == null && !Boolean.TRUE.equals(input.clearPlatformCategory())) {
 			access.requireCatalog(actor, input.storeId());
-			var row = Inputs.found(mapper.categoryLock(actor.tenantId(), input.storeId(), id));
-			if (input.status().equals("RETIRED") && mapper.categoryUsed(actor.tenantId(), input.storeId(), id))
-				throw conflict("类目仍有启用子类目或绑定商品");
-			if (input.status().equals("ACTIVE") && row.parentId() != null)
-				activeCategory(actor.tenantId(), input.storeId(), row.parentId());
-			String platformCode = platformCode(row, input);
-			check(mapper.categoryChange(actor.tenantId(), id, input, platformCode));
-			return mapper.categoryLock(actor.tenantId(), input.storeId(), id);
-		});
+			return commands.run(actor, Action.CATALOG_CHANGE.code(), key, command, Category.class, () -> {
+				access.requireCatalog(actor, input.storeId());
+				var before = Inputs.found(mapper.categoryLock(actor.tenantId(), input.storeId(), id));
+				return updateCategory(actor, id, input, before);
+			});
+		}
+		Action action = Boolean.TRUE.equals(input.clearPlatformCategory()) ? Action.CATALOG_UNBIND : Action.CATALOG_BIND;
+		return captureBinding(action, actor, input.storeId(), id, traceId, attempt -> commands.runAudited(actor,
+				Action.CATALOG_CHANGE.code(), key, command, Category.class,
+				() -> access.requireCatalog(actor, input.storeId()), attempt, () -> {
+					var before = Inputs.found(mapper.categoryLock(actor.tenantId(), input.storeId(), id));
+					return bindingEvidence(before, updateCategory(actor, id, input, before), input.reason());
+				}));
+	}
+
+	private Category updateCategory(Actor actor, String id, CategoryChange input, Category before) {
+		if (input.status().equals("RETIRED") && mapper.categoryUsed(actor.tenantId(), input.storeId(), id))
+			throw conflict("类目仍有启用子类目或绑定商品");
+		if (input.status().equals("ACTIVE") && before.parentId() != null)
+			activeCategory(actor.tenantId(), input.storeId(), before.parentId());
+		String platformCode = platformCode(before, input);
+		check(mapper.categoryChange(actor.tenantId(), id, input, platformCode));
+		return mapper.categoryLock(actor.tenantId(), input.storeId(), id);
+	}
+
+	private Category captureBinding(Action action, Actor actor, String storeId, String categoryId, String traceId,
+			LongFunction<Category> operation) {
+		try {
+			access.requireCatalog(actor, storeId);
+		}
+		catch (DomainException denied) {
+			// 未获门店权限的请求不进入可按门店检索的证据范围。
+			return audit.capture(action, actor, null, traceId, attempt -> { throw denied; });
+		}
+		return audit.captureForStore(action, actor, storeId, categoryId, traceId, operation);
+	}
+
+	private static Committed<Category> bindingEvidence(Category before, Category after, String reason) {
+		String previous = before == null ? null : before.platformCategoryCode();
+		String current = after.platformCategoryCode();
+		boolean changed = !Objects.equals(previous, current);
+		var changes = new ArrayList<OperationAudit.Change>(3);
+		if (changed)
+			changes.add(new OperationAudit.Change("platformCategoryCode", previous, current));
+		if (before != null && !Objects.equals(before.name(), after.name()))
+			changes.add(new OperationAudit.Change("name", OperationAudit.safeText(before.name()), OperationAudit.safeText(after.name())));
+		if (before != null && !Objects.equals(before.status(), after.status()))
+			changes.add(new OperationAudit.Change("status", before.status(), after.status()));
+		Action primary = changed ? (current == null ? Action.CATALOG_UNBIND : Action.CATALOG_BIND) : Action.CATALOG_CHANGE;
+		return new Committed<>(after, new Evidence(after.categoryId(), before == null ? null : before.version(),
+				after.version(), reason, changes, primary.code()));
+	}
+
+	/** 用门店 Owner 的准确权限和对象归属查询绑定历史。 */
+	@Override
+	public OperationAudit.Page categoryHistory(Actor actor, String storeId, String categoryId, String traceId,
+			String cursor) {
+		access.requireCatalog(actor, storeId);
+		Inputs.found(mapper.category(actor.tenantId(), storeId, Identifiers.require(categoryId)));
+		var page = audit.catalogHistory(actor, storeId, categoryId, traceId, cursor);
+		access.requireCatalog(actor, storeId);
+		return page;
 	}
 
 	/** 缺省字段维持原绑定，旧客户端修改店内名称时仍可保存。 */
