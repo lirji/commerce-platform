@@ -215,8 +215,8 @@ test("中央订单直接展示经营字段，时间筛选发送真实UTC条件",
   await expect(page.getByText("¥12,345.67", { exact: true })).toBeVisible();
   await expect(page.getByText("已付款", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("渠道支付", { exact: true })).toBeVisible();
-  await page.getByLabel("创建起点", { exact: true }).fill("2026-10-01T00:00");
-  await page.getByLabel("创建终点", { exact: true }).fill("2026-10-02T00:00");
+  await page.getByLabel("创建起点", { exact: true }).fill("2026-10-01 00:00");
+  await page.getByLabel("创建终点", { exact: true }).fill("2026-10-02 00:00");
   await page.getByRole("button", { name: "查询", exact: true }).click();
   const start = await page.evaluate(() =>
     new Date("2026-10-01T00:00").toISOString(),
@@ -226,7 +226,7 @@ test("中央订单直接展示经营字段，时间筛选发送真实UTC条件",
     .toBe(start);
   await page.reload();
   await expect(page.getByLabel("创建起点", { exact: true })).toHaveValue(
-    "2026-10-01T00:00",
+    "2026-10-01 00:00",
   );
   const folder =
     process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/frontend-usability";
@@ -247,7 +247,14 @@ test("中央订单直接展示经营字段，时间筛选发送真实UTC条件",
   await page.getByRole("button", { name: "查看详情", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await assertCentered(page, dialog);
-  await expect(dialog.getByText("未提供", { exact: true })).toBeVisible();
+  await expect(
+    dialog
+      .getByRole("row")
+      .filter({
+        has: page.getByRole("rowheader", { name: "订单号", exact: true }),
+      })
+      .getByRole("cell", { name: "未提供", exact: true }),
+  ).toBeVisible();
   await expect(dialog.getByText("¥12,345.67", { exact: true })).toBeVisible();
   await dialog.screenshot({ path: `${folder}/central-order-details-320.png` });
 });

@@ -15,7 +15,11 @@ import {
 import { useContext, useLayoutEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 
-import { BusinessTableScope } from "./businessTableScope";
+import {
+  BusinessTableScope,
+  readDisplayPreference,
+  writeDisplayPreference,
+} from "./businessTableScope";
 
 const copyFields = new Set([
   "businessNo",
@@ -29,6 +33,10 @@ const copyFields = new Set([
   "merchantId",
   "caseId",
   "refundId",
+  "grantId",
+  "campaignId",
+  "batchId",
+  "workId",
 ]);
 
 export function BusinessId({
@@ -54,7 +62,7 @@ export function BusinessId({
   );
 }
 
-function readPreference(key: string) {
+function readScroll(key: string) {
   try {
     return sessionStorage.getItem(key);
   } catch {
@@ -62,7 +70,7 @@ function readPreference(key: string) {
   }
 }
 
-function savePreference(key: string, value: string) {
+function saveScroll(key: string, value: string) {
   try {
     sessionStorage.setItem(key, value);
   } catch {
@@ -74,29 +82,36 @@ type BusinessTableProps<Row> = TableProps<Row> & {
   tools?: boolean;
   columnSettings?: boolean;
   onRefresh?: () => void;
+  tableId?: string;
+  selectedUnit?: string;
 };
+const tablePageSizes = [7, 10, 25, 50, 100];
 
 export function Table<Row extends object>(props: BusinessTableProps<Row>) {
-  const enabled = useContext(BusinessTableScope);
+  const owner = useContext(BusinessTableScope);
   const {
     tools = true,
     columnSettings = true,
     onRefresh,
+    tableId,
+    selectedUnit = "条",
     ...tableProps
   } = props;
   const columns = tableProps.columns ?? [];
-  if (!enabled || !tools || (columns.length < 4 && !onRefresh))
+  if (!owner || !tools || columns.length < 2)
     return <AntTable<Row> {...tableProps} />;
 
   const route = location.hash.split("?")[0] || location.pathname;
   const key = JSON.stringify([
+    owner,
     route,
-    columns.map(
-      (column) =>
-        column.key ??
-        ("dataIndex" in column ? column.dataIndex : undefined) ??
-        (typeof column.title === "string" ? column.title : ""),
-    ),
+    tableId ??
+      columns.map(
+        (column) =>
+          column.key ??
+          ("dataIndex" in column ? column.dataIndex : undefined) ??
+          (typeof column.title === "string" ? column.title : ""),
+      ),
   ]);
   return (
     <ManagedTable<Row>
@@ -105,6 +120,7 @@ export function Table<Row extends object>(props: BusinessTableProps<Row>) {
       preferenceKey={`commerce.table.${key}`}
       columnSettings={columnSettings}
       onRefresh={onRefresh}
+      selectedUnit={selectedUnit}
     />
   );
 }
@@ -113,6 +129,7 @@ function ManagedTable<Row extends object>({
   preferenceKey,
   columnSettings,
   onRefresh,
+  selectedUnit,
   columns = [],
   pagination,
   sticky,
@@ -121,18 +138,19 @@ function ManagedTable<Row extends object>({
 }: TableProps<Row> & {
   preferenceKey: string;
   columnSettings: boolean;
+  selectedUnit: string;
   onRefresh?: () => void;
 }) {
   const screens = Grid.useBreakpoint();
   const [density, setDensity] = useState(() =>
-    readPreference(`${preferenceKey}.density`) === "compact"
+    readDisplayPreference(`${preferenceKey}.density`) === "compact"
       ? "compact"
       : "standard",
   );
   const [hidden, setHidden] = useState<string[]>(() => {
     try {
       const value: unknown = JSON.parse(
-        readPreference(`${preferenceKey}.columns`) ?? "[]",
+        readDisplayPreference(`${preferenceKey}.columns`) ?? "[]",
       );
       return Array.isArray(value)
         ? value.filter((item): item is string => typeof item === "string")
@@ -143,8 +161,11 @@ function ManagedTable<Row extends object>({
   });
   const [expanded, setExpanded] = useState(false);
   const [pageSize, setPageSize] = useState(() => {
-    const saved = Number(readPreference(`${preferenceKey}.pageSize`));
-    return saved > 0 && Number.isSafeInteger(saved)
+    const saved = Number(readDisplayPreference(`${preferenceKey}.pageSize`));
+    return (pagination
+      ? (pagination.pageSizeOptions ?? tablePageSizes)
+      : tablePageSizes
+    ).some((size) => Number(size) === saved)
       ? saved
       : pagination
         ? (pagination.pageSize ?? pagination.defaultPageSize ?? 10)
@@ -158,7 +179,7 @@ function ManagedTable<Row extends object>({
     : pageSize;
   const body = useRef<HTMLDivElement>(null);
   const scrollKey = `${preferenceKey}.scroll`;
-  const horizontal = useRef(Number(readPreference(scrollKey)) || 0);
+  const horizontal = useRef(Number(readScroll(scrollKey)) || 0);
   useLayoutEffect(() => {
     const node = body.current;
     if (expanded || !node || !horizontal.current) return;
@@ -170,7 +191,8 @@ function ManagedTable<Row extends object>({
   }, [expanded, props.dataSource]);
   const options = columns.map((column, index) => ({
     id: String(
-      column.key ?? ("dataIndex" in column ? column.dataIndex : index),
+      column.key ??
+        ("dataIndex" in column ? column.dataIndex : (column.title ?? index)),
     ),
     label: typeof column.title === "string" ? column.title : undefined,
     locked:
@@ -189,7 +211,7 @@ function ManagedTable<Row extends object>({
   const hiddenIds = new Set(hidden);
   const updateColumns = (value: string[]) => {
     setHidden(value);
-    savePreference(`${preferenceKey}.columns`, JSON.stringify(value));
+    writeDisplayPreference(`${preferenceKey}.columns`, JSON.stringify(value));
   };
   const visible = options
     .filter(
@@ -199,11 +221,20 @@ function ManagedTable<Row extends object>({
         !hiddenIds.has(option.id),
     )
     .map(({ column }) => {
+      const actionColumn =
+        column.title === "操作" &&
+        screens.md &&
+        props.scroll?.x &&
+        typeof column.width === "number" &&
+        column.width <= 200 &&
+        column.fixed === undefined
+          ? { ...column, fixed: "right" as const }
+          : column;
       const field = "dataIndex" in column ? column.dataIndex : undefined;
       if (typeof field !== "string" || !copyFields.has(field) || column.render)
-        return column;
+        return actionColumn;
       return {
-        ...column,
+        ...actionColumn,
         render: (value: unknown) => <BusinessId value={value} />,
       } satisfies TableColumnType<Row>;
     });
@@ -231,7 +262,7 @@ function ManagedTable<Row extends object>({
         pagination && {
           showSizeChanger: true,
           showQuickJumper: true,
-          pageSizeOptions: [7, 10, 25, 50, 100],
+          pageSizeOptions: tablePageSizes,
           showTotal: (total, range) =>
             total
               ? `共 ${total.toLocaleString("zh-CN")} 条 · 第 ${Math.ceil(range[0] / effectivePageSize)} / ${Math.ceil(total / effectivePageSize)} 页`
@@ -243,7 +274,7 @@ function ManagedTable<Row extends object>({
             setPage(nextPage);
             if (size !== effectivePageSize) {
               setPageSize(size);
-              savePreference(`${preferenceKey}.pageSize`, String(size));
+              writeDisplayPreference(`${preferenceKey}.pageSize`, String(size));
             }
             pagination.onChange?.(nextPage, size);
           },
@@ -256,8 +287,20 @@ function ManagedTable<Row extends object>({
     />
   );
   return (
-    <div className="business-table">
+    <div
+      className="business-table"
+      aria-busy={
+        typeof props.loading === "object"
+          ? Boolean(props.loading.spinning)
+          : Boolean(props.loading)
+      }
+    >
       <div className="business-table-tools" role="group" aria-label="表格工具">
+        {!!props.rowSelection?.selectedRowKeys?.length && (
+          <Typography.Text className="business-table-selection" role="status">
+            已选 {props.rowSelection.selectedRowKeys.length} {selectedUnit}
+          </Typography.Text>
+        )}
         {onRefresh && (
           <Tooltip title="刷新列表">
             <Button
@@ -318,7 +361,7 @@ function ManagedTable<Row extends object>({
                 const next =
                   event.target.value === "compact" ? "compact" : "standard";
                 setDensity(next);
-                savePreference(`${preferenceKey}.density`, next);
+                writeDisplayPreference(`${preferenceKey}.density`, next);
               }}
             />
           }
@@ -344,7 +387,7 @@ function ManagedTable<Row extends object>({
           )
             return;
           horizontal.current = target.scrollLeft;
-          savePreference(scrollKey, String(target.scrollLeft));
+          saveScroll(scrollKey, String(target.scrollLeft));
         }}
       >
         {renderTable(false)}

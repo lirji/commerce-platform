@@ -435,7 +435,7 @@
   gap: 16px;
 }
 .admin-app .metric-card .ant-card-body {
-  padding: 24px;
+  padding: 16px 20px;
 }
 .admin-app .metric-label {
   display: flex;
@@ -450,7 +450,7 @@
 }
 .admin-app .metric-card strong {
   font-size: clamp(30px, 2.5vw, 42px);
-  margin-block: 18px 12px;
+  margin-block: 9px 6px;
   line-height: 1.1;
   font-weight: 550;
 }
@@ -484,8 +484,7 @@
   padding-top: 8px;
 }
 .admin-app .trend-summary {
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
   font-size: 12px;
 }
 .daily-explorer {
@@ -644,12 +643,6 @@
   display: flex;
   align-items: center;
   height: 44px;
-}
-.trend-slider input {
-  width: 100%;
-  height: 44px;
-  accent-color: var(--accent);
-  cursor: pointer;
 }
 .trend-controls .ant-btn {
   width: 32px;
@@ -1228,6 +1221,9 @@
   outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
+.metric-share {
+  display: block;
+}
 .metric-share-track {
   display: flex;
   width: 100%;
@@ -1295,4 +1291,104 @@
 }
 .order-number-cell .ant-typography-copy {
   margin-inline-start: 0;
+}
+
+.admin-app .query-form .ant-input-affix-wrapper {
+  width: clamp(155px, 15vw, 238px);
+}
+.business-table-selection {
+  margin-inline-end: auto;
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+}
+.trend-slider .ant-slider {
+  width: 100%;
+}
+.trend-window,
+.scoped-product-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  margin-block: 8px;
+}
+.dashboard-comparison,
+.scoped-product-metrics {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+}
+.dashboard-comparison > div,
+.scoped-product-metrics > div {
+  min-width: 0;
+}
+.dashboard-comparison dt,
+.scoped-product-metrics dt,
+.dashboard-comparison dd.dashboard-comparison-caption {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.dashboard-comparison dd,
+.scoped-product-metrics dd {
+  margin: 2px 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.scoped-product-metrics {
+  grid-auto-columns: minmax(84px, 1fr);
+}
+.business-deadline,
+.allocation-fact {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+.business-deadline .ant-tag {
+  margin-inline-end: 0;
+}
+.allocation-fact {
+  justify-items: end;
+}
+.allocation-fact > div {
+  width: min(100%, 84px);
+}
+@media (max-width: 640px) {
+  .admin-app .query-form .ant-input-affix-wrapper {
+    width: 100%;
+  }
+}
+@media (max-width: 520px) {
+  .dashboard-comparison {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
+  }
+  .dashboard-comparison > :last-child {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    gap: 5px 10px;
+    flex-wrap: wrap;
+  }
+}
+
+.exception-queue-entry {
+  width: 100%;
+  justify-content: space-between;
+  row-gap: 2px;
+}
+.queue-link-priority {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }

@@ -1,3 +1,4 @@
+import { DeadlineFact } from "../shared/BusinessFacts";
 import { BudgetUsage } from "../shared/MetricShare";
 import { Table } from "../shared/BusinessTable";
 import { DateTimeField } from "../shared/DateTimeField";
@@ -252,7 +253,12 @@ function Directory({
             {
               title: "结束时间",
               width: 190,
-              render: (_, row) => time(row.content.validTo),
+              render: (_, row) => (
+                <DeadlineFact
+                  value={row.content.validTo}
+                  watch={row.status === "PUBLISHED"}
+                />
+              ),
             },
             {
               title: "版本操作",

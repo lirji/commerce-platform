@@ -1,3 +1,4 @@
+import { AllocationFact, StockAvailable } from "../shared/BusinessFacts";
 import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
@@ -317,6 +318,8 @@ function Inventory({
         {!rows.error && (
           <Table<Stock>
             rowKey="skuId"
+            tableId="stock"
+            onRefresh={rows.refresh}
             dataSource={rows.data ?? []}
             loading={rows.loading}
             pagination={false}
@@ -339,22 +342,20 @@ function Inventory({
                       title: "可售",
                       dataIndex: "available",
                       align: "right" as const,
-                      render: (value: number) =>
-                        value === 0 ? (
-                          <span
-                            className="inventory-unavailable"
-                            title="当前无可售库存"
-                          >
-                            0
-                          </span>
-                        ) : (
-                          value
-                        ),
+                      render: (value: number) => (
+                        <StockAvailable value={value} />
+                      ),
                     },
                     {
                       title: "预占",
                       dataIndex: "held",
                       align: "right" as const,
+                      render: (value: number, row: Stock) => (
+                        <AllocationFact
+                          held={value}
+                          available={row.available}
+                        />
+                      ),
                     },
                     {
                       title: "已售",

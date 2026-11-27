@@ -1,6 +1,11 @@
+import { countText } from "../shared/MetricShare";
 import { BusinessId, Table } from "../shared/BusinessTable";
-import { CursorBack } from "../shared/pagination";
-import { useCursorState } from "../shared/routeState";
+import {
+  CursorBack,
+  PageSizeSelect,
+  pageSizeChoices,
+} from "../shared/pagination";
+import { useCursorState, type CursorNavigation } from "../shared/routeState";
 import { RecordModal } from "../shared/interactions";
 import {
   Alert,
@@ -10,7 +15,6 @@ import {
   Descriptions,
   Form,
   Input,
-  Select,
   Space,
   Spin,
   Typography,
@@ -474,8 +478,11 @@ function Products({
     addEventListener("popstate", sync);
     return () => removeEventListener("popstate", sync);
   }, []);
-  function navigate(values: Record<string, string | null>) {
-    if (values.cursor !== undefined) setCursor(values.cursor ?? "");
+  function navigate(
+    values: Record<string, string | null>,
+    navigation?: CursorNavigation,
+  ) {
+    if (values.cursor !== undefined) setCursor(values.cursor ?? "", navigation);
     const next = new URLSearchParams(location.search);
     for (const [key, value] of Object.entries(values))
       value ? next.set(key, value) : next.delete(key);
@@ -485,7 +492,7 @@ function Products({
   const search = params.get("search") ?? "",
     selected = params.get("product");
   const limitCandidate = Number(params.get("limit"));
-  const limit = [10, 25, 50, 100].includes(limitCandidate)
+  const limit = pageSizeChoices.some((size) => size === limitCandidate)
     ? limitCandidate
     : 25;
   const page = useCentral<Page>(
@@ -536,15 +543,26 @@ function Products({
             </Button>
           </Space>
           <ErrorView error={page.error} />
-          <Typography.Text>
-            当前查询 {search || "全部授权商品"}
+          <div className="scoped-product-summary">
+            <Typography.Text type="secondary">
+              当前查询 {search || "全部授权商品"}
+            </Typography.Text>
             {!page.error && page.data && (
-              <>
-                {" "}
-                · {page.data.total} 件商品 · {page.data.stores} 家门店
-              </>
+              <dl
+                className="scoped-product-metrics"
+                aria-label="当前查询全量统计"
+              >
+                <div>
+                  <dt>匹配商品</dt>
+                  <dd>{countText(page.data.total)}</dd>
+                </div>
+                <div>
+                  <dt>覆盖门店</dt>
+                  <dd>{countText(page.data.stores)}</dd>
+                </div>
+              </dl>
             )}
-          </Typography.Text>
+          </div>
           <Table<Product>
             rowKey="resourceId"
             loading={page.loading}
@@ -566,6 +584,7 @@ function Products({
               { title: "品牌", dataIndex: "brand" },
               {
                 title: "操作",
+                width: 112,
                 render: (_, r) => (
                   <Button
                     type="link"
@@ -582,25 +601,23 @@ function Products({
               name="cursor"
               after={cursor}
               initial=""
-              onPrevious={(value) => navigate({ cursor: value, product: null })}
+              onPrevious={(value, navigation) =>
+                navigate({ cursor: value, product: null }, navigation)
+              }
               disabled={page.loading || !!page.error}
               count={page.data?.items.length}
               pageSize={limit}
               total={page.error ? undefined : page.data?.total}
             />
-            <Select
-              aria-label="每页条数"
+            <PageSizeSelect
               value={limit}
-              options={[10, 25, 50, 100].map((value) => ({
-                label: `每页 ${value} 条`,
-                value,
-              }))}
+              disabled={page.loading}
               onChange={(value) =>
                 navigate({ limit: String(value), cursor: null, product: null })
               }
             />
             <Button
-              disabled={!cursor || page.loading || !!page.error}
+              disabled={!cursor || page.loading}
               onClick={() => navigate({ cursor: null, product: null })}
             >
               回到首页

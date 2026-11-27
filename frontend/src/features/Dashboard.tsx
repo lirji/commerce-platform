@@ -12,6 +12,10 @@ import {
 } from "antd";
 import { useRouteState } from "../shared/routeState";
 import type { ReactNode } from "react";
+import {
+  compareProjectedAmounts,
+  DashboardComparison,
+} from "./DashboardComparison";
 import { DailyTrend, type Daily, type TrendMetric } from "./DailyTrend";
 import { encode, useResource } from "../shared/api";
 import { ErrorNotice, PageHead, money, time } from "../shared/ui";
@@ -83,6 +87,8 @@ export function Dashboard({
     metricQuery === "received" || metricQuery === "refunded"
       ? metricQuery
       : "netReceipts";
+  const [days, setDays] = useRouteState("trendDays", 30);
+  const trendDays = [7, 14, 30].includes(days) ? days : 30;
   const [tableQuery, setTable] = useRouteState("daily", "");
   const table = tableQuery === "open";
   if (!store) return <Alert type="info" title="选择门店查看经营总览" />;
@@ -230,7 +236,26 @@ export function Dashboard({
                     成交优惠 <b>{money(sums.discountGranted)}</b>
                   </span>
                 </div>
-                <DailyTrend daily={daily} metric={metric} />
+                <DashboardComparison
+                  daily={daily}
+                  end={summary.to}
+                  metric={metric}
+                />
+                <div className="trend-window">
+                  <Typography.Text type="secondary">
+                    每日趋势范围
+                  </Typography.Text>
+                  <Segmented
+                    aria-label="每日趋势范围"
+                    value={trendDays}
+                    onChange={setDays}
+                    options={[7, 14, 30].map((value) => ({
+                      label: `${value} 天`,
+                      value,
+                    }))}
+                  />
+                </div>
+                <DailyTrend daily={daily.slice(-trendDays)} metric={metric} />
                 <Button
                   type="link"
                   onClick={() => setTable(table ? "" : "open")}
@@ -245,10 +270,33 @@ export function Dashboard({
                     pagination={{ defaultPageSize: 7 }}
                     scroll={{ x: 680 }}
                     columns={[
-                      { title: "UTC日期", dataIndex: "day" },
-                      { title: "已付订单", dataIndex: "paidOrders" },
-                      { title: "实收", dataIndex: "received", render: money },
-                      { title: "退款", dataIndex: "refunded", render: money },
+                      {
+                        title: "UTC日期",
+                        dataIndex: "day",
+                        sorter: (a, b) => a.day.localeCompare(b.day),
+                      },
+                      {
+                        title: "已付订单",
+                        dataIndex: "paidOrders",
+                        sorter: (a, b) => a.paidOrders - b.paidOrders,
+                        align: "right",
+                      },
+                      {
+                        title: "实收",
+                        dataIndex: "received",
+                        render: money,
+                        align: "right",
+                        sorter: (a, b) =>
+                          compareProjectedAmounts(a.received, b.received),
+                      },
+                      {
+                        title: "退款",
+                        dataIndex: "refunded",
+                        render: money,
+                        align: "right",
+                        sorter: (a, b) =>
+                          compareProjectedAmounts(a.refunded, b.refunded),
+                      },
                       {
                         title: "净收",
                         dataIndex: "netReceipts",

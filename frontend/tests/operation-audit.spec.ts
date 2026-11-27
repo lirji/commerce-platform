@@ -6,6 +6,78 @@ const token = process.env.COMMERCE_AUDIT_E2E_TOKEN;
 const evidence = process.env.COMMERCE_EVIDENCE_DIR;
 const adminToken = process.env.COMMERCE_AUDIT_E2E_ADMIN;
 
+test("操作日志只用服务端游标跳转已访问页，修改容量后从首页读取", async ({
+  page,
+}) => {
+  await page.route("**/v1/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/me")
+      return route.fulfill({
+        json: {
+          tenantId: "audit-tenant",
+          actorId: "auditor",
+          role: "PLATFORM_OPERATOR",
+        },
+      });
+    if (url.pathname === "/v1/runtime-capabilities")
+      return route.fulfill({
+        json: { sandboxEnabled: false, workersEnabled: false },
+      });
+    if (url.pathname !== "/v1/platform/operation-audits")
+      return route.fulfill({ json: [] });
+    const cursor = url.searchParams.get("cursor");
+    const pageIndex = cursor === "third" ? 3 : cursor === "second" ? 2 : 1;
+    return route.fulfill({
+      json: {
+        items: [
+          {
+            id: String(pageIndex),
+            resourceId: `AUDIT_${pageIndex}`,
+            action: "platform.category.create",
+            actorId: "auditor",
+            result: "SUCCEEDED",
+            occurredAt: "2026-11-27T00:00:00Z",
+            changes: [],
+          },
+        ],
+        nextCursor:
+          pageIndex === 1 ? "second" : pageIndex === 2 ? "third" : undefined,
+      },
+    });
+  });
+  await page.goto("/#platform-operation-audits");
+  await page.getByLabel("访问凭据", { exact: true }).fill("audit-ui-fixture");
+  await page.getByRole("button", { name: "进入平台", exact: true }).click();
+  const next = page.getByRole("button", { name: "下一页", exact: true });
+  const jump = page.getByRole("combobox", { name: "跳转已访问日志页" });
+  await expect(page.getByText("AUDIT_1")).toBeVisible();
+  await next.click();
+  await expect(page.getByText("AUDIT_2")).toBeVisible();
+  await next.click();
+  await expect(page.getByText("AUDIT_3")).toBeVisible();
+  await jump.click();
+  await page.getByRole("option", { name: "第 1 页" }).click();
+  await expect(page.getByText("AUDIT_1")).toBeVisible();
+  await jump.click();
+  await page.getByRole("option", { name: "第 3 页" }).click();
+  await expect(page.getByText("AUDIT_3")).toBeVisible();
+  await page.getByRole("combobox", { name: "操作日志每页条数" }).click();
+  const read = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      url.pathname === "/v1/platform/operation-audits" &&
+      url.searchParams.get("limit") === "25" &&
+      !url.searchParams.has("cursor")
+    );
+  });
+  await page.getByRole("option", { name: "每页 25 条" }).click();
+  await read;
+  await expect(page.getByText("AUDIT_1")).toBeVisible();
+  await expect(jump).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator(".pager-navigation")).toContainText("每页 25 条");
+});
+
 test("类目停用可在操作日志查看并回到原类目", async ({ page, request }) => {
   test.skip(!token, "需要隔离数据库签发的类目专岗凭据");
   const code = "OA_UI_" + randomUUID().replaceAll("-", "").toUpperCase();

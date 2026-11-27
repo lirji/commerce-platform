@@ -76,7 +76,7 @@ function QueueLine({
   const denied = error instanceof ApiError ? error.status : undefined;
   const count = Array.isArray(data) ? data.length : undefined;
   return (
-    <Space wrap>
+    <Space wrap className="exception-queue-entry">
       <Typography.Text strong>{name}</Typography.Text>
       {loading || (!data && !error) ? (
         <Typography.Text type="secondary">核对中</Typography.Text>
@@ -89,7 +89,11 @@ function QueueLine({
           重试读取{name}
         </Button>
       ) : (
-        <a href={href} aria-label={`查看${name}`}>
+        <a
+          href={href}
+          aria-label={`查看${name}`}
+          className={count ? "queue-link-priority" : undefined}
+        >
           {count >= previewSize ? `至少 ${previewSize} 条` : `${count} 条`} ·
           查看队列
         </a>

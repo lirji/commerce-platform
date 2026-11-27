@@ -22,7 +22,13 @@ import {
   type request,
   useResource,
 } from "../shared/api";
-import { ErrorNotice, PageHead, PrimaryCell, statusText } from "../shared/ui";
+import {
+  ErrorNotice,
+  PageHead,
+  PrimaryCell,
+  Status,
+  statusText,
+} from "../shared/ui";
 import {
   OpeningCategoryField,
   openingSubjects,
@@ -382,7 +388,7 @@ function DirectorySection({
             {
               title: "状态",
               dataIndex: "status",
-              render: (value: string) => statusText(value),
+              render: (value: string) => <Status value={value} />,
             },
             { title: "版本", dataIndex: "version" },
             ...(merchant && href("directory")

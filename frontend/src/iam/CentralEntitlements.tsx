@@ -1,3 +1,4 @@
+import { CompensationFact } from "../shared/BusinessFacts";
 import { BusinessId, Table } from "../shared/BusinessTable";
 import { listGuardPath } from "../shared/listFilters";
 import { useListFilters } from "../shared/listFilters";
@@ -150,7 +151,9 @@ function Directory() {
               render: (_, row) => (
                 <PrimaryCell
                   title={row.name}
-                  subtitle={row.businessNo ?? row.grantId}
+                  subtitle={
+                    <BusinessId value={row.businessNo ?? row.grantId} />
+                  }
                 />
               ),
             },
@@ -176,7 +179,11 @@ function Directory() {
             },
             { title: "总单位数", dataIndex: "units" },
             { title: "剩余单位数", dataIndex: "remainingUnits" },
-            { title: "欠项单位数", dataIndex: "debtUnits" },
+            {
+              title: "欠项单位数",
+              dataIndex: "debtUnits",
+              render: (value) => <CompensationFact value={value} />,
+            },
             {
               title: "到期时间",
               dataIndex: "expiresAt",

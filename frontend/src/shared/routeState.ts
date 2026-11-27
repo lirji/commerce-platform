@@ -70,49 +70,70 @@ function queryLocation() {
   };
 }
 
+export type CursorNavigation = { preserveTrail: true };
+type SetCursor<T> = (next: T, navigation?: CursorNavigation) => void;
+
 /** 游标与访问轨迹一并保存；不根据 ID 或满页数量推算总页数。 */
 export function useCursorState(
   name: string,
   initial: string,
   scope?: string,
-): [string, (next: string) => void];
+): [string, SetCursor<string>];
 export function useCursorState(
   name: string,
   initial: number,
   scope?: string,
-): [number, (next: number) => void];
+): [number, SetCursor<number>];
 export function useCursorState(
   name: string,
   initial: string | number,
   scope?: string,
-): [string | number, ((next: string) => void) | ((next: number) => void)] {
+): [string | number, SetCursor<string> | SetCursor<number>] {
   const [value] = useRouteState(name, initial);
-  const update = (next: string | number) => {
+  const update = (next: string | number, navigation?: CursorNavigation) => {
     const { pathRoute, query } = queryLocation();
     let trail = cursorTrail(query.get(`${name}.previous`), initial);
+    let following = cursorTrail(query.get(`${name}.following`), initial);
+    const currentRaw = query.get(name) ?? initial;
     const current =
-      typeof initial === "number"
-        ? Number(query.get(name) ?? initial)
-        : (query.get(name) ?? initial);
-    let offset = Number(query.get(`${name}.offset`) ?? 0);
+      typeof initial === "number" ? Number(currentRaw) : currentRaw;
+    let offset = Number(query.get(`${name}.offset`));
     if (!Number.isSafeInteger(offset) || offset < 0) offset = 0;
-    const visitedIndex = trail.lastIndexOf(next);
-    if (next === initial) {
+    const visited = [...trail, current, ...following];
+    const visitedIndex = visited.indexOf(next);
+
+    if (navigation?.preserveTrail && visitedIndex >= 0) {
+      trail = visited.slice(0, visitedIndex);
+      following = visited.slice(visitedIndex + 1);
+    } else if (next === initial) {
       trail = [];
+      following = [];
       offset = 0;
-    } else if (visitedIndex >= 0) trail = trail.slice(0, visitedIndex);
-    else if (next !== current) trail.push(current);
-    // 分享链接有界；最多保留最近50个实际访问过的游标。
+    } else if (next !== current) {
+      const priorIndex = trail.lastIndexOf(next);
+      if (priorIndex >= 0) {
+        following = [...trail.slice(priorIndex + 1), current, ...following];
+        trail = trail.slice(0, priorIndex);
+      } else {
+        trail.push(current);
+        // 重新读取若拿到不同游标，后续访问轨迹已不再连续。
+        following = next === following[0] ? following.slice(1) : [];
+      }
+    }
+    // 分享链接最多保留50个实际访问过的游标。
     if (trail.length > 50) {
       offset += trail.length - 50;
       trail = trail.slice(-50);
     }
+    following = following.slice(0, 50 - trail.length);
     if (next === initial) query.delete(name);
     else query.set(name, String(next));
     if (offset) query.set(`${name}.offset`, String(offset));
     else query.delete(`${name}.offset`);
     if (!trail.length) query.delete(`${name}.previous`);
     else query.set(`${name}.previous`, JSON.stringify(trail));
+    if (!following.length) query.delete(`${name}.following`);
+    else query.set(`${name}.following`, JSON.stringify(following));
     history.replaceState(
       history.state,
       "",
@@ -129,6 +150,7 @@ export function useCursorState(
     if (query.has(key)) {
       query.delete(name);
       query.delete(`${name}.previous`);
+      query.delete(`${name}.following`);
       query.delete(`${name}.offset`);
     }
     query.set(key, scope);

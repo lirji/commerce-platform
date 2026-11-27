@@ -1,4 +1,4 @@
-import { Button, Empty } from "antd";
+import { Button, Empty, Slider } from "antd";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { money } from "../shared/ui";
 
@@ -151,17 +151,23 @@ export function DailyTrend({
         >
           ←
         </Button>
-        <label className="trend-slider">
-          <span className="sr-only">选择趋势日期</span>
-          <input
-            type="range"
+        <div className="trend-slider">
+          <Slider
             min={0}
-            max={daily.length - 1}
+            max={Math.max(1, daily.length - 1)}
             value={selectedIndex}
-            onChange={(event) => select(Number(event.target.value))}
-            aria-valuetext={`${selected.day} UTC · ${trendLabels[metric]} ${money(selected[metric])}`}
+            disabled={daily.length < 2}
+            onChange={(index) => select(index)}
+            ariaLabelForHandle="选择趋势日期"
+            ariaValueTextFormatterForHandle={(index) => {
+              const day = daily[index];
+              return day
+                ? `${day.day} UTC · ${trendLabels[metric]} ${money(day[metric])}`
+                : "";
+            }}
+            tooltip={{ formatter: (index) => daily[index ?? 0]?.day }}
           />
-        </label>
+        </div>
         <Button
           type="text"
           aria-label="后一天"

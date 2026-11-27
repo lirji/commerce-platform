@@ -25,7 +25,11 @@ async function openScans(page: Page) {
     if (url.pathname.endsWith("rule-fields")) body = {};
     if (url.pathname === "/v1/admin/journey-scans" && populated)
       body = Array.from(
-        { length: url.searchParams.get("after") ? 1 : 50 },
+        {
+          length: url.searchParams.get("after")
+            ? 1
+            : Number(url.searchParams.get("limit") ?? 50),
+        },
         (_, i) => ({
           journeyId: `scan-${String(i + 1).padStart(2, "0")}`,
           journeyVersion: 1,
@@ -64,7 +68,10 @@ async function assertPagerSpacing(page: Page) {
       return { x: box.x, y: box.y, right: box.right, bottom: box.bottom };
     }),
   );
-  expect(bounds).toHaveLength(5);
+  const jumpCount = await pager
+    .getByRole("combobox", { name: "跳转已访问页" })
+    .count();
+  expect(bounds).toHaveLength(6 + jumpCount);
   for (let i = 1; i < bounds.length; i++) {
     const previous = bounds[i - 1];
     const current = bounds[i];
@@ -116,4 +123,12 @@ test("扫描分页数量、页码和紧凑按钮分开排列，手机换行，�
   await pager.getByRole("button", { name: "上一页" }).click();
   await expect(pager).toContainText("第1页");
   await expect(pager).toContainText("本页 50 条");
+  await pager.getByRole("combobox", { name: "每批扫描条数" }).click();
+  await page.getByRole("option", { name: "每页 25 条", exact: true }).click();
+  await expect(pager).toContainText("本页 25 条 · 每页最多25条");
+  await expect(
+    pager.getByRole("combobox", { name: "跳转已访问页" }),
+  ).toHaveCount(0);
+  await page.reload();
+  await expect(pager).toContainText("每页最多25条");
 });

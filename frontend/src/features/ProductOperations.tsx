@@ -161,9 +161,6 @@ export function ProductOperations({
                       <Button loading={skus.loading} onClick={refresh}>
                         刷新
                       </Button>
-                      {!!batch.length && (
-                        <span role="status">已选 {batch.length} 个规格</span>
-                      )}
                     </Space>
                     <CatalogFilters
                       query={filters}
@@ -189,6 +186,8 @@ export function ProductOperations({
                 homeLabel="回到首页"
               >
                 <Table<Sku>
+                  tableId="sku"
+                  selectedUnit="个规格"
                   rowSelection={{
                     selectedRowKeys: batch.map((r) => r.skuId),
                     onChange: (_, rows) => setBatch(rows),

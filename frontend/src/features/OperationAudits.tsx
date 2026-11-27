@@ -1,3 +1,4 @@
+import { PageSizeSelect, pageSizeChoices } from "../shared/pagination";
 import { Table } from "../shared/BusinessTable";
 import {
   Button,
@@ -15,9 +16,9 @@ import { useState } from "react";
 import type { Dayjs } from "dayjs";
 import { useResource } from "../shared/api";
 import { RecordModal } from "../shared/interactions";
+import { useRouteState } from "../shared/routeState";
 import { ErrorNotice, PageHead, Status, Workbench, time } from "../shared/ui";
 
-const auditPageSizes = [10, 25, 50, 100];
 const path = "/platform/operation-audits";
 const actions: Record<string, string> = {
   "platform.category.create": "新增类目",
@@ -247,10 +248,16 @@ export function OperationAudits({
   const [form] = Form.useForm<Filter>();
   const [filter, setFilter] = useState<Filter>({});
   const [cursors, setCursors] = useState([""]);
-  const [pageSize, setPageSize] = useState(50);
+  const [page, setPage] = useState(0);
+  const resetPage = () => {
+    setCursors([""]);
+    setPage(0);
+  };
+  const [savedPageSize, setPageSize] = useRouteState("auditLimit", 50);
+  const pageSize = pageSizeChoices.find((size) => size === savedPageSize) ?? 50;
   const [selected, setSelected] = useState<string>();
   const list = useResource<Page>(
-    path + "?" + query(filter, cursors[cursors.length - 1], pageSize),
+    path + "?" + query(filter, cursors[page], pageSize),
   );
   const detail = useResource<Audit>(selected ? path + "/" + selected : null);
   const row = detail.data?.id === selected ? detail.data : undefined;
@@ -267,7 +274,7 @@ export function OperationAudits({
         layout="inline"
         style={{ gap: "12px 0", marginBottom: 16 }}
         onFinish={(values) => {
-          setCursors([""]);
+          resetPage();
           setFilter(values);
           list.refresh();
         }}
@@ -323,7 +330,7 @@ export function OperationAudits({
               onClick={() => {
                 form.resetFields();
                 setFilter({});
-                setCursors([""]);
+                resetPage();
                 list.refresh();
               }}
             >
@@ -382,40 +389,38 @@ export function OperationAudits({
             ? "正在加载…"
             : list.error
               ? "列表未加载"
-              : `第${cursors.length}页 · 本页 ${list.data?.items.length ?? 0} 条`}
+              : `第${page + 1}页 · 本页 ${list.data?.items.length ?? 0} 条`}
         </Typography.Text>
-        <Select
-          aria-label="操作日志每页条数"
+        <PageSizeSelect
+          label="操作日志每页条数"
           value={pageSize}
-          options={auditPageSizes.map((value) => ({
-            label: `每页 ${value} 条`,
-            value,
-          }))}
           onChange={(value) => {
             setPageSize(value);
-            setCursors([""]);
+            resetPage();
           }}
         />
         <Button
-          disabled={cursors.length === 1 || list.loading}
-          onClick={() => setCursors(cursors.slice(0, -1))}
+          disabled={!page || list.loading}
+          onClick={() => setPage(page - 1)}
         >
           上一页
         </Button>
-        {cursors.length > 2 && (
+        {cursors.length > 1 && (
           <Select
             aria-label="跳转已访问日志页"
             className="cursor-jump"
             placeholder="已访问页"
             value={null}
+            virtual={false}
             disabled={list.loading}
-            options={cursors.slice(0, -1).map((_, index) => ({
+            showSearch={{ optionFilterProp: "label" }}
+            options={cursors.map((_, index) => ({
               label: `第 ${index + 1} 页`,
               value: index,
+              disabled: page === index,
             }))}
             onChange={(index) => {
-              if (typeof index === "number")
-                setCursors(cursors.slice(0, index + 1));
+              if (typeof index === "number") setPage(index);
             }}
           />
         )}
@@ -423,7 +428,10 @@ export function OperationAudits({
           disabled={!list.data?.nextCursor || list.loading}
           onClick={() => {
             const next = list.data?.nextCursor;
-            if (next) setCursors([...cursors, next]);
+            if (!next) return;
+            if (next !== cursors[page + 1])
+              setCursors([...cursors.slice(0, page + 1), next]);
+            setPage(page + 1);
           }}
         >
           下一页

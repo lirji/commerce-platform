@@ -3,7 +3,11 @@ const evidence =
   process.env.COMMERCE_EVIDENCE_DIR ?? "../.local/b-console-craft";
 
 // DashboardController 的公开汇总形状；负净收来自截至投影时已知的成功退款。
-async function openDashboard(page: Page, negativeOnly = false) {
+async function openDashboard(
+  page: Page,
+  negativeOnly = false,
+  compare = false,
+) {
   await page.route("**/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.slice(3);
     let body: unknown = [];
@@ -33,7 +37,17 @@ async function openDashboard(page: Page, negativeOnly = false) {
           day: `2026-09-${String(index + 1).padStart(2, "0")}`,
           orders: index === 0 ? 1 : 0,
           paidOrders: index === 0 ? 1 : 0,
-          received: index === 0 && !negativeOnly ? "100.00" : "0.00",
+          received: compare
+            ? index === 29
+              ? "90000.00"
+              : index >= 22
+                ? "20.00"
+                : index >= 15
+                  ? "10.00"
+                  : "0.00"
+            : index === 0 && !negativeOnly
+              ? "100.00"
+              : "0.00",
           refunded: index === 1 ? "35.00" : "0.00",
           netReceipts:
             index === 0 && !negativeOnly
@@ -47,7 +61,7 @@ async function openDashboard(page: Page, negativeOnly = false) {
         })),
         totals: {
           paidOrders: 1,
-          received: negativeOnly ? "0.00" : "100.00",
+          received: compare ? "90210.00" : negativeOnly ? "0.00" : "100.00",
           refunded: "35.00",
           netReceipts: negativeOnly ? "-35.00" : "65.00",
           discountGranted: "0.00",
@@ -140,9 +154,12 @@ test("全部净收为负仍有真实坐标，窄屏可拖动日期与返回零�
     .boundingBox())!;
   const plotBox = (await page.locator(".trend-plot").boundingBox())!;
   expect(negativeBox.height).toBeCloseTo(plotBox.height, 0);
-  await page
-    .getByRole("slider", { name: "选择趋势日期", exact: true })
-    .fill("1");
+  const slider = page.getByRole("slider", {
+    name: "选择趋势日期",
+    exact: true,
+  });
+  await slider.press("Home");
+  await slider.press("ArrowRight");
   await expect(page.locator(".trend-readout")).toContainText("¥-35.00");
   await page.getByRole("button", { name: "后一天", exact: true }).click();
   await expect(page.locator(".trend-readout")).toContainText("¥0.00");
@@ -155,6 +172,30 @@ test("全部净收为负仍有真实坐标，窄屏可拖动日期与返回零�
     path: `${evidence}/signed-trend-mobile.png`,
     fullPage: true,
   });
+});
+
+test("七日环比使用完整 UTC 日，切换趋势范围后保留回看设置", async ({
+  page,
+}) => {
+  await openDashboard(page, false, true);
+  await page
+    .locator(".ant-segmented-item")
+    .filter({ hasText: /^实收$/ })
+    .click();
+  const comparison = page.locator(".dashboard-comparison");
+  await expect(comparison).toContainText("¥140.00");
+  await expect(comparison).toContainText("¥70.00");
+  await expect(comparison).toContainText("+100%");
+  await expect(comparison).toContainText("2026-09-23 至 2026-09-29");
+  await expect(comparison).not.toContainText("90,000");
+  await page
+    .locator(".trend-window .ant-segmented-item")
+    .filter({ hasText: /^7 天$/ })
+    .click();
+  await expect(page.locator(".trend-column")).toHaveCount(7);
+  await page.reload();
+  await expect(page.locator(".trend-column")).toHaveCount(7);
+  await expect(comparison).toContainText("+100%");
 });
 
 test("旅程关系图准确表达分支与汇合，节点可键盘核对且返回焦点", async ({

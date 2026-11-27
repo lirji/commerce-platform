@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HTTP } from "../shared/http";
 export { HTTP } from "../shared/http";
 export class CentralError extends Error {
@@ -58,35 +58,45 @@ export function useCentral<T>(
   path: string | null,
   revision = 0,
 ) {
-  const [state, setState] = useState<{
+  const { token, tenant } = context;
+  const read = useMemo(
+    () => ({ token, tenant, path, revision }),
+    [token, tenant, path, revision],
+  );
+  const [settled, setSettled] = useState<{
+    read: typeof read;
     data?: T;
     error?: Error;
-    loading: boolean;
-  }>({ loading: true });
+  }>();
   useEffect(() => {
+    const requestPath = read.path;
+    if (requestPath === null) return;
     const controller = new AbortController();
-    setState({ loading: !!path });
-    if (path !== null)
-      // StrictMode会立即撤销第一次effect；在发请求前检查，避免废弃请求占用实时鉴权并发槽。
-      Promise.resolve()
-        .then(() =>
-          controller.signal.aborted
-            ? undefined
-            : central<T>(
-                context,
-                path,
-                undefined,
-                undefined,
-                controller.signal,
-              ),
-        )
-        .then((data) => {
-          if (!controller.signal.aborted) setState({ data, loading: false });
-        })
-        .catch((error) => {
-          if (!controller.signal.aborted) setState({ error, loading: false });
-        });
+    // StrictMode 会立即撤销首次 effect，已撤销的读取不占用实时鉴权并发槽。
+    Promise.resolve()
+      .then(() =>
+        controller.signal.aborted
+          ? undefined
+          : central<T>(
+              read,
+              requestPath,
+              undefined,
+              undefined,
+              controller.signal,
+            ),
+      )
+      .then((data) => {
+        if (!controller.signal.aborted) setSettled({ read, data });
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) setSettled({ read, error });
+      });
     return () => controller.abort();
-  }, [context.token, context.tenant, path, revision]);
-  return state;
+  }, [read]);
+  const current = settled?.read === read ? settled : undefined;
+  return {
+    data: current?.data,
+    error: current?.error,
+    loading: path !== null && !current,
+  };
 }

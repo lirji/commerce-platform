@@ -774,9 +774,9 @@ export function Pager({
               name={cursorName}
               after={after}
               initial={numberInitial}
-              onPrevious={(cursor) => {
+              onPrevious={(cursor, navigation) => {
                 onBack?.();
-                setNumber(cursor);
+                setNumber(cursor, navigation);
               }}
               disabled={blocked}
             />
@@ -785,14 +785,17 @@ export function Pager({
               name={cursorName}
               after={String(after ?? "")}
               initial={stringInitial}
-              onPrevious={(cursor) => {
+              onPrevious={(cursor, navigation) => {
                 onBack?.();
-                setString(cursor);
+                setString(cursor, navigation);
               }}
               disabled={blocked}
             />
           )}
-          <Button disabled={blocked || atHome} onClick={onHome}>
+          <Button
+            disabled={loading || paginationDisabled || atHome}
+            onClick={onHome}
+          >
             {homeLabel}
           </Button>
           <Button disabled={blocked || count < pageSize} onClick={onNext}>

@@ -158,6 +158,7 @@ export function Orders({
         >
           <Table<Order>
             rowKey="orderId"
+            tableId="orders"
             dataSource={resource.data}
             loading={resource.loading}
             pagination={false}

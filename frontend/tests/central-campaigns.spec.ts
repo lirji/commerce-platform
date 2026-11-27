@@ -243,9 +243,10 @@ test("预算独立入口只读取预算，401卸载敏感视图", async ({ page 
   await page.goto(
     `${process.env.COMMERCE_CENTRAL_UI_URL}/operations/campaign-budgets?tenant_id=${tenant}`,
   );
-  await expect(
-    page.getByRole("cell", { name: "CAM:7", exact: true }),
-  ).toBeVisible();
+  const campaign = page
+    .getByRole("cell")
+    .filter({ has: page.getByText("CAM:7", { exact: true }) });
+  await expect(campaign.getByRole("button", { name: "复制" })).toBeVisible();
   await screenshot(page, "budget-1440");
   await page.setViewportSize({ width: 390, height: 844 });
   await expect
@@ -257,9 +258,7 @@ test("预算独立入口只读取预算，401卸载敏感视图", async ({ page 
   await expect(
     page.getByText("登录已失效，请重新登录", { exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("cell", { name: "CAM:7", exact: true }),
-  ).toHaveCount(0);
+  await expect(campaign).toHaveCount(0);
   expect(paths.every((path) => path === "/v1/admin/campaign-budgets")).toBe(
     true,
   );

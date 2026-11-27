@@ -393,9 +393,17 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
   await page.getByRole("option", { name: "第 1 页", exact: true }).click();
   await expect(page.locator(".cursor-position")).toHaveText("第1页");
   await expect(page.locator(".list-count")).toContainText("本页 10 条");
+  await page.getByRole("combobox", { name: "跳转已访问页" }).click();
+  await page.getByRole("option", { name: "第 3 页", exact: true }).click();
+  await expect(page.locator(".cursor-position")).toHaveText("第3页");
+  await expect(page.locator(".list-count")).toContainText("本页 3 条");
+  expect(requests.at(-1)?.searchParams.get("after")).toBe("20");
   expect(requests.at(-1)?.searchParams.get("status")).toBe("PENDING_PAYMENT");
   await filter.getByRole("button", { name: "重置筛选", exact: true }).click();
   await expect(filter.getByLabel(/创建起点/)).toHaveValue("");
+  await expect(
+    page.getByRole("combobox", { name: "跳转已访问页" }),
+  ).toHaveCount(0);
   await expect(
     states.getByRole("button", { name: "全部状态", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");

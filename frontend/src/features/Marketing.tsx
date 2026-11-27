@@ -1,3 +1,4 @@
+import { DeadlineFact } from "../shared/BusinessFacts";
 import { Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";

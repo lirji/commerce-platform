@@ -124,7 +124,9 @@ export function CentralShell({
           <CentralLinkScope.Provider
             value={{ tenant, subject, routes: model.routes }}
           >
-            <BusinessTableScope.Provider value>
+            <BusinessTableScope.Provider
+              value={JSON.stringify([tenant, subject])}
+            >
               {children}
             </BusinessTableScope.Provider>
           </CentralLinkScope.Provider>

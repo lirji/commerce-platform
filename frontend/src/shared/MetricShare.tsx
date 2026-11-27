@@ -33,8 +33,8 @@ export function MetricShare({
   )
     return null;
   return (
-    <div className="metric-share">
-      <div className="metric-share-track" role="img" aria-label={caption}>
+    <span className="metric-share">
+      <span className="metric-share-track" role="img" aria-label={caption}>
         {segments.map(({ label, tone, value }) => (
           <span
             key={label}
@@ -42,8 +42,8 @@ export function MetricShare({
             style={{ flexBasis: `${(value / total) * 100}%` }}
           />
         ))}
-      </div>
-    </div>
+      </span>
+    </span>
   );
 }
 
@@ -132,7 +132,13 @@ export function CouponIssueFacts({
   return (
     <div className="coupon-issue-facts">
       <strong>{finished}</strong>
-      <span>已处理 {countText(processed)}</span>
+      <span>
+        已处理 {countText(processed)}
+        {processed > 0 &&
+          issued >= 0 &&
+          issued <= processed &&
+          ` · 发放占比 ${percentageFormat.format(issued / processed)}`}
+      </span>
       <MetricShare
         total={processed}
         segments={[

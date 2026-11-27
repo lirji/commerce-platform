@@ -1,6 +1,10 @@
 import { Table } from "../shared/BusinessTable";
-import { CursorBack } from "../shared/pagination";
-import { useCursorState } from "../shared/routeState";
+import {
+  CursorBack,
+  PageSizeSelect,
+  pageSizeChoices,
+} from "../shared/pagination";
+import { useCursorState, useRouteState } from "../shared/routeState";
 import { PagerActions } from "../shared/interactions";
 import { RowActions } from "../shared/interactions";
 import { Alert, Button, Card, Form, Input, Modal, Space } from "antd";
@@ -23,8 +27,10 @@ type Scan = {
 /** 扫描与实例分开展示，让运营能辨认未入组和等待中的会员。 */
 export function JourneyScans() {
   const [after, setAfter] = useCursorState("JourneyScans.after", "");
+  const [savedLimit, setLimit] = useRouteState("JourneyScans.limit", 50);
+  const limit = pageSizeChoices.find((size) => size === savedLimit) ?? 50;
   const rows = useResource<Scan[]>(
-    `/admin/journey-scans?after=${encode(after)}`,
+    `/admin/journey-scans?after=${encode(after)}&limit=${limit}`,
   );
   const command = useCommand();
   const [retry, setRetry] = useState<Scan>();
@@ -100,6 +106,14 @@ export function JourneyScans() {
         ]}
       />
       <PagerActions>
+        <PageSizeSelect
+          label="每批扫描条数"
+          value={limit}
+          onChange={(size) => {
+            setLimit(size);
+            setAfter("");
+          }}
+        />
         <CursorBack
           name={"JourneyScans.after"}
           after={after}
@@ -107,13 +121,13 @@ export function JourneyScans() {
           initial={""}
           disabled={rows.loading || !!rows.error}
           count={rows.data?.length}
-          pageSize={50}
+          pageSize={limit}
         />
         <Button disabled={!after} onClick={() => setAfter("")}>
           扫描首页
         </Button>
         <Button
-          disabled={rows.loading || !!rows.error || rows.data?.length !== 50}
+          disabled={rows.loading || !!rows.error || rows.data?.length !== limit}
           onClick={() => setAfter(rows.data!.at(-1)!.journeyId)}
         >
           下一批扫描

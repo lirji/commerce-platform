@@ -410,7 +410,8 @@ function ListFilters({
   };
   const [form] = Form.useForm<FormValues>();
   const [advanced, setAdvanced] = useState(false);
-  const hideSecondary = compact && !advanced;
+  const hasSecondary = compact && (spec.time || Boolean(spec.exact?.length));
+  const hideSecondary = hasSecondary && !advanced;
   const draft = Form.useWatch<FormValues>([], form);
   const formValues = {
     ...values,
@@ -675,7 +676,7 @@ function ListFilters({
               查询
             </Button>
             <Button onClick={() => applyValues({})}>重置筛选</Button>
-            {compact && (
+            {hasSecondary && (
               <Button
                 aria-expanded={advanced}
                 onClick={() => setAdvanced(!advanced)}
@@ -686,13 +687,13 @@ function ListFilters({
           </Space>
         </Form.Item>
       </Form>
-      <div className="query-scope">关键词查找：{spec.hint}</div>
+      <div className="query-scope">{spec.hint}</div>
       <div className="query-pending" role="status" aria-live="polite">
         {pending && "筛选已修改，点击查询后生效"}
       </div>
       <div className="query-summary">
         <Typography.Text type="secondary">
-          {active.length ? "已应用" : "全部符合当前范围的记录"}
+          {active.length ? "已应用" : "当前范围内的全部记录"}
         </Typography.Text>
         {active.map((item) => (
           <Tag

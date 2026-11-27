@@ -814,7 +814,17 @@ export function App() {
                 </div>
               }
             >
-              <BusinessTableScope.Provider value={admin}>
+              <BusinessTableScope.Provider
+                value={
+                  admin
+                    ? JSON.stringify([
+                        actor.tenantId,
+                        actor.actorId,
+                        actor.role,
+                      ])
+                    : undefined
+                }
+              >
                 {content}
               </BusinessTableScope.Provider>
             </Suspense>

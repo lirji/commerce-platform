@@ -142,6 +142,12 @@ export function PlatformCategories({
     historyCode ? `${DIRECTORY}/${encode(historyCode)}/history` : null,
   );
   const canEdit = !!directory.data?.canEdit;
+  const matching = branch(
+    directory.data?.items ?? [],
+    query.trim().toLowerCase(),
+  );
+  const nodeCount = (rows: CategoryRow[]): number =>
+    rows.reduce((total, row) => total + 1 + nodeCount(row.children ?? []), 0);
   return (
     <Workbench>
       <PageHead
@@ -170,85 +176,100 @@ export function PlatformCategories({
           </Typography.Text>
         )}
         {directory.data && (
-          <Table<CategoryRow>
-            key={query.trim().toLowerCase()}
-            rowKey="code"
-            dataSource={branch(
-              directory.data.items,
-              query.trim().toLowerCase(),
-            )}
-            expandable={{ defaultExpandAllRows: true }}
-            pagination={false}
-            scroll={{ x: 800 }}
-            columns={[
-              { title: "类目", dataIndex: "name" },
-              { title: "编码", dataIndex: "code" },
-              {
-                title: "类型",
-                render: (_, row) => (row.kind === BRANCH ? "分组" : "末级"),
-              },
-              { title: "排序", dataIndex: "sortOrder", width: 72 },
-              {
-                title: "状态",
-                render: (_, row) => (
-                  <Tag color={row.available ? "green" : "default"}>
-                    {row.available
-                      ? "启用"
-                      : row.enabled
-                        ? "上级已停用"
-                        : "已停用"}
-                  </Tag>
-                ),
-              },
-              {
-                title: "操作",
-                width: 220,
-                render: (_, row) => (
-                  <RowActions>
-                    <Button
-                      type="link"
-                      onClick={() => setHistoryCode(row.code)}
-                    >
-                      变更记录
-                    </Button>
-                    {canEdit && row.kind === BRANCH && row.available && (
-                      <CreateCategory parent={row} onDone={directory.refresh} />
-                    )}
-                    {canEdit && (
-                      <CommandModal
-                        title="维护"
-                        path={`${DIRECTORY}/${encode(row.code)}`}
-                        fields={[
-                          ...editFields,
-                          {
-                            name: "enabled",
-                            label: "启用类目",
-                            type: "switch",
-                            required: false,
-                          },
-                          reason,
-                        ]}
-                        initialValues={{
-                          name: row.name,
-                          sortOrder: row.sortOrder,
-                          enabled: row.enabled,
-                        }}
-                        build={(values) => ({
-                          ...values,
-                          expectedVersion: row.version,
-                        })}
-                        onDone={directory.refresh}
+          <>
+            <Typography.Text type="secondary">
+              当前范围 {matching.length.toLocaleString("zh-CN")} 个一级类目 · 共{" "}
+              {nodeCount(matching).toLocaleString("zh-CN")}{" "}
+              个节点。按一级类目分页。
+            </Typography.Text>
+            <Table<CategoryRow>
+              key={query.trim().toLowerCase()}
+              rowKey="code"
+              dataSource={matching}
+              expandable={{ defaultExpandAllRows: true }}
+              pagination={{
+                defaultPageSize: 50,
+                pageSizeOptions: [10, 25, 50, 100],
+              }}
+              scroll={{ x: 800 }}
+              columns={[
+                { title: "类目", dataIndex: "name" },
+                { title: "编码", dataIndex: "code" },
+                {
+                  title: "类型",
+                  render: (_, row) => (row.kind === BRANCH ? "分组" : "末级"),
+                },
+                {
+                  title: "排序",
+                  dataIndex: "sortOrder",
+                  width: 84,
+                  sorter: (a, b) => a.sortOrder - b.sortOrder,
+                },
+                {
+                  title: "状态",
+                  render: (_, row) => (
+                    <Tag color={row.available ? "green" : "default"}>
+                      {row.available
+                        ? "启用"
+                        : row.enabled
+                          ? "上级已停用"
+                          : "已停用"}
+                    </Tag>
+                  ),
+                },
+                {
+                  title: "操作",
+                  width: 220,
+                  render: (_, row) => (
+                    <RowActions>
+                      <Button
+                        type="link"
+                        onClick={() => setHistoryCode(row.code)}
                       >
-                        <Typography.Text type="secondary">
-                          {row.name} · {row.code}
-                        </Typography.Text>
-                      </CommandModal>
-                    )}
-                  </RowActions>
-                ),
-              },
-            ]}
-          />
+                        变更记录
+                      </Button>
+                      {canEdit && row.kind === BRANCH && row.available && (
+                        <CreateCategory
+                          parent={row}
+                          onDone={directory.refresh}
+                        />
+                      )}
+                      {canEdit && (
+                        <CommandModal
+                          title="维护"
+                          path={`${DIRECTORY}/${encode(row.code)}`}
+                          fields={[
+                            ...editFields,
+                            {
+                              name: "enabled",
+                              label: "启用类目",
+                              type: "switch",
+                              required: false,
+                            },
+                            reason,
+                          ]}
+                          initialValues={{
+                            name: row.name,
+                            sortOrder: row.sortOrder,
+                            enabled: row.enabled,
+                          }}
+                          build={(values) => ({
+                            ...values,
+                            expectedVersion: row.version,
+                          })}
+                          onDone={directory.refresh}
+                        >
+                          <Typography.Text type="secondary">
+                            {row.name} · {row.code}
+                          </Typography.Text>
+                        </CommandModal>
+                      )}
+                    </RowActions>
+                  ),
+                },
+              ]}
+            />
+          </>
         )}
       </Space>
       <RecordModal

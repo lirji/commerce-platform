@@ -1,3 +1,8 @@
+import {
+  AllocationFact,
+  CompensationFact,
+  StockAvailable,
+} from "../shared/BusinessFacts";
 import { BudgetUsage } from "../shared/MetricShare";
 import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
@@ -525,12 +530,12 @@ export function AdminData({
       ].includes(key)
     )
       return <BusinessId value={value} />;
-    if (kind === "inventory" && key === "available" && value === 0)
-      return (
-        <span className="inventory-unavailable" title="当前无可售库存">
-          0
-        </span>
-      );
+    if (kind === "inventory" && key === "available")
+      return <StockAvailable value={value} />;
+    if (kind === "inventory" && key === "held")
+      return <AllocationFact held={value} available={row.available} />;
+    if (kind === "entitlements" && key === "debtUnits")
+      return <CompensationFact value={value} />;
     return cell(key, value);
   };
   function actions(r: Row) {
@@ -805,6 +810,7 @@ export function AdminData({
       >
         <Table<Row>
           rowKey={(r) => string(r[spec.id])}
+          tableId={kind}
           dataSource={rows}
           loading={resource.loading}
           pagination={false}
