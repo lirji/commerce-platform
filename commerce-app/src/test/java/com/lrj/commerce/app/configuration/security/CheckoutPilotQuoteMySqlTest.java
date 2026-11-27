@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.lrj.commerce.runtime.serialization.JsonCodec;
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,6 +18,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +43,43 @@ class CheckoutPilotQuoteMySqlTest {
 	private static final String CONTROL_SKU = "control-mug";
 	private static final String SCOPE_VERSION = "lc02-store-r1";
 
+	private static final String ORDER = "TRD-ORD-261126-0000000101";
+	private static final String TRADE_PATH = "/api/v1/trade/admin/orders/" + ORDER + "/operation-evidence";
+	private static final String FUNDING_PATH = "/api/v1/funding/trade-orders/" + TRADE_TENANT + "/101/operation-audits";
+	private static final AtomicReference<Reply> TRADE = new AtomicReference<>(new Reply(503, "{}"));
+	private static final AtomicReference<Reply> FUNDING = new AtomicReference<>(new Reply(503, "{}"));
+	private static final HttpServer SOURCES = sourceFixtures();
+
+	private record Reply(int code, String json) {}
+
+	private static HttpServer sourceFixtures() {
+		try {
+			HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+			server.createContext(TRADE_PATH, exchange -> respond(exchange, TRADE.get(), TRADE_PATH));
+			server.createContext(FUNDING_PATH, exchange -> respond(exchange, FUNDING.get(), FUNDING_PATH));
+			server.start();
+			return server;
+		} catch (IOException failure) {
+			throw new IllegalStateException("无法启动同单外部接口测试替身", failure);
+		}
+	}
+
+	private static void respond(com.sun.net.httpserver.HttpExchange exchange, Reply reply, String path) throws IOException {
+		try (exchange) {
+			boolean authorized = path.equals(exchange.getRequestURI().getPath())
+					&& ("Bearer " + MACHINE).equals(exchange.getRequestHeaders().getFirst("Authorization"));
+			byte[] body = (authorized ? reply.json() : "{}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+			exchange.getResponseHeaders().set("Content-Type", "application/json");
+			exchange.sendResponseHeaders(authorized ? reply.code() : 403, body.length);
+			exchange.getResponseBody().write(body);
+		}
+	}
+
+	@AfterAll
+	static void stopSources() {
+		SOURCES.stop(0);
+	}
+
 	@DynamicPropertySource
 	static void properties(DynamicPropertyRegistry registry) {
 		String url = System.getenv("COMMERCE_TEST_DB_URL");
@@ -56,6 +98,12 @@ class CheckoutPilotQuoteMySqlTest {
 		registry.add("commerce.checkout-pilot.store-id", () -> STORE);
 		registry.add("commerce.checkout-pilot.sku-id", () -> SKU);
 		registry.add("commerce.checkout-pilot.bearer-token", () -> MACHINE);
+		registry.add("commerce.order-audit.enabled", () -> true);
+		String source = "http://127.0.0.1:" + SOURCES.getAddress().getPort();
+		registry.add("commerce.order-audit.trade-url", () -> source);
+		registry.add("commerce.order-audit.trade-token", () -> MACHINE);
+		registry.add("commerce.order-audit.funding-url", () -> source);
+		registry.add("commerce.order-audit.funding-token", () -> MACHINE);
 	}
 
 	@LocalServerPort int port;
@@ -103,9 +151,55 @@ class CheckoutPilotQuoteMySqlTest {
 		assertEquals("5900", body.path("items").get(0).path("unitPriceMinor").asString());
 		assertEquals(2, body.path("items").get(0).path("quantity").asInt());
 
+		verifyOrderAudit(checkout, outside, buyer);
+
 		// 冻结后重查同一份持久报价，证明已有报价不会绕过门店当前状态。
 		assertEquals(1, jdbc.update("UPDATE store_record SET status='FROZEN' WHERE tenant_id=? AND store_id=?", TENANT, STORE));
 		assertEquals(409, evidence(checkout, TRADE_TENANT, MACHINE).statusCode());
+	}
+
+	private void verifyOrderAudit(String quoteId, String outsideQuote, String buyer) throws Exception {
+		String path = "/v1/admin/order-operation-evidence?orderNo=" + ORDER;
+		String admin = token(TENANT, "audit-admin", "ADMIN");
+		assertEquals(403, get(path, buyer).statusCode());
+		assertEquals(403, get(path, token(TENANT + "-other", "other-admin", "ADMIN")).statusCode());
+
+		Map<String, Object> validBinding = Map.of("commerceTenant", TENANT, "merchantId", MERCHANT,
+				"storeId", STORE, "scopeVersion", SCOPE_VERSION, "checkoutReference", "approved-reference",
+				"commerceQuoteId", quoteId, "fundingApplicationId", "verified-application");
+		var trade = new java.util.HashMap<String, Object>(Map.of("tradeTenant", TRADE_TENANT, "orderId", "101",
+				"businessNo", ORDER, "binding", validBinding, "financialStatus", "REFUNDED",
+				"receipts", List.of(Map.of("businessNo", "TRD-RCP-261126-0000000001", "amountMinor", "1000",
+						"currency", "CNY", "disposition", "NORMAL")), "refunds", List.of()));
+		TRADE.set(new Reply(200, json.writeValueAsString(trade)));
+		var partial = get(path, admin);
+		assertEquals(200, partial.statusCode(), partial.body());
+		var snapshot = json.readTree(partial.body());
+		assertEquals("AVAILABLE", snapshot.path("commerce").path("status").asString());
+		assertEquals("1000", snapshot.path("trade").path("data").path("receipts").get(0).path("amountMinor").asString());
+		assertEquals("UNAVAILABLE", snapshot.path("marketing").path("status").asString());
+		assertFalse(partial.body().contains("memberId"));
+
+		FUNDING.set(new Reply(200, json.writeValueAsString(Map.of("checkoutReference", "approved-reference",
+				"applicationId", "verified-application", "applicationNo", "MKT-FAP-261126-0000000101", "generation", 7,
+				"history", Map.of("items", List.of(Map.of("action", "funding.reverse", "amountMinor", "1000",
+						"currency", "CNY", "result", "SUCCEEDED")))))));
+		var recovered = get(path + "&source=MARKETING", admin);
+		assertEquals(200, recovered.statusCode(), recovered.body());
+		assertEquals("AVAILABLE", json.readTree(recovered.body()).path("marketing").path("status").asString());
+		assertEquals(7, json.readTree(recovered.body()).path("marketing").path("data").path("generation").asInt());
+
+		var outside = new java.util.HashMap<>(validBinding);
+		outside.put("commerceQuoteId", outsideQuote);
+		trade.put("binding", outside);
+		TRADE.set(new Reply(200, json.writeValueAsString(trade)));
+		assertEquals(404, get(path, admin).statusCode());
+		assertEquals(3, jdbc.queryForObject("SELECT COUNT(*) FROM audit_operation_attempt WHERE actor_tenant_id=?"
+				+ " AND store_id=? AND action_code='order.evidence.read'", Integer.class, TENANT, STORE));
+	}
+
+	private HttpResponse<String> get(String path, String token) throws Exception {
+		return http.send(request(path, token).GET().build(), HttpResponse.BodyHandlers.ofString());
 	}
 
 	private String seed(String tenant, boolean control) throws Exception {

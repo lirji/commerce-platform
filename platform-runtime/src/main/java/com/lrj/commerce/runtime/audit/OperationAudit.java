@@ -60,6 +60,7 @@ public class OperationAudit {
 		CATALOG_UNBIND("catalog.category.unbind", "BUSINESS", true),
 		CATALOG_CHANGE("catalog.category.change", "BUSINESS", true),
 		CATALOG_AUDIT_LIST("catalog.category.audit.list", "HIGH_RISK", true),
+		ORDER_EVIDENCE_READ("order.evidence.read", "HIGH_RISK", true),
 		AUDIT_LIST("platform.audit.list", "HIGH_RISK"),
 		AUDIT_READ("platform.audit.read", "HIGH_RISK");
 
@@ -216,6 +217,15 @@ public class OperationAudit {
 			var items = records.stream().limit(pageSize).map(OperationAudit::item).toList();
 			finish(id, Result.SUCCEEDED, null);
 			return new Page(items, records.size() > pageSize ? items.getLast().occurredAt() + "," + items.getLast().id() : null);
+		});
+	}
+
+	/** 同单查询以调用者已获准的门店为范围，不记录未经来源核验的外部订单号。 */
+	public <T> T orderEvidenceRead(Actor actor, String storeId, String traceId, java.util.function.Supplier<T> read) {
+		return captureForStore(Action.ORDER_EVIDENCE_READ, actor, storeId, null, traceId, attempt -> {
+			T result = read.get();
+			finish(attempt, Result.SUCCEEDED, null);
+			return result;
 		});
 	}
 

@@ -4,7 +4,11 @@ export type Actor = {
   actorId: string;
   role: "ADMIN" | "MEMBER" | "OPERATOR" | "PLATFORM_OPERATOR";
 };
-export type Capabilities = { sandboxEnabled: boolean; workersEnabled: boolean };
+export type Capabilities = {
+  sandboxEnabled: boolean;
+  workersEnabled: boolean;
+  orderAuditEnabled?: boolean;
+};
 export type Store = {
   storeId: string;
   merchantId: string;

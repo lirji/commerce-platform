@@ -1,5 +1,6 @@
 import { useListFilters } from "../shared/listFilters";
 import { TradeLinks } from "../shared/workspaceLinks";
+import { OrderEvidencePanel } from "./OrderEvidencePanel";
 import { TradeRowFacts } from "../shared/TradeRowFacts";
 import { useCursorState } from "../shared/routeState";
 import {
@@ -141,6 +142,7 @@ export function Orders({
             </Button>
           }
         />
+        {admin && capabilities.orderAuditEnabled && <OrderEvidencePanel />}
         <ErrorNotice error={resource.error} onRetry={resource.refresh} />
         <ListPanel
           toolbar={filters.toolbar}

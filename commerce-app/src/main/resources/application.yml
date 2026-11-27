@@ -21,6 +21,12 @@ commerce:
       marketing-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_MARKETING_TENANT:}
       commerce-tenant: ${COMMERCE_MARKETING_MEMBER_PROFILE_COMMERCE_TENANT:}
       bearer-token: ${COMMERCE_MARKETING_MEMBER_PROFILE_BEARER_TOKEN:}
+  order-audit:
+    enabled: ${COMMERCE_ORDER_AUDIT_ENABLED:false}
+    trade-url: ${COMMERCE_ORDER_AUDIT_TRADE_URL:}
+    trade-token: ${COMMERCE_ORDER_AUDIT_TRADE_TOKEN:}
+    funding-url: ${COMMERCE_ORDER_AUDIT_FUNDING_URL:}
+    funding-token: ${COMMERCE_ORDER_AUDIT_FUNDING_TOKEN:}
   checkout-pilot:
     enabled: ${COMMERCE_CHECKOUT_PILOT_ENABLED:false}
     scope-version: ${COMMERCE_CHECKOUT_PILOT_SCOPE_VERSION:}

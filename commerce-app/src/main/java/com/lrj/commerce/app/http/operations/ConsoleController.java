@@ -1,6 +1,8 @@
 package com.lrj.commerce.app.http.operations;
 
 import com.lrj.commerce.runtime.api.validation.ListFilter;
+import com.lrj.commerce.app.application.audit.OrderOperationEvidence;
+import org.springframework.beans.factory.ObjectProvider;
 import com.lrj.commerce.runtime.api.identity.Actor;
 import com.lrj.commerce.ordering.order.api.OrderApi;
 import com.lrj.commerce.payment.charge.api.PaymentApi;
@@ -17,7 +19,7 @@ public class ConsoleController {
 
 	/** 能力展示不是授权；沙箱操作端点继续验证实际渠道配置。 */
 	@ConfigurationProperties("commerce")
-	public record Capabilities(boolean sandboxEnabled, boolean workersEnabled) {
+	public record Capabilities(boolean sandboxEnabled, boolean workersEnabled, boolean orderAuditEnabled) {
 	}
 
 	private final OrderApi orders;
@@ -28,11 +30,13 @@ public class ConsoleController {
 
 	private final Capabilities capabilities;
 
-	public ConsoleController(OrderApi orders, PaymentApi payments, StoreApi stores, Capabilities capabilities) {
+	public ConsoleController(OrderApi orders, PaymentApi payments, StoreApi stores, Capabilities capabilities,
+			ObjectProvider<OrderOperationEvidence> audit) {
 		this.orders = orders;
 		this.payments = payments;
 		this.stores = stores;
-		this.capabilities = capabilities;
+		this.capabilities = new Capabilities(capabilities.sandboxEnabled(), capabilities.workersEnabled(),
+				audit.getIfAvailable() != null);
 	}
 
 	/** 仅返回非敏感运行开关。 */
