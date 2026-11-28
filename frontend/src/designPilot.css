@@ -151,13 +151,25 @@
   margin-block-end: 14px;
 }
 
-.design-order-queues > .ant-btn {
+.workspace-queue-choice {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  height: auto;
-  min-height: 64px;
-  padding: 10px 12px;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 12px;
   text-align: start;
-  white-space: normal;
+  font: inherit;
+  color: var(--button-text);
+  border: 1px solid var(--button-border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.workspace-queue-choice:hover {
+  border-color: var(--button-hoverBorder);
+  background: var(--button-hoverBg);
 }
 
 .design-order-queues strong,
@@ -176,7 +188,7 @@
   width: 16px;
 }
 
-.design-order-queues > .ant-btn[aria-pressed="true"] {
+.design-order-queues > .workspace-queue-choice[aria-pressed="true"] {
   background: var(--selected);
   border-color: var(--accent);
   color: var(--hover);
@@ -545,5 +557,139 @@
 @media (max-width: 767px) {
   .design-campaign-section h3 {
     scroll-margin-block-start: 96px;
+  }
+}
+
+/* 作业队列先呈现切换范围；同一筛选组件负责提交及回首批。 */
+.query-quick-states.design-order-queues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr));
+  gap: 8px;
+  padding-block-end: 12px;
+  margin-block-end: 10px;
+}
+
+.query-quick-states.design-order-queues > .workspace-queue-choice {
+  min-height: 44px;
+}
+
+.query-quick-states.design-order-queues > .workspace-queue-choice:has(small) {
+  min-height: 58px;
+}
+
+.query-quick-states.design-order-queues
+  > .workspace-queue-choice[aria-pressed="true"] {
+  color: var(--hover);
+  background: var(--selected);
+  border-color: var(--accent);
+}
+
+[data-workspace-kind="queue"] .workspace-operating-actions {
+  background: var(--raised);
+}
+
+[data-workspace-kind="queue"] .list-panel .business-table-tools,
+[data-workspace-kind="directory"] .list-panel .business-table-tools {
+  padding-block: 6px;
+}
+
+.workspace-detail-lines {
+  min-width: 0;
+  margin-block: 12px;
+}
+
+.workspace-detail-lines h3 {
+  color: var(--ink);
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+/* 经营数据与口径相邻，名录则让分栏和行操作拥有更多扫描空间。 */
+[data-workspace-kind="analysis"] :is(.effect-scope, .runtime-observed) {
+  border-inline-start: 3px solid var(--accent);
+  background: var(--selected);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+[data-workspace-kind="analysis"] .runtime-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 12px;
+  margin-block-end: 16px;
+}
+
+[data-workspace-kind="analysis"] .runtime-metrics strong {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-workspace-kind="analysis"] .effects-range-form {
+  margin-block-start: 12px;
+}
+
+[data-workspace-kind="directory"] .ant-tabs-nav-list {
+  gap: 12px;
+}
+
+[data-workspace-kind="directory"] .ant-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin-inline-start: 12px;
+}
+
+[data-workspace-kind="directory"] .scoped-product-summary {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+}
+
+[data-workspace-kind="directory"]
+  .scoped-product-summary
+  .scoped-product-metrics {
+  border: 0;
+  background: transparent;
+}
+
+[data-workspace-kind="configuration"]
+  :is(.workbench, .operations-workspace)
+  > .page-head {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+[data-workspace-kind="configuration"]
+  :is(.workbench, .operations-workspace)
+  > .ant-tabs
+  > .ant-tabs-nav {
+  margin-block-end: 12px;
+}
+
+.design-campaign-form > .ant-alert {
+  margin-block-end: 12px;
+}
+
+.design-campaign-form .design-campaign-section {
+  margin-block: 0 12px;
+  padding: 14px 16px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+@media (max-width: 767px) {
+  .query-quick-states.design-order-queues {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .query-quick-states.design-order-queues .ui-icon {
+    display: none;
+  }
+
+  [data-workspace-kind="directory"] .ant-tabs-nav-list {
+    gap: 0;
+  }
+
+  .design-campaign-form .design-campaign-section {
+    padding-inline: 10px;
   }
 }

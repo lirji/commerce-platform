@@ -1,5 +1,5 @@
 import { DeadlineFact } from "../shared/BusinessFacts";
-import { Table } from "../shared/BusinessTable";
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
 import { useWorkspaceHref } from "../shared/workspaceLinks";
@@ -17,7 +17,6 @@ import {
   Fields,
   ListPanel,
   PageHead,
-  PrimaryCell,
   Status,
   Workbench,
   money,
@@ -102,14 +101,18 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           scroll={{ x: layout.width }}
           columns={[
             {
-              title: "名称",
-              render: (_, r) => (
-                <PrimaryCell
-                  title={r.content.name}
-                  subtitle={
-                    "campaignId" in r.content
-                      ? r.content.campaignId
-                      : r.content.ruleId
+              title: layout.benefits ? "活动名称" : "规则名称",
+              render: (_, r) => <strong>{r.content.name}</strong>,
+            },
+            {
+              title: layout.benefits ? "活动编号" : "规则编号",
+              width: 155,
+              render: (_, { content }) => (
+                <BusinessId
+                  value={
+                    "campaignId" in content
+                      ? content.campaignId
+                      : content.ruleId
                   }
                 />
               ),

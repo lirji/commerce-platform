@@ -572,14 +572,13 @@ function Products({
             scroll={{ x: 720 }}
             columns={[
               {
-                title: "商品",
-                render: (_, r) => (
-                  <Space direction="vertical" size={0}>
-                    <Typography.Text strong>{r.title}</Typography.Text>
-                    <BusinessId value={r.resourceId} />
-                  </Space>
+                title: "商品名称",
+                dataIndex: "title",
+                render: (title: string) => (
+                  <Typography.Text strong>{title}</Typography.Text>
                 ),
               },
+              { title: "商品编号", dataIndex: "resourceId", width: 155 },
               { title: "归属门店", dataIndex: "storeId" },
               { title: "分类", dataIndex: "category" },
               { title: "品牌", dataIndex: "brand" },

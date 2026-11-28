@@ -1,4 +1,4 @@
-import { Table } from "../shared/BusinessTable";
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useCursorState } from "../shared/routeState";
 import { useListFilters } from "../shared/listFilters";
 import { RecordModal, RowActions } from "../shared/interactions";
@@ -16,7 +16,6 @@ import {
   ErrorNotice,
   Fields,
   PageHead,
-  PrimaryCell,
   ListPanel,
   Status,
   Detail,
@@ -316,9 +315,12 @@ export function OpsPages({ store }: { store: string }) {
             {
               title: "页面名称",
               width: 190,
-              render: (_, { content }) => (
-                <PrimaryCell title={content.title} subtitle={content.pageId} />
-              ),
+              render: (_, { content }) => <strong>{content.title}</strong>,
+            },
+            {
+              title: "页面编号",
+              width: 140,
+              render: (_, row) => <BusinessId value={row.content.pageId} />,
             },
             { title: "实际门店", render: (_, row) => row.content.storeId },
             { title: "内容版本", render: (_, row) => row.content.version },

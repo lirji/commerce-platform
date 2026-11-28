@@ -9,24 +9,27 @@ const designs = {
 
 type Design = keyof typeof designs;
 
-export function useDesignPreview(enabled = true) {
+export function useDesignPreview(defaultDesign?: Design) {
   const [value, setDesign] = useRouteState("design", "");
-  const design =
-    enabled && Object.hasOwn(designs, value) ? (value as Design) : undefined;
+  const comparison =
+    defaultDesign && Object.hasOwn(designs, value)
+      ? (value as Design)
+      : undefined;
   return {
-    design,
-    open: () => setDesign("minimal"),
+    design: comparison ?? defaultDesign,
+    comparison,
+    open: () => setDesign(defaultDesign ?? ""),
     close: () => setDesign(""),
     select: (next: string) => setDesign(next),
   };
 }
 
 export function DesignPreviewBar({
-  design,
+  comparison,
   close,
   select,
 }: ReturnType<typeof useDesignPreview>) {
-  if (!design) return null;
+  if (!comparison) return null;
   return (
     <div className="design-preview-switch">
       <span>设计预览</span>
@@ -36,7 +39,7 @@ export function DesignPreviewBar({
           label,
           value,
         }))}
-        value={design}
+        value={comparison}
         onChange={select}
       />
       <Button type="text" onClick={close}>

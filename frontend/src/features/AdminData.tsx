@@ -94,7 +94,10 @@ export const specs: Record<string, Spec> = {
     path: "/admin/member-tags",
     id: "tagId",
     fields: [id("tagId", "标签标识"), name],
-    columns: [["name", "标签"]],
+    columns: [
+      ["name", "标签"],
+      ["tagId", "标签编号"],
+    ],
   },
   "store-grants": {
     title: "商家与门店经营授权",
@@ -120,6 +123,7 @@ export const specs: Record<string, Spec> = {
     build: (v) => ({ ...v, permission: "CATALOG" }),
     columns: [
       ["actorId", "运营主体"],
+      ["grantId", "授权编号"],
       ["resourceType", "范围"],
       ["resourceId", "资源"],
       ["active", "授权状态"],
@@ -141,6 +145,7 @@ export const specs: Record<string, Spec> = {
     ],
     columns: [
       ["displayName", "会员"],
+      ["memberId", "会员编号"],
       ["status", "状态"],
       ["memberLevel", "等级"],
       ["actorId", "认证主体"],
@@ -154,6 +159,7 @@ export const specs: Record<string, Spec> = {
     fields: [id("merchantId", "商家标识"), name],
     columns: [
       ["name", "商家"],
+      ["merchantId", "商家编号"],
       ["status", "状态"],
     ],
   },
@@ -164,6 +170,7 @@ export const specs: Record<string, Spec> = {
     id: "storeId",
     columns: [
       ["name", "店铺"],
+      ["storeId", "店铺编号"],
       ["merchantId", "所属商家"],
       ["status", "状态"],
     ],
@@ -244,6 +251,7 @@ export const specs: Record<string, Spec> = {
     build: couponBody,
     columns: [
       ["name", "优惠券"],
+      ["definitionId", "优惠券编号"],
       ["version", "内容版本"],
       ["issuanceMode", "发行方式"],
       ["validTo", "定义截止时间"],
@@ -288,6 +296,7 @@ export const specs: Record<string, Spec> = {
     }),
     columns: [
       ["name", "权益"],
+      ["benefitId", "权益编号"],
       ["version", "固定版本"],
       ["units", "每份单位"],
       ["validTo", "定义截止"],
@@ -304,6 +313,7 @@ export const specs: Record<string, Spec> = {
     id: "grantId",
     columns: [
       ["name", "权益"],
+      ["grantId", "台账编号"],
       ["sourceType", "来源类型"],
       ["sourceId", "来源编号"],
       ["status", "状态"],
@@ -320,6 +330,7 @@ export const specs: Record<string, Spec> = {
     id: "budgetId",
     columns: [
       ["campaignId", "活动"],
+      ["budgetId", "预算编号"],
       ["version", "版本"],
       ["cap", "预算上限"],
       ["held", "已预占"],
@@ -519,6 +530,8 @@ export function AdminData({
     resource.refresh();
     if (storeDirectory) onStoresChanged();
   };
+  const hasIdentifierColumn = spec.columns.some(([key]) => key === spec.id);
+  const hasStatusColumn = spec.columns.some(([key]) => key === "status");
   const rowCell = (key: string, row: Row) => {
     if (
       spec === specs.budgets &&
@@ -530,6 +543,7 @@ export function AdminData({
     }
     const value = tradeFieldValue(spec.path, key, row);
     if (
+      key === spec.id ||
       [
         "storeId",
         "skuId",
@@ -839,15 +853,16 @@ export function AdminData({
               .map(([key, label], index) => ({
                 title: label,
                 dataIndex: key,
-                className: numberFields?.[key]
-                  ? "trade-business-number-cell"
-                  : undefined,
+                className:
+                  numberFields?.[key] || (isTrade && index === 0)
+                    ? "trade-business-number-cell"
+                    : undefined,
                 ellipsis:
                   !numberFields?.[key] &&
-                  !((compact || compactStock) && index === 0),
+                  !((isTrade || compactStock) && index === 0),
                 width:
                   numberFields?.[key] ||
-                  ((compact || compactStock) && index === 0)
+                  ((isTrade || compactStock) && index === 0)
                     ? tradeNumberColumnWidth
                     : kind === "refunds" && key === "provider"
                       ? 118
@@ -894,15 +909,15 @@ export function AdminData({
                       />
                       <TradeRowFacts row={r} />
                     </div>
-                  ) : index === 0 ? (
+                  ) : index === 0 && !isTrade ? (
                     <PrimaryCell
                       title={rowCell(key, r)}
                       subtitle={
-                        key === spec.id ? undefined : (
+                        hasIdentifierColumn ? undefined : (
                           <BusinessId value={r[spec.id]} />
                         )
                       }
-                      status={string(r.status)}
+                      status={hasStatusColumn ? undefined : string(r.status)}
                     />
                   ) : (
                     rowCell(key, r)

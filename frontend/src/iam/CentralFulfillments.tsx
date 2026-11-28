@@ -15,7 +15,28 @@ export default function CentralFulfillments(props: OperationsProps) {
     >
       {(client, dirty) => (
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Card title="履约操作">
+          <OperationsList
+            path="/admin/fulfillments"
+            detailPath={(id) => `/admin/fulfillments/${id}`}
+            idField="orderId"
+            columns={[
+              ["orderId", "订单"],
+              ["status", "履约状态"],
+              ["trackingNo", "运单"],
+              ["blocked", "售后阻拦"],
+              ["provider", "仓配渠道"],
+            ]}
+            fields={[
+              ["orderId", "订单编号"],
+              ["storeId", "实际门店编号"],
+              ["status", "履约状态"],
+              ["trackingNo", "运单编号"],
+              ["provider", "仓配渠道"],
+              ["blocked", "售后阻拦"],
+              ["version", "数据版本"],
+            ]}
+          />
+          <Card className="workspace-operating-actions" title="履约操作">
             <Space wrap>
               <OperationAction
                 client={client}
@@ -42,27 +63,6 @@ export default function CentralFulfillments(props: OperationsProps) {
               />
             </Space>
           </Card>
-          <OperationsList
-            path="/admin/fulfillments"
-            detailPath={(id) => `/admin/fulfillments/${id}`}
-            idField="orderId"
-            columns={[
-              ["orderId", "订单"],
-              ["status", "履约状态"],
-              ["trackingNo", "运单"],
-              ["blocked", "售后阻拦"],
-              ["provider", "仓配渠道"],
-            ]}
-            fields={[
-              ["orderId", "订单编号"],
-              ["storeId", "实际门店编号"],
-              ["status", "履约状态"],
-              ["trackingNo", "运单编号"],
-              ["provider", "仓配渠道"],
-              ["blocked", "售后阻拦"],
-              ["version", "数据版本"],
-            ]}
-          />
         </Space>
       )}
     </OperationsWorkspace>

@@ -1,4 +1,4 @@
-import { Table } from "../shared/BusinessTable";
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { CursorBack } from "../shared/pagination";
 import { useCursorState } from "../shared/routeState";
@@ -15,7 +15,6 @@ import {
   Fields,
   ListPanel,
   PageHead,
-  PrimaryCell,
   Status,
   Workbench,
   time,
@@ -125,13 +124,13 @@ export function Segments() {
           scroll={{ x: 1050 }}
           columns={[
             {
-              title: "人群",
-              render: (_, r) => (
-                <PrimaryCell
-                  title={r.content.name}
-                  subtitle={r.content.segmentId}
-                />
-              ),
+              title: "人群名称",
+              render: (_, r) => <strong>{r.content.name}</strong>,
+            },
+            {
+              title: "人群编号",
+              width: 150,
+              render: (_, r) => <BusinessId value={r.content.segmentId} />,
             },
             { title: "定义版本", render: (_, r) => r.content.version },
             {

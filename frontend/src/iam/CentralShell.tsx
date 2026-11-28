@@ -1,3 +1,7 @@
+import {
+  WorkspacePresentation,
+  workspaceKind,
+} from "../shared/workspacePresentation";
 import { BusinessTableScope } from "../shared/businessTableScope";
 import { RecordModal } from "../shared/interactions";
 import { Avatar, Button, Grid, Layout, Menu, Space, Typography } from "antd";
@@ -28,6 +32,7 @@ export function CentralShell({
   const screens = Grid.useBreakpoint();
   const compact = screens.md === false;
   const [open, setOpen] = useState(false);
+  const presentation = workspaceKind(location.pathname);
   const collaboration = location.pathname.startsWith("/collaboration/");
   const active = model.groups.find((g) =>
     g.pages.some(([path]) => path === location.pathname),
@@ -99,6 +104,7 @@ export function CentralShell({
         </Layout.Header>
         <Layout.Content
           className="workspace"
+          data-workspace-kind={presentation}
           id="workspace-content"
           role="main"
           tabIndex={-1}
@@ -116,7 +122,9 @@ export function CentralShell({
             <BusinessTableScope.Provider
               value={JSON.stringify([tenant, subject])}
             >
-              {children}
+              <WorkspacePresentation.Provider value={presentation}>
+                {children}
+              </WorkspacePresentation.Provider>
             </BusinessTableScope.Provider>
           </CentralLinkScope.Provider>
         </Layout.Content>

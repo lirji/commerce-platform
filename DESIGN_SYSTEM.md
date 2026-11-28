@@ -1,6 +1,17 @@
 # 交易中心 B 端设计系统
 
-本规范适用于经营运营台、中央员工台与商家门店经营。当前实施和验收范围见[代表页面设计](docs/design/commerce-console-design-pilot/FRONTEND_ARCHITECTURE.md)。方案在同一个 React、Ant Design 和 CSS token 体系内比较。
+本规范适用于经营运营台、中央员工台与商家门店经营。代表页面与方向比较见[样板设计](docs/design/commerce-console-design-pilot/FRONTEND_ARCHITECTURE.md)，全站应用范围见[推广记录](docs/delivery/commerce-console-design-rollout/DELIVERY_STATUS.md)。页面共用 React、Ant Design 和 CSS token。
+
+## 已确认的页面布局
+
+| 页面族 | 默认布局 |
+| --- | --- |
+| 经营与运行指标 | 数据驱动。门店、时间窗和数据口径靠近指标及趋势，运营待办在分析区之后。 |
+| 订单及相关队列 | 高密度运营。将履约、售后和退款的真实状态组合放到查询之前。表格默认紧凑，已保存行距优先。 |
+| 商家商品及业务名录 | 现代简约。标明授权店铺或查询范围，名称、编号和状态分列，常用编辑直接可达。 |
+| 活动及版本配置 | 配置控件按任务分区，编辑页保留当前对象、版本、时间和适用范围，验证定位到字段。 |
+
+工作台和旧运营订单的比较链接继续支持明确的 `design` 参数。退出比较回到上述默认布局，保留可用查询与分页。路由布局分类只控制视图和默认密度。[页面分类实现](frontend/src/shared/workspacePresentation.ts)
 
 ## 页面与空间
 

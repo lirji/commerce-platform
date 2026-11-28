@@ -15,7 +15,34 @@ export default function CentralAftersales(props: OperationsProps) {
     >
       {(client, dirty) => (
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Card title="售后动作">
+          <OperationsList
+            path="/admin/aftersales"
+            detailPath={(id) => `/admin/aftersales/${id}`}
+            idField="caseId"
+            columns={[
+              ["caseId", "售后编号"],
+              ["orderId", "订单"],
+              ["status", "状态"],
+              ["refundAmount", "退款金额"],
+              ["memberId", "会员编号"],
+              ["returnRequired", "需要退货"],
+              ["refundId", "退款编号"],
+            ]}
+            fields={[
+              ["businessNo", "售后编号"],
+              ["caseId", "原售后标识"],
+              ["storeId", "实际门店编号"],
+              ["createdAt", "申请时间"],
+              ["orderBusinessNo", "订单编号"],
+              ["memberId", "会员编号"],
+              ["status", "售后状态"],
+              ["returnRequired", "需退货"],
+              ["refundAmount", "退款金额"],
+              ["refundBusinessNo", "退款编号"],
+              ["version", "数据版本"],
+            ]}
+          />
+          <Card className="workspace-operating-actions" title="售后动作">
             <Space wrap>
               {(
                 [
@@ -46,33 +73,6 @@ export default function CentralAftersales(props: OperationsProps) {
               ))}
             </Space>
           </Card>
-          <OperationsList
-            path="/admin/aftersales"
-            detailPath={(id) => `/admin/aftersales/${id}`}
-            idField="caseId"
-            columns={[
-              ["caseId", "售后编号"],
-              ["orderId", "订单"],
-              ["status", "状态"],
-              ["refundAmount", "退款金额"],
-              ["memberId", "会员编号"],
-              ["returnRequired", "需要退货"],
-              ["refundId", "退款编号"],
-            ]}
-            fields={[
-              ["businessNo", "售后编号"],
-              ["caseId", "原售后标识"],
-              ["storeId", "实际门店编号"],
-              ["createdAt", "申请时间"],
-              ["orderBusinessNo", "订单编号"],
-              ["memberId", "会员编号"],
-              ["status", "售后状态"],
-              ["returnRequired", "需退货"],
-              ["refundAmount", "退款金额"],
-              ["refundBusinessNo", "退款编号"],
-              ["version", "数据版本"],
-            ]}
-          />
         </Space>
       )}
     </OperationsWorkspace>
