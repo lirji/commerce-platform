@@ -40,11 +40,18 @@ const exactLabels = {
   aggregateId: "精确业务编号",
 };
 
+type QueueShortcut = {
+  label: string;
+  status?: string;
+  blocked?: boolean;
+};
+
 type FilterSpec = {
   hint: string;
   failureClass?: boolean;
   states?: string[];
   quickStates?: string[];
+  queueShortcuts?: QueueShortcut[];
   time?: boolean;
   enabled?: boolean;
   exact?: readonly (typeof exactIds)[number][];
@@ -103,6 +110,11 @@ const specs: Record<string, FilterSpec> = {
     blocked: true,
     hint: "订单编号、运单或仓配渠道",
     states: ["READY", "SHIPPED", "DELIVERED", "CANCELLED"],
+    queueShortcuts: [
+      { label: "待发货 · 未阻拦", status: "READY", blocked: false },
+      { label: "售后已阻拦", blocked: true },
+      { label: "已发货", status: "SHIPPED" },
+    ],
   },
   "/admin/aftersales": {
     quickStates: ["REQUESTED", "WAIT_RETURN", "REFUNDING"],
@@ -585,24 +597,33 @@ function ListFilters({
       </Form.Item>
     </>
   );
+  const shortcuts: QueueShortcut[] | undefined =
+    spec.queueShortcuts ??
+    spec.quickStates?.map((status) => ({ label: statusText(status), status }));
   return (
     <div className="query-panel">
-      {spec.quickStates && (
+      {shortcuts && (
         <div
           className="query-quick-states"
           role="group"
           aria-label="状态快捷筛选"
         >
-          {[undefined, ...spec.quickStates].map((status) => (
-            <Button
-              key={status ?? "all"}
-              aria-pressed={values.status === status}
-              type={values.status === status ? "default" : "text"}
-              onClick={() => applyValues({ ...values, status })}
-            >
-              {status ? statusText(status) : "全部状态"}
-            </Button>
-          ))}
+          {[{ label: "全部状态" }, ...shortcuts].map(
+            ({ label, status, blocked }) => {
+              const selected =
+                values.status === status && values.blocked === blocked;
+              return (
+                <Button
+                  key={label}
+                  aria-pressed={selected}
+                  type={selected ? "default" : "text"}
+                  onClick={() => applyValues({ ...values, status, blocked })}
+                >
+                  {label}
+                </Button>
+              );
+            },
+          )}
         </div>
       )}
       <Form

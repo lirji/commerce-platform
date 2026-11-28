@@ -20,7 +20,7 @@ import {
   tradeNumberColumnWidth,
   tradeNumberFields,
 } from "../shared/tradeNumbers";
-import { Alert, Button, Grid, Space, Spin, Typography } from "antd";
+import { Alert, Button, Grid, Space, Spin, Tag, Typography } from "antd";
 import {
   OpeningCategoryField,
   openingProfile,
@@ -55,6 +55,15 @@ import {
   ENTITLEMENT_ORDER_SOURCE,
   type Capabilities,
 } from "../shared/contracts";
+const legacyTradeDetails = {
+  fulfillments: { title: "履约详情", related: ["orders", "aftersales"] },
+  aftersales: {
+    title: "售后详情",
+    related: ["orders", "fulfillments", "refunds"],
+  },
+  refunds: { title: "退款详情", related: ["orders", "aftersales"] },
+} as const;
+
 type Row = Record<string, unknown>;
 type Spec = {
   title: string;
@@ -320,7 +329,7 @@ export const specs: Record<string, Spec> = {
   },
   fulfillments: {
     title: "履约队列",
-    description: "沙箱出库与签收事实推进订单，售后阻拦期间禁止发货。",
+    description: "按待发货、售后阻拦和已发货定位订单，核对交付进度。",
     path: "/admin/fulfillments",
     id: "orderId",
     columns: [
@@ -333,7 +342,7 @@ export const specs: Record<string, Spec> = {
   },
   aftersales: {
     title: "售后审批",
-    description: "未发货全额退款，已发货支持按商品数量部分退货。",
+    description: "按申请、收货和退款状态处理售后，按商品数量核对退货。",
     path: "/admin/aftersales",
     id: "caseId",
     columns: [
@@ -348,7 +357,7 @@ export const specs: Record<string, Spec> = {
   },
   refunds: {
     title: "退款核对",
-    description: "未知结果不释放资金预留，成功证据推动售后完成。",
+    description: "核对渠道退款结果。结果待确认时继续保留资金预留。",
     path: "/admin/refunds",
     id: "refundId",
     actionWidth: 180,
@@ -419,6 +428,9 @@ const eyebrows: Record<string, string> = {
 };
 function cell(key: string, value: unknown): ReactNode {
   if (key === "status") return <Status value={string(value)} />;
+  if (key === "provider") return formatField(key, value);
+  if (key === "blocked" && typeof value === "boolean")
+    return value ? <Tag color="warning">已阻拦</Tag> : "未阻拦";
   if (key === "resourceType") {
     if (value === "STORE") return "单个门店";
     if (value === "MERCHANT") return "商家及其门店";
@@ -469,7 +481,8 @@ export function AdminData({
 }) {
   const spec = specs[kind];
   const storeDirectory = spec === specs.stores;
-  const isTrade = ["fulfillments", "aftersales", "refunds"].includes(kind);
+  const trade = legacyTradeDetails[kind as keyof typeof legacyTradeDetails];
+  const isTrade = trade !== undefined;
   const narrow = Grid.useBreakpoint().md === false;
   const compact = narrow && isTrade;
   const compactStock = narrow && spec === specs.inventory;
@@ -924,7 +937,7 @@ export function AdminData({
       </ListPanel>
       <RecordModal
         className="record-modal"
-        title={detail ? detailTitle : "业务记录详情"}
+        title={trade?.title ?? (detail ? detailTitle : "业务记录详情")}
         open={!!selected}
         onCancel={() => setDetail(undefined)}
         width={560}
@@ -949,9 +962,16 @@ export function AdminData({
               eyebrow={spec.title}
               title={detailTitle}
               id={
-                <Typography.Text copyable={{ text: detailId }}>
-                  {detailId}
-                </Typography.Text>
+                isTrade ? (
+                  <BusinessId
+                    value={detailId}
+                    copyOnly={detailId === detailTitle}
+                  />
+                ) : (
+                  <Typography.Text copyable={{ text: detailId }}>
+                    {detailId}
+                  </Typography.Text>
+                )
               }
               status={detail.status ? string(detail.status) : undefined}
               metrics={spec.columns
@@ -973,8 +993,14 @@ export function AdminData({
                   value: rowCell(key, detail),
                 }))}
             />
-            {isTrade && (
-              <TradeLinks orderId={detail.orderId} pages={["orders"]} />
+            {trade && typeof detail.orderId === "string" && (
+              <section
+                className="trade-related-documents"
+                aria-label="关联单据"
+              >
+                <Typography.Title level={5}>关联单据</Typography.Title>
+                <TradeLinks orderId={detail.orderId} pages={trade.related} />
+              </section>
             )}
             {spec === specs.entitlements &&
               detail.sourceType === ENTITLEMENT_ORDER_SOURCE && (

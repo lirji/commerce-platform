@@ -314,6 +314,41 @@ test("交易列和状态存档按浏览器范围恢复且保留当前精确归�
       storeId: "STORE-B",
       orderId: "ORDER-B",
     });
+  const shortcuts = page.getByRole("group", { name: "状态快捷筛选" });
+  const fulfillmentCalls = () =>
+    calls.filter((url) => url.pathname === "/v1/admin/fulfillments");
+  const ready = shortcuts.getByRole("button", { name: "待发货 · 未阻拦" });
+  await ready.click();
+  await expect(ready).toHaveAttribute("aria-pressed", "true");
+  await expect
+    .poll(() => Object.fromEntries(fulfillmentCalls().at(-1)!.searchParams))
+    .toEqual({
+      after: "",
+      limit: "25",
+      status: "READY",
+      blocked: "false",
+      storeId: "STORE-B",
+      orderId: "ORDER-B",
+    });
+  await shortcuts.getByRole("button", { name: "售后已阻拦" }).click();
+  await expect
+    .poll(() => Object.fromEntries(fulfillmentCalls().at(-1)!.searchParams))
+    .toEqual({
+      after: "",
+      limit: "25",
+      blocked: "true",
+      storeId: "STORE-B",
+      orderId: "ORDER-B",
+    });
+  await shortcuts.getByRole("button", { name: "全部状态" }).click();
+  await expect
+    .poll(() => Object.fromEntries(fulfillmentCalls().at(-1)!.searchParams))
+    .toEqual({
+      after: "",
+      limit: "25",
+      storeId: "STORE-B",
+      orderId: "ORDER-B",
+    });
   await expect(
     page.getByRole("columnheader", { name: "仓配渠道", exact: true }),
   ).toHaveCount(0);

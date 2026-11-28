@@ -1150,3 +1150,12 @@ session85180/PID21761/rehearsal-81eacc02b592/10.254.128.0/24已确认实际live�
 ## 商城售后与退款可读编号修复（2026-11-26）
 
 - 当前任务与恢复入口见 `.local/aftersale-refund-business-numbers/PROGRESS.md`。
+
+<!-- commerce-trade-queues:start -->
+## 商城履约与售后作业体验
+
+- 目标和边界：按本轮授权优化 commerce-platform 的 B 端履约、售后、退款作业。以 619659b 为基线，任务分支 feat/commerce-trade-queues，保留现有交易事实、接口和权限。
+- 执行清单：核对本机 8602 与当前主线；完善真实队列快筛与关联单据；验证浏览器和构建；提交和本机 Docker 验收。
+- 恢复入口：设计见 docs/design/b-console-workspace-system/FRONTEND_ARCHITECTURE.md。当前任务证据位于 .local/commerce-trade-queues/。
+- 功能已实现。构建、29 个旧运营队列及入口的 145 个布局、真实六档宽度与关联跳转、6 项旧运营浏览器回归和中央定向快筛用例已通过。下一步为 Git 交付、精确 CI 和原环境 Docker 升级。
+<!-- commerce-trade-queues:end -->
