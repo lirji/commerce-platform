@@ -1,5 +1,12 @@
 # Codex Progress
 
+<!-- commerce-console-design-rollout:start -->
+## 交易中心及商家端设计推广
+
+- 已确认工作台、订单与商家的设计方向。[交付状态](docs/delivery/commerce-console-design-rollout/DELIVERY_STATUS.md)为恢复入口。
+- 浏览器、Git 和 Docker 回执位于 `.local/commerce-console-design-rollout/`。
+<!-- commerce-console-design-rollout:end -->
+
 <!-- commerce-console-design-pilot:start -->
 ## 当前任务：交易中心及商家端设计样板
 
