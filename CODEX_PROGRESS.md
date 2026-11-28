@@ -1159,3 +1159,11 @@ session85180/PID21761/rehearsal-81eacc02b592/10.254.128.0/24已确认实际live�
 - 恢复入口：设计见 docs/design/b-console-workspace-system/FRONTEND_ARCHITECTURE.md。当前任务证据位于 .local/commerce-trade-queues/。
 - 功能已实现。构建、29 个旧运营队列及入口的 145 个布局、真实六档宽度与关联跳转、6 项旧运营浏览器回归和中央定向快筛用例已通过。下一步为 Git 交付、精确 CI 和原环境 Docker 升级。
 <!-- commerce-trade-queues:end -->
+
+<!-- commerce-light-sidebar:start -->
+## 商城侧边栏配色优化
+
+- 用户反馈侧边栏太暗。以 420d2cd 为基线，任务分支 fix/commerce-light-sidebar，调整商城 B 端导航的背景、分组、悬停、选中和键盘焦点。
+- 执行清单：基线取证、侧栏样式、桌面和窄屏验证、正常 Git 交付、本机 Docker 更新。恢复证据 .local/commerce-light-sidebar/。
+- 已通过生产构建和实际入口六档视口验证，侧栏表面白色，选中项浅蓝及左标记，分组和键盘焦点可辨认。开始主线交付及 Docker 更新。
+<!-- commerce-light-sidebar:end -->

@@ -42,10 +42,8 @@ for (const [name, value] of Object.entries(buttonPalette))
 // 经营框架与会员页面共用组件体系，但导航/画布只在 B 端作用域使用。
 export const workspacePalette = {
   canvas: "#F4F6FA",
-  spine: "#11253C",
-  spineHover: "#203B57",
-  spineText: "#C9D5E6",
-  spineActive: "#254D78",
+  featured: "#11253C",
+  featuredText: "#C9D5E6",
   signal: "#BDEACF",
 };
 for (const [name, value] of Object.entries(workspacePalette))

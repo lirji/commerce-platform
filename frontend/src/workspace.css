@@ -6,24 +6,25 @@
 }
 .admin-app .sidebar {
   border: 0;
-  background: var(--workspace-spine);
+  border-inline-end: 1px solid var(--line);
+  background: var(--surface);
   scrollbar-width: thin;
-  scrollbar-color: var(--workspace-spineActive) transparent;
+  scrollbar-color: var(--line) transparent;
 }
 .admin-app .sidebar .brand {
   padding: 20px 18px;
-  color: var(--surface);
-  border-bottom: 1px solid var(--workspace-spineHover);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
   margin-bottom: 12px;
 }
 .admin-app .sidebar .brand-sub {
-  color: var(--workspace-spineText);
+  color: var(--muted);
   font-size: 11px;
   letter-spacing: 0;
 }
 .admin-app .sidebar .ant-menu {
   background: transparent;
-  color: var(--workspace-spineText);
+  color: var(--ink);
   padding-inline: 8px;
 }
 .admin-app .sidebar .ant-menu-item,
@@ -31,22 +32,31 @@
   border-radius: 6px;
   height: 38px;
   line-height: 38px;
-  color: var(--workspace-spineText);
 }
-.admin-app .sidebar .ant-menu-submenu-open > .ant-menu-submenu-title,
-.admin-app .sidebar .ant-menu-submenu-selected > .ant-menu-submenu-title {
-  color: var(--surface);
+.admin-app .sidebar .ant-menu-submenu-title {
+  color: var(--muted);
+}
+.admin-app .sidebar .ant-menu-submenu-open > .ant-menu-submenu-title {
+  color: var(--ink);
 }
 .admin-app .sidebar .ant-menu-item:not(.ant-menu-item-selected):hover,
 .admin-app .sidebar .ant-menu-submenu-title:hover {
-  background: var(--workspace-spineHover);
-  color: var(--surface);
+  background: var(--raised);
+  color: var(--ink);
+}
+.admin-app .sidebar .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: var(--hover);
 }
 .admin-app .sidebar .ant-menu-item-selected,
 .admin-app .sidebar .ant-menu-item-selected:hover {
-  background: var(--workspace-spineActive);
-  color: var(--surface);
+  background: var(--selected);
+  box-shadow: inset 3px 0 var(--accent);
+  color: var(--hover);
   font-weight: 600;
+}
+.admin-app .sidebar :is(.ant-menu-item, .ant-menu-submenu-title):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
 }
 .admin-app .sidebar a {
   color: inherit;
@@ -492,12 +502,12 @@
   line-height: 1.6;
 }
 .admin-app .metric-featured {
-  background: var(--workspace-spine);
-  border-color: var(--workspace-spine);
+  background: var(--workspace-featured);
+  border-color: var(--workspace-featured);
 }
 .admin-app .metric-featured .metric-label,
 .admin-app .metric-featured .metric-note {
-  color: var(--workspace-spineText);
+  color: var(--workspace-featuredText);
 }
 .admin-app .metric-featured strong {
   color: #fff;
