@@ -781,6 +781,7 @@ export function CatalogFilters({
   operations = false,
   className,
   shopMode = false,
+  showStatusSelect = true,
   query,
 }: {
   categories: Category[];
@@ -788,6 +789,7 @@ export function CatalogFilters({
   operations?: boolean;
   className?: string;
   shopMode?: boolean;
+  showStatusSelect?: boolean;
   query?: string;
 }) {
   const [form] = Form.useForm();
@@ -842,6 +844,9 @@ export function CatalogFilters({
         for (const [key, value] of Object.entries(v))
           if (value !== undefined && value !== null && value !== "")
             params.set(key, String(value));
+        const status = current.get("status");
+        if (operations && !showStatusSelect && status)
+          params.set("status", status);
         onSearch(params.toString());
       }}
       onFinishFailed={() => operations && setPriceOpen(true)}
@@ -871,7 +876,7 @@ export function CatalogFilters({
         </Form.Item>
       )}
       {!operations && priceFields}
-      {operations && (
+      {operations && showStatusSelect && (
         <Form.Item name="status">
           <Select
             aria-label="筛选销售状态"

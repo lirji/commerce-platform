@@ -323,6 +323,7 @@ export function useListFilters(
   path: string,
   reset: () => void,
   compact = false,
+  showShortcuts = true,
 ) {
   const spec = specs[path];
   const [raw, setRaw] = useRouteState(`${name}.query`, "");
@@ -400,6 +401,7 @@ export function useListFilters(
         raw={raw}
         apply={apply}
         compact={compact}
+        showShortcuts={showShortcuts}
       />
     ) : null,
   };
@@ -410,12 +412,14 @@ function ListFilters({
   raw,
   apply,
   compact,
+  showShortcuts,
 }: {
   spec: FilterSpec;
   values: Values;
   raw: string;
   apply: (v: Values) => void;
   compact: boolean;
+  showShortcuts: boolean;
 }) {
   type FormValues = Omit<Values, "enabled" | "blocked"> & {
     enabled?: string;
@@ -602,7 +606,7 @@ function ListFilters({
     spec.quickStates?.map((status) => ({ label: statusText(status), status }));
   return (
     <div className="query-panel">
-      {shortcuts && (
+      {showShortcuts && shortcuts && (
         <div
           className="query-quick-states"
           role="group"

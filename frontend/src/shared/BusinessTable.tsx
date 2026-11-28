@@ -82,6 +82,8 @@ function saveScroll(key: string, value: string) {
   }
 }
 
+type TableDensity = "standard" | "compact";
+
 type BusinessTableProps<Row> = TableProps<Row> & {
   tools?: boolean;
   columnSettings?: boolean;
@@ -90,6 +92,7 @@ type BusinessTableProps<Row> = TableProps<Row> & {
   tableId?: string | readonly string[];
   selectedUnit?: string;
   toolbarActions?: ReactNode;
+  defaultDensity?: TableDensity;
 };
 const tablePageSizes = [7, 10, 25, 50, 100];
 
@@ -104,6 +107,7 @@ export function Table<Row extends object>(props: BusinessTableProps<Row>) {
     tableId,
     selectedUnit = "条",
     toolbarActions,
+    defaultDensity = "standard",
     ...tableProps
   } = props;
   const columns = tableProps.columns ?? [];
@@ -161,6 +165,7 @@ export function Table<Row extends object>(props: BusinessTableProps<Row>) {
       onRefresh={onRefresh}
       selectedUnit={selectedUnit}
       toolbarActions={toolbarActions}
+      defaultDensity={defaultDensity}
     />
   );
 }
@@ -171,6 +176,7 @@ function ManagedTable<Row extends object>({
   onRefresh,
   selectedUnit,
   toolbarActions,
+  defaultDensity,
   columns = [],
   pagination,
   sticky,
@@ -185,13 +191,16 @@ function ManagedTable<Row extends object>({
   inPanel: boolean;
   onRefresh?: () => void;
   toolbarActions?: ReactNode;
+  defaultDensity: TableDensity;
 }) {
   const screens = Grid.useBreakpoint();
-  const [density, setDensity] = useState(() =>
-    readDisplayPreference(`${preferenceKey}.density`) === "compact"
-      ? "compact"
-      : "standard",
+  const [preferredDensity, setDensity] = useState<TableDensity | undefined>(
+    () => {
+      const saved = readDisplayPreference(`${preferenceKey}.density`);
+      return saved === "compact" || saved === "standard" ? saved : undefined;
+    },
   );
+  const density = preferredDensity ?? defaultDensity;
   const [hidden, setHidden] = useState<string[]>(() => {
     try {
       const value: unknown = JSON.parse(

@@ -1,3 +1,4 @@
+import { DesignPreviewBar, useDesignPreview } from "./DesignPreview";
 import { countText, MetricShare, PaidOrderShare } from "../shared/MetricShare";
 import { Table } from "../shared/BusinessTable";
 import {
@@ -87,6 +88,8 @@ export function Dashboard({
   const data = useResource<Summary>(
     store ? `/admin/dashboard?storeId=${encode(store)}` : null,
   );
+  const preview = useDesignPreview();
+  const { design } = preview;
   const [metricQuery, setMetric] = useRouteState("metric", "netReceipts");
   const metric: TrendMetric =
     metricQuery === "received" ||
@@ -117,23 +120,308 @@ export function Dashboard({
       刷新总览
     </Button>
   );
+  const metrics = sums && (
+    <div className="metric-grid">
+      {[
+        {
+          label: "净收金额",
+          value: money(sums.netReceipts),
+          note: "近30天 · 实收减已知成功退款",
+          metric: "netReceipts" as const,
+          tone: "featured",
+          mark: "trade",
+        },
+        {
+          label: "实收金额",
+          value: money(sums.received),
+          note: "已付订单 · 成交投影",
+          metric: "received" as const,
+          tone: "blue",
+          mark: "trade",
+        },
+        {
+          label: "成功退款",
+          value: money(sums.refunded),
+          note: "截至投影已知成功退款",
+          metric: "refunded" as const,
+          tone: "teal",
+          mark: "trade",
+        },
+        {
+          label: "已付订单",
+          value: countText(sums.paidOrders),
+          note: "近30天 · 已投影订单",
+          metric: "paidOrders" as const,
+          tone: "purple",
+          mark: "trade",
+        },
+      ].map((k) => {
+        const selectedMetric = k.metric;
+        const content = (
+          <>
+            <span className="metric-label">
+              {k.label}
+              <Icon name={k.mark as IconName} />
+            </span>
+            <strong>{k.value}</strong>
+            <span className="metric-note">{k.note}</span>
+          </>
+        );
+        return (
+          <Card key={k.label} className={`metric-card metric-${k.tone}`}>
+            {selectedMetric ? (
+              <button
+                className="dashboard-metric-choice"
+                type="button"
+                aria-label={`查看${k.label}趋势`}
+                aria-pressed={metric === selectedMetric}
+                onClick={() => setMetric(selectedMetric)}
+              >
+                {content}
+              </button>
+            ) : (
+              content
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+  const comparison = summary && (
+    <DashboardComparison daily={daily} end={summary.to} metric={metric} />
+  );
+  const trend = summary && sums && (
+    <Card className="trend-card" title="成交与退款趋势">
+      <div className="trend-window">
+        <Segmented
+          aria-label="趋势指标"
+          value={metric}
+          onChange={setMetric}
+          options={Object.entries(trendLabels).map(([value, label]) => ({
+            label,
+            value,
+          }))}
+        />
+        <Segmented
+          aria-label="每日趋势范围"
+          value={trendDays}
+          onChange={setDays}
+          options={[7, 14, 30].map((value) => ({
+            label: `${value} 天`,
+            value,
+          }))}
+        />
+      </div>
+      <div className="trend-summary">
+        <span>
+          成交优惠 <b>{money(sums.discountGranted)}</b>
+        </span>
+      </div>
+      {design && design !== "analytics" ? (
+        <details className="design-period-comparison">
+          <summary>查看七日对比</summary>
+          {comparison}
+        </details>
+      ) : (
+        comparison
+      )}
+      <DailyTrend daily={visibleDays} metric={metric} />
+      <Button type="link" onClick={() => setTable(table ? "" : "open")}>
+        {table ? "收起每日数据" : "查看每日数据"}
+      </Button>
+      {table && (
+        <Table<Daily>
+          key={trendDays}
+          tableId="dashboard-daily"
+          size="small"
+          rowKey="day"
+          dataSource={visibleDays}
+          pagination={{ defaultPageSize: 7 }}
+          scroll={{ x: 680 }}
+          columns={[
+            {
+              title: "UTC日期",
+              dataIndex: "day",
+              sorter: (a, b) => a.day.localeCompare(b.day),
+            },
+            {
+              title: "投影下单",
+              dataIndex: "orders",
+              align: "right",
+              render: countText,
+            },
+            {
+              title: "已付订单",
+
+              dataIndex: "paidOrders",
+              sorter: (a, b) => a.paidOrders - b.paidOrders,
+              render: countText,
+              align: "right",
+            },
+            {
+              title: "已付比例",
+              key: "paidOrderShare",
+              width: 104,
+              render: (_, row) => (
+                <PaidOrderShare paid={row.paidOrders} orders={row.orders} />
+              ),
+            },
+            {
+              title: "实收",
+
+              dataIndex: "received",
+              render: money,
+              align: "right",
+              sorter: (a, b) => compareProjectedAmounts(a.received, b.received),
+            },
+            {
+              title: "退款",
+              dataIndex: "refunded",
+              render: money,
+              align: "right",
+              sorter: (a, b) => compareProjectedAmounts(a.refunded, b.refunded),
+            },
+            {
+              title: "净收",
+              dataIndex: "netReceipts",
+              render: money,
+            },
+            {
+              title: "优惠",
+              dataIndex: "discountGranted",
+              render: money,
+            },
+          ]}
+        />
+      )}
+    </Card>
+  );
+  const scale = summary && (
+    <Card title="经营规模" className="state-card">
+      <div className="state-heading">
+        <Icon name="member" />
+        <Typography.Text type="secondary">会员 · 当前租户</Typography.Text>
+      </div>
+      <div className="state-total">
+        {countText(summary.members.active)}
+        <small>可用会员</small>
+      </div>
+      <MetricShare
+        total={summary.members.total}
+        segments={[
+          {
+            label: "可用",
+            value: summary.members.active,
+            tone: "success",
+          },
+          {
+            label: "冻结",
+            value: summary.members.frozen,
+            tone: "warning",
+          },
+          {
+            label: "注销",
+            value: summary.members.closed,
+            tone: "muted",
+          },
+        ]}
+        caption={`租户会员状态分布，可用 ${countText(summary.members.active)}，已冻结 ${countText(summary.members.frozen)}，已注销 ${countText(summary.members.closed)}`}
+      />
+      <div className="state-row">
+        <span>已冻结</span>
+        <b>{countText(summary.members.frozen)}</b>
+      </div>
+      <div className="state-row">
+        <span>已注销</span>
+        <b>{countText(summary.members.closed)}</b>
+      </div>
+      <div className="state-row">
+        <span>会员总数</span>
+        <b>{countText(summary.members.total)}</b>
+      </div>
+      <div className="state-divider" />
+      <div className="state-heading">
+        <Icon name="catalog" />
+        <Typography.Text type="secondary">商品 · 当前门店</Typography.Text>
+      </div>
+      <div className="state-row">
+        <span>在售规格</span>
+        <b>{countText(summary.catalog.active)}</b>
+      </div>
+      <div className="state-row">
+        <span>下架规格</span>
+        <b>{countText(summary.catalog.frozen)}</b>
+      </div>
+      <MetricShare
+        total={summary.catalog.total}
+        segments={[
+          {
+            label: "在售",
+            value: summary.catalog.active,
+            tone: "accent",
+          },
+          {
+            label: "下架",
+            value: summary.catalog.frozen,
+            tone: "muted",
+          },
+        ]}
+        caption={`当前门店规格状态分布，在售 ${countText(summary.catalog.active)}，下架 ${countText(summary.catalog.frozen)}`}
+      />
+      {canNavigate("members") && (
+        <Button block onClick={() => navigate("members")}>
+          查看会员档案
+        </Button>
+      )}
+      {canNavigate("skus") && (
+        <Button type="link" block onClick={() => navigate("skus")}>
+          查看门店商品
+        </Button>
+      )}
+    </Card>
+  );
+  const queueSection = exceptions && (
+    <div className="design-dashboard-queues">{exceptions}</div>
+  );
+  const chooseDesign = !design && (
+    <Button type="text" onClick={preview.open}>
+      比较设计
+    </Button>
+  );
   return (
-    <div className="dashboard">
+    <div
+      className={`dashboard${design ? " design-dashboard design-" + design : ""}`}
+    >
       {!embedded && (
         <PageHead
           eyebrow="经营工作台"
           title="经营总览"
           description="处理门店异常，核对成交与退款。"
-          extra={refresh}
+          extra={
+            <>
+              {chooseDesign}
+              {refresh}
+            </>
+          }
         />
       )}
       <div className="dashboard-intro">
         <strong className="dashboard-store">
           当前门店 {storeName ? `${storeName} · ${store}` : store}
         </strong>
-        {embedded && refresh}
+        {embedded && (
+          <>
+            {chooseDesign}
+            {refresh}
+          </>
+        )}
       </div>
-      {exceptions}
+      <DesignPreviewBar {...preview} />
+      {design === "operations"
+        ? queueSection
+        : design
+          ? !summary && queueSection
+          : exceptions}
       <ErrorNotice error={data.error} onRetry={data.refresh} />
       <Spin spinning={data.loading}>
         {data.loading && (
@@ -155,273 +443,30 @@ export function Dashboard({
                 读取于 {time(summary.generatedAt)}
               </span>
             </div>
-            <div className="metric-grid">
-              {[
-                {
-                  label: "净收金额",
-                  value: money(sums.netReceipts),
-                  note: "近30天 · 实收减已知成功退款",
-                  metric: "netReceipts" as const,
-                  tone: "featured",
-                  mark: "trade",
-                },
-                {
-                  label: "实收金额",
-                  value: money(sums.received),
-                  note: "已付订单 · 成交投影",
-                  metric: "received" as const,
-                  tone: "blue",
-                  mark: "trade",
-                },
-                {
-                  label: "成功退款",
-                  value: money(sums.refunded),
-                  note: "截至投影已知成功退款",
-                  metric: "refunded" as const,
-                  tone: "teal",
-                  mark: "trade",
-                },
-                {
-                  label: "已付订单",
-                  value: countText(sums.paidOrders),
-                  note: "近30天 · 已投影订单",
-                  metric: "paidOrders" as const,
-                  tone: "purple",
-                  mark: "trade",
-                },
-              ].map((k) => {
-                const selectedMetric = k.metric;
-                const content = (
-                  <>
-                    <span className="metric-label">
-                      {k.label}
-                      <Icon name={k.mark as IconName} />
-                    </span>
-                    <strong>{k.value}</strong>
-                    <span className="metric-note">{k.note}</span>
-                  </>
-                );
-                return (
-                  <Card
-                    key={k.label}
-                    className={`metric-card metric-${k.tone}`}
-                  >
-                    {selectedMetric ? (
-                      <button
-                        className="dashboard-metric-choice"
-                        type="button"
-                        aria-label={`查看${k.label}趋势`}
-                        aria-pressed={metric === selectedMetric}
-                        onClick={() => setMetric(selectedMetric)}
-                      >
-                        {content}
-                      </button>
-                    ) : (
-                      content
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-            <div className="dashboard-main-grid">
-              <Card className="trend-card" title="成交与退款趋势">
-                <div className="trend-window">
-                  <Segmented
-                    aria-label="趋势指标"
-                    value={metric}
-                    onChange={setMetric}
-                    options={Object.entries(trendLabels).map(
-                      ([value, label]) => ({
-                        label,
-                        value,
-                      }),
-                    )}
-                  />
-                  <Segmented
-                    aria-label="每日趋势范围"
-                    value={trendDays}
-                    onChange={setDays}
-                    options={[7, 14, 30].map((value) => ({
-                      label: `${value} 天`,
-                      value,
-                    }))}
-                  />
-                </div>
-                <div className="trend-summary">
-                  <span>
-                    成交优惠 <b>{money(sums.discountGranted)}</b>
-                  </span>
-                </div>
-                <DashboardComparison
-                  daily={daily}
-                  end={summary.to}
-                  metric={metric}
-                />
-                <DailyTrend daily={visibleDays} metric={metric} />
-                <Button
-                  type="link"
-                  onClick={() => setTable(table ? "" : "open")}
-                >
-                  {table ? "收起每日数据" : "查看每日数据"}
-                </Button>
-                {table && (
-                  <Table<Daily>
-                    key={trendDays}
-                    tableId="dashboard-daily"
-                    size="small"
-                    rowKey="day"
-                    dataSource={visibleDays}
-                    pagination={{ defaultPageSize: 7 }}
-                    scroll={{ x: 680 }}
-                    columns={[
-                      {
-                        title: "UTC日期",
-                        dataIndex: "day",
-                        sorter: (a, b) => a.day.localeCompare(b.day),
-                      },
-                      {
-                        title: "投影下单",
-                        dataIndex: "orders",
-                        align: "right",
-                        render: countText,
-                      },
-                      {
-                        title: "已付订单",
-
-                        dataIndex: "paidOrders",
-                        sorter: (a, b) => a.paidOrders - b.paidOrders,
-                        render: countText,
-                        align: "right",
-                      },
-                      {
-                        title: "已付比例",
-                        key: "paidOrderShare",
-                        width: 104,
-                        render: (_, row) => (
-                          <PaidOrderShare
-                            paid={row.paidOrders}
-                            orders={row.orders}
-                          />
-                        ),
-                      },
-                      {
-                        title: "实收",
-
-                        dataIndex: "received",
-                        render: money,
-                        align: "right",
-                        sorter: (a, b) =>
-                          compareProjectedAmounts(a.received, b.received),
-                      },
-                      {
-                        title: "退款",
-                        dataIndex: "refunded",
-                        render: money,
-                        align: "right",
-                        sorter: (a, b) =>
-                          compareProjectedAmounts(a.refunded, b.refunded),
-                      },
-                      {
-                        title: "净收",
-                        dataIndex: "netReceipts",
-                        render: money,
-                      },
-                      {
-                        title: "优惠",
-                        dataIndex: "discountGranted",
-                        render: money,
-                      },
-                    ]}
-                  />
+            {design === "analytics" ? (
+              <div className="design-trade-analysis">
+                {metrics}
+                {trend}
+              </div>
+            ) : (
+              <>
+                {metrics}
+                {design ? (
+                  trend
+                ) : (
+                  <div className="dashboard-main-grid">
+                    {trend}
+                    {scale}
+                  </div>
                 )}
-              </Card>
-              <Card title="经营规模" className="state-card">
-                <div className="state-heading">
-                  <Icon name="member" />
-                  <Typography.Text type="secondary">
-                    会员 · 当前租户
-                  </Typography.Text>
-                </div>
-                <div className="state-total">
-                  {countText(summary.members.active)}
-                  <small>可用会员</small>
-                </div>
-                <MetricShare
-                  total={summary.members.total}
-                  segments={[
-                    {
-                      label: "可用",
-                      value: summary.members.active,
-                      tone: "success",
-                    },
-                    {
-                      label: "冻结",
-                      value: summary.members.frozen,
-                      tone: "warning",
-                    },
-                    {
-                      label: "注销",
-                      value: summary.members.closed,
-                      tone: "muted",
-                    },
-                  ]}
-                  caption={`租户会员状态分布，可用 ${countText(summary.members.active)}，已冻结 ${countText(summary.members.frozen)}，已注销 ${countText(summary.members.closed)}`}
-                />
-                <div className="state-row">
-                  <span>已冻结</span>
-                  <b>{countText(summary.members.frozen)}</b>
-                </div>
-                <div className="state-row">
-                  <span>已注销</span>
-                  <b>{countText(summary.members.closed)}</b>
-                </div>
-                <div className="state-row">
-                  <span>会员总数</span>
-                  <b>{countText(summary.members.total)}</b>
-                </div>
-                <div className="state-divider" />
-                <div className="state-heading">
-                  <Icon name="catalog" />
-                  <Typography.Text type="secondary">
-                    商品 · 当前门店
-                  </Typography.Text>
-                </div>
-                <div className="state-row">
-                  <span>在售规格</span>
-                  <b>{countText(summary.catalog.active)}</b>
-                </div>
-                <div className="state-row">
-                  <span>下架规格</span>
-                  <b>{countText(summary.catalog.frozen)}</b>
-                </div>
-                <MetricShare
-                  total={summary.catalog.total}
-                  segments={[
-                    {
-                      label: "在售",
-                      value: summary.catalog.active,
-                      tone: "accent",
-                    },
-                    {
-                      label: "下架",
-                      value: summary.catalog.frozen,
-                      tone: "muted",
-                    },
-                  ]}
-                  caption={`当前门店规格状态分布，在售 ${countText(summary.catalog.active)}，下架 ${countText(summary.catalog.frozen)}`}
-                />
-                {canNavigate("members") && (
-                  <Button block onClick={() => navigate("members")}>
-                    查看会员档案
-                  </Button>
-                )}
-                {canNavigate("skus") && (
-                  <Button type="link" block onClick={() => navigate("skus")}>
-                    查看门店商品
-                  </Button>
-                )}
-              </Card>
-            </div>
+              </>
+            )}
+            {design && (
+              <>
+                {design !== "operations" && queueSection}
+                {scale}
+              </>
+            )}
             <div className="shortcut-grid">
               {shortcuts
                 .filter((s) => canNavigate(s.page))

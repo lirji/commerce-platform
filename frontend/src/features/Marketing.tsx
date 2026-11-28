@@ -76,9 +76,10 @@ export function Marketing({ kind, store }: { kind: string; store: string }) {
           </>
         }
       />
-      {filters.toolbar}
+      {kind === "rules" && filters.toolbar}
       <ErrorNotice error={resource.error} onRetry={resource.refresh} />
       <ListPanel
+        toolbar={kind === "campaigns" ? filters.toolbar : undefined}
         pageSize={filters.limit}
         count={resource.data?.length ?? 0}
         loading={resource.loading}

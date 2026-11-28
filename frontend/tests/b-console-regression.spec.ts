@@ -307,7 +307,7 @@ test("规格表格列、行距、全屏与编号复制保留本页批选", async
     page.getByRole("status").filter({ hasText: "已选 1 个规格" }),
   ).toBeVisible();
   await row
-    .getByRole("cell", { name: /批选表格商品/ })
+    .getByRole("cell", { name: /sku-copy-01/ })
     .getByRole("button", { name: "复制编号" })
     .click();
   await expect
@@ -459,6 +459,30 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
   await expect(page.locator(".list-count")).toContainText("本页 3 条");
   expect(requests.at(-1)?.searchParams.get("after")).toBe("20");
   expect(requests.at(-1)?.searchParams.get("status")).toBe("PENDING_PAYMENT");
+  await page.getByRole("button", { name: "比较设计", exact: true }).click();
+  const design = page.getByLabel("设计方案");
+  await design.getByText("数据驱动", { exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "本页订单状态分布" }),
+  ).toContainText(/本页订单\s*3\s*条/);
+  await expect(page.locator(".cursor-position")).toHaveText("第3页");
+  await design.getByText("高密度运营", { exact: true }).click();
+  await expect(page.locator(".cursor-position")).toHaveText("第3页");
+  const closing = waitOrders(
+    (query) =>
+      query.get("status") === "CLOSING" &&
+      query.get("after") === "" &&
+      query.get("limit") === "10" &&
+      query.has("from") &&
+      query.has("to"),
+  );
+  await page
+    .getByRole("group", { name: "快捷队列" })
+    .getByRole("button", { name: /关单确认中/ })
+    .click();
+  await closing;
+  await expect(page.locator(".cursor-position")).toHaveText("第1页");
+  await page.getByRole("button", { name: "退出预览", exact: true }).click();
   await filter.getByRole("button", { name: "重置筛选", exact: true }).click();
   await expect(filter.getByLabel(/创建起点/)).toHaveValue("");
   await expect(

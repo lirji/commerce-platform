@@ -1,3 +1,5 @@
+import { DesignPreviewBar, useDesignPreview } from "./DesignPreview";
+import { OrderPageComposition, OrderQueueViews } from "./OrderDesignOverview";
 import { tradeNumberColumnWidth } from "../shared/tradeNumbers";
 import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
@@ -52,6 +54,10 @@ export function Orders({
   admin: boolean;
   capabilities: Capabilities;
 }) {
+  const preview = useDesignPreview(admin);
+  const { design } = preview;
+  const operations = design === "operations";
+  const analytics = design === "analytics";
   const compact = Grid.useBreakpoint().md === false;
   const [after, setAfter] = useCursorState("after", "");
   const [selected, setSelected] = useState<string>();
@@ -127,6 +133,7 @@ export function Orders({
     admin ? "/admin/orders" : "/orders",
     () => setAfter(""),
     compact,
+    !operations && !analytics,
   );
   const resource = useResource<Order[]>(
     (admin ? "/admin/orders" : "/orders") +
@@ -135,12 +142,15 @@ export function Orders({
   return (
     <Workbench>
       {workspaceId && (
-        <div className="order-workspace">
+        <div
+          className={`order-workspace${admin ? " design-order-detail" : ""}`}
+        >
           <div
             ref={detailHeading}
             tabIndex={-1}
             role="region"
             aria-label="订单完整详情"
+            className="design-order-heading"
           >
             <PageHead
               eyebrow={admin ? "交易与交付 / 订单" : "我的订单"}
@@ -155,10 +165,16 @@ export function Orders({
             admin={admin}
             capabilities={capabilities}
             onUpdate={resource.refresh}
+            fullWorkspace={admin}
           />
         </div>
       )}
-      <div ref={listRef} tabIndex={-1} hidden={!!workspaceId}>
+      <div
+        ref={listRef}
+        tabIndex={-1}
+        hidden={!!workspaceId}
+        className={design ? `design-orders design-${design}` : undefined}
+      >
         <PageHead
           eyebrow={admin ? "交易与交付" : undefined}
           title={admin ? "订单工作台" : "我的订单"}
@@ -168,12 +184,26 @@ export function Orders({
               : "查看本人在各店铺的订单。支付结果以渠道核对为准。"
           }
           extra={
-            <Button loading={resource.loading} onClick={resource.refresh}>
-              {admin ? "刷新队列" : "刷新订单"}
-            </Button>
+            <>
+              {admin && !design && (
+                <Button type="text" onClick={preview.open}>
+                  比较设计
+                </Button>
+              )}
+              <Button loading={resource.loading} onClick={resource.refresh}>
+                {admin ? "刷新队列" : "刷新订单"}
+              </Button>
+            </>
           }
         />
-        {admin && capabilities.orderAuditEnabled && <OrderEvidencePanel />}
+        <DesignPreviewBar {...preview} />
+        {operations && <OrderQueueViews {...filters} />}
+        {analytics && resource.data && (
+          <OrderPageComposition rows={resource.data} {...filters} />
+        )}
+        {!design && admin && capabilities.orderAuditEnabled && (
+          <OrderEvidencePanel />
+        )}
         <ErrorNotice error={resource.error} onRetry={resource.refresh} />
         <ListPanel
           toolbar={filters.toolbar}
@@ -189,6 +219,7 @@ export function Orders({
           <Table<Order>
             rowKey="orderId"
             tableId="orders"
+            defaultDensity={operations ? "compact" : "standard"}
             dataSource={resource.data}
             loading={resource.loading}
             pagination={false}
@@ -241,18 +272,18 @@ export function Orders({
                     {
                       title: "订单状态",
                       dataIndex: "status",
-                      width: admin ? 112 : undefined,
+                      width: design ? 94 : admin ? 112 : undefined,
                       render: (v: string) => <Status value={v} />,
                     },
                     {
                       title: "应付金额",
                       dataIndex: "payable",
                       align: "right" as const,
-                      width: admin ? 108 : undefined,
+                      width: design ? 98 : admin ? 108 : undefined,
                       className: "trade-amount",
                       render: money,
                     },
-                    ...(admin
+                    ...(admin && !design
                       ? [
                           {
                             title: "店铺",
@@ -268,20 +299,35 @@ export function Orders({
                               ),
                           },
                         ]
-                      : [
-                          { title: "店铺编号", dataIndex: "storeId" },
-                          {
-                            title: "店铺名称",
-                            dataIndex: "storeName",
-                            render: (name: string | undefined) => name ?? "—",
-                          },
-                        ]),
+                      : !admin
+                        ? [
+                            { title: "店铺编号", dataIndex: "storeId" },
+                            {
+                              title: "店铺名称",
+                              dataIndex: "storeName",
+                              render: (name: string | undefined) => name ?? "—",
+                            },
+                          ]
+                        : [
+                            {
+                              title: "店铺名称",
+                              dataIndex: "storeName",
+                              width: 128,
+                              render: (name: string | undefined) => name ?? "—",
+                            },
+                            {
+                              title: "店铺编号",
+                              dataIndex: "storeId",
+                              width: 120,
+                              className: "design-order-store-code",
+                            },
+                          ]),
                   ]
                 : []),
               {
                 title: "创建时间",
                 dataIndex: "createdAt",
-                width: admin ? 136 : undefined,
+                width: design ? 125 : admin ? 136 : undefined,
                 render: time,
               },
               ...(admin
@@ -291,7 +337,7 @@ export function Orders({
                           {
                             title: "支付方式",
                             dataIndex: "paymentKind",
-                            width: 104,
+                            width: design ? 90 : 104,
                             render: (value: string) =>
                               formatField("paymentKind", value),
                           },
@@ -300,7 +346,7 @@ export function Orders({
                     {
                       title: "支付截止",
                       dataIndex: "expiresAt",
-                      width: 136,
+                      width: design ? 125 : 136,
                       render: time,
                     },
                   ]
@@ -308,7 +354,7 @@ export function Orders({
               {
                 title: "操作",
                 className: "row-actions-cell",
-                width: admin && !compact ? 184 : 180,
+                width: design && !compact ? 174 : admin && !compact ? 184 : 180,
                 fixed: admin && !compact ? "right" : undefined,
                 render: (_, r) => (
                   <RowActions>
@@ -334,6 +380,7 @@ export function Orders({
             ]}
           />
         </ListPanel>
+        {design && capabilities.orderAuditEnabled && <OrderEvidencePanel />}
       </div>
       <RecordModal
         className="record-modal"
@@ -368,11 +415,13 @@ function OrderDetails({
   admin,
   capabilities,
   onUpdate,
+  fullWorkspace = false,
 }: {
   id: string;
   admin: boolean;
   capabilities: Capabilities;
   onUpdate: () => void;
+  fullWorkspace?: boolean;
 }) {
   const prefix = admin ? "/admin/orders/" : "/orders/";
   const order = useResource<Order>(prefix + encode(id));
@@ -390,6 +439,36 @@ function OrderDetails({
     onUpdate();
   };
   const value = order.data;
+  const tradeFacts = value && (
+    <Descriptions
+      className={admin ? "order-operating-facts" : undefined}
+      title={admin && !fullWorkspace ? "交易信息" : undefined}
+      column={2}
+      items={[
+        ...(admin && value.storeName
+          ? [
+              {
+                key: "storeId",
+                label: "店铺编号",
+                children: <BusinessId value={value.storeId} />,
+              },
+            ]
+          : []),
+        {
+          key: "kind",
+          label: "支付方式",
+          children: formatField("paymentKind", value.paymentKind),
+        },
+        {
+          key: "expires",
+          label: "支付截止",
+          children: time(value.expiresAt),
+        },
+        { key: "version", label: "版本", children: value.version },
+        { key: "lines", label: "商品行数", children: value.items.length },
+      ]}
+    />
+  );
   return (
     <>
       <ErrorNotice error={order.error} onRetry={order.refresh} />
@@ -414,6 +493,7 @@ function OrderDetails({
             }
             id={admin ? (value.storeName ?? value.storeId) : value.storeId}
             status={value.status}
+            extra={fullWorkspace && <Button onClick={refresh}>刷新状态</Button>}
             metrics={[
               { label: "应付金额", value: money(value.payable) },
               { label: "会员", value: value.memberId },
@@ -436,34 +516,7 @@ function OrderDetails({
               }
             />
           </div>
-          <Descriptions
-            className={admin ? "order-operating-facts" : undefined}
-            title={admin ? "交易信息" : undefined}
-            column={2}
-            items={[
-              ...(admin && value.storeName
-                ? [
-                    {
-                      key: "storeId",
-                      label: "店铺编号",
-                      children: <BusinessId value={value.storeId} />,
-                    },
-                  ]
-                : []),
-              {
-                key: "kind",
-                label: "支付方式",
-                children: formatField("paymentKind", value.paymentKind),
-              },
-              {
-                key: "expires",
-                label: "支付截止",
-                children: time(value.expiresAt),
-              },
-              { key: "version", label: "版本", children: value.version },
-              { key: "lines", label: "商品行数", children: value.items.length },
-            ]}
-          />
+          {!fullWorkspace && tradeFacts}
           <Card size="small" title="商品明细" className="detail-block">
             <Table<QuoteLine>
               tools={false}
@@ -495,57 +548,73 @@ function OrderDetails({
               ]}
             />
           </Card>
-          <Space wrap className="section-actions">
-            <Button onClick={refresh}>刷新状态</Button>
-            {!admin &&
-              ["PENDING_PAYMENT", "PAYMENT_IN_PROGRESS"].includes(
-                value.status,
-              ) && (
-                <Button
-                  type="primary"
-                  loading={command.busy}
-                  onClick={async () => {
-                    if (
-                      (await command.run(
-                        "/orders/" + encode(primaryId) + "/payments",
-                      )) !== undefined
-                    ) {
-                      setPaymentVisible(true);
-                      refresh();
-                    }
-                  }}
-                >
-                  发起支付
-                </Button>
-              )}
-            {!admin &&
-              ["PENDING_PAYMENT", "PAYMENT_IN_PROGRESS", "CLOSING"].includes(
-                value.status,
-              ) && (
-                <ActionButton
-                  label="取消订单"
-                  danger
-                  confirm={{
-                    title: "确认取消这笔订单？",
-                    description:
-                      "取消请求会交由服务端核对支付结果，处理中的订单可稍后刷新查看。",
-                  }}
-                  path={"/orders/" + encode(primaryId) + "/cancel"}
-                  onDone={refresh}
-                />
-              )}
-            <Button onClick={() => setPaymentVisible(true)}>查询支付</Button>
-            {!admin &&
-              ["PAID", "FULFILLING", "COMPLETED"].includes(value.status) && (
-                <Button onClick={() => setReturnOpen(true)}>申请售后</Button>
-              )}
-          </Space>
-          {paymentVisible && (
+          {!fullWorkspace && (
+            <Space wrap className="section-actions">
+              <Button onClick={refresh}>刷新状态</Button>
+              {!admin &&
+                ["PENDING_PAYMENT", "PAYMENT_IN_PROGRESS"].includes(
+                  value.status,
+                ) && (
+                  <Button
+                    type="primary"
+                    loading={command.busy}
+                    onClick={async () => {
+                      if (
+                        (await command.run(
+                          "/orders/" + encode(primaryId) + "/payments",
+                        )) !== undefined
+                      ) {
+                        setPaymentVisible(true);
+                        refresh();
+                      }
+                    }}
+                  >
+                    发起支付
+                  </Button>
+                )}
+              {!admin &&
+                ["PENDING_PAYMENT", "PAYMENT_IN_PROGRESS", "CLOSING"].includes(
+                  value.status,
+                ) && (
+                  <ActionButton
+                    label="取消订单"
+                    danger
+                    confirm={{
+                      title: "确认取消这笔订单？",
+                      description:
+                        "取消请求会交由服务端核对支付结果，处理中的订单可稍后刷新查看。",
+                    }}
+                    path={"/orders/" + encode(primaryId) + "/cancel"}
+                    onDone={refresh}
+                  />
+                )}
+              <Button onClick={() => setPaymentVisible(true)}>查询支付</Button>
+              {!admin &&
+                ["PAID", "FULFILLING", "COMPLETED"].includes(value.status) && (
+                  <Button onClick={() => setReturnOpen(true)}>申请售后</Button>
+                )}
+            </Space>
+          )}
+          {(fullWorkspace || paymentVisible) && (
             <Card
               size="small"
-              title="支付状态"
-              extra={<Button onClick={payment.refresh}>刷新支付</Button>}
+              title={fullWorkspace ? "支付核对" : "支付状态"}
+              className={fullWorkspace ? "design-order-payment" : undefined}
+              extra={
+                paymentVisible ? (
+                  <Button onClick={payment.refresh}>刷新支付</Button>
+                ) : (
+                  <Button onClick={() => setPaymentVisible(true)}>
+                    查询支付
+                  </Button>
+                )
+              }
             >
+              {!paymentVisible && (
+                <Typography.Text type="secondary">
+                  支付方式 {formatField("paymentKind", value.paymentKind)}
+                </Typography.Text>
+              )}
               <ErrorNotice error={payment.error} onRetry={payment.refresh} />
               {payment.loading && !payment.data && (
                 <div className="record-loading" role="status">
@@ -598,6 +667,11 @@ function OrderDetails({
                   </p>
                 </>
               )}
+            </Card>
+          )}
+          {fullWorkspace && (
+            <Card size="small" title="交易信息" className="design-order-facts">
+              {tradeFacts}
             </Card>
           )}
           {returnOpen && (

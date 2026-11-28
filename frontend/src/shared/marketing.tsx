@@ -1,5 +1,5 @@
 import { Button, Form, Input, Select, Space } from "antd";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { Campaign, Rule } from "./contracts";
 import { encode, useCommand } from "./api";
 import {
@@ -265,6 +265,13 @@ export function RuleSummary({ rule }: { rule: Rule | null }) {
     </div>
   );
 }
+const campaignSections = [
+  { key: "identity", label: "活动与有效期" },
+  { key: "eligibility", label: "优惠与资格" },
+  { key: "pricing", label: "商品范围与阶梯" },
+  { key: "assets", label: "人群、权益与预算" },
+] as const;
+
 export function CampaignEditor({
   store,
   onDone,
@@ -281,6 +288,9 @@ export function CampaignEditor({
   initialCampaign?: Campaign;
 }) {
   const [open, setOpen] = useState(false);
+  const sectionPrefix = useId();
+  const headingId = (key: (typeof campaignSections)[number]["key"]) =>
+    `${sectionPrefix}-${key}`;
   const command = useCommand();
   const [form] = Form.useForm();
   const rowAction = useRowAction();
@@ -420,7 +430,8 @@ export function CampaignEditor({
         {label}
       </Button>
       <RecordModal
-        width={640}
+        width={880}
+        className="design-campaign-editor"
         title={label}
         open={open}
         onCancel={closing.requestClose}
@@ -439,15 +450,38 @@ export function CampaignEditor({
         }
         destroyOnHidden
       >
-        <p className="overlay-intro">
-          {initialCampaign
-            ? `基于 v${initialCampaign.version} 创建新的草稿版本，保存后可继续审批发布。`
-            : "先填写活动与资格条件，再按需要配置商品范围和关联资产。"}
-        </p>
+        <div className="design-campaign-context">
+          <p>
+            <span>适用门店</span>
+            <strong>{store}</strong>
+          </p>
+          <p>
+            {initialCampaign
+              ? `从 v${initialCampaign.version} 创建草稿，保存后可继续审批发布。`
+              : "草稿保存后可继续审批发布。"}
+          </p>
+        </div>
+        <nav className="design-campaign-sections" aria-label="活动配置分区">
+          {campaignSections.map(({ key, label }) => (
+            <Button
+              key={key}
+              type="text"
+              aria-controls={headingId(key)}
+              onClick={() => {
+                const heading = document.getElementById(headingId(key));
+                heading?.focus({ preventScroll: true });
+                heading?.scrollIntoView({ block: "start" });
+              }}
+            >
+              {label}
+            </Button>
+          ))}
+        </nav>
         <ErrorNotice error={command.error} />
         <Form
           form={form}
           layout="vertical"
+          scrollToFirstError={{ focus: true }}
           initialValues={{
             version: 1,
             validFrom: initialDate(-60),
@@ -482,6 +516,7 @@ export function CampaignEditor({
                   errors: ["预算、比例或权益配置需要引用人群或规则资产"],
                 },
               ]);
+              form.scrollToField("audienceId", { focus: true });
               return;
             }
             let input: Campaign;
@@ -494,6 +529,7 @@ export function CampaignEditor({
                   errors: [e instanceof Error ? e.message : "配置格式无效"],
                 },
               ]);
+              form.scrollToField("tiers", { focus: true });
               return;
             }
             if (
@@ -506,113 +542,170 @@ export function CampaignEditor({
             }
           }}
         >
-          <div className="node-grid">
+          <section
+            className="design-campaign-section"
+            aria-labelledby={headingId("identity")}
+          >
+            <h3 id={headingId("identity")} tabIndex={-1}>
+              {campaignSections[0].label}
+            </h3>
+            <div className="node-grid design-campaign-identity">
+              <Fields
+                fields={[
+                  { name: "name", label: "活动名称" },
+                  { name: "campaignId", label: "活动标识" },
+                  {
+                    name: "version",
+                    label: "版本",
+                    type: "number",
+                    min: 1,
+                    max: 2147483647,
+                  },
+                ]}
+              />
+            </div>
+            <div className="node-grid">
+              <Fields
+                fields={[
+                  {
+                    name: "validFrom",
+                    label: "开始时间（北京时间）",
+                    type: "datetime",
+                  },
+                  {
+                    name: "validTo",
+                    label: "结束时间（北京时间）",
+                    type: "datetime",
+                  },
+                ]}
+              />
+            </div>
+          </section>
+          <section
+            className="design-campaign-section"
+            aria-labelledby={headingId("eligibility")}
+          >
+            <h3 id={headingId("eligibility")} tabIndex={-1}>
+              {campaignSections[1].label}
+            </h3>
+            <div className="node-grid">
+              <Fields
+                fields={[
+                  { name: "minimumSpend", label: "消费门槛", type: "money" },
+                  {
+                    name: "discountAmount",
+                    label: "优惠金额 / 比例折扣上限",
+                    type: "money",
+                  },
+                ]}
+              />
+            </div>
+            <Form.Item
+              label="资格规则"
+              name="rule"
+              rules={[{ required: true }]}
+            >
+              <RuleEditor />
+            </Form.Item>
+          </section>
+          <section
+            className="design-campaign-section"
+            aria-labelledby={headingId("pricing")}
+          >
+            <h3 id={headingId("pricing")} tabIndex={-1}>
+              {campaignSections[2].label}
+            </h3>
+            <p className="muted">
+              可选。启用后配置参与规格、排除规格和优惠档位。
+            </p>
             <Fields
               fields={[
-                { name: "campaignId", label: "活动标识" },
                 {
-                  name: "version",
-                  label: "版本",
-                  type: "number",
-                  min: 1,
-                  max: 2147483647,
-                },
-                { name: "name", label: "活动名称" },
-                { name: "minimumSpend", label: "消费门槛", type: "money" },
-                {
-                  name: "discountAmount",
-                  label: "优惠金额 / 比例折扣上限",
-                  type: "money",
-                },
-                { name: "validFrom", label: "开始时间", type: "datetime" },
-                { name: "validTo", label: "结束时间", type: "datetime" },
-              ]}
-            />
-          </div>
-          <Form.Item label="资格规则" name="rule" rules={[{ required: true }]}>
-            <RuleEditor />
-          </Form.Item>
-          <div className="form-section-title">精细促销（可选，需审批发布）</div>
-          <Fields
-            fields={[
-              {
-                name: "advanced",
-                label: "启用商品范围与阶梯",
-                type: "switch",
-                required: false,
-              },
-              {
-                name: "includedSkuIds",
-                label: "参与SKU（逗号分隔，留空为全部）",
-                required: false,
-              },
-              {
-                name: "excludedSkuIds",
-                label: "排除SKU（逗号分隔，排除优先）",
-                required: false,
-              },
-              {
-                name: "tiers",
-                label: "优惠阶梯",
-                type: "textarea",
-                required: false,
-                help: "每行：门槛,优惠上限,优惠比例万分比。比例0表示固定减免，1000表示减10%；按门槛升序，最多8档。留空使用上方基础优惠。",
-              },
-            ]}
-          />
-          <div className="form-section-title">可信资产与预算（可选）</div>
-          <p className="muted">
-            引用人群或规则资产后走审批发布流程。百分比、预算、资方与权益配置随该受治理版本一起生效。
-          </p>
-          <div className="node-grid">
-            <Fields
-              fields={[
-                { name: "audienceId", label: "人群标识", required: false },
-                {
-                  name: "audienceVersion",
-                  label: "人群版本",
-                  type: "number",
-                  min: 1,
-                },
-                { name: "ruleId", label: "规则资产标识", required: false },
-                {
-                  name: "ruleVersion",
-                  label: "规则资产版本",
-                  type: "number",
-                  min: 1,
-                },
-                {
-                  name: "percentageBps",
-                  label: "优惠比例（万分比，0为固定金额）",
-                  type: "number",
-                  max: 10000,
-                },
-                {
-                  name: "platformFundingBps",
-                  label: "平台承担比例（万分比）",
-                  type: "number",
-                  max: 10000,
-                },
-                {
-                  name: "budget",
-                  label: "营销预算上限",
-                  type: "money",
+                  name: "advanced",
+                  label: "启用商品范围与阶梯",
+                  type: "switch",
                   required: false,
                 },
                 {
-                  name: "benefitId",
-                  label: "支付后授予权益标识",
+                  name: "includedSkuIds",
+                  label: "参与SKU（逗号分隔，留空为全部）",
                   required: false,
                 },
                 {
-                  name: "benefitVersion",
-                  label: "权益版本",
-                  type: "number",
-                  min: 1,
+                  name: "excludedSkuIds",
+                  label: "排除SKU（逗号分隔，排除优先）",
+                  required: false,
+                },
+                {
+                  name: "tiers",
+                  label: "优惠阶梯",
+                  type: "textarea",
+                  required: false,
+                  help: "每行：门槛,优惠上限,优惠比例万分比。比例0表示固定减免，1000表示减10%；按门槛升序，最多8档。留空使用上方基础优惠。",
                 },
               ]}
             />
-          </div>
+          </section>
+          <section
+            className="design-campaign-section"
+            aria-labelledby={headingId("assets")}
+          >
+            <h3 id={headingId("assets")} tabIndex={-1}>
+              {campaignSections[3].label}
+            </h3>
+            <p className="muted">
+              引用人群或规则资产后走审批发布流程。百分比、预算、资方与权益配置随该受治理版本一起生效。
+            </p>
+            <div className="node-grid">
+              <Fields
+                fields={[
+                  { name: "audienceId", label: "人群标识", required: false },
+                  {
+                    name: "audienceVersion",
+                    label: "人群版本",
+                    type: "number",
+                    min: 1,
+                  },
+                  { name: "ruleId", label: "规则资产标识", required: false },
+                  {
+                    name: "ruleVersion",
+                    label: "规则资产版本",
+                    type: "number",
+                    min: 1,
+                  },
+                  {
+                    name: "percentageBps",
+                    label: "优惠比例（万分比，0为固定金额）",
+                    type: "number",
+                    max: 10000,
+                  },
+                  {
+                    name: "platformFundingBps",
+                    label: "平台承担比例（万分比）",
+                    type: "number",
+                    max: 10000,
+                  },
+                  {
+                    name: "budget",
+                    label: "营销预算上限",
+                    type: "money",
+                    required: false,
+                  },
+                  {
+                    name: "benefitId",
+                    label: "支付后授予权益标识",
+                    required: false,
+                  },
+                  {
+                    name: "benefitVersion",
+                    label: "权益版本",
+                    type: "number",
+                    min: 1,
+                  },
+                ]}
+              />
+            </div>
+          </section>
         </Form>
       </RecordModal>
     </>

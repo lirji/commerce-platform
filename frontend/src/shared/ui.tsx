@@ -109,7 +109,7 @@ const labels: Record<string, string> = {
 };
 export const statusText = (value: string) =>
   labels[value] ?? `未知状态（${value}）`;
-export function Status({ value }: { value?: string }) {
+export function Status({ value, label }: { value?: string; label?: string }) {
   if (value == null || value === "")
     return <Typography.Text type="secondary">未提供</Typography.Text>;
   const v = value;
@@ -158,7 +158,7 @@ export function Status({ value }: { value?: string }) {
         borderColor: "transparent",
       }}
     >
-      {statusText(v)}
+      {label ?? statusText(v)}
     </Tag>
   );
 }

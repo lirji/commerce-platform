@@ -557,7 +557,7 @@ export function App() {
         },
       ]
     : operator
-      ? [{ key: "skus", label: "授权商品经营" }]
+      ? [{ key: "skus", label: "授权商品经营", icon: <Icon name="catalog" /> }]
       : admin
         ? [
             {
@@ -611,7 +611,14 @@ export function App() {
       />
     );
   else if (admin && page === "skus")
-    content = <ProductOperations key={store} store={store} />;
+    content = (
+      <ProductOperations
+        key={store}
+        store={store}
+        storeContext={stores.data?.find((item) => item.storeId === store)}
+        merchant={operator}
+      />
+    );
   else if (operator)
     content = <Alert type="warning" title="请从导航进入已授权的商品经营功能" />;
   else if (admin && page === "coupon-deliveries")
