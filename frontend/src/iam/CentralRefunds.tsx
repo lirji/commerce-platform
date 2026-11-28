@@ -15,19 +15,6 @@ export default function CentralRefunds(props: OperationsProps) {
     >
       {(client, dirty) => (
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Card title="核对原退款">
-            <OperationAction
-              client={client}
-              dirty={dirty}
-              family="refunds"
-              action="reconcile"
-              label="核对退款"
-              keyed={false}
-              fields={[{ name: "refundId", label: "原退款编号", kind: "id" }]}
-              path={(v) => `/admin/refunds/${v.refundId}/reconcile`}
-              note="金额与收款对象不可编辑。UNKNOWN表示渠道结果未确认；显式重试只核对同一笔退款。"
-            />
-          </Card>
           <OperationsList
             path="/admin/refunds"
             detailPath={(id) => `/admin/refunds/${id}`}
@@ -55,6 +42,19 @@ export default function CentralRefunds(props: OperationsProps) {
               ["version", "数据版本"],
             ]}
           />
+          <Card className="workspace-operating-actions" title="核对原退款">
+            <OperationAction
+              client={client}
+              dirty={dirty}
+              family="refunds"
+              action="reconcile"
+              label="核对退款"
+              keyed={false}
+              fields={[{ name: "refundId", label: "原退款编号", kind: "id" }]}
+              path={(v) => `/admin/refunds/${v.refundId}/reconcile`}
+              note="金额与收款对象不可编辑。UNKNOWN表示渠道结果未确认；显式重试只核对同一笔退款。"
+            />
+          </Card>
         </Space>
       )}
     </OperationsWorkspace>

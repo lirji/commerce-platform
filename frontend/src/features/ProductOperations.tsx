@@ -37,7 +37,6 @@ import {
   ErrorNotice,
   ListPanel,
   PageHead,
-  PrimaryCell,
   Status,
   Workbench,
   money,
@@ -169,36 +168,40 @@ export function ProductOperations({
           }
         />
       )}
-      {!embedded && (
-        <section className="design-store-scope" aria-label="商品经营范围">
-          <div className="design-store-symbol">
-            <Icon name="catalog" />
-          </div>
-          <div className="design-store-name">
-            <span>{merchant ? "当前授权门店" : "当前经营门店"}</span>
-            <strong>{storeContext?.name ?? store}</strong>
-          </div>
-          {storeContext && (
-            <>
-              <Status value={storeContext.status} />
-              <dl>
-                <div>
-                  <dt>门店编号</dt>
-                  <dd>
-                    <BusinessId value={store} />
-                  </dd>
-                </div>
-                <div>
-                  <dt>商家编号</dt>
-                  <dd>
-                    <BusinessId value={storeContext.merchantId} />
-                  </dd>
-                </div>
-              </dl>
-            </>
-          )}
-        </section>
-      )}
+      <section className="design-store-scope" aria-label="商品经营范围">
+        <div className="design-store-symbol">
+          <Icon name="catalog" />
+        </div>
+        <div className="design-store-name">
+          <span>
+            {merchant
+              ? "当前授权门店"
+              : embedded
+                ? "当前查询门店"
+                : "当前经营门店"}
+          </span>
+          <strong>{storeContext?.name ?? store}</strong>
+        </div>
+        {storeContext && (
+          <>
+            <Status value={storeContext.status} />
+            <dl>
+              <div>
+                <dt>门店编号</dt>
+                <dd>
+                  <BusinessId value={store} />
+                </dd>
+              </div>
+              <div>
+                <dt>商家编号</dt>
+                <dd>
+                  <BusinessId value={storeContext.merchantId} />
+                </dd>
+              </div>
+            </dl>
+          </>
+        )}
+      </section>
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -211,28 +214,23 @@ export function ProductOperations({
                 toolbar={
                   <>
                     <ErrorNotice error={skus.error} onRetry={skus.refresh} />
-                    <div
-                      className={
-                        !embedded ? "design-catalog-toolbar" : undefined
-                      }
-                    >
-                      {!embedded && (
-                        <Segmented
-                          aria-label="销售规格视图"
-                          options={[
-                            { label: "全部规格", value: "" },
-                            { label: "在售", value: "ACTIVE" },
-                            { label: "下架", value: "FROZEN" },
-                          ]}
-                          value={skuStatus}
-                          onChange={(status) => {
-                            const query = new URLSearchParams(filters);
-                            if (status) query.set("status", status);
-                            else query.delete("status");
-                            searchSku(query.toString());
-                          }}
-                        />
-                      )}
+                    <div className="design-catalog-toolbar">
+                      <Segmented
+                        aria-label="销售规格视图"
+                        options={[
+                          { label: "全部规格", value: "" },
+                          ...Object.entries(salesStatusLabels).map(
+                            ([value, label]) => ({ value, label }),
+                          ),
+                        ]}
+                        value={skuStatus}
+                        onChange={(status) => {
+                          const query = new URLSearchParams(filters);
+                          if (status) query.set("status", status);
+                          else query.delete("status");
+                          searchSku(query.toString());
+                        }}
+                      />
                       <Space wrap>
                         <VariantCreator store={store} onDone={refresh} />
                         <BatchCatalogAction
@@ -249,7 +247,7 @@ export function ProductOperations({
                       query={filters}
                       categories={categories.data ?? []}
                       operations
-                      showStatusSelect={embedded}
+                      showStatusSelect={false}
                       onSearch={searchSku}
                     />
                   </>
@@ -276,12 +274,12 @@ export function ProductOperations({
                   dataSource={skus.data}
                   loading={skus.loading}
                   pagination={false}
-                  scroll={{ x: embedded ? 1150 : 1110 }}
+                  scroll={{ x: 1110 }}
                   columns={[
                     {
-                      title: embedded ? "商品" : "规格名称",
+                      title: "规格名称",
                       dataIndex: "title",
-                      width: embedded ? 250 : 194,
+                      width: 194,
                       render: (_, r) => (
                         <div className="catalog-identity">
                           <span className="catalog-thumbnail">
@@ -297,31 +295,16 @@ export function ProductOperations({
                               />
                             )}
                           </span>
-                          {embedded ? (
-                            <PrimaryCell
-                              title={r.title}
-                              subtitle={<BusinessId value={r.skuId} />}
-                            />
-                          ) : (
-                            <strong className="design-catalog-title">
-                              {r.title}
-                            </strong>
-                          )}
+                          <strong className="design-catalog-title">
+                            {r.title}
+                          </strong>
                         </div>
                       ),
                     },
-                    ...(!embedded
-                      ? [
-                          {
-                            title: "规格编号",
-                            dataIndex: "skuId",
-                            width: 130,
-                          },
-                        ]
-                      : []),
+                    { title: "规格编号", dataIndex: "skuId", width: 130 },
                     {
                       title: "规格",
-                      width: embedded ? 220 : 150,
+                      width: 150,
                       render: (_, r) =>
                         r.specifications
                           .map((s) => `${s.name}：${s.value}`)
@@ -339,10 +322,7 @@ export function ProductOperations({
                       width: 90,
                       dataIndex: "status",
                       render: (v: string) => (
-                        <Status
-                          value={v}
-                          label={!embedded ? salesStatusLabels[v] : undefined}
-                        />
+                        <Status value={v} label={salesStatusLabels[v]} />
                       ),
                     },
                     ...(!merchant
@@ -356,7 +336,7 @@ export function ProductOperations({
                       : []),
                     {
                       title: "SPU",
-                      width: embedded ? 130 : 110,
+                      width: 110,
                       render: (_, r) => r.productId ?? "历史商品",
                     },
                     { title: "版本", dataIndex: "revision", width: 64 },
@@ -479,33 +459,17 @@ export function ProductOperations({
               >
                 <Table<Product>
                   rowKey="productId"
-                  scroll={!embedded ? { x: 690 } : undefined}
+                  scroll={{ x: 690 }}
                   dataSource={products.data}
                   loading={products.loading}
                   pagination={false}
                   columns={[
                     {
-                      title: embedded ? "商品" : "商品名称",
+                      title: "商品名称",
                       dataIndex: "title",
-                      render: (_, r) =>
-                        embedded ? (
-                          <PrimaryCell
-                            title={r.title}
-                            subtitle={<BusinessId value={r.productId} />}
-                          />
-                        ) : (
-                          <strong>{r.title}</strong>
-                        ),
+                      render: (_, r) => <strong>{r.title}</strong>,
                     },
-                    ...(!embedded
-                      ? [
-                          {
-                            title: "商品编号",
-                            dataIndex: "productId",
-                            width: 150,
-                          },
-                        ]
-                      : []),
+                    { title: "商品编号", dataIndex: "productId", width: 150 },
                     { title: "分类", dataIndex: "category" },
                     { title: "品牌", dataIndex: "brand" },
                     {

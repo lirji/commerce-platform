@@ -28,7 +28,26 @@ export default function CentralOrders(props: OperationsProps) {
     >
       {(client, dirty) => (
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Card title="独立订单操作">
+          <OperationsList
+            path="/admin/orders"
+            idField="orderId"
+            columns={[
+              ["businessNo", "订单号"],
+              ["status", "状态"],
+              ["payable", "应付金额"],
+              ["storeName", "门店名称"],
+              ["createdAt", "创建时间"],
+              ["storeId", "门店编号"],
+              ["orderId", "原订单编号"],
+              ["memberId", "会员编号"],
+              ["merchantId", "商家编号"],
+              ["paymentKind", "付款方式"],
+              ["expiresAt", "付款截止"],
+            ]}
+            fields={fields}
+            detailPath={(id) => `/admin/orders/${id}`}
+          />
+          <Card className="workspace-operating-actions" title="独立订单操作">
             <Space wrap>
               <OperationAction
                 client={client}
@@ -53,25 +72,6 @@ export default function CentralOrders(props: OperationsProps) {
               />
             </Space>
           </Card>
-          <OperationsList
-            path="/admin/orders"
-            idField="orderId"
-            columns={[
-              ["businessNo", "订单号"],
-              ["status", "状态"],
-              ["payable", "应付金额"],
-              ["storeName", "门店名称"],
-              ["createdAt", "创建时间"],
-              ["storeId", "门店编号"],
-              ["orderId", "原订单编号"],
-              ["memberId", "会员编号"],
-              ["merchantId", "商家编号"],
-              ["paymentKind", "付款方式"],
-              ["expiresAt", "付款截止"],
-            ]}
-            fields={fields}
-            detailPath={(id) => `/admin/orders/${id}`}
-          />
         </Space>
       )}
     </OperationsWorkspace>

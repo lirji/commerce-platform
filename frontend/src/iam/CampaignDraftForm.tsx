@@ -183,6 +183,8 @@ export function CampaignDraftForm({
     <Form
       form={form}
       name="campaign-create"
+      className="design-campaign-form"
+      scrollToFirstError={{ focus: true }}
       layout="vertical"
       disabled={disabled}
       onValuesChange={onChange}
@@ -206,239 +208,258 @@ export function CampaignDraftForm({
         type="info"
         showIcon
         title="保存草稿后按实际审批状态继续提交、审批和发布"
-        description="门店、固定规则、人群、权益和SKU填写真实编号；服务端检查归属、有效期与已发布状态。时间按浏览器时区输入。"
+        description="门店、固定规则、人群、权益和SKU填写真实编号；服务端检查归属、有效期与已发布状态。日期按北京时间填写。"
       />
-      <Typography.Title level={5}>基础信息</Typography.Title>
-      <div className="node-grid">
-        <Form.Item name="campaignId" label="活动编号" rules={campaignIdRules}>
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          name="version"
-          label="内容版本（不可变）"
-          rules={positiveVersionRules}
-        >
-          <InputNumber
-            min={1}
-            max={Number.MAX_SAFE_INTEGER}
-            precision={0}
-            style={{ width: "100%" }}
-          />
-        </Form.Item>
-        <Form.Item name="storeId" label="实际门店编号" rules={campaignIdRules}>
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          name="name"
-          label="活动名称"
-          rules={[{ required: true, whitespace: true, max: 128 }]}
-        >
-          <Input maxLength={128} />
-        </Form.Item>
-        <Form.Item
-          name="validFrom"
-          label="开始时间"
-          rules={[{ required: true }]}
-        >
-          <DateTimeField />
-        </Form.Item>
-        <Form.Item
-          name="validTo"
-          label="结束时间"
-          dependencies={["validFrom"]}
-          rules={[
-            { required: true },
-            {
-              validator: (_, value) =>
-                !value ||
-                new Date(value).getTime() >
-                  new Date(form.getFieldValue("validFrom")).getTime()
-                  ? Promise.resolve()
-                  : Promise.reject(new Error("结束时间须晚于开始时间")),
-            },
-          ]}
-        >
-          <DateTimeField />
-        </Form.Item>
-        <Form.Item
-          name="minimumSpend"
-          label="消费门槛（元）"
-          rules={moneyRules}
-        >
-          <Input inputMode="decimal" />
-        </Form.Item>
-        <Form.Item
-          name="discountAmount"
-          label="优惠金额 / 比例折扣上限（元）"
-          rules={[
-            ...moneyRules,
-            {
-              validator: (_, v) =>
-                !v || /[1-9]/.test(v)
-                  ? Promise.resolve()
-                  : Promise.reject(new Error("优惠金额必须大于零")),
-            },
-          ]}
-        >
-          <Input inputMode="decimal" />
-        </Form.Item>
-      </div>
-      <Typography.Title level={5}>资格与固定资产</Typography.Title>
-      <Form.Item name="useFixedRule" valuePropName="checked">
-        <Checkbox>仅使用固定已发布规则</Checkbox>
-      </Form.Item>
-      {!fixed && (
-        <Form.Item name="rule" label="资格规则" rules={[{ required: true }]}>
-          <RuleEditor />
-        </Form.Item>
-      )}
-      <div className="node-grid">
-        <Form.Item
-          name="ruleId"
-          label="固定规则编号（可选）"
-          rules={[{ required: !!fixed, pattern: campaignIdentifier }]}
-        >
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          name="ruleVersion"
-          label="固定规则版本"
-          dependencies={["ruleId"]}
-          rules={[
-            {
-              ...positiveVersionRules[0],
-              required: !!ruleId,
-            },
-          ]}
-        >
-          <InputNumber min={1} max={Number.MAX_SAFE_INTEGER} precision={0} />
-        </Form.Item>
-        <Form.Item
-          name="audienceId"
-          label="固定人群编号（可选）"
-          rules={[{ pattern: campaignIdentifier }]}
-        >
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          name="audienceVersion"
-          label="固定人群版本"
-          dependencies={["audienceId"]}
-          rules={[
-            {
-              ...positiveVersionRules[0],
-              required: !!audienceId,
-            },
-          ]}
-        >
-          <InputNumber min={1} max={Number.MAX_SAFE_INTEGER} precision={0} />
-        </Form.Item>
-      </div>
-      <Typography.Title level={5}>优惠与预算</Typography.Title>
-      <div className="node-grid">
-        <Form.Item
-          name="percentageBps"
-          label="折扣比例（万分比，0为固定减免）"
-          rules={[{ type: "integer", min: 0, max: 10000 }]}
-        >
-          <InputNumber min={0} max={10000} precision={0} />
-        </Form.Item>
-        <Form.Item
-          name="platformFundingBps"
-          label="平台资方比例（万分比）"
-          rules={[{ type: "integer", min: 0, max: 10000 }]}
-        >
-          <InputNumber min={0} max={10000} precision={0} />
-        </Form.Item>
-        <Form.Item
-          name="budget"
-          label="预算上限（元，可留空）"
-          rules={[
-            { ...moneyRules[0], required: false },
-            {
-              validator: (_, v) =>
-                !v || /[1-9]/.test(v)
-                  ? Promise.resolve()
-                  : Promise.reject(new Error("预算必须大于零")),
-            },
-          ]}
-        >
-          <Input inputMode="decimal" />
-        </Form.Item>
-      </div>
-      <Typography.Title level={5}>权益与商品价格配置</Typography.Title>
-      <Form.Item name="benefitKind" label="关联权益类型">
-        <Select
-          options={[
-            { value: BenefitKind.NONE, label: "不关联" },
-            { value: BenefitKind.ENTITLEMENT, label: "权益定义" },
-            { value: BenefitKind.COUPON, label: "优惠券定义" },
-          ]}
-        />
-      </Form.Item>
-      {kind !== BenefitKind.NONE && kind && (
+      <section className="design-campaign-section" aria-label="基础信息">
+        <h3>基础信息</h3>
         <div className="node-grid">
+          <Form.Item name="campaignId" label="活动编号" rules={campaignIdRules}>
+            <Input maxLength={64} />
+          </Form.Item>
           <Form.Item
-            name="benefitId"
-            label={
-              kind === BenefitKind.COUPON ? "优惠券定义编号" : "权益定义编号"
-            }
+            name="version"
+            label="内容版本（不可变）"
+            rules={positiveVersionRules}
+          >
+            <InputNumber
+              min={1}
+              max={Number.MAX_SAFE_INTEGER}
+              precision={0}
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="storeId"
+            label="实际门店编号"
             rules={campaignIdRules}
           >
             <Input maxLength={64} />
           </Form.Item>
           <Form.Item
-            name="benefitVersion"
-            label="权益定义版本"
-            rules={positiveVersionRules}
+            name="name"
+            label="活动名称"
+            rules={[{ required: true, whitespace: true, max: 128 }]}
+          >
+            <Input maxLength={128} />
+          </Form.Item>
+          <Form.Item
+            name="validFrom"
+            label="开始时间"
+            rules={[{ required: true }]}
+          >
+            <DateTimeField />
+          </Form.Item>
+          <Form.Item
+            name="validTo"
+            label="结束时间"
+            dependencies={["validFrom"]}
+            rules={[
+              { required: true },
+              {
+                validator: (_, value) =>
+                  !value ||
+                  new Date(value).getTime() >
+                    new Date(form.getFieldValue("validFrom")).getTime()
+                    ? Promise.resolve()
+                    : Promise.reject(new Error("结束时间须晚于开始时间")),
+              },
+            ]}
+          >
+            <DateTimeField />
+          </Form.Item>
+          <Form.Item
+            name="minimumSpend"
+            label="消费门槛（元）"
+            rules={moneyRules}
+          >
+            <Input inputMode="decimal" />
+          </Form.Item>
+          <Form.Item
+            name="discountAmount"
+            label="优惠金额 / 比例折扣上限（元）"
+            rules={[
+              ...moneyRules,
+              {
+                validator: (_, v) =>
+                  !v || /[1-9]/.test(v)
+                    ? Promise.resolve()
+                    : Promise.reject(new Error("优惠金额必须大于零")),
+              },
+            ]}
+          >
+            <Input inputMode="decimal" />
+          </Form.Item>
+        </div>
+      </section>
+      <section className="design-campaign-section" aria-label="资格与固定资产">
+        <h3>资格与固定资产</h3>
+        <Form.Item name="useFixedRule" valuePropName="checked">
+          <Checkbox>仅使用固定已发布规则</Checkbox>
+        </Form.Item>
+        {!fixed && (
+          <Form.Item name="rule" label="资格规则" rules={[{ required: true }]}>
+            <RuleEditor />
+          </Form.Item>
+        )}
+        <div className="node-grid">
+          <Form.Item
+            name="ruleId"
+            label="固定规则编号（可选）"
+            rules={[{ required: !!fixed, pattern: campaignIdentifier }]}
+          >
+            <Input maxLength={64} />
+          </Form.Item>
+          <Form.Item
+            name="ruleVersion"
+            label="固定规则版本"
+            dependencies={["ruleId"]}
+            rules={[
+              {
+                ...positiveVersionRules[0],
+                required: !!ruleId,
+              },
+            ]}
+          >
+            <InputNumber min={1} max={Number.MAX_SAFE_INTEGER} precision={0} />
+          </Form.Item>
+          <Form.Item
+            name="audienceId"
+            label="固定人群编号（可选）"
+            rules={[{ pattern: campaignIdentifier }]}
+          >
+            <Input maxLength={64} />
+          </Form.Item>
+          <Form.Item
+            name="audienceVersion"
+            label="固定人群版本"
+            dependencies={["audienceId"]}
+            rules={[
+              {
+                ...positiveVersionRules[0],
+                required: !!audienceId,
+              },
+            ]}
           >
             <InputNumber min={1} max={Number.MAX_SAFE_INTEGER} precision={0} />
           </Form.Item>
         </div>
-      )}
-      {kind === BenefitKind.COUPON && (
-        <Typography.Paragraph type="secondary">
-          优惠券关联是否启用由服务端配置裁决。
-        </Typography.Paragraph>
-      )}
-      <Form.Item name="advanced" valuePropName="checked">
-        <Checkbox>启用商品范围与阶梯价格</Checkbox>
-      </Form.Item>
-      {advanced && (
-        <>
+      </section>
+      <section className="design-campaign-section" aria-label="优惠与预算">
+        <h3>优惠与预算</h3>
+        <div className="node-grid">
           <Form.Item
-            name="includedSkuIds"
-            label="参与SKU（逗号或换行分隔，留空为全部）"
+            name="percentageBps"
+            label="折扣比例（万分比，0为固定减免）"
+            rules={[{ type: "integer", min: 0, max: 10000 }]}
           >
-            <Input.TextArea rows={3} maxLength={6500} />
+            <InputNumber min={0} max={10000} precision={0} />
           </Form.Item>
-          <Form.Item name="excludedSkuIds" label="排除SKU（排除优先）">
-            <Input.TextArea rows={3} maxLength={6500} />
+          <Form.Item
+            name="platformFundingBps"
+            label="平台资方比例（万分比）"
+            rules={[{ type: "integer", min: 0, max: 10000 }]}
+          >
+            <InputNumber min={0} max={10000} precision={0} />
           </Form.Item>
-          <Form.List name="tiers">
-            {(fields, { add, remove }) => (
-              <Space orientation="vertical" style={{ width: "100%" }}>
-                {fields.map((field) => (
-                  <CardlessTier
-                    key={field.key}
-                    name={field.name}
-                    remove={() => remove(field.name)}
-                  />
-                ))}
-                <Button
-                  disabled={fields.length >= 8}
-                  onClick={() => add({ percentageBps: 0 })}
-                >
-                  添加价格阶梯（最多8项）
-                </Button>
-              </Space>
-            )}
-          </Form.List>
+          <Form.Item
+            name="budget"
+            label="预算上限（元，可留空）"
+            rules={[
+              { ...moneyRules[0], required: false },
+              {
+                validator: (_, v) =>
+                  !v || /[1-9]/.test(v)
+                    ? Promise.resolve()
+                    : Promise.reject(new Error("预算必须大于零")),
+              },
+            ]}
+          >
+            <Input inputMode="decimal" />
+          </Form.Item>
+        </div>
+      </section>
+      <section
+        className="design-campaign-section"
+        aria-label="权益与商品价格配置"
+      >
+        <h3>权益与商品价格配置</h3>
+        <Form.Item name="benefitKind" label="关联权益类型">
+          <Select
+            options={[
+              { value: BenefitKind.NONE, label: "不关联" },
+              { value: BenefitKind.ENTITLEMENT, label: "权益定义" },
+              { value: BenefitKind.COUPON, label: "优惠券定义" },
+            ]}
+          />
+        </Form.Item>
+        {kind !== BenefitKind.NONE && kind && (
+          <div className="node-grid">
+            <Form.Item
+              name="benefitId"
+              label={
+                kind === BenefitKind.COUPON ? "优惠券定义编号" : "权益定义编号"
+              }
+              rules={campaignIdRules}
+            >
+              <Input maxLength={64} />
+            </Form.Item>
+            <Form.Item
+              name="benefitVersion"
+              label="权益定义版本"
+              rules={positiveVersionRules}
+            >
+              <InputNumber
+                min={1}
+                max={Number.MAX_SAFE_INTEGER}
+                precision={0}
+              />
+            </Form.Item>
+          </div>
+        )}
+        {kind === BenefitKind.COUPON && (
           <Typography.Paragraph type="secondary">
-            阶梯门槛须严格递增，由服务端按精确金额验证。
+            优惠券关联是否启用由服务端配置裁决。
           </Typography.Paragraph>
-        </>
-      )}
+        )}
+        <Form.Item name="advanced" valuePropName="checked">
+          <Checkbox>启用商品范围与阶梯价格</Checkbox>
+        </Form.Item>
+        {advanced && (
+          <>
+            <Form.Item
+              name="includedSkuIds"
+              label="参与SKU（逗号或换行分隔，留空为全部）"
+            >
+              <Input.TextArea rows={3} maxLength={6500} />
+            </Form.Item>
+            <Form.Item name="excludedSkuIds" label="排除SKU（排除优先）">
+              <Input.TextArea rows={3} maxLength={6500} />
+            </Form.Item>
+            <Form.List name="tiers">
+              {(fields, { add, remove }) => (
+                <Space orientation="vertical" style={{ width: "100%" }}>
+                  {fields.map((field) => (
+                    <CardlessTier
+                      key={field.key}
+                      name={field.name}
+                      remove={() => remove(field.name)}
+                    />
+                  ))}
+                  <Button
+                    disabled={fields.length >= 8}
+                    onClick={() => add({ percentageBps: 0 })}
+                  >
+                    添加价格阶梯（最多8项）
+                  </Button>
+                </Space>
+              )}
+            </Form.List>
+            <Typography.Paragraph type="secondary">
+              阶梯门槛须严格递增，由服务端按精确金额验证。
+            </Typography.Paragraph>
+          </>
+        )}
+      </section>
     </Form>
   );
 }

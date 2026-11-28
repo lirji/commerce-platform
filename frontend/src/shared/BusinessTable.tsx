@@ -1,3 +1,4 @@
+import { WorkspacePresentation } from "./workspacePresentation";
 import {
   Button,
   Checkbox,
@@ -99,6 +100,7 @@ const tablePageSizes = [7, 10, 25, 50, 100];
 export function Table<Row extends object>(props: BusinessTableProps<Row>) {
   const owner = useContext(BusinessTableScope);
   const panel = useContext(ListTableScope);
+  const workspace = useContext(WorkspacePresentation);
   const {
     tools = true,
     columnSettings = true,
@@ -107,7 +109,7 @@ export function Table<Row extends object>(props: BusinessTableProps<Row>) {
     tableId,
     selectedUnit = "条",
     toolbarActions,
-    defaultDensity = "standard",
+    defaultDensity = workspace === "queue" ? "compact" : "standard",
     ...tableProps
   } = props;
   const columns = tableProps.columns ?? [];

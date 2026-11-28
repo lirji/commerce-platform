@@ -1,4 +1,4 @@
-import { Table } from "../shared/BusinessTable";
+import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
 import { useCursorState } from "../shared/routeState";
 import { RecordModal, RowActions } from "../shared/interactions";
@@ -20,7 +20,6 @@ import {
   Fields,
   ListPanel,
   PageHead,
-  PrimaryCell,
   Status,
   Workbench,
   initialDate,
@@ -371,15 +370,16 @@ export function Journeys({ store }: { store: string }) {
           dataSource={resource.data}
           loading={resource.loading}
           pagination={false}
+          scroll={{ x: 1120 }}
           columns={[
             {
-              title: "旅程",
-              render: (_, r) => (
-                <PrimaryCell
-                  title={r.content.name}
-                  subtitle={r.content.journeyId}
-                />
-              ),
+              title: "旅程名称",
+              render: (_, r) => <strong>{r.content.name}</strong>,
+            },
+            {
+              title: "旅程编号",
+              width: 150,
+              render: (_, r) => <BusinessId value={r.content.journeyId} />,
             },
             {
               title: "触发方式",
@@ -392,13 +392,12 @@ export function Journeys({ store }: { store: string }) {
               render: (v: string) => <Status value={v} />,
             },
             {
-              title: "入组窗口",
-              render: (_, r) => (
-                <PrimaryCell
-                  title={time(r.content.validFrom)}
-                  subtitle={`截至 ${time(r.content.validTo)}（不含）`}
-                />
-              ),
+              title: "入组开始",
+              render: (_, r) => time(r.content.validFrom),
+            },
+            {
+              title: "入组截止（不含）",
+              render: (_, r) => time(r.content.validTo),
             },
             { title: "节点数", render: (_, r) => r.content.nodes.length },
             {

@@ -1,3 +1,5 @@
+import { WorkspacePresentation } from "./workspacePresentation";
+import { Icon } from "./Icon";
 import { DateTimeField, dateRangePresets } from "./DateTimeField";
 import { Button, Form, Input, Select, Space, Tag, Typography } from "antd";
 import { useContext, useEffect, useId, useState } from "react";
@@ -44,7 +46,10 @@ type QueueShortcut = {
   label: string;
   status?: string;
   blocked?: boolean;
+  description?: string;
 };
+
+type ShortcutLayout = "inline" | "queue" | "hidden";
 
 type FilterSpec = {
   hint: string;
@@ -77,7 +82,23 @@ const specs: Record<string, FilterSpec> = {
     states: ["ACTIVE", "FROZEN"],
   },
   "/admin/orders": {
-    quickStates: ["PENDING_PAYMENT", "PAYMENT_IN_PROGRESS", "CLOSING"],
+    queueShortcuts: [
+      {
+        label: statusText("PENDING_PAYMENT"),
+        status: "PENDING_PAYMENT",
+        description: "跟进待付款订单",
+      },
+      {
+        label: statusText("PAYMENT_IN_PROGRESS"),
+        status: "PAYMENT_IN_PROGRESS",
+        description: "核对渠道支付结果",
+      },
+      {
+        label: statusText("CLOSING"),
+        status: "CLOSING",
+        description: "核对关单与支付状态",
+      },
+    ],
     exact: tradeIds,
     hint: "完整订单号、原编号、日期加尾号或会员、门店、商家编号",
     states: [
@@ -111,13 +132,34 @@ const specs: Record<string, FilterSpec> = {
     hint: "订单编号、运单或仓配渠道",
     states: ["READY", "SHIPPED", "DELIVERED", "CANCELLED"],
     queueShortcuts: [
-      { label: "待发货 · 未阻拦", status: "READY", blocked: false },
-      { label: "售后已阻拦", blocked: true },
-      { label: "已发货", status: "SHIPPED" },
+      {
+        label: "待发货 · 未阻拦",
+        status: "READY",
+        blocked: false,
+        description: "查找可继续出库的订单",
+      },
+      { label: "售后已阻拦", blocked: true, description: "核对关联售后申请" },
+      { label: "已发货", status: "SHIPPED", description: "跟进物流与送达" },
     ],
   },
   "/admin/aftersales": {
-    quickStates: ["REQUESTED", "WAIT_RETURN", "REFUNDING"],
+    queueShortcuts: [
+      {
+        label: statusText("REQUESTED"),
+        status: "REQUESTED",
+        description: "核对待审批申请",
+      },
+      {
+        label: statusText("WAIT_RETURN"),
+        status: "WAIT_RETURN",
+        description: "跟进寄回与收货",
+      },
+      {
+        label: statusText("REFUNDING"),
+        status: "REFUNDING",
+        description: "跟进渠道退款结果",
+      },
+    ],
     exact: tradeIds,
     hint: "售后、订单、会员或退款编号",
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
@@ -128,7 +170,18 @@ const specs: Record<string, FilterSpec> = {
     states: ["REQUESTED", "WAIT_RETURN", "REFUNDING", "COMPLETED", "REJECTED"],
   },
   "/admin/refunds": {
-    quickStates: ["UNKNOWN", "SUCCEEDED"],
+    queueShortcuts: [
+      {
+        label: statusText("UNKNOWN"),
+        status: "UNKNOWN",
+        description: "处理待核对的渠道结果",
+      },
+      {
+        label: statusText("SUCCEEDED"),
+        status: "SUCCEEDED",
+        description: "核对已成功退款",
+      },
+    ],
     exact: tradeIds,
     hint: "退款、售后、订单编号或渠道",
     states: ["UNKNOWN", "SUCCEEDED"],
@@ -323,8 +376,10 @@ export function useListFilters(
   path: string,
   reset: () => void,
   compact = false,
-  showShortcuts = true,
+  shortcutLayout?: ShortcutLayout,
 ) {
+  const workspace = useContext(WorkspacePresentation);
+  const layout = shortcutLayout ?? (workspace === "queue" ? "queue" : "inline");
   const spec = specs[path];
   const [raw, setRaw] = useRouteState(`${name}.query`, "");
   const values = decode(raw, spec);
@@ -401,7 +456,7 @@ export function useListFilters(
         raw={raw}
         apply={apply}
         compact={compact}
-        showShortcuts={showShortcuts}
+        shortcutLayout={layout}
       />
     ) : null,
   };
@@ -412,14 +467,14 @@ function ListFilters({
   raw,
   apply,
   compact,
-  showShortcuts,
+  shortcutLayout,
 }: {
   spec: FilterSpec;
   values: Values;
   raw: string;
   apply: (v: Values) => void;
   compact: boolean;
-  showShortcuts: boolean;
+  shortcutLayout: ShortcutLayout;
 }) {
   type FormValues = Omit<Values, "enabled" | "blocked"> & {
     enabled?: string;
@@ -604,24 +659,46 @@ function ListFilters({
   const shortcuts: QueueShortcut[] | undefined =
     spec.queueShortcuts ??
     spec.quickStates?.map((status) => ({ label: statusText(status), status }));
+  const queues = shortcutLayout === "queue";
   return (
     <div className="query-panel">
-      {showShortcuts && shortcuts && (
+      {shortcutLayout !== "hidden" && shortcuts && (
         <div
-          className="query-quick-states"
+          className={
+            queues
+              ? "query-quick-states design-order-queues"
+              : "query-quick-states"
+          }
           role="group"
           aria-label="状态快捷筛选"
         >
           {[{ label: "全部状态" }, ...shortcuts].map(
-            ({ label, status, blocked }) => {
+            ({ label, status, blocked, description }: QueueShortcut) => {
               const selected =
                 values.status === status && values.blocked === blocked;
-              return (
+              const select = () => applyValues({ ...values, status, blocked });
+              return queues ? (
+                <button
+                  key={label}
+                  type="button"
+                  className="workspace-queue-choice"
+                  aria-pressed={selected}
+                  aria-label={label}
+                  aria-description={description}
+                  onClick={select}
+                >
+                  <span>
+                    <strong>{label}</strong>
+                    {description && <small>{description}</small>}
+                  </span>
+                  <Icon name="arrow" />
+                </button>
+              ) : (
                 <Button
                   key={label}
                   aria-pressed={selected}
                   type={selected ? "default" : "text"}
-                  onClick={() => applyValues({ ...values, status, blocked })}
+                  onClick={select}
                 >
                   {label}
                 </Button>

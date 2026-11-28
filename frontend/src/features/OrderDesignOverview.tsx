@@ -1,27 +1,7 @@
 import { Button } from "antd";
 import type { Order } from "../shared/contracts";
-import { Icon } from "../shared/Icon";
 import type { QueuePreset } from "../shared/listFilters";
 import { statusText } from "../shared/ui";
-
-const workQueues = [
-  { label: "全部订单", purpose: "查找各店铺的订单" },
-  { status: "PENDING_PAYMENT", label: "待付款", purpose: "跟进待付款订单" },
-  {
-    status: "PAYMENT_IN_PROGRESS",
-    label: "支付处理中",
-    purpose: "核对渠道支付结果",
-  },
-  {
-    status: "CLOSING",
-    label: "关单确认中",
-    purpose: "核对关单与支付状态",
-  },
-] as const satisfies readonly {
-  status?: string;
-  label: string;
-  purpose: string;
-}[];
 
 const orderStatuses = [
   { status: "PENDING_PAYMENT", tone: "warn" },
@@ -37,30 +17,6 @@ type QueryChoice = {
   preset: QueuePreset;
   applyPreset: (next: QueuePreset) => void;
 };
-
-export function OrderQueueViews({ preset, applyPreset }: QueryChoice) {
-  return (
-    <div className="design-order-queues" role="group" aria-label="快捷队列">
-      {workQueues.map((queue) => {
-        const status = "status" in queue ? queue.status : undefined;
-        const selected = preset.status === status;
-        return (
-          <Button
-            key={queue.label}
-            aria-pressed={selected}
-            onClick={() => applyPreset({ ...preset, status })}
-          >
-            <span>
-              <strong>{queue.label}</strong>
-              <small>{queue.purpose}</small>
-            </span>
-            <Icon name="arrow" />
-          </Button>
-        );
-      })}
-    </div>
-  );
-}
 
 export function OrderPageComposition({
   rows,

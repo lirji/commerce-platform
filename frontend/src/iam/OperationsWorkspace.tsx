@@ -74,9 +74,11 @@ const text = (v: unknown) =>
 export function OperationDetails({
   row,
   fields,
+  lineItemsFirst = false,
 }: {
   row: OperationRow;
   fields: readonly [string, string][];
+  lineItemsFirst?: boolean;
 }) {
   const lines = Array.isArray(row.items) ? (row.items as OperationRow[]) : [];
   const amounts = (
@@ -85,37 +87,45 @@ export function OperationDetails({
       ["refundAmount", "退款金额"],
     ] as const
   ).filter(([key]) => lines.some((line) => line[key] != null));
+  const facts = (
+    <Descriptions
+      column={{ xs: 1, sm: 2 }}
+      bordered
+      size="small"
+      items={fields.map(([key, label]) => ({
+        key,
+        label,
+        children: formatField(key, row[key]),
+      }))}
+    />
+  );
+  const lineItems = lines.length > 0 && (
+    <section className="workspace-detail-lines" aria-label="商品明细">
+      <h3>商品明细</h3>
+      <Table<OperationRow>
+        tools={false}
+        size="small"
+        rowKey={(r, i) => `${r.skuId}-${i}`}
+        pagination={false}
+        scroll={{ x: amounts.length > 1 ? 440 : 300 }}
+        dataSource={lines}
+        columns={[
+          { title: "商品规格", dataIndex: "skuId" },
+          { title: "数量", dataIndex: "quantity" },
+          ...amounts.map(([dataIndex, title]) => ({
+            dataIndex,
+            title,
+            render: (v: unknown) => (v == null ? "—" : money(v)),
+          })),
+        ]}
+      />
+    </section>
+  );
   return (
     <>
-      <Descriptions
-        column={{ xs: 1, sm: 2 }}
-        bordered
-        size="small"
-        items={fields.map(([key, label]) => ({
-          key,
-          label,
-          children: formatField(key, row[key]),
-        }))}
-      />
-      {lines.length > 0 && (
-        <Table<OperationRow>
-          tools={false}
-          size="small"
-          rowKey={(r, i) => `${r.skuId}-${i}`}
-          pagination={false}
-          scroll={{ x: amounts.length > 1 ? 440 : 300 }}
-          dataSource={lines}
-          columns={[
-            { title: "商品规格", dataIndex: "skuId" },
-            { title: "数量", dataIndex: "quantity" },
-            ...amounts.map(([dataIndex, title]) => ({
-              dataIndex,
-              title,
-              render: (v: unknown) => (v == null ? "—" : money(v)),
-            })),
-          ]}
-        />
-      )}
+      {lineItemsFirst && lineItems}
+      {facts}
+      {!lineItemsFirst && lineItems}
     </>
   );
 }
@@ -436,7 +446,11 @@ export function OperationsList({
                   aggregateId={record.aggregateId}
                 />
               )}
-              <OperationDetails row={detailRecord} fields={fields} />
+              <OperationDetails
+                row={detailRecord}
+                fields={fields}
+                lineItemsFirst={!!related}
+              />
             </Space>
           )
         )}

@@ -1,3 +1,7 @@
+import {
+  WorkspacePresentation,
+  workspaceKind,
+} from "../shared/workspacePresentation";
 import { BusinessTableScope } from "../shared/businessTableScope";
 import { RecordModal } from "../shared/interactions";
 import {
@@ -524,6 +528,7 @@ export function App() {
           ? "dashboard"
           : "shop");
   const store = locationState.store;
+  const presentation = admin ? workspaceKind(page) : undefined;
   const categoryWorkspace = platform && page === PLATFORM_CATEGORIES_PAGE;
   const auditWorkspace = platform && page === PLATFORM_AUDIT_PAGE;
   const platformContext = categoryWorkspace
@@ -794,6 +799,7 @@ export function App() {
         )}
         <Layout.Content
           className="workspace"
+          data-workspace-kind={presentation}
           id="workspace-content"
           role="main"
           tabIndex={-1}
@@ -829,7 +835,9 @@ export function App() {
                     : undefined
                 }
               >
-                {content}
+                <WorkspacePresentation.Provider value={presentation}>
+                  {content}
+                </WorkspacePresentation.Provider>
               </BusinessTableScope.Provider>
             </Suspense>
           </div>

@@ -88,8 +88,8 @@ export function Dashboard({
   const data = useResource<Summary>(
     store ? `/admin/dashboard?storeId=${encode(store)}` : null,
   );
-  const preview = useDesignPreview();
-  const { design } = preview;
+  const preview = useDesignPreview("analytics");
+  const design = preview.design ?? "analytics";
   const [metricQuery, setMetric] = useRouteState("metric", "netReceipts");
   const metric: TrendMetric =
     metricQuery === "received" ||
@@ -217,7 +217,7 @@ export function Dashboard({
           成交优惠 <b>{money(sums.discountGranted)}</b>
         </span>
       </div>
-      {design && design !== "analytics" ? (
+      {design !== "analytics" ? (
         <details className="design-period-comparison">
           <summary>查看七日对比</summary>
           {comparison}
@@ -383,15 +383,13 @@ export function Dashboard({
   const queueSection = exceptions && (
     <div className="design-dashboard-queues">{exceptions}</div>
   );
-  const chooseDesign = !design && (
+  const chooseDesign = !preview.comparison && (
     <Button type="text" onClick={preview.open}>
       比较设计
     </Button>
   );
   return (
-    <div
-      className={`dashboard${design ? " design-dashboard design-" + design : ""}`}
-    >
+    <div className={`dashboard design-dashboard design-${design}`}>
       {!embedded && (
         <PageHead
           eyebrow="经营工作台"
@@ -417,11 +415,7 @@ export function Dashboard({
         )}
       </div>
       <DesignPreviewBar {...preview} />
-      {design === "operations"
-        ? queueSection
-        : design
-          ? !summary && queueSection
-          : exceptions}
+      {(design === "operations" || !summary) && queueSection}
       <ErrorNotice error={data.error} onRetry={data.refresh} />
       <Spin spinning={data.loading}>
         {data.loading && (
@@ -451,22 +445,11 @@ export function Dashboard({
             ) : (
               <>
                 {metrics}
-                {design ? (
-                  trend
-                ) : (
-                  <div className="dashboard-main-grid">
-                    {trend}
-                    {scale}
-                  </div>
-                )}
+                {trend}
               </>
             )}
-            {design && (
-              <>
-                {design !== "operations" && queueSection}
-                {scale}
-              </>
-            )}
+            {design !== "operations" && queueSection}
+            {scale}
             <div className="shortcut-grid">
               {shortcuts
                 .filter((s) => canNavigate(s.page))

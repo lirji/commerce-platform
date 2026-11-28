@@ -1142,7 +1142,7 @@ test("异常待办使用独立权限，同门店筛选和有界实数", async ({
 test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，窄屏不溢出", async ({
   page,
 }) => {
-  test.setTimeout(180000);
+  test.setTimeout(240000);
   const base = process.env.COMMERCE_CENTRAL_UI_URL;
   test.skip(!base, "需显式启用独立SSO预览；默认CI不伪装中央登录");
   const tenant = "11111111-1111-4111-8111-111111111111";
@@ -1176,10 +1176,10 @@ test("中央页面族统一导航，权限拒绝可见，页签刷新恢复，�
     // 部分旅程页由外层统一处理会话退出；本回归核对各页面实际操作按钮。
     await expect(page.locator(".ant-spin-spinning")).toHaveCount(0);
     await assertButtonSizes(page);
-    for (const width of [1440, 390, 320]) {
+    for (const width of [1440, 1920, 2560, 1024, 390, 320]) {
       await page.setViewportSize({
         width,
-        height: width === 1440 ? 1000 : 844,
+        height: width >= 1024 ? 1000 : 844,
       });
       await assertButtonSizes(page);
       await page.screenshot({

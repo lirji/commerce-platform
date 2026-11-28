@@ -16,6 +16,10 @@ test("经营总览：真实汇总、每日趋势、导航搜索与手机布局",
   await expect(
     page.getByRole("heading", { name: "经营总览", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.locator(".design-dashboard.design-analytics"),
+  ).toBeVisible();
+  await expect(page.getByLabel("设计方案")).toHaveCount(0);
   const response = await page.request.get(
     access.baseUrl + "/v1/admin/dashboard?storeId=brand-store",
     { headers: { Authorization: "Bearer " + access.adminToken } },

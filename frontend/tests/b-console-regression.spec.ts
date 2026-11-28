@@ -405,6 +405,8 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
   const pending = waitOrders(
     (query) => query.get("status") === "PENDING_PAYMENT",
   );
+  await expect(page.locator(".design-orders.design-operations")).toBeVisible();
+  await expect(page.getByLabel("设计方案")).toHaveCount(0);
   const states = page.getByRole("group", { name: "状态快捷筛选" });
   await states.getByRole("button", { name: "待付款", exact: true }).click();
   await pending;
@@ -477,7 +479,7 @@ test("订单快筛和近7天仅向服务端提交实际条件，游标跳转保�
       query.has("to"),
   );
   await page
-    .getByRole("group", { name: "快捷队列" })
+    .getByRole("group", { name: "状态快捷筛选" })
     .getByRole("button", { name: /关单确认中/ })
     .click();
   await closing;

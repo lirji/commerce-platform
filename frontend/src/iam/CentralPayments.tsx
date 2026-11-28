@@ -37,7 +37,7 @@ function PaymentRead() {
         >
           <Input maxLength={64} />
         </Form.Item>
-        <Button htmlType="submit" loading={view.loading}>
+        <Button type="primary" htmlType="submit" loading={view.loading}>
           读取支付
         </Button>
         <Button onClick={view.refresh} disabled={!order}>
@@ -79,7 +79,8 @@ export default function CentralPayments(props: OperationsProps) {
     >
       {(client, dirty) => (
         <Space orientation="vertical" style={{ width: "100%" }}>
-          <Card title="核对原支付">
+          <PaymentRead />
+          <Card className="workspace-operating-actions" title="核对原支付">
             <OperationAction
               client={client}
               dirty={dirty}
@@ -92,7 +93,6 @@ export default function CentralPayments(props: OperationsProps) {
               note="读取可信渠道的原金额、币种与状态。UNKNOWN不表示已付款；重试核对同一笔原支付。"
             />
           </Card>
-          <PaymentRead />
         </Space>
       )}
     </OperationsWorkspace>

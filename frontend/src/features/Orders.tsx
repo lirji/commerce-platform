@@ -1,5 +1,5 @@
 import { DesignPreviewBar, useDesignPreview } from "./DesignPreview";
-import { OrderPageComposition, OrderQueueViews } from "./OrderDesignOverview";
+import { OrderPageComposition } from "./OrderDesignOverview";
 import { tradeNumberColumnWidth } from "../shared/tradeNumbers";
 import { BusinessId, Table } from "../shared/BusinessTable";
 import { useListFilters } from "../shared/listFilters";
@@ -32,7 +32,6 @@ import {
   ErrorNotice,
   ListPanel,
   PageHead,
-  PrimaryCell,
   RecordHero,
   RecordModal,
   RowActions,
@@ -54,7 +53,7 @@ export function Orders({
   admin: boolean;
   capabilities: Capabilities;
 }) {
-  const preview = useDesignPreview(admin);
+  const preview = useDesignPreview(admin ? "operations" : undefined);
   const { design } = preview;
   const operations = design === "operations";
   const analytics = design === "analytics";
@@ -133,7 +132,7 @@ export function Orders({
     admin ? "/admin/orders" : "/orders",
     () => setAfter(""),
     compact,
-    !operations && !analytics,
+    analytics ? "hidden" : operations ? "queue" : "inline",
   );
   const resource = useResource<Order[]>(
     (admin ? "/admin/orders" : "/orders") +
@@ -185,7 +184,7 @@ export function Orders({
           }
           extra={
             <>
-              {admin && !design && (
+              {admin && !preview.comparison && (
                 <Button type="text" onClick={preview.open}>
                   比较设计
                 </Button>
@@ -197,12 +196,8 @@ export function Orders({
           }
         />
         <DesignPreviewBar {...preview} />
-        {operations && <OrderQueueViews {...filters} />}
         {analytics && resource.data && (
           <OrderPageComposition rows={resource.data} {...filters} />
-        )}
-        {!design && admin && capabilities.orderAuditEnabled && (
-          <OrderEvidencePanel />
         )}
         <ErrorNotice error={resource.error} onRetry={resource.refresh} />
         <ListPanel
@@ -283,45 +278,29 @@ export function Orders({
                       className: "trade-amount",
                       render: money,
                     },
-                    ...(admin && !design
+                    ...(!admin
                       ? [
+                          { title: "店铺编号", dataIndex: "storeId" },
                           {
-                            title: "店铺",
-                            dataIndex: "storeId",
-                            render: (id: string, row: Order) =>
-                              row.storeName ? (
-                                <PrimaryCell
-                                  title={row.storeName}
-                                  subtitle={<BusinessId value={id} />}
-                                />
-                              ) : (
-                                <BusinessId value={id} />
-                              ),
+                            title: "店铺名称",
+                            dataIndex: "storeName",
+                            render: (name: string | undefined) => name ?? "—",
                           },
                         ]
-                      : !admin
-                        ? [
-                            { title: "店铺编号", dataIndex: "storeId" },
-                            {
-                              title: "店铺名称",
-                              dataIndex: "storeName",
-                              render: (name: string | undefined) => name ?? "—",
-                            },
-                          ]
-                        : [
-                            {
-                              title: "店铺名称",
-                              dataIndex: "storeName",
-                              width: 128,
-                              render: (name: string | undefined) => name ?? "—",
-                            },
-                            {
-                              title: "店铺编号",
-                              dataIndex: "storeId",
-                              width: 120,
-                              className: "design-order-store-code",
-                            },
-                          ]),
+                      : [
+                          {
+                            title: "店铺名称",
+                            dataIndex: "storeName",
+                            width: 128,
+                            render: (name: string | undefined) => name ?? "—",
+                          },
+                          {
+                            title: "店铺编号",
+                            dataIndex: "storeId",
+                            width: 120,
+                            className: "design-order-store-code",
+                          },
+                        ]),
                   ]
                 : []),
               {
@@ -380,7 +359,7 @@ export function Orders({
             ]}
           />
         </ListPanel>
-        {design && capabilities.orderAuditEnabled && <OrderEvidencePanel />}
+        {admin && capabilities.orderAuditEnabled && <OrderEvidencePanel />}
       </div>
       <RecordModal
         className="record-modal"
