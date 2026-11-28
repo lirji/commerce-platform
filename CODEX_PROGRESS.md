@@ -1,5 +1,12 @@
 # Codex Progress
 
+<!-- commerce-console-design-pilot:start -->
+## 当前任务：交易中心及商家端设计样板
+
+- [规范](DESIGN_SYSTEM.md)、[视觉方案](docs/design/commerce-console-design-pilot/FRONTEND_ARCHITECTURE.md)和[交付状态](docs/delivery/commerce-console-design-pilot/DELIVERY_STATUS.md)为恢复入口。
+- 本轮本地浏览器、调研及 Git 验证证据位于 `.local/commerce-console-design-pilot/`。
+<!-- commerce-console-design-pilot:end -->
+
 <!-- b-console-workspace-system:start -->
 ## 当前任务：交易中心工作台统一改造
 
