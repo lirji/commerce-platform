@@ -21,7 +21,9 @@ COMMERCE_BASE_URL=http://127.0.0.1:8602 python3 scripts/seed-local.py
 python3 deploy/smoke.py
 ```
 
-演示数据通过 API 写入数据库，同一 UTC 日期重复执行不会重复创建示例订单。停止本项目使用 `./deploy/down.sh`；不删除数据，也不管理共享 MySQL。
+演示数据通过 API 写入数据库，同一 UTC 日期重复执行基础种子不会重复创建示例订单。补齐管理员、会员及门店运营菜单可运行 `python3 scripts/seed-menu-demo.py`，继续使用 `.local/demo-access.json` 内的原身份。平台字典、操作日志以及验收命令见 [菜单演示数据](deploy/README.md#菜单演示数据)。
+
+停止本项目使用 `./deploy/down.sh`。
 
 ## 运营业务编号
 

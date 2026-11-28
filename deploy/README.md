@@ -32,6 +32,34 @@
 
 浏览器验收先执行 `COMMERCE_E2E_BASE_URL=http://127.0.0.1:8602 python3 scripts/prepare-e2e.py`，必要时在 frontend 执行 `npx playwright install chromium`，再按 README 执行 e2e。每次使用独立租户，测试 token 1 天有效；不清理其他租户。
 
+## 菜单演示数据
+
+在本机 `commerce_local` 已完成基础演示种子后运行：
+
+```sh
+python3 scripts/seed-menu-demo.py
+python3 scripts/seed-menu-demo.py --verify
+```
+
+脚本默认连接 `http://127.0.0.1:8602`，自定义本机端口使用 `--base-url`。登录沿用 `.local/demo-access.json` 的 `adminToken` 和 `memberToken`。新增门店运营身份保存在 `.local/commerce-menu-demo-data/operator-access.json`，运营凭据有效 30 天，运行导入时续期。
+
+| 入口 | 演示内容 |
+| --- | --- |
+| 会员经营 | 三位新会员、三类标签及绑定、成长等级、周期权益、积分及兑换、商品浏览和加购 |
+| 商家与商品 | 商家、开店草稿、门店授权、商品、分类和规格模板、库存、渠道价、已处理的调价任务 |
+| 营销与旅程 | 活动、规则、预算和效果、人群快照与刷新记录、两张定向发放券、权益和生日旅程 |
+| 交易与交付 | 待付款订单、已支付订单、履约、待审批售后、全额退款和事件 |
+| 运营与平台 | 已发布运营页面、恢复历史中的真实拒绝记录、暂停的投影重放、平台运行观测 |
+
+平台分类和操作日志使用本机类目维护专岗。可沿用既有专岗凭据文件，或按 [平台分类字典说明](../docs/design/store-opening/PLATFORM_CATEGORIES.md) 签发。导入会在食品饮料分组下新增「咖啡与可可（演示）」并生成真实操作日志。
+
+```sh
+python3 scripts/seed-menu-demo.py --platform-access .local/platform-category-dictionary/curator-access.json
+python3 scripts/seed-menu-demo.py --verify --platform-access .local/platform-category-dictionary/curator-access.json
+```
+
+种子业务标识和幂等键固定，时间依据保存在本机 `.local/commerce-menu-demo-data/seed-clock`。重跑可补做尚未提交的命令，营销有效期、初始订单时间和历史都沿用首次导入。中央组织按 IAM 授权读取其绑定的商城租户。
+
 ## 运行、失败和回滚
 
 - 容器使用固定基础镜像 digest、非 root 用户、只读根目录、64 MiB 临时目录、资源上限、健康检查和优雅停止。容器无状态，数据存项目 MySQL。

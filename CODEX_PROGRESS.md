@@ -1174,3 +1174,12 @@ session85180/PID21761/rehearsal-81eacc02b592/10.254.128.0/24已确认实际live�
 - 执行清单：基线取证、侧栏样式、桌面和窄屏验证、正常 Git 交付、本机 Docker 更新。恢复证据 .local/commerce-light-sidebar/。
 - 已通过生产构建和实际入口六档视口验证，侧栏表面白色，选中项浅蓝及左标记，分组和键盘焦点可辨认。开始主线交付及 Docker 更新。
 <!-- commerce-light-sidebar:end -->
+
+<!-- commerce-menu-demo-data:start -->
+## 商城菜单演示数据
+
+- 基线 `daef5ff`，任务分支 `feat/commerce-menu-demo-data`。为保护并行的设计推广改动，使用独立工作树。
+- 已通过业务接口补齐本机 8602 的 `demo` 租户及平台分类字典。继续使用原管理员和会员身份。[运行及验收入口](deploy/README.md#菜单演示数据)。
+- 实际 MySQL 接口检查 60 项，重复导入返回的记录数一致。管理员 29 页、会员 7 页、门店运营 1 页、平台 3 页在 Chromium 中验收通过。中央 IAM 当前无启用绑定。
+- 原仓库 `.local/commerce-menu-demo-data/` 保存验收及 Git 回执。交付以实际远程 main 包含的提交为准。
+<!-- commerce-menu-demo-data:end -->
